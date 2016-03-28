@@ -326,9 +326,10 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
     Shape upArrow;
     Shape downArrow;
     
-    // Image to hold the complete board shadow map
-    BufferedImage shadowMap;
-    double[] lightDirection = { -19, 7 };
+    // Shadowmap
+    private BufferedImage shadowMap;
+    private int shadowMapScale;
+    private double[] lightDirection = { -19, 7 };
     private static Kernel kernel = new Kernel(5, 5,
             new float[] {
                     1f/25f, 1f/25f, 1f/25f, 1f/25f, 1f/25f,
@@ -1370,11 +1371,22 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             return;
         }
         
+        // the shadowmap will not be bigger in any direction than this in pixels
+        final int maxSize = 5000; 
         
         // the shadowmap needs to be painted as if scale == 1
         // therefore some of the methods of boardview1 cannot be used
         int width = game.getBoard().getWidth() * HEX_WC + (int) (HEX_W / 4);
         int height = game.getBoard().getHeight() * (int) (HEX_H) + (int) (HEX_H / 2);
+        
+        // get an int division factor by which to scale the map down. Minimum of 1.
+        // I assume that using an integer division will create the least hassle.
+        int be = Math.max(width, height);
+        shadowMapScale = 1 + be / maxSize;
+        
+        // scale the image down if necessary
+        width = width/shadowMapScale;
+        height = height/shadowMapScale;
         
         GraphicsConfiguration config = GraphicsEnvironment
                 .getLocalGraphicsEnvironment().getDefaultScreenDevice()
@@ -1384,6 +1396,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                 Transparency.TRANSLUCENT);
         
         Graphics2D g = (Graphics2D)(shadowMap.createGraphics());
+        g.scale(1.0f/shadowMapScale, 1.0f/shadowMapScale);
         
         if ((game.getPlanetaryConditions().getLight() == PlanetaryConditions.L_MOONLESS) ||
         (game.getPlanetaryConditions().getLight() == PlanetaryConditions.L_PITCH_BLACK)) {
@@ -2367,7 +2380,9 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         if (guip.getBoolean(GUIPreferences.SHADOWMAP) &&  
             (shadowMap != null)) {            
             Point p1SRC = getHexLocationLargeTile(c.getX(), c.getY(), 1);
-            Point p2SRC = new Point(p1SRC.x + HEX_W, p1SRC.y + HEX_H);
+            p1SRC.x = p1SRC.x/shadowMapScale;
+            p1SRC.y = p1SRC.y/shadowMapScale;
+            Point p2SRC = new Point(p1SRC.x + HEX_W/shadowMapScale, p1SRC.y + HEX_H/shadowMapScale);
             Point p2DST = new Point(hex_size.width, hex_size.height);
 
             Composite svComp = g.getComposite();
