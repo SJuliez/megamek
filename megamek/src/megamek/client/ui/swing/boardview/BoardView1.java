@@ -1591,12 +1591,15 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                             return;
                         }
                         int h = hex.terrainLevel(Terrains.BRIDGE_ELEV);
-                        p1.setLocation(p0.getX()+deltaX*n*(shadowcaster+h-shadowed), 
-                                p0.getY()+deltaY*n*(shadowcaster+h-shadowed));
-                        // the shadowmask is translucent, therefore draw n times
-                        // stupid hack
-                        for (int i=0;i<n;i++)
-                            g.drawImage(maskB, (int)p1.getX(), (int)p1.getY(), null);
+                        if ((shadowcaster+h-shadowed) > 0) {
+                            p1.setLocation(p0.getX()+deltaX*n*(shadowcaster+h-shadowed), 
+                                    p0.getY()+deltaY*n*(shadowcaster+h-shadowed));
+                            // the shadowmask is translucent, therefore draw n times
+                            // stupid hack
+                            for (int i=0;i<n;i++) {
+                                g.drawImage(maskB, (int)p1.getX(), (int)p1.getY(), null);
+                            }
+                        }
                     }
 
                 }
