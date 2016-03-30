@@ -47,7 +47,6 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
@@ -1372,7 +1371,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         }
         
         // the shadowmap will not be bigger in any direction than this in pixels
-        final int maxSize = 5000; 
+        final int maxSize = 2000; 
         
         // the shadowmap needs to be painted as if scale == 1
         // therefore some of the methods of boardview1 cannot be used
@@ -1443,6 +1442,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         }
         
         // 2) Create clipping areas
+        /*
         HashMap<Integer,Shape> levelClips = new HashMap<Integer,Shape>();
         for (Integer h: sortedHexes.keySet()) {
             Path2D path = new Path2D.Float();
@@ -1454,7 +1454,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                 path.append(t.createTransformedShape(hexPoly), false);
             }
             levelClips.put(h, path);
-        }
+        }*/
 
 
         // 3) Find all level differences
@@ -1463,12 +1463,12 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         for (int shadowed = board.getMinElevation(); 
                 shadowed < board.getMaxElevation(); 
                 shadowed++) {
-            if (levelClips.get(shadowed) == null) continue;
+            if (sortedHexes.get(shadowed) == null) continue;
 
             for (int shadowcaster = shadowed+1; 
                     shadowcaster <= board.getMaxElevation(); 
                     shadowcaster++) {
-                if (levelClips.get(shadowcaster) == null) continue;
+                if (sortedHexes.get(shadowcaster) == null) continue;
                 
                 lDiffs.add(Math.min(shadowcaster-shadowed, maxDiff));
             }
@@ -1497,30 +1497,91 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         }
         
         // 5) Actually draw the elevation shadows
+            
+        Set<Integer> dCombos = new TreeSet<Integer>();
+
+        for (int shadowed = board.getMinElevation(); 
+                shadowed < board.getMaxElevation(); 
+                shadowed++) {
+            if (sortedHexes.get(shadowed) == null) continue;
+
+            dCombos.clear();
+
+            for (int shadowcaster = shadowed+1; 
+                    shadowcaster <= board.getMaxElevation(); 
+                    shadowcaster++) {
+                if (shadowCastingHexes.get(shadowcaster) == null) continue;
+
+                int lDiff = shadowcaster - shadowed;
+                BufferedImage or = hS.get(Math.min(lDiff, maxDiff));
+
+                // code the shadowed level into the color of the shadowmap
+                if (!dCombos.contains(lDiff*10000+shadowed)) {
+                    int rd = ((shadowed*5+120) & 0xFF) << 16;
+                    for (int x = 0; x < or.getWidth(); ++x) {
+                        for (int y = 0; y < or.getHeight(); ++y) {
+                            int rgb = or.getRGB(x, y);
+                            int al = rgb >> 24 & 0xFF;
+                            int nc = rgb & 0xFF00FFFF | rd;
+                            or.setRGB(x, y, nc);
+                        }
+                    }
+                    dCombos.add(lDiff*10000+shadowed);
+                }
+
+                for (Coords c: shadowCastingHexes.get(shadowcaster)) {
+                    Point2D p0 = getHexLocationLargeTile(c.getX(), c.getY(), 1);
+                    g.drawImage(or, 
+                            (int)p0.getX()-(int)(Math.abs(lightDirection[0])*Math.min(lDiff, maxDiff)+HEX_W), 
+                            (int)p0.getY()-(int)(Math.abs(lightDirection[1])*Math.min(lDiff, maxDiff)+HEX_H), null);
+                }
+            }
+        }
+        
+        /*
+     // 5) Actually draw the elevation shadows
         for (int shadowed = board.getMinElevation(); 
                 shadowed < board.getMaxElevation(); 
                 shadowed++) {
             if (levelClips.get(shadowed) == null) continue;
 
             Shape saveClip = g.getClip();
-            g.setClip(levelClips.get(shadowed));
+//            g.setClip(levelClips.get(shadowed));
 
             for (int shadowcaster = shadowed+1; 
                     shadowcaster <= board.getMaxElevation(); 
                     shadowcaster++) {
                 if (levelClips.get(shadowcaster) == null) continue;
                 int lDiff = shadowcaster - shadowed;
+                
+                BufferedImage or = hS.get(Math.min(lDiff, maxDiff));
+                float[] offsets = new float[] { shadowed*5f+100, 0f, 0f, 0f };
+//                RescaleOp op = new RescaleOp(factors, offsets, null);
+//                BufferedImage co = op.filter(or, null);
+                
+                for (int x = 0; x < or.getWidth(); ++x) {
+                    for (int y = 0; y < or.getHeight(); ++y) {
+                        int rgb = or.getRGB(x, y);
+                        int al = (rgb >> 24) & 0xFF; 
+                        int rd = shadowed*5+120;
+                        int gr = (rgb >> 8) & 0xFF;
+                        int bl = rgb & 0xFF;
+
+                        int nc = (al << 24) + (rd << 16) + (gr << 8) + bl; 
+                        or.setRGB(x, y, nc);
+                    }
+                }
 
                 for (Coords c: shadowCastingHexes.get(shadowcaster)) {
                     Point2D p0 = getHexLocationLargeTile(c.getX(), c.getY(), 1);
-                    g.drawImage(hS.get(Math.min(lDiff, maxDiff)), 
+                    g.drawImage(or, 
                             (int)p0.getX()-(int)(Math.abs(lightDirection[0])*Math.min(lDiff, maxDiff)+HEX_W), 
                             (int)p0.getY()-(int)(Math.abs(lightDirection[1])*Math.min(lDiff, maxDiff)+HEX_H), null);
                 }
             }
-            g.setClip(saveClip);
-        }
-
+//            g.setClip(saveClip);
+        }*/
+/*
         n = 5;
         deltaX = lightDirection[0]/n;
         deltaY = lightDirection[1]/n;
@@ -1605,7 +1666,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                 }
             }
             g.setClip(saveClip);
-        }
+        }*/
 
         long tT5 = System.nanoTime()-stT;
         System.out.println("Time to prepare the shadow map: "+tT5/1e6+" ms");
@@ -2378,7 +2439,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                 }
             }
         }
-        
+        /*
         // Add the terrain & building shadows
         if (guip.getBoolean(GUIPreferences.SHADOWMAP) &&  
             (shadowMap != null)) {            
@@ -2399,6 +2460,54 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             g.drawImage(shadowMap, 0, 0, p2DST.x, p2DST.y, p1SRC.x, p1SRC.y,
                     p2SRC.x, p2SRC.y, null); 
             g.setComposite(svComp);
+        }*/
+
+        int lv = hex.getLevel();
+        Point p1SRC = getHexLocationLargeTile(c.getX(), c.getY(), 1);
+        if (guip.getBoolean(GUIPreferences.SHADOWMAP) && (shadowMap != null)) {  
+            for (int x = 0; x < hexImage.getWidth(); ++x) {
+                for (int y = 0; y < hexImage.getHeight(); ++y) {
+                    int sx = (p1SRC.x+(int)(x/scale))/shadowMapScale;
+                    int sy = (p1SRC.y+(int)(y/scale))/shadowMapScale;
+                    sx = Math.min(shadowMap.getWidth()-1, sx);
+                    sy = Math.min(shadowMap.getHeight()-1, sy);
+                    int srgb = shadowMap.getRGB(sx, sy);
+                    int srd = (srgb >> 16) & 0xFF;
+                    if (srd >= lv*5+120-2) {
+                    
+//                    int sx1 = Math.min(shadowMap.getWidth()-1, sx+1);
+//                    int sy1 = Math.min(shadowMap.getHeight()-1, sy+1);
+//                    
+//                    int sx_1 = Math.max(0, sx-1);
+//                    int sy_1 = Math.max(0, sy-1);
+//
+//                    int sal_1_1 = (shadowMap.getRGB(sx_1, sy_1)>>24) & 0xFF;
+//                    int sal1_1 = (shadowMap.getRGB(sx1, sy_1)>>24) & 0xFF;
+//                    int sal_11 = (shadowMap.getRGB(sx_1, sy)>>24) & 0xFF;
+//                    int sal11 = (shadowMap.getRGB(sx1, sy1)>>24) & 0xFF;
+//                    
+                                       
+                    
+                    
+                    
+                        int sal = (srgb >> 24) & 0xFF;
+                        
+//                        sal = (sal+sal_1_1+sal_11+sal1_1+sal11)/5;
+                        int rgb = hexImage.getRGB(x, y);
+                        int al = (rgb >> 24) & 0xFF; 
+                        int rd = (rgb >> 16) & 0xFF;
+                        int gr = (rgb >> 8) & 0xFF;
+                        int bl = rgb & 0xFF;
+
+                        rd = (rd*(255-sal/2))/255;
+                        gr = (gr*(255-sal/2))/255;
+                        bl = (bl*(255-sal/2))/255;
+
+                        int nc = (al << 24) + (rd << 16) + (gr << 8) + bl; 
+                        hexImage.setRGB(x, y, nc);
+                    }
+                }
+            }
         }
 
         if (!supersUnderShadow) {
@@ -2732,8 +2841,8 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                     hexImage.setRGB(x, y, gray);
                 }
             }
-        }        
-
+        }   
+        
         cacheEntry = new HexImageCacheEntry(hexImage);
         if (!dontCache) {
             hexImageCache.put(c, cacheEntry);
