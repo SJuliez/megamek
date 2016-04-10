@@ -19,6 +19,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -190,6 +192,14 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
         }
         content.add(panCenter, BorderLayout.CENTER);
         
+        // Close this dialog when the window manager says to.
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                cancelActions();
+            }
+        });
+        
         setResizable(true);
         setLocationRelativeTo(owner);
         validate();
@@ -279,6 +289,11 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
             oldColors.put(i, guip.getColor(guipA+guipCodes[i]+"Color"));
         }
     }
+    
+    private void cancelActions() {
+        restoreOldValuesToGUIP();
+        updateBoard();
+    }
 
     // All the button presses are handled here. The refresh for text changes
     // in the text fields is handled by the keyPressed etc. below.
@@ -289,8 +304,7 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
             setVisible(false);
             
         } else if (e.getSource().equals(butCancel)) {
-            restoreOldValuesToGUIP();
-            updateBoard();
+            cancelActions();
             setVisible(false);
             
         } else if (e.getSource().equals(butBigger)) {
@@ -349,9 +363,11 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
     /** Fetches the GUIPrefs in addition to super.setVisible(). */
     @Override
     public void setVisible(boolean visible) {
-        loadValuesfromGUIP(); 
-        previewButtonStatus();
-        refreshExamples();
+        if (visible) {
+            loadValuesfromGUIP(); 
+            previewButtonStatus();
+            refreshExamples();
+        }
         super.setVisible(visible);
     }
     
