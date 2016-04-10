@@ -2831,7 +2831,10 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
 
         if (hexTexts.isEmpty()) return;
         
-        int fontsize = GUIPreferences.getInstance().getInt("HexTextDefSize"); 
+        int fontsize = GUIPreferences.getInstance().getInt("HexTextDefSize");
+        if (scale < 1) {
+            fontsize = (int)(fontsize*scale+0.9);
+        }
         String font = GUIPreferences.getInstance().getString("HexTextDefFont");
         int style = GUIPreferences.getInstance().getBoolean("HexTextDefBold") ?
                 Font.BOLD : Font.PLAIN;
