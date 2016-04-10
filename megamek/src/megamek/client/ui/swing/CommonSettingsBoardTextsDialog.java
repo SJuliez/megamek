@@ -95,7 +95,9 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
    
     // --------------------------------------------------------------------------
     
-    
+    /** A dialog for confiuration of the texts that are written on hexes
+     * in the boardview, like "LEVEL" or "Swamp". Called from View->Client
+     * Settings (CommonSettingsDialog). */
     public CommonSettingsBoardTextsDialog(JFrame owner, ClientGUI cg) {
 
         super(owner, "Configure Hex Texts ... ", true); //$NON-NLS-1$
@@ -159,18 +161,27 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
                 @Override
                 public void paintComponent(Graphics g) {
                     super.paintComponent(g); 
+                    
                     GUIPreferences.AntiAliasifSet(g);
+                    // arbitrary brownish background
                     g.setColor(new Color(180,150,40));
                     g.fillRect(0,0,80,20);
-                    int style = fontBold ? Font.BOLD:Font.PLAIN;
-                    Font font = new Font((String)defaultFont.getSelectedItem(),style,fontSize);
+                    
+                    // set the font
+                    Font font = new Font(
+                            (String)defaultFont.getSelectedItem(),
+                            fontBold ? Font.BOLD : Font.PLAIN,
+                            fontSize);
                     g.setFont(font);
+                    
+                    // set the text and add a level to some
                     String txt = textFields.get(i).getText();
                     if (hexTexts[i].equals("Level") ||
                             hexTexts[i].equals("Depth") ||
                             hexTexts[i].equals("Building Height")) {
                         txt += "5";
                     }
+                    
                     BoardView1.DrawHexText(g, 40, 10, colors.get(i), txt, shadowColor);
                 }
             };
@@ -190,7 +201,7 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
      * @param index The index in hexTexts for which the color is chosen 
      */ 
     private void chooseColor(int index) {
-        Color newC = JColorChooser.showDialog(this,"Choose Standard Text Color", Color.BLACK);
+        Color newC = JColorChooser.showDialog(this,"Choose Standard Text Color", colors.get(index));
         // update the button icon if a color was chosen
         if (newC != null) {
             colors.put(index, newC);
@@ -198,11 +209,9 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
         }
     }
     
-    /** Opens a color choice dialog for the indicated text.
-     * @param index The index in hexTexts for which the color is chosen 
-     */ 
+    /** Opens a color choice dialog for the shadow color. */ 
     private void chooseShadowColor() {
-        Color newC = JColorChooser.showDialog(this,"Choose Shadow Color", Color.BLACK);
+        Color newC = JColorChooser.showDialog(this,"Choose Shadow Color", shadowColor);
         // update the button icon if a color was chosen
         if (newC != null) {
             shadowColor = newC;
@@ -217,6 +226,7 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
         }
     }
     
+    /** Saves the current config to the GUIP. */
     private void saveValuesToGUIP() {
         String f = (String)defaultFont.getSelectedItem();
         guip.setValue(GUIPreferences.HEX_TEXT_DEF_FONT, f);
@@ -231,6 +241,9 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
         }
     }
     
+    /** Restores the old settings to the GUIP. Used for the Cancel button. 
+     *  Necessary because the GUIP settings get updated when
+     *  the Preview button is used. */
     private void restoreOldValuesToGUIP() {
         guip.setValue(GUIPreferences.HEX_TEXT_DEF_FONT, oldFont);
         guip.setValue(GUIPreferences.HEX_TEXT_DEF_SIZE, oldFontSize);
@@ -244,6 +257,8 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
         }
     }
     
+    /** Loads the settings from the GUIP. Also stores them separately
+     *  in the old... variables for cancelling. */  
     private void loadValuesfromGUIP() {
         oldFont = guip.getString(GUIPreferences.HEX_TEXT_DEF_FONT);
         defaultFont.setSelectedItem(oldFont);
@@ -340,12 +355,12 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
         super.setVisible(visible);
     }
     
-    /** Updates the status of clientGUI (present or null) */
+    /** Give this a new ClientGUI (may be null) */
     public void updateClient(ClientGUI cg) {
         clientgui = cg;
     }
 
-    /** Enables/Disables the preview button if a boardview is present. */
+    /** Enables/Disables the preview button depending on whether a boardview is present. */
     private void previewButtonStatus() {
         if ((clientgui != null) && (clientgui.bv != null)) {
             butPreview.setEnabled(true);
@@ -354,10 +369,11 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
         }
     }
 
+    /** Makes the boardview redraw the hex graphics */
     private void updateBoard() {
         if ((clientgui != null) && (clientgui.bv != null)) {
             clientgui.bv.clearHexImageCache();
-            clientgui.bv.repaint();
+            clientgui.bv.repaint(); // TODO: necessary?
         }
     }
 
