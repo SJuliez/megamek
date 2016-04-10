@@ -59,9 +59,8 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
 
     // Default Text Features
     private JPanel panStandard = new JPanel();
-    private JLabel defaultLabel = new JLabel("Standard Text Color: "); //$NON-NLS-1$
-    private JComboBox<String> defaultFont = new JComboBox<>(); //$NON-NLS-1$
-    private JCheckBox StandardShadow = new JCheckBox("Shadow");
+    private JLabel defaultLabel = new JLabel("General Features: "); //$NON-NLS-1$
+    private JComboBox<String> defaultFont = new JComboBox<>();
     private JButton butBold = new JButton("B"); //$NON-NLS-1$
     private JButton butBigger = new JButton("+"); //$NON-NLS-1$
     private JButton butSmaller = new JButton("-"); //$NON-NLS-1$
@@ -78,7 +77,7 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
             "Rough", "Rubble", "Woods", "Jungle", "Mud" };
     private final String[] guipCodes = { "Sep", "Lvl", "Dth", "Bdg", "Swp", 
              "Rgh", "Rbl", "Wds", "Jng", "Mud" };
-    private final String guipA = "HexText";
+    private final String guipA = "HexText";  //$NON-NLS-1$
     
     private List<JButton> textButtons = new ArrayList<>();
     private List<JTextField> textFields = new ArrayList<>();
@@ -116,7 +115,7 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
         panButtons.add(butOkay);
         panButtons.add(butCancel);
         panButtons.add(butPreview);
-        previewButtonStatus();
+        adjustButtons();
         content.add(panButtons, BorderLayout.SOUTH);
 
         // Default Text Config
@@ -128,7 +127,6 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
         butShadowColor.addActionListener(this);
         panStandard.setLayout(new FlowLayout(FlowLayout.LEFT));
         panStandard.add(defaultLabel);
-        panStandard.add(StandardShadow);
         panStandard.add(defaultFont);
         panStandard.add(butBold);
         panStandard.add(butBigger);
@@ -313,7 +311,7 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
             
         } else if (e.getSource().equals(butBold)) {
             fontBold = !fontBold;
-            butBold.setText("<HTML>"+(fontBold?"<B>":"")+"B</HTML>");
+            adjustButtons();
             refreshExamples();
             
         } else if (e.getSource().equals(butShadowColor)) {
@@ -365,7 +363,7 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
     public void setVisible(boolean visible) {
         if (visible) {
             loadValuesfromGUIP(); 
-            previewButtonStatus();
+            adjustButtons();
             refreshExamples();
         }
         super.setVisible(visible);
@@ -377,12 +375,13 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
     }
 
     /** Enables/Disables the preview button depending on whether a boardview is present. */
-    private void previewButtonStatus() {
+    private void adjustButtons() {
         if ((clientgui != null) && (clientgui.bv != null)) {
             butPreview.setEnabled(true);
         } else {
             butPreview.setEnabled(false);
         }
+        butBold.setText("<HTML>"+(fontBold?"<B>":"")+"B</HTML>");        
     }
 
     /** Makes the boardview redraw the hex graphics */
