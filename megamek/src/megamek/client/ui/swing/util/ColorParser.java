@@ -97,7 +97,12 @@ public class ColorParser {
             }
             int blue = (int) st.nval;
             nextToken();
-            color = new Color(red, green, blue);
+            int alpha = 255;
+            if (currentToken == StreamTokenizer.TT_NUMBER) {
+                alpha = (int) st.nval;
+            }
+            nextToken();
+            color = new Color(red, green, blue, alpha);
         } else {
             throw new ParseException(
                     "color name or integer read component value expected");

@@ -1231,6 +1231,12 @@ public class GUIPreferences extends PreferenceStoreProxy {
         b.append(color.getRed()).append(" ");
         b.append(color.getGreen()).append(" ");
         b.append(color.getBlue());
+        // It would also be possible to always write the alpha
+        // value, which would make all opaque colors end 
+        // with ... 255
+        if (color.getAlpha() != 255) {
+            b.append(" ").append(color.getAlpha());
+        }
         return b.toString();
     }
 
