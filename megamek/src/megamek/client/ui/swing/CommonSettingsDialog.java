@@ -1204,6 +1204,26 @@ public class CommonSettingsDialog extends ClientDialog implements
         row.add(tileSetChoice);
         comps.add(row);
         
+        // Spacer
+        row = new ArrayList<>();
+        row.add(Box.createRigidArea(new Dimension(0, 5)));
+        comps.add(row);
+        
+        // Open the Texts config dialog
+        CommonSettingsBoardTextsDialog textsDialog = new CommonSettingsBoardTextsDialog(owner, clientgui);
+        JButton openTextsDialog = new JButton("Configure Hex Texts");
+        openTextsDialog.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textsDialog.updateClient(clientgui);
+                textsDialog.setVisible(true);
+            }
+        });
+        row = new ArrayList<>();
+        row.add(openTextsDialog);
+        comps.add(row);
+        
+        
         // Horizontal Line and Spacer
         row = new ArrayList<>();
         row.add(Box.createRigidArea(new Dimension(0, 10)));

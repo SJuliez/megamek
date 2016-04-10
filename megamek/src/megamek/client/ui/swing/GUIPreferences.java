@@ -182,6 +182,32 @@ public class GUIPreferences extends PreferenceStoreProxy {
     public static final String SKIN_FILE = "SkinFile";
     public static final String DEFAULT_WEAP_SORT_ORDER = "DefaultWeaponSortOrder";
     
+    // Hex Text preferences
+    public static final String HEX_TEXT_DEF_FONT = "HexTextDefFont";
+    public static final String HEX_TEXT_DEF_SIZE = "HexTextDefSize";
+    public static final String HEX_TEXT_DEF_BOLD = "HexTextDefBold";
+    public static final String HEX_TEXT_SHD_COLOR = "HexTextShdColor";
+    public static final String HEX_TEXT_SEP_COLOR = "HexTextSepColor";
+    public static final String HEX_TEXT_SEP_TEXT = "HexTextSepText";
+    public static final String HEX_TEXT_LVL_COLOR = "HexTextLvlColor";
+    public static final String HEX_TEXT_LVL_TEXT = "HexTextLvlText";
+    public static final String HEX_TEXT_DTH_COLOR = "HexTextDthColor";
+    public static final String HEX_TEXT_DTH_TEXT = "HexTextDthText";
+    public static final String HEX_TEXT_BDG_COLOR = "HexTextBdgColor";
+    public static final String HEX_TEXT_BDG_TEXT = "HexTextBdgText";
+    public static final String HEX_TEXT_RGH_COLOR = "HexTextRghColor";
+    public static final String HEX_TEXT_RGH_TEXT = "HexTextRghText";
+    public static final String HEX_TEXT_SWP_COLOR = "HexTextSwpColor";
+    public static final String HEX_TEXT_SWP_TEXT = "HexTextSwpText";
+    public static final String HEX_TEXT_RBL_COLOR = "HexTextRblColor";
+    public static final String HEX_TEXT_RBL_TEXT = "HexTextRblText";
+    public static final String HEX_TEXT_WDS_COLOR = "HexTextWdsColor";
+    public static final String HEX_TEXT_WDS_TEXT = "HexTextWdsText";
+    public static final String HEX_TEXT_JNG_COLOR = "HexTextJngColor";
+    public static final String HEX_TEXT_JNG_TEXT = "HexTextJngText";
+    public static final String HEX_TEXT_MUD_COLOR = "HexTextMudColor";
+    public static final String HEX_TEXT_MUD_TEXT = "HexTextMudText";
+    
     // RAT dialog preferences
     public static String RAT_TECH_LEVEL = "RATTechLevel";
     public static String RAT_BV_MIN = "RATBVMin";
@@ -343,6 +369,32 @@ public class GUIPreferences extends PreferenceStoreProxy {
         store.setDefault(RAT_YEAR_MAX, "3100");
         store.setDefault(RAT_PAD_BV, false);
         store.setDefault(RAT_SELECTED_RAT, "");
+        
+        // Hex Texts
+        store.setDefault(HEX_TEXT_DEF_FONT, "SansSerif");
+        store.setDefault(HEX_TEXT_DEF_SIZE, 12);
+        store.setDefault(HEX_TEXT_DEF_BOLD, true);
+        setDefault(HEX_TEXT_SHD_COLOR, new Color(50,50,50,100));
+        setDefault(HEX_TEXT_SEP_COLOR, new Color(200,0,0));
+        store.setDefault(HEX_TEXT_SEP_TEXT, " - ");
+        setDefault(HEX_TEXT_LVL_COLOR, Color.BLACK); 
+        store.setDefault(HEX_TEXT_LVL_TEXT, "LEVEL");
+        setDefault(HEX_TEXT_DTH_COLOR, Color.BLACK);
+        store.setDefault(HEX_TEXT_DTH_TEXT, "DEPTH");
+        setDefault(HEX_TEXT_BDG_COLOR, Color.BLACK);
+        store.setDefault(HEX_TEXT_BDG_TEXT, "HEIGHT");
+        setDefault(HEX_TEXT_RGH_COLOR, Color.BLACK);
+        store.setDefault(HEX_TEXT_RGH_TEXT, "");
+        setDefault(HEX_TEXT_SWP_COLOR, Color.BLACK);
+        store.setDefault(HEX_TEXT_SWP_TEXT, "");
+        setDefault(HEX_TEXT_RBL_COLOR, Color.BLACK);
+        store.setDefault(HEX_TEXT_RBL_TEXT, "");
+        setDefault(HEX_TEXT_WDS_COLOR, Color.BLACK);
+        store.setDefault(HEX_TEXT_WDS_TEXT, "");
+        setDefault(HEX_TEXT_JNG_COLOR, Color.BLACK);
+        store.setDefault(HEX_TEXT_JNG_TEXT, ""); 
+        setDefault(HEX_TEXT_MUD_COLOR, Color.BLACK);
+        store.setDefault(HEX_TEXT_MUD_TEXT, "");
         
         store.setDefault(DEFAULT_WEAP_SORT_ORDER,
                 Entity.WeaponSortOrder.DEFAULT.ordinal());

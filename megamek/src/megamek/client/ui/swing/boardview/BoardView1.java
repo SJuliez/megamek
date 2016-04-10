@@ -180,6 +180,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
     private static final long serialVersionUID = -5582195884759007416L;
 
     static final int TRANSPARENT = 0xFFFF00FF;
+    private final static Color TRANSPARENTCOLOR = new Color(0,0,0,0);
 
     private static final int BOARD_HEX_CLICK = 1;
     private static final int BOARD_HEX_DOUBLECLICK = 2;
@@ -2580,29 +2581,77 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         }
 
         // write terrain level / water depth / building height
+        hexTexts.clear();
+        g.setFont(new Font(
+                guip.getString("HexTextDefFont"),
+                guip.getInt("HexTextDefSize"),
+                Font.BOLD));
+        
         if (scale > 0.5f) {
-            int ypos = HEX_H-2;
             if (level != 0) {
-                drawCenteredString(
-                        Messages.getString("BoardView1.LEVEL") + level, //$NON-NLS-1$
-                        0, (int) (ypos * scale), font_elev, g);
-                ypos -= 10;
+                String t = guip.getString("HexTextLvlText");
+                Color o = guip.getColor("HexTextLvlColor");
+                AddtoHexText(t+level, o);
             }
             if (depth != 0) {
-                drawCenteredString(
-                        Messages.getString("BoardView1.DEPTH") + depth, //$NON-NLS-1$
-                        0, (int) (ypos * scale), font_elev, g);
-                ypos -= 10;
+                String t = guip.getString("HexTextDthText");
+                Color o = guip.getColor("HexTextDthColor");
+                AddtoHexText(t+depth, o);
             }
             if (height > 0) {
-                g.setColor(GUIPreferences.getInstance().getColor(
-                        "AdvancedBuildingTextColor"));                 //$NON-NLS-1$
-                drawCenteredString(
-                        Messages.getString("BoardView1.HEIGHT") + height, //$NON-NLS-1$
-                        0, (int) (ypos * scale), font_elev, g);
-                ypos -= 10;
+                String t = guip.getString("HexTextBdgText");
+                Color o = guip.getColor("HexTextBdgColor");
+                AddtoHexText(t+height, o);
             }
+            if (hex.containsTerrain(Terrains.SWAMP)) {
+                String t = guip.getString("HexTextSwpText");
+                Color o = guip.getColor("HexTextSwpColor");
+                AddtoHexText(t, o);
+            }
+            if (hex.containsTerrain(Terrains.MUD)) {
+                String t = guip.getString("HexTextMudText");
+                Color o = guip.getColor("HexTextMudColor");
+                AddtoHexText(t, o);
+            }
+            if (hex.containsTerrain(Terrains.ROUGH)) {
+                String t = guip.getString("HexTextRghText");
+                Color o = guip.getColor("HexTextRghColor");
+                AddtoHexText(t, o);
+            }
+            if (hex.containsTerrain(Terrains.RUBBLE)) {
+                String t = guip.getString("HexTextRblText");
+                Color o = guip.getColor("HexTextRblColor");
+                AddtoHexText(t, o);
+            }
+            if (hex.containsTerrain(Terrains.WOODS)) {
+                String t = guip.getString("HexTextWdsText");
+                Color o = guip.getColor("HexTextWdsColor");
+                AddtoHexText(t, o);
+            
+//                String ts = "";
+//                switch (hex.getTerrain(Terrains.WOODS).getLevel()) {
+//                case 1: ts = "Light"; break;
+//                case 2: ts = "Heavy"; break;
+//                case 3: ts = "Ultra"; }
+//                AddtoHexText(ts, Color.GREEN);
+            }
+            if (hex.containsTerrain(Terrains.JUNGLE)) {
+                String t = guip.getString("HexTextJngText");
+                Color o = guip.getColor("HexTextJngColor");
+                AddtoHexText(t, o);
+////                g.setColor(Color.GREEN); //$NON-NLS-1$
+//                String ts = "";
+//                switch (hex.getTerrain(Terrains.JUNGLE).getLevel()) {
+//                case 1: ts = "Light"; break;
+//                case 2: ts = "Heavy"; break;
+//                case 3: ts = "Ultra"; }
+////                DrawHexText(g, 0, ypos, fontsize, Color.GREEN, ts);
+//                AddtoHexText(ts, Color.GREEN);
+////                ypos -= lineheight;
+            }
+            
         }
+        DrawHexTexts(g);
 
         // Used to make the following draw calls shorter
         int s21 = (int)(21*scale);
@@ -2724,6 +2773,129 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             hexImageCache.put(c, cacheEntry);
         }
         boardGraph.drawImage(cacheEntry.hexImage, hexLoc.x, hexLoc.y, this);
+    }
+    
+    // This is only used by the text settings dialog!
+    public static void DrawHexText(Graphics g, int x, int y, Color c, String text, Color sc) {
+        if (text == null) return;
+
+        Graphics2D g2D = (Graphics2D)g;
+        FontMetrics fm = g2D.getFontMetrics(g2D.getFont());
+        // Center the text around pos
+        int cx = x - (fm.stringWidth(text) / 2);
+        int cy = y + (fm.getAscent() - fm.getDescent()) / 2;
+        
+        // get text shape and position it
+        GlyphVector gv = g2D.getFont().createGlyphVector(g2D.getFontRenderContext(), text);
+        Shape shape = gv.getOutline();
+        shape = AffineTransform.getTranslateInstance(cx,cy).
+                createTransformedShape(shape);
+
+        // outline
+        g2D.setStroke(new BasicStroke(2.5f,BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2D.setColor(sc);
+        g2D.draw(shape);
+        
+        // text area fill
+        g2D.setColor(c);
+        g2D.fill(shape);
+    }
+    
+    public static void DrawHexText(Graphics2D g, int x, int y, int fontsize, Color c, String text) {
+        if (text == null) return;
+        Point pos = new Point(x,y);
+        drawOutlineText(g, text, pos, fontsize, TRANSPARENTCOLOR, true, Color.LIGHT_GRAY);
+        drawOutlineText(g, text, pos, fontsize, c, false, TRANSPARENTCOLOR);
+    }
+    
+    // happy little class to hold the texts info
+    class hexText {
+        String text;
+        Color color;
+        int xPos;
+        
+        hexText(String s, Color c) {
+            text = s;
+            color = c;
+        }
+    }
+    
+    ArrayList<hexText> hexTexts = new ArrayList<>();
+    private void AddtoHexText(String s, Color c) {
+        if (!s.isEmpty()) {
+            hexTexts.add(new hexText(s,c));
+        }
+    }
+    
+    private void DrawHexTexts(Graphics2D g) {
+
+        if (hexTexts.isEmpty()) return;
+        
+        int ypos = (int)((HEX_H-8)*scale);
+        int fontsize = GUIPreferences.getInstance().getInt("HexTextDefSize"); 
+        String font = GUIPreferences.getInstance().getString("HexTextDefFont");
+        int style = GUIPreferences.getInstance().getBoolean("HexTextDefBold") ?
+                Font.BOLD : Font.PLAIN;
+        g.setFont(new Font(font,style,fontsize));
+        Color shadowColor = GUIPreferences.getInstance().getColor("HexTextShdColor");
+        int lineheight = fontsize+1;
+        FontMetrics fm = g.getFontMetrics(g.getFont());
+
+        // The separator between texts in one line
+        String sep = GUIPreferences.getInstance().getString("HexTextSepText");
+        Color sepColor = GUIPreferences.getInstance().getColor("HexTextSepColor");
+        int sepWidth = fm.stringWidth(sep);
+
+        int line = 0;
+        ArrayList<hexText> thisLine = new ArrayList<>();
+        Iterator<hexText> it = hexTexts.iterator();
+        int lineMaxLength = (int)(hex_size.width*(1-
+                (double)Math.abs(hex_size.getHeight()/2-(ypos-lineheight*line))/(hex_size.getHeight()/2)/2));
+        int lineMaxLength2 = (int)(hex_size.width*(1-
+                (double)Math.abs(hex_size.getHeight()/2-(ypos-lineheight*(line-1)))/(hex_size.getHeight()/2)/2));
+        lineMaxLength = Math.min(lineMaxLength, lineMaxLength2);
+        thisLine.add(hexTexts.get(0));
+        int lineLength = fm.stringWidth(hexTexts.get(0).text);
+        it.next();
+        while (it.hasNext()) {
+            hexText hT = it.next();
+            if (((lineLength + fm.stringWidth(hT.text) + sepWidth) < lineMaxLength) ||
+                    (thisLine.size() == 0)) {
+                thisLine.add(hT);
+                lineLength += fm.stringWidth(hT.text) + sepWidth;
+            } else {
+                boolean subsequent = false;
+                int xpos = (hex_size.width - lineLength)/2;
+                for (hexText lT: thisLine) {
+                    if (subsequent) {
+                        DrawHexText(g, xpos+sepWidth/2, ypos-lineheight*line, sepColor, sep, shadowColor);
+                        xpos += sepWidth;
+                    }
+                    subsequent = true;
+                    DrawHexText(g, xpos+fm.stringWidth(lT.text)/2, ypos-lineheight*line, lT.color, lT.text, shadowColor);
+                    xpos += fm.stringWidth(lT.text);
+                }
+                line++;
+                thisLine = new ArrayList<>();
+                lineMaxLength = (int)(scale*hex_size.width*(1-(double)Math.abs(hex_size.height/2-(ypos-lineheight*line))/(hex_size.height/2)/2));
+                lineMaxLength2 = (int)(hex_size.width*(1-
+                        (double)Math.abs(hex_size.getHeight()/2-(ypos-lineheight*(line-1)))/(hex_size.getHeight()/2)/2));
+                lineMaxLength = Math.min(lineMaxLength, lineMaxLength2);
+                thisLine.add(hT);
+                lineLength = fm.stringWidth(hT.text);
+            }
+        }
+        boolean subsequent = false;
+        int xpos = (hex_size.width - lineLength)/2;
+        for (hexText lT: thisLine) {
+            if (subsequent) {
+                DrawHexText(g, xpos+sepWidth/2, ypos-lineheight*line, sepColor, sep, shadowColor);
+                xpos += sepWidth;
+            }
+            subsequent = true;
+            DrawHexText(g, xpos+fm.stringWidth(lT.text)/2, ypos-lineheight*line, lT.color, lT.text, shadowColor);
+            xpos += fm.stringWidth(lT.text);
+        }
     }
 
     /**
@@ -3831,8 +4003,18 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
      * @param translucent (optional)  makes the text translucent if set to true. Defaults to false
      * @param cOutline (optional) the color of the outline. Defaults to Color.DARK_GRAY
      */
-    public void drawOutlineText(Graphics2D g2D, String text, Point pos,
+    public static void drawOutlineText(Graphics2D g2D, String text, Point pos,
             float fontSize, Color color, boolean translucent, Color cOutline) {
+        Color lineColor = cOutline;
+        if (translucent) {
+            color = new Color(color.getRGB() & 0x00FFFFFF | 0xA0000000, true);
+            lineColor = new Color(lineColor.getRGB() & 0x00FFFFFF | 0xA0000000, true);
+        }
+        drawOutlineText(g2D, text, pos, fontSize, color, lineColor);
+    }
+    
+    public static void drawOutlineText(Graphics2D g2D, String text, Point pos,
+            float fontSize, Color color, Color cOutline) {
         g2D.setFont(g2D.getFont().deriveFont(fontSize));
         FontMetrics fm = g2D.getFontMetrics(g2D.getFont());
         // Center the text around pos
@@ -3846,17 +4028,12 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                 createTransformedShape(shape);
         
         // text area fill
-        if (translucent) 
-            color = new Color(color.getRGB() & 0x00FFFFFF | 0xA0000000, true);
         g2D.setColor(color);
         g2D.fill(shape);
         
         // outline
-        g2D.setStroke(new BasicStroke(0.5f));
-        Color lineColor = cOutline;
-        if (translucent) 
-            lineColor = new Color(lineColor.getRGB() & 0x00FFFFFF | 0xA0000000, true);
-        g2D.setColor(lineColor);
+        g2D.setStroke(new BasicStroke(2.5f,BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2D.setColor(cOutline);
         g2D.draw(shape);
     }
     
