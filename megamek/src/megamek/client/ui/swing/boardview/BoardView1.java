@@ -65,7 +65,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimerTask;
@@ -2828,7 +2830,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         }
     }
     
-    ArrayList<hexText> hexTexts = new ArrayList<>();
+    List<hexText> hexTexts = new LinkedList<>();
     private void AddtoHexText(String s, Color c) {
         if (!s.isEmpty()) {
             hexTexts.add(new hexText(s,c));
@@ -2839,74 +2841,89 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
 
         if (hexTexts.isEmpty()) return;
         
+        // gather the font from GUIP
         int fontsize = GUIPreferences.getInstance().getInt("HexTextDefSize");
-        if (scale < 1) {
-            fontsize = (int)(fontsize*scale+0.9);
-        }
         String font = GUIPreferences.getInstance().getString("HexTextDefFont");
         int style = GUIPreferences.getInstance().getBoolean("HexTextDefBold") ?
                 Font.BOLD : Font.PLAIN;
+        // scale the font down when zoomed out, but not when zoomed in
+        if (scale < 1) {
+            fontsize = (int)(fontsize*scale+0.9);
+        }
         g.setFont(new Font(font,style,fontsize));
+        
+        // the shadow (outline) color
         Color shadowColor = GUIPreferences.getInstance().getColor("HexTextShdColor");
+        
+        // other control settings
         int ypos = (int)((HEX_H-8)*scale);
         int lineheight = fontsize+1;
         FontMetrics fm = g.getFontMetrics(g.getFont());
 
-        // The separator between texts in one line
+        // the separator between texts in one line
         String sep = GUIPreferences.getInstance().getString("HexTextSepText");
         Color sepColor = GUIPreferences.getInstance().getColor("HexTextSepColor");
-        int sepWidth = fm.stringWidth(sep);
+        int wSep = fm.stringWidth(sep);
 
+        // now the texts are arranged by filling up lines
+        //
+        hexText hT = null;
+        int lineMaxLength = 0;
+        int lineLength = 0;
+        
         int line = 0;
         ArrayList<hexText> thisLine = new ArrayList<>();
-        Iterator<hexText> it = hexTexts.iterator();
-        int lineMaxLength = (int)(hex_size.width*(1-
-                (double)Math.abs(hex_size.getHeight()/2-(ypos-lineheight*line))/(hex_size.getHeight()/2)/2));
-        int lineMaxLength2 = (int)(hex_size.width*(1-
-                (double)Math.abs(hex_size.getHeight()/2-(ypos-lineheight*(line-1)))/(hex_size.getHeight()/2)/2));
-        lineMaxLength = Math.min(lineMaxLength, lineMaxLength2);
-        thisLine.add(hexTexts.get(0));
-        int lineLength = fm.stringWidth(hexTexts.get(0).text);
-        it.next();
+        ListIterator<hexText> it = hexTexts.listIterator();
+        // while items are there, build lines
         while (it.hasNext()) {
-            hexText hT = it.next();
-            if (((lineLength + fm.stringWidth(hT.text) + sepWidth) < lineMaxLength) ||
-                    (thisLine.size() == 0)) {
-                thisLine.add(hT);
-                lineLength += fm.stringWidth(hT.text) + sepWidth;
-            } else {
-                boolean subsequent = false;
-                int xpos = (hex_size.width - lineLength)/2;
-                for (hexText lT: thisLine) {
-                    if (subsequent) {
-                        DrawHexText(g, xpos+sepWidth/2, ypos-lineheight*line, sepColor, sep, shadowColor);
-                        xpos += sepWidth;
-                    }
-                    subsequent = true;
-                    DrawHexText(g, xpos+fm.stringWidth(lT.text)/2, ypos-lineheight*line, lT.color, lT.text, shadowColor);
-                    xpos += fm.stringWidth(lT.text);
+            
+            // while items are there, fit them in the current line
+            while (it.hasNext()) {
+                hT = it.next();
+                int wHT = fm.stringWidth(hT.text);
+                
+                if  (thisLine.isEmpty()) {
+                    // add this item if the line is empty regardless of length
+                    thisLine.add(hT);
+                    lineLength = fm.stringWidth(hT.text);
+                    
+                    // get the line width within the hex boundaries
+                    double w = hex_size.width;
+                    double h2 = hex_size.height/2;
+                    double y = ypos-lineheight*line;
+                    double d = Math.abs(h2-y)/h2;
+                    lineMaxLength = (int)(0.95*w*(1-d/2));
+                    
+                } else if (lineLength + wHT + wSep < lineMaxLength) {
+                    // add the item if it fits in
+                    thisLine.add(hT);
+                    lineLength += fm.stringWidth(hT.text) + wSep;
+
+                } else {
+                    // line too long, don't add any more
+                    it.previous();
+                    break;
                 }
-                line++;
-                thisLine = new ArrayList<>();
-                lineMaxLength = (int)(scale*hex_size.width*(1-(double)Math.abs(hex_size.height/2-(ypos-lineheight*line))/(hex_size.height/2)/2));
-                lineMaxLength2 = (int)(hex_size.width*(1-
-                        (double)Math.abs(hex_size.getHeight()/2-(ypos-lineheight*(line-1)))/(hex_size.getHeight()/2)/2));
-                lineMaxLength = Math.min(lineMaxLength, lineMaxLength2);
-                thisLine.add(hT);
-                lineLength = fm.stringWidth(hT.text);
             }
-        }
-        boolean subsequent = false;
-        int xpos = (hex_size.width - lineLength)/2;
-        for (hexText lT: thisLine) {
-            if (subsequent) {
-                DrawHexText(g, xpos+sepWidth/2, ypos-lineheight*line, sepColor, sep, shadowColor);
-                xpos += sepWidth;
+            
+            // write the line
+            boolean subsequent = false;
+            int xpos = (hex_size.width - lineLength)/2;
+            for (hexText lT: thisLine) {
+                if (subsequent) {
+                    DrawHexText(g, xpos+wSep/2, ypos-lineheight*line, sepColor, sep, shadowColor);
+                    xpos += wSep;
+                }
+                subsequent = true;
+                DrawHexText(g, xpos+fm.stringWidth(lT.text)/2, ypos-lineheight*line, lT.color, lT.text, shadowColor);
+                xpos += fm.stringWidth(lT.text);
             }
-            subsequent = true;
-            DrawHexText(g, xpos+fm.stringWidth(lT.text)/2, ypos-lineheight*line, lT.color, lT.text, shadowColor);
-            xpos += fm.stringWidth(lT.text);
+            
+            // prepare next line
+            line++;
+            thisLine = new ArrayList<>();
         }
+   
     }
 
     /**
