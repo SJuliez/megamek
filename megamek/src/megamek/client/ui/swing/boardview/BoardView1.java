@@ -2831,13 +2831,13 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
 
         if (hexTexts.isEmpty()) return;
         
-        int ypos = (int)((HEX_H-8)*scale);
         int fontsize = GUIPreferences.getInstance().getInt("HexTextDefSize"); 
         String font = GUIPreferences.getInstance().getString("HexTextDefFont");
         int style = GUIPreferences.getInstance().getBoolean("HexTextDefBold") ?
                 Font.BOLD : Font.PLAIN;
         g.setFont(new Font(font,style,fontsize));
         Color shadowColor = GUIPreferences.getInstance().getColor("HexTextShdColor");
+        int ypos = (int)((HEX_H-8)*scale);
         int lineheight = fontsize+1;
         FontMetrics fm = g.getFontMetrics(g.getFont());
 
