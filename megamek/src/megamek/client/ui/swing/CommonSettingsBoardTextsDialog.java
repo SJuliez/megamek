@@ -74,9 +74,9 @@ public class CommonSettingsBoardTextsDialog extends ClientDialog implements Acti
     // Other Text Features
     private JPanel panCenter = new JPanel();
     private final String[] hexTexts = { "Separator", "Level", "Depth", "Building Height", "Swamp", 
-            "Rough", "Rubble", "Woods", "Jungle", "Mud" };
+            "Rough", "Rubble", "Woods", "Jungle", "Mud", "Light", "Heavy", "Ultra" };
     private final String[] guipCodes = { "Sep", "Lvl", "Dth", "Bdg", "Swp", 
-             "Rgh", "Rbl", "Wds", "Jng", "Mud" };
+             "Rgh", "Rbl", "Wds", "Jng", "Mud", "Lgt", "Hvy", "Ult" };
     private final String guipA = "HexText";  //$NON-NLS-1$
     
     private List<JButton> textButtons = new ArrayList<>();

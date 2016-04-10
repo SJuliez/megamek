@@ -207,6 +207,9 @@ public class GUIPreferences extends PreferenceStoreProxy {
     public static final String HEX_TEXT_JNG_TEXT = "HexTextJngText";
     public static final String HEX_TEXT_MUD_COLOR = "HexTextMudColor";
     public static final String HEX_TEXT_MUD_TEXT = "HexTextMudText";
+    public static final String HEX_TEXT_LGT_TEXT = "HexTextLgtText";
+    public static final String HEX_TEXT_HVY_TEXT = "HexTextHvyText";
+    public static final String HEX_TEXT_ULT_TEXT = "HexTextUltText";
     
     // RAT dialog preferences
     public static String RAT_TECH_LEVEL = "RATTechLevel";
@@ -395,10 +398,13 @@ public class GUIPreferences extends PreferenceStoreProxy {
         store.setDefault(HEX_TEXT_JNG_TEXT, ""); 
         setDefault(HEX_TEXT_MUD_COLOR, Color.BLACK);
         store.setDefault(HEX_TEXT_MUD_TEXT, "");
-        
+        store.setDefault(HEX_TEXT_LGT_TEXT, "");
+        store.setDefault(HEX_TEXT_HVY_TEXT, ""); 
+        store.setDefault(HEX_TEXT_ULT_TEXT, "");         
+
         store.setDefault(DEFAULT_WEAP_SORT_ORDER,
                 Entity.WeaponSortOrder.DEFAULT.ordinal());
-        
+
     }
 
     public void setDefault(String name, Color color) {

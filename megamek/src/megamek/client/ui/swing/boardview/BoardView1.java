@@ -2623,33 +2623,41 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                 Color o = guip.getColor("HexTextRblColor");
                 AddtoHexText(t, o);
             }
-            if (hex.containsTerrain(Terrains.WOODS)) {
-                String t = guip.getString("HexTextWdsText");
-                Color o = guip.getColor("HexTextWdsColor");
-                AddtoHexText(t, o);
-            
-//                String ts = "";
-//                switch (hex.getTerrain(Terrains.WOODS).getLevel()) {
-//                case 1: ts = "Light"; break;
-//                case 2: ts = "Heavy"; break;
-//                case 3: ts = "Ultra"; }
-//                AddtoHexText(ts, Color.GREEN);
+            if (hex.containsTerrain(Terrains.WOODS) ||
+                    hex.containsTerrain(Terrains.JUNGLE)) {
+
+                int lvl = hex.containsTerrain(Terrains.WOODS) ? 
+                        hex.getTerrain(Terrains.WOODS).getLevel() : 
+                    hex.getTerrain(Terrains.JUNGLE).getLevel();
+                String ts = "";
+                Color cs = Color.BLACK;
+                switch (lvl) {
+                case 1: 
+                    ts = guip.getString("HexTextLgtText");
+                    cs = guip.getColor("HexTextLgtColor"); 
+                    break;
+                case 2: 
+                    ts = guip.getString("HexTextHvyText");
+                    cs = guip.getColor("HexTextHvyColor"); 
+                    break;
+                case 3:  
+                    ts = guip.getString("HexTextUltText");
+                    cs = guip.getColor("HexTextUltColor"); 
+                    break;
+                }
+                AddtoHexText(ts, cs);
+                if (hex.containsTerrain(Terrains.WOODS)) {
+                    String t = guip.getString("HexTextWdsText");
+                    Color o = guip.getColor("HexTextWdsColor");
+                    AddtoHexText(t, o);
+                }
+                if (hex.containsTerrain(Terrains.JUNGLE)) {
+                    String t = guip.getString("HexTextJngText");
+                    Color o = guip.getColor("HexTextJngColor");
+                    AddtoHexText(t, o);
+                }
             }
-            if (hex.containsTerrain(Terrains.JUNGLE)) {
-                String t = guip.getString("HexTextJngText");
-                Color o = guip.getColor("HexTextJngColor");
-                AddtoHexText(t, o);
-////                g.setColor(Color.GREEN); //$NON-NLS-1$
-//                String ts = "";
-//                switch (hex.getTerrain(Terrains.JUNGLE).getLevel()) {
-//                case 1: ts = "Light"; break;
-//                case 2: ts = "Heavy"; break;
-//                case 3: ts = "Ultra"; }
-////                DrawHexText(g, 0, ypos, fontsize, Color.GREEN, ts);
-//                AddtoHexText(ts, Color.GREEN);
-////                ypos -= lineheight;
-            }
-            
+
         }
         DrawHexTexts(g);
 
