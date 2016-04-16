@@ -840,7 +840,7 @@ public class CommonSettingsDialog extends ClientDialog implements
         if (tileSetChoice.getSelectedIndex() >= 0) {
             if (!cs.getMapTileset().equals(tileSets[tileSetChoice.getSelectedIndex()]) &&
                     (clientgui != null) && (clientgui.bv != null))  {
-                clientgui.bv.clearShadowMap();
+                clientgui.bv.updateShadowMap();
             }
             cs.setMapTileset(tileSets[tileSetChoice.getSelectedIndex()]
                     .getName());
