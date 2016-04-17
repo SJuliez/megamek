@@ -543,17 +543,27 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                     
                 } else {
                     if (we.isControlDown()) {
-                        boolean zoomIn = ((we.getWheelRotation() > 0) && !GUIPreferences
-                                .getInstance().getMouseWheelZoomFlip())
-                                         || ((we.getWheelRotation() <= 0) && GUIPreferences
-                                .getInstance().getMouseWheelZoomFlip());
-                        if (zoomIn) {
-                            zoomOut();
+                        if (we.isShiftDown()) {
+                            int notches = we.getWheelRotation();
+                            if (notches < 0) {
+                                lightDirection[0] +=1;
+                            } else {
+                                lightDirection[0] -=1;
+                            }
+                            clearShadows();updateShadowMap();clearHexImageCache();
                         } else {
-                            zoomIn();
+                            boolean zoomIn = ((we.getWheelRotation() > 0) && !GUIPreferences
+                                    .getInstance().getMouseWheelZoomFlip())
+                                    || ((we.getWheelRotation() <= 0) && GUIPreferences
+                                            .getInstance().getMouseWheelZoomFlip());
+                            if (zoomIn) {
+                                zoomOut();
+                            } else {
+                                zoomIn();
+                            }
+                            if (zoomIndex != oldzoomIndex)
+                                adjustVisiblePosition(zoomCenter, dispPoint, ihdx, ihdy);
                         }
-                        if (zoomIndex != oldzoomIndex)
-                            adjustVisiblePosition(zoomCenter, dispPoint, ihdx, ihdy);
                     } else if (we.isShiftDown()) {
                         int notches = we.getWheelRotation();
                         if (notches < 0) {
@@ -1354,6 +1364,9 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         terrainShadows.clear();
         woodsShadows.clear();
         buildingShadows.clear();
+        terrainShadowHexes.clear();
+        woodsShadowHexes.clear();
+        buildingShadowHexes.clear();
         shadowcache.clear();
     }
     
@@ -1405,6 +1418,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         // Map editor? No shadows
         if (game.getPhase() == IGame.Phase.PHASE_UNKNOWN) return;
         
+        /*
         // Update the light direction depending on Planetary Conditions
         if ((game.getPlanetaryConditions().getLight() == PlanetaryConditions.L_MOONLESS) ||
         (game.getPlanetaryConditions().getLight() == PlanetaryConditions.L_PITCH_BLACK)) {
@@ -1415,7 +1429,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         } else {
             lightDirection = new double[] { -19, 7 };
         }
-        
+        */
         // create the blurred and scaled hex shadow
         Image hexShadow = tileManager.getHexMask();
         hexShadow = createBlurredShadow(hexShadow);
@@ -1498,13 +1512,29 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             // up to a fixed distance
             // TODO: start from the shadowcasting, distance depending on level
             // TODO: fix direction
+            // looks good!
 
             terrainShadowHexes.put(c, new HashSet<Coords>());
+            int lvl = board.getHex(c).getLevel();
             for (int range=1; range < maxRange; range++) {
                 ArrayList<Coords> rc = Compute.coordsAtRange(c, range);
-                terrainShadowHexes.get(c).addAll(rc);
+                for (Coords cd: rc) {
+                    // only add as a shadowing hex if ...
+                    // - on the board
+                    // - in the shadowcasting hex set
+                    // - in somewhat the right direction from the hex
+                    // - higher in level than the target hex
+                    if (board.contains(cd) 
+                            && lvl < board.getHex(cd).getLevel()
+                            && shadowCastingHexSet.contains(cd) 
+                            && ((cd.direction(c) == mDir)
+                                    || (cd.direction(c.translated((mDir+1)%6)) == mDir)   
+                                    || (cd.direction(c.translated((mDir+5)%6)) == mDir))) {
+
+                        terrainShadowHexes.get(c).add(cd);
+                    }
+                }
             }
-            terrainShadowHexes.get(c).retainAll(shadowCastingHexSet);
         }
         
 //        edT = System.nanoTime()-stT;
@@ -2643,14 +2673,12 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         }
          
         // Add the terrain shadows
-        if (guip.getBoolean(GUIPreferences.SHADOWMAP)) {
+        if (guip.getBoolean(GUIPreferences.SHADOWMAP) &&
+                (!game.getBoard().inSpace())) {
             // prepare a temporary shadow image; necessary because the 
             // shadows must be translucent but they must not "add" up 
             // (several shadows overlapping must not get darker)
-            GraphicsConfiguration config = GraphicsEnvironment
-                    .getLocalGraphicsEnvironment().getDefaultScreenDevice()
-                    .getDefaultConfiguration();
-            BufferedImage tempS = config.createCompatibleImage(
+            BufferedImage tempS = gConfig.createCompatibleImage(
                     hexImage.getWidth(null), 
                     hexImage.getHeight(null),
                     Transparency.TRANSLUCENT);
@@ -2660,6 +2688,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             Point pC = getHexLocationLargeTile(c.getX(), c.getY());
             
             if (terrainShadowHexes.containsKey(c)) {
+                System.out.println("Terrain Shadows for "+c.toString()+": "+terrainShadowHexes.get(c).toString());
                 for (Coords sh: terrainShadowHexes.get(c)) {
                     if (board.contains(sh)) {
                         IHex sHex = board.getHex(sh);
