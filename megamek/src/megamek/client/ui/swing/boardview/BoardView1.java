@@ -1382,6 +1382,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         }
         map.get(shadowed).add(shadower);
     }
+    
     HashMap<Integer,Set<Coords>> sortedHexes = new HashMap<Integer,Set<Coords>>();
     HashMap<Integer,Set<Coords>> shadowCastingHexes = new HashMap<Integer,Set<Coords>>();
     
@@ -1430,6 +1431,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             lightDirection = new double[] { -19, 7 };
         }
         */
+        
         // create the blurred and scaled hex shadow
         Image hexShadow = tileManager.getHexMask();
         hexShadow = createBlurredShadow(hexShadow);
@@ -1437,11 +1439,17 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         // Shadows for elevation
         // 1a) Sort the board hexes by elevation
         // 1b) Create a reduced list of shadowcasting hexes
+        
+        // get the hex direction that is closest to the light direction
+        // and the two adjacent directions
         double angle = Math.atan2(-lightDirection[1], lightDirection[0]);
         int mDir = (int)(0.5+1.5-angle/Math.PI*3); // +0.5 to counter the (int)
-        int[] sDirs = { mDir%6, (mDir+1)%6, (mDir+5)%6 };
+        int[] sDirs = {  (mDir+1)%6, (mDir+5)%6, mDir%6 };
         
+        // a set of hexes on the board that are the only ones
+        // for which a shadow must be drawn
         Set<Coords> shadowCastingHexSet = new HashSet<>();
+        
         for (Coords c: allBoardHexes()) {
             IHex hex = board.getHex(c);
             int level = hex.getLevel();
@@ -1475,7 +1483,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
 //        System.out.println("Shadow. Time Sorting: "+edT/1e6+" ms");
 //        stT = System.nanoTime();
         
-        // 3) Find all level differences
+        // 2) Find all level differences
         Set<Integer> lDiffs = new TreeSet<Integer>();
         int maxActualDiff = 0;
         for (int shadowed = board.getMinElevation(); 
@@ -1499,23 +1507,43 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
 //        System.out.println("Shadow. Time Level Diffs: "+edT/1e6+" ms");
 //        stT = System.nanoTime();
         
-        // 2) gather the shadowed hexes
-        // SOLUTION: paint shadows directly in the drawhex() ?? fast enough?
-        // find for each hex those hexes that will shadow it
-        // opposite direction rDirs of the shadow and intersect with shadowcasting
-        double d = Math.sqrt(lightDirection[0]*lightDirection[0]+lightDirection[1]*lightDirection[1]);
-        int maxRange = 2+(int)(maxActualDiff*d)/70;
-        
+        // 3) find for each hex those shadowed by it
         for (Coords c: allBoardHexes()) {
 
-            // simple version: check all surrounding hexes
-            // up to a fixed distance
-            // TODO: start from the shadowcasting, distance depending on level
-            // TODO: fix direction
-            // looks good!
+            // if this hex does not cast shadows as tested above, skip it
+            if (!shadowCastingHexSet.contains(c)) continue;
 
-            terrainShadowHexes.put(c, new HashSet<Coords>());
             int lvl = board.getHex(c).getLevel();
+            
+            // Get the shadow line end point
+            Point s1 = getCentreHexLocation(c);
+            int nx = (int)(lightDirection[0]*lvl)+s1.x;
+            int ny = (int)(lightDirection[1]*lvl)+s1.y;
+
+            // Padding needed because getCoordsAt expects screen coordinates
+            Coords endPoint = getCoordsAt(new Point(nx+HEX_W, ny+HEX_H));
+
+            // Add hexes along the shadow line as shadowed hexes
+            List<Coords> shadowLine = Coords.intervening(c, endPoint);
+            for (Coords curP: shadowLine) {
+
+                // add the three adjacent hexes according to light direction
+                for (int i = 0; i<3; i++) {
+                    Coords cd = curP.translated(sDirs[i]);
+                    // only add as a shadowed hex if ...
+                    // on the board and lower in level
+                    if (board.contains(cd) 
+                            && lvl > board.getHex(cd).getLevel()) {
+
+                        addToShadowList(terrainShadowHexes, cd, c);
+
+                    }
+                }
+            }
+
+            
+            
+            /*
             for (int range=1; range < maxRange; range++) {
                 ArrayList<Coords> rc = Compute.coordsAtRange(c, range);
                 for (Coords cd: rc) {
@@ -1534,8 +1562,17 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                         terrainShadowHexes.get(c).add(cd);
                     }
                 }
-            }
+            }*/
         }
+        
+        int total = 0;
+        for (Coords c: allBoardHexes()) {
+            if (terrainShadowHexes.containsKey(c))
+            total += terrainShadowHexes.get(c).size();
+        }
+        System.out.println("Shadowed hexes: "+total);
+        // 36545
+        
         
 //        edT = System.nanoTime()-stT;
 //        System.out.println("Shadow. Time shadowed hexes: "+edT/1e6+" ms");
@@ -1543,7 +1580,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         
         
         // 4) Elevation Shadow images for all level differences present
-        int n = 10;
+        int n = 5;
         double deltaX = lightDirection[0]/n*scale;
         double deltaY = lightDirection[1]/n*scale;
          
@@ -1619,37 +1656,45 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                 }
             }
         }
-
+ 
         // BUILDING preparation
         for (Coords c: allBoardHexes()) {
+            
             IHex hex = board.getHex(c);
             if (hex.containsTerrain(Terrains.BUILDING)) {
+                double height = hex.terrainLevel(Terrains.BLDG_ELEV);
 
-                // the woods will always shadow the hex itself (its own floor)
-                addToShadowList(buildingShadowHexes, c, c);
-                addToShadowList(buildingShadowHexes, c.translated(sDirs[0]), c);
-                addToShadowList(buildingShadowHexes, c.translated(sDirs[1]), c);
-                addToShadowList(buildingShadowHexes, c.translated(sDirs[2]), c);
-                // TODO: nope.
-                addToShadowList(buildingShadowHexes, c.translated(sDirs[0]).translated(mDir), c);
-                addToShadowList(buildingShadowHexes, c.translated(sDirs[1]).translated(mDir), c);
-                addToShadowList(buildingShadowHexes, c.translated(sDirs[2]).translated(mDir), c);
+                // Get the shadow line end point
+                Point s1 = getCentreHexLocation(c);
+                int nx = (int)(lightDirection[0]*height)+s1.x;
+                int ny = (int)(lightDirection[1]*height)+s1.y;
 
-                // check which other hexes are shadowed
-                // and add the current hex to the list shadowing those hexes
+                // Padding needed because getCoordsAt expects screen coordinates
+                Coords endPoint = getCoordsAt(new Point(nx+HEX_W, ny+HEX_H));
+                
+                // Add hexes along the shadow line as shadowed hexes
+                List<Coords> shadowLine = Coords.intervening(c, endPoint);
+                for (Coords curP: shadowLine) {
+                    addToShadowList(buildingShadowHexes, curP, c);
+                    addToShadowList(buildingShadowHexes, curP.translated(sDirs[0]), c);
+                    addToShadowList(buildingShadowHexes, curP.translated(sDirs[1]), c);
+                    addToShadowList(buildingShadowHexes, curP.translated(sDirs[2]), c);
+                }
+                
+
+                // Prepare the shadow image for this building tile
                 List<Image> supers = tileManager.supersFor(hex);
 
                 if (!supers.isEmpty()) {
                     int hash = supers.get(supers.size()-1).hashCode();
-                    int h = hex.terrainLevel(Terrains.BLDG_ELEV);
-                    hash += h;
+                    hash += height;
 
                     if (!buildingShadows.containsKey(hash)) {
                         Image bld = createBlurredShadow(supers.get(supers.size()-1));
                         if (bld != null) {
                             Dimension eSize = new Dimension(
-                                    (int)((Math.abs(lightDirection[0])*h+HEX_W+10)*2*scale), 
-                                    (int)((Math.abs(lightDirection[1])*h+HEX_H+10)*2*scale));
+                                    (int)((Math.abs(lightDirection[0])*height+HEX_W+10)*2*scale), 
+                                    (int)((Math.abs(lightDirection[1])*height+HEX_H+10)*2*scale));
 
                             BufferedImage elevShadow = gConfig.createCompatibleImage(
                                     eSize.width, 
@@ -1658,9 +1703,9 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
 
                             Graphics gS = elevShadow.getGraphics();
                             Point2D p1 = new Point2D.Double(
-                                    (Math.abs(lightDirection[0])*h+HEX_W)*scale, 
-                                    (Math.abs(lightDirection[1])*h+HEX_H)*scale);
-                            for (int i = 0; i<n*h; i++) {
+                                    (Math.abs(lightDirection[0])*height+HEX_W)*scale, 
+                                    (Math.abs(lightDirection[1])*height+HEX_H)*scale);
+                            for (int i = 0; i<n*height; i++) {
                                 gS.drawImage(bld, (int)p1.getX(), (int)p1.getY(), null);
                                 p1.setLocation(p1.getX()+deltaX, p1.getY()+deltaY);
                             }
@@ -1671,6 +1716,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                 }
             }
         }
+        
         
         // BRIDGE preparation
         for (Coords c: allBoardHexes()) {
@@ -1714,9 +1760,9 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                                     (Math.abs(lightDirection[1])*h+HEX_H)*scale);
                             p1.setLocation(p1.getX()+deltaX*n*h, 
                                     p1.getY()+deltaY*n*h);
-//                            for (int i = 0; i<n*h; i++) {
+                            for (int i = 0; i<n; i++) {
                                 gS.drawImage(bld, (int)p1.getX(), (int)p1.getY(), null);
-//                            }
+                            }
                             gS.dispose();
                             buildingShadows.put(hash, elevShadow);
                         }
@@ -2688,7 +2734,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             Point pC = getHexLocationLargeTile(c.getX(), c.getY());
             
             if (terrainShadowHexes.containsKey(c)) {
-                System.out.println("Terrain Shadows for "+c.toString()+": "+terrainShadowHexes.get(c).toString());
+//                System.out.println("Terrain Shadows for "+c.toString()+": "+terrainShadowHexes.get(c).toString());
                 for (Coords sh: terrainShadowHexes.get(c)) {
                     if (board.contains(sh)) {
                         IHex sHex = board.getHex(sh);
@@ -2729,6 +2775,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             }
             
             if (buildingShadowHexes.containsKey(c)) {
+//                System.out.println("Building Shadows for "+c.toString()+": "+buildingShadowHexes.get(c).toString());
                 for (Coords sh: buildingShadowHexes.get(c)) {
                     IHex sHex = board.getHex(sh);
                     List<Image> osupers;
@@ -3411,7 +3458,10 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
     /**
      * Returns the coords at the specified point
      */
-    Coords getCoordsAt(Point p) {
+    Coords getCoordsAt(Point point) {
+        // the point is modified here
+        Point p = new Point(point);
+        
         // We must account for the board translation to add padding
         p.x -= HEX_W;
         p.y -= HEX_H;
