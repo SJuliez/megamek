@@ -555,7 +555,9 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                             } else {
                                 shadowDir -= 5;
                             }
-                            clearShadows();updateShadowMap();clearHexImageCache();
+                            clearShadows();
+                            updateShadowMap();
+                            clearHexImageCache();
                         } else if (we.isAltDown()) {
                             int notches = we.getWheelRotation();
                             if (notches < 0) {
@@ -563,7 +565,9 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                             } else {
                                 shadowLength += 5;
                             }
-                            clearShadows();updateShadowMap();clearHexImageCache();
+                            clearShadows();
+                            updateShadowMap();
+                            clearHexImageCache();
                         } else {
                             boolean zoomIn = ((we.getWheelRotation() > 0) && !GUIPreferences
                                     .getInstance().getMouseWheelZoomFlip())
@@ -1452,6 +1456,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
     
     Map<Integer,BufferedImage> terrainShadows = new HashMap<>();
     HashMap<Coords,Set<Coords>> terrainShadowHexes = new HashMap<>();
+    BufferedImage terrainShadow;
     
     Map<Integer,BufferedImage> woodsShadows = new HashMap<>();
     HashMap<Coords,Set<Coords>> woodsShadowHexes = new HashMap<>();
@@ -1498,17 +1503,14 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         
         lightDirection[0] = Math.cos(Math.toRadians(shadowDir))*shadowLength;
         lightDirection[1] = -Math.sin(Math.toRadians(shadowDir))*shadowLength;
-        
-        
-        
         // 1a) Sort the board hexes by elevation
         // 1b) Create a reduced list of shadowcasting hexes
         
         // get the hex direction that is closest to the light direction
         // and the two adjacent directions
-        double angle = Math.atan2(-lightDirection[1], lightDirection[0]);
-        int mDir = (int)(0.5+1.5-angle/Math.PI*3); // +0.5 to counter the (int)
-        int[] sDirs = {  (mDir+1)%6, (mDir+5)%6, mDir%6 };
+        shadowDir = shadowDir % 360;
+        int mDir = ((480-(int)shadowDir) / 60) % 6;
+        int[] sDirs = { (mDir+1)%6, (mDir+5)%6, mDir%6 };
         
         // a set of hexes on the board that are the only ones
         // for which a shadow must be drawn
@@ -1611,7 +1613,8 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
 //        edT = System.nanoTime()-stT;
 //        System.out.println("Shadow. Time shadowed hexes: "+edT/1e6+" ms");
 //        stT = System.nanoTime();
-        
+        int memsum = 0;
+        int imagesum = 0;
         
         // 4) Prepare elevation shadow images for all level differences present
         // these are the hex image repeated many times along a shadow line
@@ -1643,7 +1646,51 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             }
             gS.dispose();
             terrainShadows.put(lDiff, elevShadow);
+            memsum += (eSize.height*eSize.width)*4/1000;
+            imagesum++;
         }
+        
+        
+        
+        
+        /*
+     // 4) OPTIMIZED: Only one hex shadow graphic
+        // Prepare elevation shadow images for all level differences present
+        // these are the hex image repeated many times along a shadow line
+        
+        // Optimize by shortening to ~3 hexes length and adjusting position in drawhex()
+        // n: cleanness of the shadows, more n = cleaner
+        int n = 5;
+        double deltaX = lightDirection[0]/n*scale;
+        double deltaY = lightDirection[1]/n*scale;
+         
+        // create the blurred and scaled hex shadow
+        Image hexShadow = tileManager.getHexMask();
+        hexShadow = createBlurredShadow(hexShadow);
+
+        Dimension eSize = new Dimension(
+                (int)((Math.abs(lightDirection[0])*lDiff+HEX_W+10)*2*scale), 
+                (int)((Math.abs(lightDirection[1])*lDiff+HEX_H+10)*2*scale));
+
+        BufferedImage elevShadow = gConfig.createCompatibleImage(eSize.width, eSize.height,
+                Transparency.TRANSLUCENT);
+        Graphics gS = elevShadow.getGraphics();
+        Point2D p1 = new Point2D.Double(
+                (int)((Math.abs(lightDirection[0])*lDiff+HEX_W)*scale), 
+                (int)((Math.abs(lightDirection[1])*lDiff+HEX_H)*scale));
+        for (int i = 0; i<n*lDiff; i++) {
+            gS.drawImage(hexShadow, (int)p1.getX(), (int)p1.getY(), null);
+            p1.setLocation(p1.getX()+deltaX, p1.getY()+deltaY);
+        }
+        gS.dispose();
+        terrainShadows.put(lDiff, elevShadow);
+        terrainShadow = elevShadow;
+*/
+
+        
+        
+        
+        
         
         // WOODS / JUNGLE preparation
         // 1) gather all the hexes that contain a WOODS or JUNGLE
@@ -1694,6 +1741,8 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                         }
                         gS.dispose();
                         woodsShadows.put(hash, elevShadow);
+                        memsum += (eSize.height*eSize.width)*4/1000;
+                        imagesum++;
                     }
                 }
             }
@@ -1760,6 +1809,8 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                             }
                             gS.dispose();
                             buildingShadows.put(hash, elevShadow);
+                            memsum += (eSize.height*eSize.width)*4/1000;
+                            imagesum++;
                         }
                     }
                 }
@@ -1814,11 +1865,16 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                             }
                             gS.dispose();
                             buildingShadows.put(hash, elevShadow);
+                            memsum += (eSize.height*eSize.width)*4/1000;
+                            imagesum++;
                         }
                     }
                 }
             }
         }
+        
+        System.out.println("Speichersumme: "+memsum);
+        System.out.println("Bilder: "+imagesum);
         
     }
         
