@@ -2745,21 +2745,28 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         // Unfortunately I dont think the supers images themselves can be checked for
         // roads.
         List<Image> supers = tileManager.supersFor(hex);
-        boolean supersUnderShadow = false;
-        if (hex.containsTerrain(Terrains.ROAD) ||
-                hex.containsTerrain(Terrains.WATER)) {
-            supersUnderShadow = true;
-            if (supers != null) {
-                for (Image image : supers) {
-                    if (animatedImages.contains(image.hashCode())) {
-                        dontCache = true;
-                    }
-                    scaledImage = getScaledImage(image, true);
-                    g.drawImage(scaledImage, 0, 0, this);
+        boolean hasSuperOverShadow = false;
+        
+        if (hex.containsTerrain(Terrains.BUILDING) ||
+                hex.containsTerrain(Terrains.WOODS)) {
+            hasSuperOverShadow = true;
+        }
+
+        if (supers != null) {
+            for (Image image : supers) {
+                if (hasSuperOverShadow &&
+                        supers.indexOf(image) == supers.size()-1) {
+                    break;
                 }
+                if (animatedImages.contains(image.hashCode())) {
+                    dontCache = true;
+                }
+                scaledImage = getScaledImage(image, true);
+                g.drawImage(scaledImage, 0, 0, this);
             }
         }
-         
+
+
         // Add the terrain shadows
         if (guip.getBoolean(GUIPreferences.SHADOWMAP) &&
                 (!game.getBoard().inSpace())) {
@@ -2922,18 +2929,17 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             g.setComposite(svComp);
         }
 
-         if (!supersUnderShadow) {
+        if (hasSuperOverShadow) {
             if (supers != null) {
-                for (Image image : supers) {
-                    if (animatedImages.contains(image.hashCode())) {
-                        dontCache = true;
-                    }
-                    scaledImage = getScaledImage(image, true);
-                    g.drawImage(scaledImage, 0, 0, this);
+                Image image = supers.get(supers.size()-1);
+                if (animatedImages.contains(image.hashCode())) {
+                    dontCache = true;
                 }
+                scaledImage = getScaledImage(image, true);
+                g.drawImage(scaledImage, 0, 0, this);
             }
         }
-        
+
         // AO Hex Shadow in this hex when a higher one is adjacent
         if (guip.getBoolean(GUIPreferences.AOHEXSHADOWS) ||
                 guip.getBoolean(GUIPreferences.SHADOWMAP))   
