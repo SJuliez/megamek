@@ -22,6 +22,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +38,6 @@ import javax.swing.ScrollPaneConstants;
 import megamek.client.Client;
 import megamek.client.ui.swing.ClientGUI;
 import megamek.client.ui.swing.ReportDisplay;
-import megamek.common.Aero;
 import megamek.common.AmmoType;
 import megamek.common.Building;
 import megamek.common.Compute;
@@ -50,6 +51,7 @@ import megamek.common.EquipmentType;
 import megamek.common.GameTurn;
 import megamek.common.IBoard;
 import megamek.common.IGame;
+import megamek.common.IHex;
 import megamek.common.IPlayer;
 import megamek.common.Infantry;
 import megamek.common.Mech;
@@ -58,7 +60,6 @@ import megamek.common.MiscType;
 import megamek.common.Mounted;
 import megamek.common.MovePath;
 import megamek.common.Protomech;
-import megamek.common.Tank;
 import megamek.common.TargetRoll;
 import megamek.common.Terrains;
 import megamek.common.ToHitData;
@@ -69,30 +70,37 @@ import megamek.common.actions.WeaponAttackAction;
 import megamek.common.annotations.Nullable;
 import megamek.common.event.GameCFREvent;
 import megamek.common.event.GameListenerAdapter;
+import megamek.common.event.GamePhaseChangeEvent;
 import megamek.common.event.GamePlayerChatEvent;
 import megamek.common.event.GameReportEvent;
 import megamek.common.event.GameTurnChangeEvent;
 import megamek.common.net.Packet;
 import megamek.common.options.OptionsConstants;
-import megamek.common.pathfinder.AbstractPathFinder;
-import megamek.common.pathfinder.ShortestPathFinder;
+import megamek.common.pathfinder.BoardEdgePathFinder;
 import megamek.common.preference.PreferenceManager;
 import megamek.common.util.StringUtil;
 
 public abstract class BotClient extends Client {
+    private Map<EntityMovementMode, BoardEdgePathFinder> deploymentPathFinders = new HashMap<>();
 
-    private static final HexHasPathToCenterCache hexHasPathToCenterCache = new HexHasPathToCenterCache();
-    private static Coords boardCenter = null;
-
+    private List<Entity> currentTurnEnemyEntities;
+    private List<Entity> currentTurnFriendlyEntities;
+    
     // a frame, to show stuff in
     public JFrame frame;
+    
+    /**
+     * Keeps track of whether this client has started to calculate a turn this phase.
+     */
+    boolean calculatedTurnThisPhase = false;
+    int calculatedTurnsThisPhase = 0;
 
     /**
      * Store a reference to the ClientGUI for the client who created this bot.
      * This is used to ensure keep the ClientGUI synchronized with changes to
      * this BotClient (particularly the bot's name).
      */
-    ClientGUI clientgui = null;
+    private ClientGUI clientgui = null;
 
     public class CalculateBotTurn implements Runnable {
         public void run() {
@@ -113,17 +121,38 @@ public abstract class BotClient extends Client {
 
             @Override
             public void gameTurnChange(GameTurnChangeEvent e) {
-                if (isMyTurn()
-                        && (e.getPlayer() != null) 
-                        && (e.getPlayer().getId() == localPlayerNumber)) {
+                // On simultaneous phases, each player ending their turn will generalte a turn change
+                // We want to ignore turns from other players and only listen to events we generated
+                boolean ignoreSimTurn = game.isPhaseSimultaneous() && (e.getPreviousPlayerId() != localPlayerNumber)
+                        && calculatedTurnThisPhase;
+
+                
+                if (isMyTurn() && !ignoreSimTurn) {
+                    calculatedTurnThisPhase = true;
                     // Run bot's turn processing in a separate thread.
                     // So calling thread is free to process the other actions.
                     Thread worker = new Thread(new CalculateBotTurn(),
-                                               getName() + " Turn " + game.getTurnIndex()
-                                               + " Calc Thread"
+                            getName() + " Turn " + game.getTurnIndex() + " Calc Thread"
                     );
                     worker.start();
+                    calculatedTurnsThisPhase++;
                 }
+
+                // unloading "stranded" units happens as part of a game turn change, so that's where we do it.
+                if(canUnloadStranded()) {
+                    sendUnloadStranded(getStrandedEntities());
+                }
+            }
+
+            @Override
+            public void gamePhaseChange(GamePhaseChangeEvent e) {
+                calculatedTurnThisPhase = false;
+                if (e.getOldPhase().isPhaseSimultaneous(game)) {
+                    int numOwnedEntities = game.getEntitiesOwnedBy(getLocalPlayer());
+                    System.out.println("BotClient calculated turns, " + getName() + " phase " + e.getOldPhase()
+                            + " " + calculatedTurnsThisPhase + "/" + numOwnedEntities);
+                }
+                calculatedTurnsThisPhase = 0;
             }
 
             @Override
@@ -137,7 +166,7 @@ public abstract class BotClient extends Client {
             }
 
             @Override
-            public void gameClientFeedbackRquest(GameCFREvent evt) {
+            public void gameClientFeedbackRequest(GameCFREvent evt) {
                 switch (evt.getCFRType()) {
                     case Packet.COMMAND_CFR_DOMINO_EFFECT:
                         // This will always send a "no action" response.
@@ -161,6 +190,27 @@ public abstract class BotClient extends Client {
                             Compute.getHighestExpectedDamage(game,
                                     evt.getWAAs(), true);
                         sendAPDSAssignCFRResponse(evt.getWAAs().indexOf(waa));
+                        break;
+                    case Packet.COMMAND_CFR_HIDDEN_PBS:
+                        try {
+                            Vector<EntityAction> pointBlankShots = calculatePointBlankShot(evt.getEntityId(), evt.getTargetId());
+                            
+                            if(pointBlankShots == null) {
+                                sendHiddenPBSCFRResponse(null);
+                            } else {
+                                // we send two packets because the server will ignore the first one
+                                sendHiddenPBSCFRResponse(new Vector<EntityAction>());
+                                sendHiddenPBSCFRResponse(pointBlankShots);
+                            }
+                        } catch(Exception e) {
+                            // if we screw up, don't keep everyone else waiting
+                            sendHiddenPBSCFRResponse(null);
+                            throw e;
+                        }
+
+                        break;
+                    case Packet.COMMAND_CFR_TAG_TARGET:
+                        sendTAGTargetCFRResponse(pickTagTarget(evt));
                         break;
                 }
             }
@@ -191,8 +241,29 @@ public abstract class BotClient extends Client {
 
     protected abstract void calculateDeployment();
 
+    protected void initTargeting() { }
+    
+    /**
+     * Calculates the targeting/offboard turn
+     * This includes firing TAG and non-direct-fire artillery
+     * Does nothing in this implementation.
+     */
+    protected void calculateTargetingOffBoardTurn() {
+        sendAttackData(game.getFirstEntityNum(getMyTurn()),
+                new Vector<>(0));
+        sendDone(true);
+    }
+    
     @Nullable
     protected abstract PhysicalOption calculatePhysicalTurn();
+    
+    protected Vector<EntityAction> calculatePointBlankShot(int firingEntityID, int targetID) { 
+        return null;
+    }
+    
+    protected int pickTagTarget(GameCFREvent evt) {
+        return 0;
+    }
 
     /**
      * Calculates the full {@link MovePath} for the given {@link Entity}.
@@ -209,6 +280,43 @@ public abstract class BotClient extends Client {
 
     protected abstract void checkMoral();
 
+    @Override
+    protected boolean keepGameLog() {
+        return false;
+    }
+
+    /**
+     * Helper function that determines which of this bot's entities are stranded inside immobilized transports. 
+     * @return Array of entity IDs.
+     */
+    public int[] getStrandedEntities() {
+        List<Integer> entitiesToUnload = new ArrayList<>();
+        
+        // Basically, we loop through all entities owned by the current player
+        // And if the entity happens to be in a disabled transport, then we unload it
+        // unless doing so would kill it or be illegal due to stacking violation
+        for(Entity currentEntity : getGame().getPlayerEntities(getLocalPlayer(), true)) {
+            Entity transport = currentEntity.getTransportId() != Entity.NONE ? getGame().getEntity(currentEntity.getTransportId()) : null;
+            
+            if(transport != null && transport.isPermanentlyImmobilized(true)) {
+                boolean stackingViolation = null != Compute.stackingViolation(game, currentEntity.getId(), transport.getPosition());
+                boolean unloadFatal = currentEntity.isBoardProhibited(getGame().getBoard().getType()) ||
+                        currentEntity.isLocationProhibited(transport.getPosition());
+                        
+                if(!stackingViolation && !unloadFatal) {
+                    entitiesToUnload.add(currentEntity.getId());
+                }
+            }
+        }
+        
+        int[] entityIDs = new int[entitiesToUnload.size()];
+        for(int x = 0; x < entitiesToUnload.size(); x++) {
+            entityIDs[x] = entitiesToUnload.get(x);
+        }
+        
+        return entityIDs;
+    }
+    
     public List<Entity> getEntitiesOwned() {
         ArrayList<Entity> result = new ArrayList<>();
         for (Entity entity : game.getEntitiesVector()) {
@@ -219,29 +327,53 @@ public abstract class BotClient extends Client {
         }
         return result;
     }
-
-    public List<Entity> getEnemyEntities() {
-        ArrayList<Entity> result = new ArrayList<>();
+    
+    protected Entity getArbitraryEntity() {
         for (Entity entity : game.getEntitiesVector()) {
-            if (entity.getOwner().isEnemyOf(getLocalPlayer())
-                && (entity.getPosition() != null) && !entity.isOffBoard()
-                && (entity.getCrew() != null) && !entity.getCrew().isDead()) {
-
-                result.add(entity);
+            if (entity.getOwner().equals(getLocalPlayer())) {
+                return entity;
             }
         }
-        return result;
+        
+        return null;
     }
 
-    public List<Entity> getFriendEntities() {
-        List<Entity> result = new ArrayList<>();
-        for (Entity entity : game.getEntitiesVector()) {
-            if (!entity.getOwner().isEnemyOf(getLocalPlayer()) && (entity.getPosition() != null)
-                && !entity.isOffBoard()) {
-                result.add(entity);
+    /**
+     * Lazy-loaded list of enemy entities that we should consider firing at.
+     * Only good for the current entity turn calculation, as this list can change between individual entity turns. 
+     */
+    public List<Entity> getEnemyEntities() {
+        if(currentTurnEnemyEntities == null) {
+            currentTurnEnemyEntities = new ArrayList<>();
+            for (Entity entity : game.getEntitiesVector()) {
+                if (entity.getOwner().isEnemyOf(getLocalPlayer())
+                    && (entity.getPosition() != null) && !entity.isOffBoard()
+                    && (entity.getCrew() != null) && !entity.getCrew().isDead()) {
+    
+                    currentTurnEnemyEntities.add(entity);
+                }
             }
         }
-        return result;
+        
+        return currentTurnEnemyEntities;
+    }
+
+    /**
+     * Lazy-loaded list of friendly entities.
+     * Only good for the current entity turn calculation, as this list can change between individual entity turns. 
+     */
+    public List<Entity> getFriendEntities() {
+        if(currentTurnFriendlyEntities == null) {
+            currentTurnFriendlyEntities = new ArrayList<>();
+            for (Entity entity : game.getEntitiesVector()) {
+                if (!entity.getOwner().isEnemyOf(getLocalPlayer()) && (entity.getPosition() != null)
+                    && !entity.isOffBoard()) {
+                    currentTurnFriendlyEntities.add(entity);
+                }
+            }
+        }
+        
+        return currentTurnFriendlyEntities;
     }
 
     // TODO: move initMovement to be called on phase end
@@ -268,7 +400,7 @@ public abstract class BotClient extends Client {
                      */
                     // if the game is not double blind and I can't see anyone
                     // else on the board I should kill myself.
-                    if (!(game.getOptions().booleanOption("double_blind")) //$NON-NLS-1$
+                    if (!(game.getOptions().booleanOption(OptionsConstants.ADVANCED_DOUBLE_BLIND)) //$NON-NLS-1$
                         && ((game.getEntitiesOwnedBy(getLocalPlayer())
                              - game.getNoOfEntities()) == 0)) {
                         die();
@@ -287,14 +419,18 @@ public abstract class BotClient extends Client {
                     break;
                 case PHASE_PHYSICAL:
                     break;
+                case PHASE_TARGETING:
+                    initTargeting();
+                    break;
                 case PHASE_END_REPORT:
                     // Check if stealth armor should be switched on/off
                     // Kinda cheap leaving this until the end phase, players
                     // can't do this
                     toggleStealth();
                     endOfTurnProcessing();
-                case PHASE_INITIATIVE_REPORT:
+                    // intentional fallthrough: all reports must click "done", otherwise the game never moves on.
                 case PHASE_TARGETING_REPORT:
+                case PHASE_INITIATIVE_REPORT:
                 case PHASE_MOVEMENT_REPORT:
                 case PHASE_OFFBOARD_REPORT:
                 case PHASE_FIRING_REPORT:
@@ -315,8 +451,6 @@ public abstract class BotClient extends Client {
     }
 
     private void runEndGame() {
-        hexHasPathToCenterCache.clearCache();
-
         // Make a list of the player's living units.
         ArrayList<Entity> living = game.getPlayerEntities(getLocalPlayer(), false);
 
@@ -363,7 +497,11 @@ public abstract class BotClient extends Client {
         return unMoved.get(Compute.randomInt(unMoved.size()));
     }
 
-    synchronized protected void calculateMyTurn() {
+    private synchronized void calculateMyTurn() {
+        // clear out transient data
+        currentTurnEnemyEntities = null;
+        currentTurnFriendlyEntities = null;
+        
         try {
             if (game.getPhase() == IGame.Phase.PHASE_MOVEMENT) {
                 MovePath mp;
@@ -382,6 +520,7 @@ public abstract class BotClient extends Client {
                 }
                 moveEntity(mp.getEntity().getId(), mp);
             } else if (game.getPhase() == IGame.Phase.PHASE_FIRING) {
+                // TODO: consider that if you're hidden you should hold fire
                 calculateFiringTurn();
             } else if (game.getPhase() == IGame.Phase.PHASE_PHYSICAL) {
                 PhysicalOption po = calculatePhysicalTurn();
@@ -391,7 +530,7 @@ public abstract class BotClient extends Client {
                 } else {
                     // Send a "no attack" to clear the game turn, if any.
                     sendAttackData(game.getFirstEntityNum(getMyTurn()),
-                                   new Vector<EntityAction>(0));
+                                   new Vector<>(0));
                 }
             } else if (game.getPhase() == IGame.Phase.PHASE_DEPLOYMENT) {
                 calculateDeployment();
@@ -410,22 +549,38 @@ public abstract class BotClient extends Client {
                        || (game.getPhase() == IGame.Phase.PHASE_OFFBOARD)) {
                 // Send a "no attack" to clear the game turn, if any.
                 // TODO: Fix for real arty stuff
-                sendAttackData(game.getFirstEntityNum(getMyTurn()),
-                               new Vector<EntityAction>(0));
-                sendDone(true);
+                calculateTargetingOffBoardTurn();
             }
         } catch (Throwable t) {
             t.printStackTrace();
         }
     }
 
+    public double getMassOfAllInBuilding(final IGame game, final Coords coords) {
+        double mass = 0;
+
+        // Add the mass of anyone else standing in/on this building.
+        final IHex hex = game.getBoard().getHex(coords);
+        final int buildingElevation = hex.terrainLevel(Terrains.BLDG_ELEV);
+        final int bridgeElevation = hex.terrainLevel(Terrains.BRIDGE_ELEV);
+        Iterator<Entity> crowd = game.getEntities(coords);
+        while (crowd.hasNext()) {
+            Entity e = crowd.next();
+
+            if (buildingElevation >= e.getElevation() || bridgeElevation >= e.getElevation()) {
+                mass += e.getWeight();
+            }
+        }
+
+        return mass;
+    }
+    
     /**
      * Gets valid & empty starting coords around the specified point. This
      * method iterates through the list of Coords and returns the first Coords
      * that does not have a stacking violation.
      */
-    protected Coords getFirstValidCoords(Entity deployedUnit,
-            List<Coords> possibleDeployCoords) {
+    protected Coords getFirstValidCoords(Entity deployedUnit, List<Coords> possibleDeployCoords) {
         // Check all of the hexes in order.
         for (Coords dest : possibleDeployCoords) {
             Entity violation = Compute.stackingViolation(game, deployedUnit,
@@ -434,6 +589,16 @@ public abstract class BotClient extends Client {
             if (violation != null) {
                 continue;
             }
+
+            // Make sure we don't overload any buildings in this hex.
+            Building building = game.getBoard().getBuildingAt(dest);
+            if (null != building) {
+                double mass = getMassOfAllInBuilding(game, dest) + deployedUnit.getWeight();
+                if (mass > building.getCurrentCF(dest)) {
+                    continue;
+                }
+            }
+
             return dest;
         }
 
@@ -442,7 +607,7 @@ public abstract class BotClient extends Client {
         return null;
     }
 
-    protected List<Coords> getStartingCoordsArray() {
+    protected List<Coords> getStartingCoordsArray(Entity deployed_ent) {
         int highest_elev, lowest_elev, weapon_count;
         double av_range, ideal_elev;
         double adjusted_damage, max_damage, total_damage;
@@ -450,7 +615,6 @@ public abstract class BotClient extends Client {
         Coords highestHex;
         List<RankedCoords> validCoords = new LinkedList<>();
         Vector<Entity> valid_attackers;
-        Entity deployed_ent = getEntity(game.getFirstDeployableEntityNum());
         WeaponAttackAction test_attack;
         List<ECMInfo> allECMInfo = ComputeECM.computeAllEntitiesECMInfo(game
                 .getEntitiesVector());
@@ -540,6 +704,8 @@ public abstract class BotClient extends Client {
             ideal_elev = highest_elev;
         }
 
+        double highestFitness = -5000;
+        
         for (RankedCoords coord : validCoords) {
 
             // Calculate the fitness factor for each hex and save it to the array
@@ -605,7 +771,7 @@ public abstract class BotClient extends Client {
             coord.fitness += (total_damage / 10);
 
             // Mech
-            if (deployed_ent instanceof Mech) {
+            if (deployed_ent.hasETypeFlag(Entity.ETYPE_MECH)) {
                 // -> Trees are good
                 // -> Water isn't that great below depth 1 -> this saves actual
                 // ground space for infantry/vehicles (minor)
@@ -626,7 +792,7 @@ public abstract class BotClient extends Client {
 
             // Infantry
 
-            if (deployed_ent instanceof Infantry) {
+            if (deployed_ent.hasETypeFlag(Entity.ETYPE_INFANTRY)) {
                 // -> Trees and buildings make good cover, esp for conventional
                 // infantry
                 // rough is nice, too
@@ -678,18 +844,13 @@ public abstract class BotClient extends Client {
                 }
             }
 
-            // VTOL *PLACEHOLDER*
-            // Currently, VTOLs are deployed as tanks, because they're a
-            // sub-class.
-            // This isn't correct in the long run, and eventually should be
-            // fixed.
-            // FIXME
-            if (deployed_ent instanceof Tank) {
+            // some criteria for deploying non-vtol tanks
+            if (deployed_ent.hasETypeFlag(Entity.ETYPE_TANK) &&
+                    !deployed_ent.hasETypeFlag(Entity.ETYPE_VTOL)) {
                 // Tracked vehicle
                 // -> Trees increase fitness
                 if (deployed_ent.getMovementMode() == EntityMovementMode.TRACKED) {
-                    if (board.getHex(coord.getX(), coord.getY()).containsTerrain(
-                            Terrains.WOODS)) {
+                    if (board.getHex(coord.getX(), coord.getY()).containsTerrain(Terrains.WOODS)) {
                         coord.fitness += 2;
                     }
                 }
@@ -710,6 +871,7 @@ public abstract class BotClient extends Client {
                 coord.fitness -= potentialBuildingDamage(coord.getX(), coord.getY(),
                                                          deployed_ent);
             }
+            
             // ProtoMech
             // ->
             // -> Trees increase fitness by +2 (minor)
@@ -721,11 +883,27 @@ public abstract class BotClient extends Client {
             }
 
             // Make sure I'm not stuck in a dead-end.
-            if (!hasPathToCenter(deployed_ent, board)) {
+            if (!hasPathToEdge(deployed_ent, board)) {
                 coord.fitness -= 100;
+            }
+            
+            if(coord.fitness > highestFitness) {
+                highestFitness = coord.fitness;
             }
         }
 
+        // now, we double check: did we get a bunch of coordinates with a value way below 0?
+        // This indicates that we did not find any paths from the deployment zone to the opposite edge
+        // So we adjust each coordinate's fitness based on the "longest available path"
+        if(highestFitness < -10) {
+            for(RankedCoords rc : validCoords) {
+                MovePath movePath = getBoardEdgePathFinder(deployed_ent).getLongestNonEdgePath(rc.getCoords());
+                if (movePath != null) {
+                    rc.fitness += movePath.getHexesMoved();
+                }
+            }
+        }
+        
         // Now sort the valid array.
         Collections.sort(validCoords);
 
@@ -737,50 +915,33 @@ public abstract class BotClient extends Client {
         return result;
     }
 
+    /**
+     * Gets the {@link BoardEdgePathFinder} for an {@link Entity} for their
+     * current movement mode.
+     * @param entity The entity to retrieve the {@link BoardEdgePathFinder}.
+     * @return The appropriate {@link BoardEdgePathFinder} for the given entity.
+     */
+    private BoardEdgePathFinder getBoardEdgePathFinder(Entity entity) {
+        return deploymentPathFinders.computeIfAbsent(entity.getMovementMode(), 
+            e -> new BoardEdgePathFinder());
+    }
+
     // ToDo: Change this to 'hasSafePathToCenter' to account for buildings, lava and similar hazards.
-    // ToDo: This will require a new PathFinder.
-    private boolean hasPathToCenter(Entity entity, IBoard board) {
-        // Flying units can always reach the center of the board.
-        if (entity instanceof Aero || entity instanceof VTOL) {
+    /**
+     * Determines if the given entity has a reasonable path to the "opposite" edge of the board from its
+     * current position.
+     * @param entity
+     * @param board
+     * @return
+     */
+    private boolean hasPathToEdge(Entity entity, IBoard board) {
+        // Flying units can always get anywhere
+        if (entity.isAirborne() || entity instanceof VTOL) {
             return true;
         }
-
-        // Don't take too long.
-        final int timeLimit = PreferenceManager.getClientPreferences().getMaxPathfinderTime();
-
-        // Find the center of the board.
-        synchronized (this) {
-            if (boardCenter == null) {
-                boardCenter = board.getCenter();
-            }
-        }
-
-        // Start the path assuming forward movement, but if the unit is jump-capable, use jump movement.
-        MovePath pathToCenter = new MovePath(game, entity);
-        MovePath.MoveStepType type = MovePath.MoveStepType.FORWARDS;
-        if (entity.getOriginalJumpMP() > 0) {
-            type = MovePath.MoveStepType.START_JUMP;
-        }
-
-        // Check the cache to see if we've already tested this hex for this movement mode.
-        HexHasPathToCenterCache.Key key =
-                new HexHasPathToCenterCache.Key(entity.getPosition().toFriendlyString(), entity.getMovementMode());
-        Boolean hasPath = hexHasPathToCenterCache.hasPathToCenter(key);
-        if (hasPath != null) {
-            return hasPath;
-        }
-
-        // Find the shortest path.
-        ShortestPathFinder shortestPathFinder = ShortestPathFinder.newInstanceOfAStar(boardCenter, type, game);
-        AbstractPathFinder.StopConditionTimeout<MovePath> timeoutCondition =
-                new AbstractPathFinder.StopConditionTimeout<>(timeLimit);
-        shortestPathFinder.addStopCondition(timeoutCondition);
-        shortestPathFinder.run(pathToCenter.clone());
-
-        // Base return on if a path was found or not and cache the result.
-        hasPath = shortestPathFinder.getComputedPath(boardCenter) != null;
-        hexHasPathToCenterCache.addMember(key, hasPath);
-        return hasPath;
+        
+        MovePath mp = getBoardEdgePathFinder(entity).findPathToEdge(entity);
+        return mp != null;
     }
 
     private double potentialBuildingDamage(int x, int y, Entity entity) {
@@ -790,7 +951,7 @@ public abstract class BotClient extends Client {
             return 0;
         }
         int potentialDmg = (int) Math.ceil((double) building.getCurrentCF(coords) / 10);
-        boolean aptGunnery = entity.getCrew().getOptions().booleanOption(OptionsConstants.PILOT_APTITUDE_GUNNERY);
+        boolean aptGunnery = entity.hasAbility(OptionsConstants.PILOT_APTITUDE_GUNNERY);
         double oddsTakeDmg = 1 - (Compute.oddsAbove(entity.getCrew().getPiloting(), aptGunnery) / 100);
         return potentialDmg * oddsTakeDmg;
     }
@@ -810,8 +971,7 @@ public abstract class BotClient extends Client {
      */
     private static float getDeployDamage(IGame g, WeaponAttackAction waa, List<ECMInfo> allECMInfo) {
         Entity attacker = g.getEntity(waa.getEntityId());
-        boolean naturalAptGunnery = attacker.getCrew().getOptions()
-                                            .booleanOption(OptionsConstants.PILOT_APTITUDE_GUNNERY);
+        boolean naturalAptGunnery = attacker.hasAbility(OptionsConstants.PILOT_APTITUDE_GUNNERY);
         Mounted weapon = attacker.getEquipment(waa.getWeaponId());
         ToHitData hitData = waa.toHit(g, allECMInfo);
         if (hitData.getValue() > 12) {
@@ -951,7 +1111,7 @@ public abstract class BotClient extends Client {
         }
     }
 
-    public String getRandomBotMessage() {
+    private String getRandomBotMessage() {
         String message = "";
 
         try {
@@ -1009,7 +1169,7 @@ public abstract class BotClient extends Client {
         setName((String) (inP.getObject(0)));
     }
 
-    public ClientGUI getClientGUI() {
+    private ClientGUI getClientGUI() {
         return clientgui;
     }
 
@@ -1019,6 +1179,23 @@ public abstract class BotClient extends Client {
 
     public void endOfTurnProcessing() {
         // Do nothing;
+    }
+    
+    @SuppressWarnings("unchecked")
+    protected void receiveBuildingCollapse(Packet packet) {
+        game.getBoard().collapseBuilding((Vector<Coords>) packet.getObject(0));
+        
+        // once we've updated the game board with the building collapse, it is time to update
+        // the board edge pathfinder by purging any paths that go through or next to the collapsed hexes
+        for(BoardEdgePathFinder edgePathFinder : deploymentPathFinders.values()) {
+            for(Coords coords : (Vector<Coords>) packet.getObject(0)) {
+                edgePathFinder.invalidatePaths(coords);
+                
+                for(Coords neighbor : coords.allAdjacent()) {
+                    edgePathFinder.invalidatePaths(neighbor);
+                }
+            }
+        }
     }
 
     private class RankedCoords implements Comparable<RankedCoords> {

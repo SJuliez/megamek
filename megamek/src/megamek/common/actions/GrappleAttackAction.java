@@ -193,16 +193,21 @@ public class GrappleAttackAction extends PhysicalAttackAction {
             return new ToHitData(TargetRoll.IMPOSSIBLE,
                     "You can't attack from a null entity!");
 
-        if (!game.getOptions().booleanOption("tacops_grappling"))
+        if (!game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_GRAPPLING))
             return new ToHitData(TargetRoll.IMPOSSIBLE,
                     "grappling attack not allowed");
+
+        // LAM AirMechs can only grapple when grounded.
+        if (ae.isAirborneVTOLorWIGE()) {
+            return new ToHitData(TargetRoll.IMPOSSIBLE, "Cannot grapple while airborne");
+        }
 
         String impossible = toHitIsImpossible(game, ae, target);
         if (impossible != null && !impossible.equals("Locked in Grapple")) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "impossible");
         }
 
-        if (!game.getOptions().booleanOption("friendly_fire")) {
+        if (!game.getOptions().booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE)) {
             // a friendly unit can never be the target of a direct attack.
             if (target.getTargetType() == Targetable.TYPE_ENTITY
                     && (((Entity) target).getOwnerId() == ae.getOwnerId() || (((Entity) target)

@@ -24,6 +24,10 @@ A
 3019
 </year>
 
+<originalBuildYear>
+3019
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 6
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+5
+</omnipodheatsinks>
 
 <fuel>
 320
@@ -76,30 +87,34 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLERPPC
-CLUltraAC20
-Clan Ultra AC/20 Ammo
-Clan Ultra AC/20 Ammo
-Clan Ultra AC/20 Ammo
-Clan Ultra AC/20 Ammo
-CLCASE
+CLERPPC:OMNI
+CLUltraAC20:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLStreakSRM6
-Clan Streak SRM 6 Ammo
-CLCASE
+CLStreakSRM6:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLStreakSRM6
-Clan Streak SRM 6 Ammo
-CLCASE
+CLStreakSRM6:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLERLargeLaser
+CLERLargeLaser:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Ultra AC/20 Ammo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+Clan Streak SRM 6 Ammo:OMNI
+Clan Streak SRM 6 Ammo:OMNI
+CLCASE
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Succession Wars

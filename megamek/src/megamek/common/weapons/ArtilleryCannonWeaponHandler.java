@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import megamek.common.Aero;
 import megamek.common.AmmoType;
 import megamek.common.BattleArmor;
 import megamek.common.Compute;
@@ -29,7 +28,6 @@ import megamek.common.Infantry;
 import megamek.common.Minefield;
 import megamek.common.Mounted;
 import megamek.common.Report;
-import megamek.common.SpecialHexDisplay;
 import megamek.common.TargetRoll;
 import megamek.common.Targetable;
 import megamek.common.ToHitData;
@@ -75,10 +73,9 @@ public class ArtilleryCannonWeaponHandler extends AmmoWeaponHandler {
         if (!cares(phase)) {
             return true;
         }
-        String artyMsg;
         Coords targetPos = target.getPosition();
-        boolean isFlak = (target instanceof VTOL) || (target instanceof Aero);
-        boolean asfFlak = target instanceof Aero;
+        boolean isFlak = (target instanceof VTOL) || target.isAero();
+        boolean asfFlak = target.isAero();
         if (ae == null) {
             System.err.println("Artillery Entity is null!");
             return true;
@@ -153,31 +150,13 @@ public class ArtilleryCannonWeaponHandler extends AmmoWeaponHandler {
             r.subject = subjectId;
             r.add(targetPos.getBoardNum());
             vPhaseReport.addElement(r);
-            artyMsg = "Artillery Hit here by"
-                    + ae.getOwner().getName()
-                    + " (this hex is now an auto-hit). Display this for everyone.";
-            game.getBoard().addSpecialHexDisplay(
-                    targetPos,
-                    new SpecialHexDisplay(SpecialHexDisplay.Type.ARTILLERY_HIT,
-                            game.getRoundCount(), ae.getOwner(), artyMsg));
-
         } else {
-            Coords origPos = targetPos;
             targetPos = Compute.scatter(targetPos,
                     (Math.abs(toHit.getMoS()) + 1) / 2);
             if (game.getBoard().contains(targetPos)) {
                 // misses and scatters to another hex
                 if (!isFlak) {
                     r = new Report(3195);
-                    artyMsg = "Artillery missed here by"
-                            + ae.getOwner().getName()
-                            + ". Display this for everyone.";
-                    game.getBoard().addSpecialHexDisplay(
-                            origPos,
-                            new SpecialHexDisplay(
-                                    SpecialHexDisplay.Type.ARTILLERY_HIT, game
-                                            .getRoundCount(), ae.getOwner(),
-                                    artyMsg));
                 } else {
                     r = new Report(3192);
                 }
@@ -292,17 +271,13 @@ public class ArtilleryCannonWeaponHandler extends AmmoWeaponHandler {
      */
     @Override
     protected int calcDamagePerHit() {
-        float toReturn = wtype.getDamage();
+        double toReturn = wtype.getDamage();
         // area effect damage is double
-        if ((target instanceof Infantry) && !(target instanceof BattleArmor)) {
+        if (target.isConventionalInfantry()) {
             toReturn /= 0.5;
         }
 
-        if (bGlancing) {
-            toReturn = (int) Math.floor(toReturn / 2.0);
-        }
-
-        // System.err.println("Attack is doing " + toReturn + " damage.");
+        toReturn = applyGlancingBlowModifier(toReturn, target.isConventionalInfantry());
 
         return (int) Math.ceil(toReturn);
     }

@@ -15,7 +15,7 @@
 package megamek.common;
 
 /**
- * Represtents a volume of space set aside for carrying insulated cargo
+ * Represents a volume of space set aside for carrying insulated cargo
  */
 
 public final class InsulatedCargoBay extends Bay {
@@ -25,7 +25,7 @@ public final class InsulatedCargoBay extends Bay {
      */
     private static final long serialVersionUID = 4161027191694822726L;
 
-    private float weight = 0;
+    private double weight = 0;
 
     /**
      * The default constructor is only for serialization.
@@ -46,9 +46,9 @@ public final class InsulatedCargoBay extends Bay {
      *            - The weight of troops (in tons) this space can carry.
      */
     public InsulatedCargoBay(double space, int doors, int bayNumber) {
-        totalSpace = space * 0.87;
-        weight = (float) space;
-        currentSpace = space * 0.87;
+        totalSpace = space;
+        weight = space / 0.87;
+        currentSpace = space;
         this.doors = doors;
         this.bayNumber = bayNumber;
     }
@@ -72,12 +72,13 @@ public final class InsulatedCargoBay extends Bay {
 
     @Override
     public String getUnusedString(boolean showrecovery) {
-        StringBuffer returnString = new StringBuffer("Insulated Cargo Space - ");
+        StringBuffer returnString = new StringBuffer("Insulated Cargo Space "
+                + numDoorsString() + " - ");
 
-        if (currentSpace != Math.round(currentSpace)) {
-            returnString.append(String.format("%1$,.3f", currentSpace));
+        if (getUnused() != Math.round(getUnused())) {
+            returnString.append(String.format("%1$,.3f", getUnused()));
         } else {
-            returnString.append(String.format("%1$,.0f", currentSpace));
+            returnString.append(String.format("%1$,.0f", getUnused()));
         }
 
         returnString.append(" tons");
@@ -90,12 +91,24 @@ public final class InsulatedCargoBay extends Bay {
     }
 
     @Override
-    public float getWeight() {
+    public double getWeight() {
         return weight;
     }
 
     @Override
     public String toString() {
         return "insulatedcargobay:" + totalSpace + ":" + doors + ":"+ bayNumber;
+    }
+    
+    
+    @Override
+    public boolean isCargo() {
+        return true;
+    }
+
+    @Override
+    public long getCost() {
+        // Based on the weight of the equipment (not capacity), rounded up to the whole ton
+        return 250L * (long) Math.ceil(getWeight());
     }
 }

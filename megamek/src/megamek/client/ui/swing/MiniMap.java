@@ -73,12 +73,14 @@ import megamek.common.Configuration;
 import megamek.common.Coords;
 import megamek.common.Entity;
 import megamek.common.EntityMovementMode;
+import megamek.common.EntityVisibilityUtils;
 import megamek.common.GameTurn;
 import megamek.common.GunEmplacement;
 import megamek.common.IBoard;
 import megamek.common.IGame;
 import megamek.common.IHex;
 import megamek.common.Mech;
+import megamek.common.MechWarrior;
 import megamek.common.Protomech;
 import megamek.common.Tank;
 import megamek.common.Targetable;
@@ -96,6 +98,7 @@ import megamek.common.event.GameListener;
 import megamek.common.event.GameListenerAdapter;
 import megamek.common.event.GamePhaseChangeEvent;
 import megamek.common.event.GameTurnChangeEvent;
+import megamek.common.util.MegaMekFile;
 
 /**
  * Displays all the mapsheets in a scaled-down size. TBD refactorings: -make a
@@ -113,21 +116,21 @@ public class MiniMap extends JPanel {
      *
      */
     private static final long serialVersionUID = 6964529682842424060L;
-    private final static Color[] m_terrainColors = new Color[Terrains.SIZE];
+    private static final Color[] m_terrainColors = new Color[Terrains.SIZE];
     private static Color HEAVY_WOODS;
     private static Color ULTRA_HEAVY_WOODS;
     private static Color BACKGROUND;
     private static Color SINKHOLE;
     private static Color SMOKE_AND_FIRE;
 
-    private final static int SHOW_NO_HEIGHT = 0;
-    private final static int SHOW_GROUND_HEIGHT = 1;
-    private final static int SHOW_BUILDING_HEIGHT = 2;
-    private final static int SHOW_TOTAL_HEIGHT = 3;
-    private final static int NBR_MODES = 3;
+    private static final int SHOW_NO_HEIGHT = 0;
+    private static final int SHOW_GROUND_HEIGHT = 1;
+    private static final int SHOW_BUILDING_HEIGHT = 2;
+    private static final int SHOW_TOTAL_HEIGHT = 3;
+    private static final int NBR_MODES = 3;
 
-    private final static int SCROLL_PANE_WIDTH = 160;
-    private final static int SCROLL_PANE_HEIGHT = 200;
+    private static final int SCROLL_PANE_WIDTH = 160;
+    private static final int SCROLL_PANE_HEIGHT = 200;
 
     private Image m_mapImage;
     private IBoardView m_bview;
@@ -171,19 +174,19 @@ public class MiniMap extends JPanel {
     
     // Here come the Strat Ops / NATO unit symbols
     Map<Coords, Integer> multiUnits = new HashMap<Coords, Integer>();
-    private final static Path2D STRAT_BASERECT;
-    private final static Path2D STRAT_INFANTRY;
-    private final static Path2D STRAT_MECH;
-    private final static Path2D STRAT_VTOL;
-    private final static Path2D STRAT_TANKTRACKED;
-    private final static Path2D STRAT_AERO;
-    private final static Path2D STRAT_SPHEROID;
-    private final static Path2D STRAT_HOVER;
-    private final static Path2D STRAT_WHEELED;
-    private final static Path2D STRAT_NAVAL;
-    private final static Dimension SYMBOLSIZE = new Dimension(167,103);
-    private final static String[] STRAT_WEIGHTS = { "L", "L", "M", "H", "A", "A" };
-    private final static double STRAT_CX = SYMBOLSIZE.getWidth()/5; // X center for two symbols
+    private static final Path2D STRAT_BASERECT;
+    private static final Path2D STRAT_INFANTRY;
+    private static final Path2D STRAT_MECH;
+    private static final Path2D STRAT_VTOL;
+    private static final Path2D STRAT_TANKTRACKED;
+    private static final Path2D STRAT_AERO;
+    private static final Path2D STRAT_SPHEROID;
+    private static final Path2D STRAT_HOVER;
+    private static final Path2D STRAT_WHEELED;
+    private static final Path2D STRAT_NAVAL;
+    private static final Dimension SYMBOLSIZE = new Dimension(167,103);
+    private static final String[] STRAT_WEIGHTS = { "L", "L", "M", "H", "A", "A" };
+    private static final double STRAT_CX = SYMBOLSIZE.getWidth()/5; // X center for two symbols
     
     static {
         // Base rectangle for all units
@@ -437,9 +440,9 @@ public class MiniMap extends JPanel {
         int green;
         int blue;
 
-        File coloursFile = new File(
+        File coloursFile = new MegaMekFile(
                 Configuration.hexesDir(), GUIPreferences.getInstance().getMinimapColours()
-        );
+        ).getFile();
 
         // only while the defaults are hard-coded!
         if (!coloursFile.exists()) {
@@ -1140,15 +1143,6 @@ public class MiniMap extends JPanel {
     }
 
     private void paintUnit(Graphics g, Entity entity) {
-        boolean sensors = m_game.getOptions().booleanOption(
-                "tacops_sensors");
-        boolean sensorsDetectAll = m_game.getOptions().booleanOption(
-                "sensors_detect_all");
-        boolean doubleBlind = m_game.getOptions().booleanOption(
-                "double_blind");
-        boolean hasVisual = entity.hasSeenEntity(m_bview.getLocalPlayer());
-        boolean hasDetected = entity.hasDetectedEntity(m_bview.getLocalPlayer());
-        
         int baseX = (entity.getPosition().getX() * (hexSide[zoom] + hexSideBySin30[zoom]))
                 + leftMargin + hexSide[zoom];
         int baseY = (((2 * entity.getPosition().getY()) + 1 + (entity
@@ -1156,8 +1150,7 @@ public class MiniMap extends JPanel {
         int[] xPoints;
         int[] yPoints;
 
-        if (sensors && doubleBlind && !sensorsDetectAll
-                && hasDetected && !hasVisual) { // Sensor Return
+        if (EntityVisibilityUtils.onlyDetectedBySensors(m_bview.getLocalPlayer(), entity)) { // Sensor Return
             String sensorReturn = "?";           
             Font font = new Font("SansSerif", Font.BOLD, fontSize[zoom]); //$NON-NLS-1$            
             int width = getFontMetrics(font).stringWidth(sensorReturn) / 2;
@@ -1166,7 +1159,7 @@ public class MiniMap extends JPanel {
             g.setColor(Color.RED);
             g.drawString(sensorReturn, baseX - width, baseY + height);
             return;
-        } else if (doubleBlind && !hasVisual) { // Unseen Unit
+        } else if (!EntityVisibilityUtils.detectedOrHasVisual(m_bview.getLocalPlayer(), m_game, entity)) { // Unseen Unit
             // Do nothing
             return;
         } else if (entity instanceof Mech) {
@@ -1302,8 +1295,8 @@ public class MiniMap extends JPanel {
                 } else {
                     form = STRAT_TANKTRACKED;
                 }
-            } else if (entity instanceof Aero) {
-                if (((Aero) entity).isFighter()) {
+            } else if (entity.isAero()) {
+                if (entity.isFighter()) {
                     form = STRAT_AERO;
                 } else {
                     form = STRAT_SPHEROID;
@@ -1337,6 +1330,9 @@ public class MiniMap extends JPanel {
                     GlyphVector gv = font.createGlyphVector(fontContext, s);
                     g2.fill(gv.getOutline((int)STRAT_CX-stringWidth/2,(float)SYMBOLSIZE.getHeight()/3.0f));
                 }
+            } else if (entity instanceof MechWarrior) {
+                g2.setColor(Color.black);
+                g2.fillOval(0 - 25, 0 - 25, 50, 50);
             }
             // Draw the unit icon in black
             g2.draw(form);
@@ -1344,23 +1340,43 @@ public class MiniMap extends JPanel {
             g2.setTransform(svTransform);
             
         } else {
+            // Drawn a circle for MechWarriors
+            if (entity instanceof MechWarrior) {
+                // Draw a slight dark border
+                int radius = unitSize - 3;
+                int dia = radius * 2;
+                ((Graphics2D)g).setStroke(new BasicStroke(unitBorder[zoom]+2));
+                g.setColor(new Color(100,100,100,200));
+                g.drawOval(baseX - radius, baseY - radius, dia, dia);
 
-            // Draw a slight dark border to set off the icon from the background
-            ((Graphics2D)g).setStroke(new BasicStroke(unitBorder[zoom]+2));
-            g.setColor(new Color(100,100,100,200));
-            g.drawPolygon(xPoints, yPoints, xPoints.length);
-            
-            // Fill the icon according to the player color
-            Color pColor = new Color(
-                    PlayerColors.getColorRGB(entity.getOwner().getColorIndex()));
-            g.setColor(pColor);
-            g.fillPolygon(xPoints, yPoints, xPoints.length);
-            
-            // Draw a white border to better show the player color
-            // maybe useful later: if (!entity.isSelectableThisTurn()) {
-            ((Graphics2D)g).setStroke(new BasicStroke(unitBorder[zoom]));
-            g.setColor(Color.WHITE);
-            g.drawPolygon(xPoints, yPoints, xPoints.length);
+                // Fill the icon according to player color
+                Color pColor = new Color(
+                        PlayerColors.getColorRGB(entity.getOwner().getColorIndex()));
+                g.setColor(pColor);
+                g.fillOval(baseX - radius, baseY - radius, dia, dia);
+
+                // Draw a white border to better show the player color
+                ((Graphics2D)g).setStroke(new BasicStroke(unitBorder[zoom]));
+                g.setColor(Color.WHITE);
+                g.drawOval(baseX - radius, baseY - radius, dia, dia);
+            } else {
+                // Draw a slight dark border to set off the icon from the background
+                ((Graphics2D)g).setStroke(new BasicStroke(unitBorder[zoom]+2));
+                g.setColor(new Color(100,100,100,200));
+                g.drawPolygon(xPoints, yPoints, xPoints.length);
+
+                // Fill the icon according to the player color
+                Color pColor = new Color(
+                        PlayerColors.getColorRGB(entity.getOwner().getColorIndex()));
+                g.setColor(pColor);
+                g.fillPolygon(xPoints, yPoints, xPoints.length);
+
+                // Draw a white border to better show the player color
+                // maybe useful later: if (!entity.isSelectableThisTurn()) {
+                ((Graphics2D)g).setStroke(new BasicStroke(unitBorder[zoom]));
+                g.setColor(Color.WHITE);
+                g.drawPolygon(xPoints, yPoints, xPoints.length);
+            }
 
         }
         
@@ -1507,27 +1523,29 @@ public class MiniMap extends JPanel {
         }
 
         int terrain = 0;
-        for (int j = m_terrainColors.length - 1; j >= 0; j--) {
-            if ((x.getTerrain(j) != null) && (m_terrainColors[j] != null)) {
-                if ((j == Terrains.ROAD) || (j == Terrains.BRIDGE)) {
-                    continue;
+        // Check for Smoke and Fire - this overrides any other colors
+        if (x.containsTerrain(Terrains.SMOKE) && x.containsTerrain(Terrains.FIRE)) {
+            terrColor = SMOKE_AND_FIRE;
+        // Check for Fire - this overrides any other colors
+        } else if (x.containsTerrain(Terrains.FIRE)) {
+            terrColor = m_terrainColors[Terrains.FIRE];
+        } else { // Otherwise, color based on terrains - higher valued terrains take color precedence
+            for (int j = m_terrainColors.length - 1; j >= 0; j--) {
+                if ((x.getTerrain(j) != null) && (m_terrainColors[j] != null)) {
+                    if ((j == Terrains.ROAD) || (j == Terrains.BRIDGE)) {
+                        continue;
+                    }
+                    terrColor = m_terrainColors[j];
+                    terrain = j;
+                    // make heavy woods darker
+                    if (((j == Terrains.WOODS) || (j == Terrains.JUNGLE)) && (x.getTerrain(j).getLevel() == 2)) {
+                        terrColor = HEAVY_WOODS;
+                    }
+                    if (((j == Terrains.WOODS) || (j == Terrains.JUNGLE)) && (x.getTerrain(j).getLevel() > 2)) {
+                        terrColor = ULTRA_HEAVY_WOODS;
+                    }
+                    break;
                 }
-                terrColor = m_terrainColors[j];
-                terrain = j;
-                // make heavy woods darker
-                if (((j == Terrains.WOODS) || (j == Terrains.JUNGLE))
-                    && (x.getTerrain(j).getLevel() == 2)) {
-                    terrColor = HEAVY_WOODS;
-                }
-                if (((j == Terrains.WOODS) || (j == Terrains.JUNGLE))
-                    && (x.getTerrain(j).getLevel() > 2)) {
-                    terrColor = ULTRA_HEAVY_WOODS;
-                }
-                // contains both smoke and fire
-                if ((j == Terrains.SMOKE) && (x.getTerrain(Terrains.FIRE) != null)) {
-                    terrColor = SMOKE_AND_FIRE;
-                }
-                break;
             }
         }
         int level = 0;

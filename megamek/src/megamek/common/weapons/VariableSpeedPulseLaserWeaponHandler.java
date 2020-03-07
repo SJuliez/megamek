@@ -35,7 +35,7 @@ public class VariableSpeedPulseLaserWeaponHandler extends EnergyWeaponHandler {
      * @param g
      */
     public VariableSpeedPulseLaserWeaponHandler(ToHitData toHit,
-                                                WeaponAttackAction waa, IGame g, Server s) {
+            WeaponAttackAction waa, IGame g, Server s) {
         super(toHit, waa, g, s);
     }
 
@@ -49,13 +49,13 @@ public class VariableSpeedPulseLaserWeaponHandler extends EnergyWeaponHandler {
         int[] nRanges = wtype.getRanges(weapon);
         double toReturn = wtype.getDamage(nRange);
 
-        if (game.getOptions().booleanOption("tacops_energy_weapons")
+        if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_ENERGY_WEAPONS)
             && wtype.hasModes()) {
             toReturn = Compute.dialDownDamage(weapon, wtype, nRange);
         }
 
         // Check for Altered Damage from Energy Weapons (TacOp, pg.83)
-        if (game.getOptions().booleanOption("tacops_altdmg")) {
+        if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_ALTDMG)) {
             if (nRange <= 1) {
                 toReturn++;
             } else if (nRange <= wtype.getMediumRange()) {
@@ -65,11 +65,12 @@ public class VariableSpeedPulseLaserWeaponHandler extends EnergyWeaponHandler {
             }
         }
 
-        if ((target instanceof Infantry) && !(target instanceof BattleArmor)) {
+        if (target.isConventionalInfantry()) {
             toReturn = Compute.directBlowInfantryDamage(toReturn,
-                                                        bDirect ? toHit.getMoS() / 3 : 0,
-                                                        wtype.getInfantryDamageClass(),
-                                                        ((Infantry) target).isMechanized());
+                    bDirect ? toHit.getMoS() / 3 : 0,
+                    wtype.getInfantryDamageClass(),
+                    ((Infantry) target).isMechanized(),
+                    toHit.getThruBldg() != null, ae.getId(), calcDmgPerHitReport);
             if (nRange <= nRanges[RangeType.RANGE_SHORT]) {
                 toReturn += 3;
             } else if (nRange <= nRanges[RangeType.RANGE_MEDIUM]) {
@@ -81,21 +82,19 @@ public class VariableSpeedPulseLaserWeaponHandler extends EnergyWeaponHandler {
             toReturn = Math.min(toReturn + (toHit.getMoS() / 3), toReturn * 2);
         }
 
-        if (game.getOptions().booleanOption(OptionsConstants.AC_TAC_OPS_RANGE)
+        if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_RANGE)
             && (nRange > nRanges[RangeType.RANGE_LONG])) {
             // Against conventional infantry, treat as direct fire energy
-            if ((target instanceof Infantry) 
-                    && !(target instanceof BattleArmor) ) {
+            if (target.isConventionalInfantry()) {
                 toReturn -= 1;
             } else { // Else, treat as pulse weapon
                 toReturn = (int) Math.floor(toReturn / 2.0);
             }
         }
-        if (game.getOptions().booleanOption(OptionsConstants.AC_TAC_OPS_LOS_RANGE)
+        if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_LOS_RANGE)
                 && (nRange > nRanges[RangeType.RANGE_EXTREME])) {
          // Against conventional infantry, treat as direct fire energy
-            if ((target instanceof Infantry) 
-                    && !(target instanceof BattleArmor) ) {
+            if (target.isConventionalInfantry()) {
                 toReturn = (int) Math.floor(toReturn / 2.0);
             } else { // Else, treat as pulse weapon
                 toReturn = (int) Math.floor(toReturn / 3.0);
@@ -103,9 +102,7 @@ public class VariableSpeedPulseLaserWeaponHandler extends EnergyWeaponHandler {
 
         }
 
-        if (bGlancing) {
-            toReturn = (int) Math.floor(toReturn / 2.0);
-        }
+        toReturn = applyGlancingBlowModifier(toReturn, target.isConventionalInfantry());
         return (int) Math.ceil(toReturn);
     }
 

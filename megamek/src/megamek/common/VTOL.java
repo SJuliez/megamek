@@ -17,10 +17,17 @@
  */
 package megamek.common;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import megamek.common.options.OptionsConstants;
+
 /**
  * @author Andrew Hunter VTOLs are helicopters (more or less.)
  */
-public class VTOL extends Tank {
+public class VTOL extends Tank implements IBomber {
 
     /**
      *
@@ -47,6 +54,11 @@ public class VTOL extends Tank {
     public static final int CRIT_FLIGHT_STABILIZER = 19;
 
     @Override
+    public int getUnitType() {
+        return UnitType.VTOL;
+    }
+
+    @Override
     public String[] getLocationAbbrs() {
         return LOCATION_ABBRS;
     }
@@ -65,6 +77,10 @@ public class VTOL extends Tank {
         return LOC_TURRET_2;
     }
 
+    private int[] bombChoices = new int[BombType.B_NUM];
+    private Targetable bombTarget = null;
+    private List<Coords> strafingCoords = new ArrayList<>();
+
     /*
      * (non-Javadoc)
      *
@@ -73,15 +89,13 @@ public class VTOL extends Tank {
      *      megamek.common.Coords, boolean, int)
      */
     @Override
-    public PilotingRollData checkSkid(EntityMovementType moveType, IHex prevHex,
-            EntityMovementType overallMoveType, MoveStep prevStep, int prevFacing,
-            int curFacing, Coords lastPos, Coords curPos, boolean isInfantry,
-            int distance) {
-        PilotingRollData roll = getBasePilotingRoll(overallMoveType);
-        roll.addModifier(TargetRoll.CHECK_FALSE,
-                "Check false: VTOLs can't skid");
-        return roll;
-    }
+	public PilotingRollData checkSkid(EntityMovementType moveType, IHex prevHex, EntityMovementType overallMoveType,
+	        MoveStep prevStep, MoveStep currStep, int prevFacing, int curFacing, Coords lastPos, Coords curPos,
+	        boolean isInfantry, int distance) {
+		PilotingRollData roll = getBasePilotingRoll(overallMoveType);
+		roll.addModifier(TargetRoll.CHECK_FALSE, "Check false: VTOLs can't skid");
+		return roll;
+	}
 
     /*
      * (non-Javadoc)
@@ -93,40 +107,6 @@ public class VTOL extends Tank {
         return false;
     }
 
-    /**
-     * Returns the name of the type of movement used. This is VTOL-specific.
-     */
-    @Override
-    public String getMovementString(EntityMovementType mtype) {
-        switch (mtype) {
-            case MOVE_VTOL_WALK:
-                return "Cruised";
-            case MOVE_VTOL_RUN:
-                return "Flanked";
-            case MOVE_NONE:
-                return "None";
-            default:
-                return "Unknown!";
-        }
-    }
-
-    /**
-     * Returns the name of the type of movement used. This is tank-specific.
-     */
-    @Override
-    public String getMovementAbbr(EntityMovementType mtype) {
-        switch (mtype) {
-            case MOVE_VTOL_WALK:
-                return "C";
-            case MOVE_VTOL_RUN:
-                return "F";
-            case MOVE_NONE:
-                return "N";
-            default:
-                return "?";
-        }
-    }
-
     @Override
     public int getMaxElevationChange() {
         return 999;
@@ -135,6 +115,27 @@ public class VTOL extends Tank {
     @Override
     public boolean isLocationProhibited(Coords c, int currElevation) {
         IHex hex = game.getBoard().getHex(c);
+        // Additional restrictions for hidden units
+        if (isHidden()) {
+            // Can't deploy in paved hexes
+            if (hex.containsTerrain(Terrains.PAVEMENT)
+                    || hex.containsTerrain(Terrains.ROAD)) {
+                return true;
+            }
+            // Can't deploy on a bridge
+            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == currElevation)
+                    && hex.containsTerrain(Terrains.BRIDGE)) {
+                return true;
+            }
+            // Can't deploy on the surface of water
+            if (hex.containsTerrain(Terrains.WATER) && (currElevation == 0)) {
+                return true;
+            }
+            // Airborne units can't deploy hidden
+            if (currElevation > 0) {
+                return true;
+            }
+        }
         if (hex.containsTerrain(Terrains.IMPASSABLE)) {
             return true;
         }
@@ -221,7 +222,7 @@ public class VTOL extends Tank {
             case 7:
                 break;
             case 8:
-                if (bSide && !game.getOptions().booleanOption("tacops_vehicle_effective")) {
+                if (bSide && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_EFFECTIVE)) {
                     rv.setEffect(HitData.EFFECT_CRITICAL);
                 }
                 break;
@@ -257,6 +258,55 @@ public class VTOL extends Tank {
     public boolean doomedInAtmosphere() {
         return true;
     }
+    
+    @Override
+    public boolean isBomber() {
+        return (game != null)
+                && game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VTOL_ATTACKS);
+    }
+    
+    @Override
+    public int availableBombLocation(int cost) {
+        return LOC_FRONT;
+    }
+    
+    public int getMaxBombPoints() {
+        return (int) Math.round(getWeight() / 5);
+    }
+
+    public int[] getBombChoices() {
+        return bombChoices.clone();
+    }
+
+    public void setBombChoices(int[] bc) {
+        if (bc.length == bombChoices.length) {
+            bombChoices = bc;
+        }
+    }
+    
+    @Override
+    public void clearBombChoices() {
+        Arrays.fill(bombChoices, 0);
+    }
+
+    @Override
+    public Targetable getVTOLBombTarget() {
+        return bombTarget;
+    }
+    
+    @Override
+    public void setVTOLBombTarget(Targetable t) {
+        bombTarget = t;
+    }
+    
+    public List<Coords> getStrafingCoords() {
+        return strafingCoords;
+    }
+    
+    @Override
+    public boolean isMakingVTOLGroundAttack() {
+        return bombTarget != null || strafingCoords.size() > 0;
+    }
 
     @Override
     public boolean doomedInSpace() {
@@ -285,7 +335,7 @@ public class VTOL extends Tank {
             roll = 12;
         }
         if ((roll < 6)
-                || (game.getOptions().booleanOption("vehicles_threshold")
+                || (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_VEHICLES_THRESHOLD)
                         && !getOverThresh() && !damagedByFire)) {
             return CRIT_NONE;
         }
@@ -374,13 +424,17 @@ public class VTOL extends Tank {
                         }
                     case 11:
                         if (!engineHit) {
-                            return CRIT_ENGINE;
+                            return (hasEngine() ? CRIT_ENGINE : CRIT_NONE);
                         }
                     case 12:
-                        if (getEngine().isFusion() && !engineHit) {
-                            return CRIT_ENGINE;
-                        } else if (!getEngine().isFusion()) {
-                            return CRIT_FUEL_TANK;
+                        if(hasEngine()) {
+                            if (getEngine().isFusion() && !engineHit) {
+                                return CRIT_ENGINE;
+                            } else if (!getEngine().isFusion()) {
+                                return CRIT_FUEL_TANK;
+                            }
+                        } else {
+                            return CRIT_NONE;
                         }
                 }
             } else if (loc == LOC_ROTOR) {
@@ -467,7 +521,7 @@ public class VTOL extends Tank {
                         }
                     case 10:
                         if (!engineHit) {
-                            return CRIT_ENGINE;
+                            return (hasEngine() ? CRIT_ENGINE : CRIT_NONE);
                         }
                     case 11:
                         for (Mounted m : getAmmo()) {
@@ -476,10 +530,14 @@ public class VTOL extends Tank {
                             }
                         }
                     case 12:
-                        if (getEngine().isFusion() && !engineHit) {
-                            return CRIT_ENGINE;
-                        } else if (!getEngine().isFusion()) {
-                            return CRIT_FUEL_TANK;
+                        if(hasEngine()) {
+                            if (getEngine().isFusion() && !engineHit) {
+                                return CRIT_ENGINE;
+                            } else if (!getEngine().isFusion()) {
+                                return CRIT_FUEL_TANK;
+                            }
+                        } else {
+                            return CRIT_NONE;
                         }
                 }
             }
@@ -500,12 +558,21 @@ public class VTOL extends Tank {
         }
 
         // VDNI bonus?
-        if (getCrew().getOptions().booleanOption("vdni")
-                && !getCrew().getOptions().booleanOption("bvdni")) {
+        if (hasAbility(OptionsConstants.MD_VDNI)
+                && !hasAbility(OptionsConstants.MD_BVDNI)) {
             prd.addModifier(-1, "VDNI");
         }
 
         return prd;
+    }
+
+
+    @Override
+    public void newRound(int roundNumber) {
+        super.newRound(roundNumber);
+        
+        bombTarget = null;
+        strafingCoords.clear();
     }
 
     @Override
@@ -519,7 +586,7 @@ public class VTOL extends Tank {
             return 0;
         }
         j = Math.max(0, j - motiveDamage);
-        j = Math.max(0, j - getCargoMpReduction());
+        j = Math.max(0, j - getCargoMpReduction(this));
         if (null != game) {
             int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
             if (weatherMod != 0) {
@@ -532,6 +599,16 @@ public class VTOL extends Tank {
         }
         if (hasWorkingMisc(MiscType.F_DUNE_BUGGY)) {
             j--;
+        }
+
+        // Per TacOps errata v3.0, movement reduction is per bomb rather than per 5 bomb points
+        for (Mounted m : getBombs()) {
+            if (m.getUsableShotsLeft() > 0) {
+                j--;
+            }
+        }
+        if (j < 0) {
+            j = 0;
         }
 
         if (gravity) {
@@ -565,8 +642,61 @@ public class VTOL extends Tank {
     }
 
     @Override
+    public double getBaseBattleForceMovement() {
+        double move = getOriginalWalkMP();
+
+        if (getMisc().stream().anyMatch(m -> m.getType().hasFlag(MiscType.F_JET_BOOSTER))) {
+            move *= 1.25;
+        }
+
+        return move;
+    }
+    
+    @Override
+    public double getBattleForceLocationMultiplier(int index, int location, boolean rearMounted) {
+        if (index == 1 && location == LOC_REAR) {
+            return 1.0;
+        } else if (location == LOC_REAR || location == LOC_BODY || location == LOC_ROTOR
+                || (index == 0 && location >= LOC_TURRET)
+                || (index == 1 && location < LOC_TURRET)) {
+            return 0.0;
+        }
+        return 1.0; 
+    }
+
+    public void addBattleForceSpecialAbilities(Map<BattleForceSPA,Integer> specialAbilities) {
+        super.addBattleForceSpecialAbilities(specialAbilities);
+        specialAbilities.put(BattleForceSPA.ATMO, null);
+    }
+    
+    @Override
     public long getEntityType(){
         return Entity.ETYPE_TANK | Entity.ETYPE_VTOL;
+    }
+
+    public static TechAdvancement getChinTurretTA() {
+        return new TechAdvancement(TECH_BASE_ALL)
+                .setAdvancement(DATE_PS, 3079, 3080).setApproximate(false, true, false)
+                .setTechRating(RATING_B).setAvailability(RATING_F, RATING_F, RATING_F, RATING_D)
+                .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
+    }
+
+    protected void addSystemTechAdvancement(CompositeTechLevel ctl) {
+        super.addSystemTechAdvancement(ctl);
+        if (!hasNoTurret()) {
+            ctl.addComponent(getChinTurretTA());
+        }
+    }
+    
+    /**
+     * Used to determine the draw priority of different Entity subclasses.
+     * This allows different unit types to always be draw above/below other
+     * types.
+     *
+     * @return
+     */
+    public int getSpriteDrawPriority() {
+        return 8;
     }
 
 }

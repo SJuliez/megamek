@@ -37,7 +37,7 @@ public final class TroopSpace implements Transporter {
     /**
      * The troops being carried.
      */
-    Map<Integer, Float> troops = new HashMap<>();
+    Map<Integer, Double> troops = new HashMap<>();
     
     /**
      * The total amount of space available for troops.
@@ -85,6 +85,7 @@ public final class TroopSpace implements Transporter {
      * @return <code>true</code> if the unit can be loaded, <code>false</code>
      *         otherwise.
      */
+    @Override
     public boolean canLoad(Entity unit) {
         // Assume that we can carry the unit.
         boolean result = true;
@@ -113,6 +114,7 @@ public final class TroopSpace implements Transporter {
      *            <code>IllegalArgumentException</code> exception will be
      *            thrown.
      */
+    @Override
     public void load(Entity unit) throws IllegalArgumentException {
         // If we can't load the unit, throw an exception.
         if (!canLoad(unit)) {
@@ -136,9 +138,10 @@ public final class TroopSpace implements Transporter {
      *         returned <code>List</code> is independant from the under- lying
      *         data structure; modifying one does not affect the other.
      */
+    @Override
     public Vector<Entity> getLoadedUnits() {
         Vector<Entity> loaded = new Vector<Entity>();
-        for (Map.Entry<Integer,Float> entry : troops.entrySet()) {
+        for (Map.Entry<Integer, Double> entry : troops.entrySet()) {
             int key = entry.getKey();
             loaded.add(game.getEntity(key));
         }
@@ -154,10 +157,17 @@ public final class TroopSpace implements Transporter {
      * @return <code>true</code> if the unit was contained in this space,
      *         <code>false</code> otherwise.
      */
+    @Override
     public boolean unload(Entity unit) {
+       // If this unit isn't loaded, nothing to do
+        if (!troops.containsKey(unit.getId())) {
+            return false;
+        }
+
         // Remove the unit if we are carrying it.
         boolean retval = false;
-        float unloadWeight = 0;
+        double unloadWeight = 0;
+
         if (unit != null) {
             unloadWeight = troops.get(unit.getId());
         }
@@ -177,10 +187,12 @@ public final class TroopSpace implements Transporter {
      *
      * @return A <code>String</code> meant for a human.
      */
+    @Override
     public String getUnusedString() {
         return "Troops - " + currentSpace + " tons";
     }
 
+    @Override
     public double getUnused(){
         return currentSpace;
     }
@@ -198,6 +210,7 @@ public final class TroopSpace implements Transporter {
      * @return <code>true</code> if a transported unit is in the way,
      *         <code>false</code> if the weapon can fire.
      */
+    @Override
     public boolean isWeaponBlockedAt(int loc, boolean isRear) {
         return false;
     }
@@ -218,16 +231,19 @@ public final class TroopSpace implements Transporter {
      *         location. This value will be <code>null</code> if no unit is
      *         transported on the outside at that location.
      */
+    @Override
     public Entity getExteriorUnitAt(int loc, boolean isRear) {
         return null;
     }
 
+    @Override
     public final List<Entity> getExternalUnits() {
         ArrayList<Entity> rv = new ArrayList<Entity>(1);
         return rv;
     }
 
-    public int getCargoMpReduction() {
+    @Override
+    public int getCargoMpReduction(Entity carrier) {
         return 0;
     }
 
@@ -236,13 +252,19 @@ public final class TroopSpace implements Transporter {
         return "troopspace:" + totalSpace;
     }
 
+    @Override
     public void setGame(IGame game) {
         this.game = game;
     }
     
+    @Override
     public void resetTransporter() {
         troops = new HashMap<>();
         currentSpace = totalSpace;
     }
     
+    @Override
+    public int hardpointCost() {
+        return 0;
+    }
 } // End package class TroopSpace implements Transporter

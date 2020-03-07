@@ -24,6 +24,10 @@ MIK-OE
 3075
 </year>
 
+<originalBuildYear>
+3075
+</originalBuildYear>
+
 <type>
 IS Level 2
 </type>
@@ -31,6 +35,9 @@ IS Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 5
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+8
+</omnipodheatsinks>
 
 <fuel>
 400
@@ -68,29 +79,35 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-ISAntiMissileSystem
-ISAMS Ammo
-ISPlasmaRifle
-ISPlasmaRifle
-ISPlasmaRifleAmmo
-ISPlasmaRifleAmmo
-ISPlasmaRifleAmmo
-ISPlasmaRifleAmmo
+ISAntiMissileSystem:OMNI
+ISPlasmaRifle:OMNI
+ISPlasmaRifle:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-ISERMediumLaser
-ISSNPPC
+ISERMediumLaser:OMNI
+ISSNPPC:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-ISERMediumLaser
-ISSNPPC
+ISERMediumLaser:OMNI
+ISSNPPC:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-ISGuardianECMSuite
+ISGuardianECMSuite:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+ISAMS Ammo:OMNI
+ISPlasmaRifleAmmo:OMNI
+ISPlasmaRifleAmmo:OMNI
+ISPlasmaRifleAmmo:OMNI
+ISPlasmaRifleAmmo:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3067 - Jihad

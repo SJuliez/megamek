@@ -24,6 +24,10 @@ B
 3032
 </year>
 
+<originalBuildYear>
+3032
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 5
@@ -76,34 +83,39 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLGaussRifle
-Clan Gauss Ammo
-Clan Gauss Ammo
-Clan Gauss Ammo
-CLERMediumLaser
-CLERMediumLaser
+CLGaussRifle:OMNI
+CLERMediumLaser:OMNI
+CLERMediumLaser:OMNI
 CLCASE
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLERPPC
-CLLRM20
-CLArtemisIV
-Clan Ammo LRM-20 (Clan) Artemis-capable
-CLCASE
+CLERPPC:OMNI
+CLLRM20:OMNI
+CLArtemisIV:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLERPPC
-CLLRM20
-CLArtemisIV
-Clan Ammo LRM-20 (Clan) Artemis-capable
-CLCASE
+CLERPPC:OMNI
+CLLRM20:OMNI
+CLArtemisIV:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLERSmallLaser
+CLERSmallLaser:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Gauss Ammo:OMNI
+Clan Gauss Ammo:OMNI
+Clan Gauss Ammo:OMNI
+Clan Ammo LRM-20 (Clan) Artemis-capable:OMNI
+Clan Ammo LRM-20 (Clan) Artemis-capable:OMNI
+CLCASE
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Succession Wars

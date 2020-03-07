@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
+import megamek.common.options.OptionsConstants;
 import megamek.server.SmokeCloud;
 
 
@@ -121,7 +122,7 @@ public class ComputeECM {
      * along the path from a to b
      */
     public static int getSmallCraftECM(Entity ae, Coords a, Coords b) {
-        if (!ae.getGame().getBoard().inSpace()) {
+        if (!ae.isSpaceborne()) {
             // only matters in space
             return 0;
         }
@@ -144,17 +145,17 @@ public class ComputeECM {
             if (ent.isEnemyOf(ae) && ent.hasActiveECM() && (entPos != null)
                 && !ent.isLargeCraft()) {
                 vEnemyECMCoords.addElement(entPos);
-                vEnemyECMRanges.addElement(new Integer(ent.getECMRange()));
+                vEnemyECMRanges.addElement(Integer.valueOf(ent.getECMRange()));
             }
             if (!ent.isEnemyOf(ae) && ent.hasActiveECCM() && (entPos != null)
                 && !ent.isLargeCraft()) {
                 vFriendlyECCMCoords.addElement(entPos);
-                vFriendlyECCMRanges.addElement(new Integer(ent.getECMRange()));
+                vFriendlyECCMRanges.addElement(Integer.valueOf(ent.getECMRange()));
             }
             if (!ent.isEnemyOf(ae) && ent.hasBAP(false) && (entPos != null)) {
                 vFriendlyBAPCoords.addElement(entPos);
-                vFriendlyBAPRanges.addElement(new Integer(ent.getBAPRange()));
-                vFriendlyBAPFacings.addElement(new Integer(ent.getFacing()));
+                vFriendlyBAPRanges.addElement(Integer.valueOf(ent.getBAPRange()));
+                vFriendlyBAPFacings.addElement(Integer.valueOf(ent.getFacing()));
             }
     
             // TODO: do docked dropships give ECM benefit?
@@ -244,7 +245,7 @@ public class ComputeECM {
      * along the path from a to b
      */
     public static int getLargeCraftECM(Entity ae, Coords a, Coords b) {
-        if (!ae.getGame().getBoard().inSpace()) {
+        if (!ae.isSpaceborne()) {
             // only matters in space
             return 0;
         }
@@ -267,17 +268,17 @@ public class ComputeECM {
             if (ent.isEnemyOf(ae) && ent.hasActiveECM() && (entPos != null)
                 && ent.isLargeCraft()) {
                 vEnemyECMCoords.addElement(entPos);
-                vEnemyECMRanges.addElement(new Integer(ent.getECMRange()));
+                vEnemyECMRanges.addElement(Integer.valueOf(ent.getECMRange()));
             }
             if (!ent.isEnemyOf(ae) && ent.hasActiveECCM() && (entPos != null)
                 && !ent.isLargeCraft()) {
                 vFriendlyECCMCoords.addElement(entPos);
-                vFriendlyECCMRanges.addElement(new Integer(ent.getECMRange()));
+                vFriendlyECCMRanges.addElement(Integer.valueOf(ent.getECMRange()));
             }
             if (!ent.isEnemyOf(ae) && ent.hasBAP(false) && (entPos != null)) {
                 vFriendlyBAPCoords.addElement(entPos);
-                vFriendlyBAPRanges.addElement(new Integer(ent.getBAPRange()));
-                vFriendlyBAPFacings.addElement(new Integer(ent.getFacing()));
+                vFriendlyBAPRanges.addElement(Integer.valueOf(ent.getBAPRange()));
+                vFriendlyBAPFacings.addElement(Integer.valueOf(ent.getFacing()));
     
             }
             // TODO: do docked dropships give ECM benefit?
@@ -411,7 +412,7 @@ public class ComputeECM {
         
         
         // If ECCM is on, we may have to remove some ECM that is negated
-        if (game.getOptions().booleanOption("tacops_eccm") 
+        if (game.getOptions().booleanOption(OptionsConstants.ADVANCED_TACOPS_ECCM) 
                 && allEccmInfo.size() > 0) {
             Iterator<ECMInfo> ecmIterator = allEcmInfo.iterator();
             Iterator<ECMInfo> eccmIterator;
@@ -483,7 +484,7 @@ public class ComputeECM {
             ecmComparator = new ECMInfo.ECCMComparator();
         }
         
-        if (ae.getGame().getBoard().inSpace()) {
+        if (ae.isSpaceborne()) {
             // normal ECM effects don't apply in space
             return null;
         }

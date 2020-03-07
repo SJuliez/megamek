@@ -24,6 +24,10 @@ Tyre
 2907
 </year>
 
+<originalBuildYear>
+2907
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 5
@@ -56,10 +63,6 @@ Aerodyne
 0
 </engine_type>
 
-<omni>
-1
-</omni>
-
 <armor>
 35
 30
@@ -69,13 +72,9 @@ Aerodyne
 
 <Nose Equipment>
 CLUltraAC10
-Clan Ultra AC/10 Ammo
-Clan Ultra AC/10 Ammo
-Clan Ultra AC/10 Ammo
 CLMediumPulseLaser
 CLMediumPulseLaser
 CLMediumPulseLaser
-CLCASE
 </Nose Equipment>
 
 <Left Wing Equipment>
@@ -91,6 +90,16 @@ CLMediumPulseLaser
 <Aft Equipment>
 CLERSmallLaser
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Ultra AC/10 Ammo
+Clan Ultra AC/10 Ammo
+Clan Ultra AC/10 Ammo
+CLCASE
+</Fuselage Equipment>
 
 <source>
 TRO 3067 - Succession Wars

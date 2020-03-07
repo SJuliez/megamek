@@ -30,6 +30,8 @@ import megamek.common.TargetRoll;
 import megamek.common.ToHitData;
 import megamek.common.WeaponType;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.weapons.ppc.CLPlasmaCannon;
+import megamek.common.weapons.ppc.ISPlasmaRifle;
 import megamek.server.Server;
 
 public class PlasmaBayWeaponHandler extends AmmoBayWeaponHandler {
@@ -109,37 +111,6 @@ public class PlasmaBayWeaponHandler extends AmmoBayWeaponHandler {
                 vPhaseReport.addElement(r);                
             }
         }
-    }
-
-    /**
-     * @return a <code>boolean</code> value indicating wether or not this attack
-     *         needs further calculating, like a missed shot hitting a building,
-     *         or an AMS only shooting down some missiles.
-     */
-    @Override
-    protected boolean handleSpecialMiss(Entity entityTarget,
-            boolean targetInBuilding, Building bldg, Vector<Report> vPhaseReport) {
-        // Shots that miss an entity can set fires.
-        // Buildings can't be accidentally ignited,
-        // and some weapons can't ignite fires.
-        if ((entityTarget != null)
-                && ((bldg == null) && (wtype.getFireTN() != TargetRoll.IMPOSSIBLE))) {
-            server.tryIgniteHex(target.getPosition(), subjectId, true, false,
-                    new TargetRoll(wtype.getFireTN(), wtype.getName()), 3,
-                    vPhaseReport);
-        }
-
-        // shots that miss an entity can also potential cause explosions in a
-        // heavy industrial hex
-        server.checkExplodeIndustrialZone(target.getPosition(), vPhaseReport);
-
-        // BMRr, pg. 51: "All shots that were aimed at a target inside
-        // a building and miss do full damage to the building instead."
-        if (!targetInBuilding
-                || (toHit.getValue() == TargetRoll.AUTOMATIC_FAIL)) {
-            return false;
-        }
-        return true;
     }
 
     @Override

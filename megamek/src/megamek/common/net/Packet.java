@@ -46,6 +46,7 @@ public class Packet {
     public static final int COMMAND_ENTITY_AMMOCHANGE = 160;
     public static final int COMMAND_ENTITY_SENSORCHANGE = 165;
     public static final int COMMAND_ENTITY_SINKSCHANGE = 166;
+    public static final int COMMAND_ENTITY_ACTIVATE_HIDDEN = 167;
     public static final int COMMAND_ENTITY_SYSTEMMODECHANGE = 170;
 
     public static final int COMMAND_ENTITY_VISIBILITY_INDICATOR = 180;
@@ -57,6 +58,7 @@ public class Packet {
     public static final int COMMAND_BLDG_REMOVE = 210;
     public static final int COMMAND_BLDG_UPDATE = 220;
     public static final int COMMAND_BLDG_COLLAPSE = 230;
+    public static final int COMMAND_BLDG_EXPLODE = 240;
 
     public static final int COMMAND_PHASE_CHANGE = 240;
     public static final int COMMAND_TURN = 250;
@@ -124,6 +126,9 @@ public class Packet {
     public static final int COMMAND_CFR_EDGE_PROMPT = 710;
     public static final int COMMAND_CFR_AMS_ASSIGN = 715;
     public static final int COMMAND_CFR_APDS_ASSIGN = 716;
+    public static final int COMMAND_CFR_HIDDEN_PBS = 717;
+    public static final int COMMAND_CFR_TELEGUIDED_TARGET = 718;
+    public static final int COMMAND_CFR_TAG_TARGET = 719;
     
     public static final int COMMAND_GAME_VICTORY_EVENT = 800;
 

@@ -20,7 +20,6 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Image;
 import java.awt.Polygon;
-import java.io.File;
 import java.util.Vector;
 
 import javax.swing.JComponent;
@@ -28,8 +27,10 @@ import javax.swing.JComponent;
 import megamek.client.ui.swing.GUIPreferences;
 import megamek.client.ui.swing.unitDisplay.UnitDisplay;
 import megamek.common.Configuration;
+import megamek.common.DockingCollar;
 import megamek.common.Entity;
 import megamek.common.Jumpship;
+import megamek.common.util.MegaMekFile;
 
 /**
  * Class which keeps set of all areas required to 
@@ -39,8 +40,8 @@ public class JumpshipMapSet implements DisplayMapSet{
 
     private JComponent comp;
     private PMSimplePolygonArea[] areas = new PMSimplePolygonArea[7];
-    private PMSimpleLabel[] labels = new PMSimpleLabel[13];
-    private PMValueLabel[] vLabels = new PMValueLabel[13];
+    private PMSimpleLabel[] labels = new PMSimpleLabel[17];
+    private PMValueLabel[] vLabels = new PMValueLabel[17];
     private Vector<BackGroundDrawer>  bgDrawers = new Vector<BackGroundDrawer>();
     private PMAreasGroup content = new PMAreasGroup();
     
@@ -114,12 +115,37 @@ public class JumpshipMapSet implements DisplayMapSet{
         WidgetUtils.setAreaColor(areas[6], vLabels[6], (double)a/(double)a0);
 
         //now for the vitals
+        //need some extra info for docking collars
+        int damagedCollars = 0;
+        //We want a different string for this one, in case there are 25 collars...
+        String collarDamageString = "";
+        for (DockingCollar collar : t.getDockingCollars()) {
+            if (collar.isDamaged()) {
+                damagedCollars++;
+            }
+        }
+        if (damagedCollars > 0) {
+            collarDamageString = String.format("X (%d)", damagedCollars);
+        }
+        //We want a different string for these too
+        String kfDamageString = "";
+        if (t.getKFDriveDamage() > 0) {
+            kfDamageString = String.format("%d / %d", t.getKFIntegrity(), t.getOKFIntegrity());
+        }
+        String sailDamageString = "";
+        if (t.getSailIntegrity() < t.getOSailIntegrity()) {
+            sailDamageString = String.format("%d / %d", t.getSailIntegrity(), t.getOSailIntegrity());
+        }
         vLabels[7].setValue(getCriticalHitTally(t.getAvionicsHits(),3));
         vLabels[8].setValue(getCriticalHitTally(t.getCICHits(),3));
         vLabels[9].setValue(getCriticalHitTally(t.getEngineHits(),t.getMaxEngineHits()));
         vLabels[10].setValue(getCriticalHitTally(t.getSensorHits(),3));
         vLabels[11].setValue(getCriticalHitTally(t.getLeftThrustHits(),3));
         vLabels[12].setValue(getCriticalHitTally(t.getRightThrustHits(),3));
+        vLabels[13].setValue(collarDamageString);
+        vLabels[14].setValue(getCriticalHitTally(t.getTotalDamagedGravDeck(),t.getTotalGravDeck()));
+        vLabels[15].setValue(kfDamageString);
+        vLabels[16].setValue(sailDamageString);
 
     }
 
@@ -146,6 +172,14 @@ public class JumpshipMapSet implements DisplayMapSet{
         content.addArea(vLabels[11]);
         content.addArea(labels[12]);
         content.addArea(vLabels[12]);
+        content.addArea(labels[13]);
+        content.addArea(vLabels[13]);
+        content.addArea(labels[14]);
+        content.addArea(vLabels[14]);
+        content.addArea(labels[15]);
+        content.addArea(vLabels[15]);
+        content.addArea(labels[16]);
+        content.addArea(vLabels[16]);
 
     }
 
@@ -186,8 +220,12 @@ public class JumpshipMapSet implements DisplayMapSet{
         labels[10] = WidgetUtils.createLabel("Sensors:", fm, Color.white,10,255); //$NON-NLS-1$
         labels[11] = WidgetUtils.createLabel("L Thrust:", fm, Color.white,90,210); //$NON-NLS-1$
         labels[12] = WidgetUtils.createLabel("R Thrust:", fm, Color.white,90,225); //$NON-NLS-1$
+        labels[13] = WidgetUtils.createLabel("Collars:", fm, Color.white,90,240); //$NON-NLS-1$
+        labels[14] = WidgetUtils.createLabel("Grav Decks:", fm, Color.white,90,255); //$NON-NLS-1$
+        labels[15] = WidgetUtils.createLabel("K-F Drive:", fm, Color.white,10,270); //$NON-NLS-1$
+        labels[16] = WidgetUtils.createLabel("Jump Sail:", fm, Color.white,10,285); //$NON-NLS-1$
 
-        //Value labels for all parts of mek
+        //Value labels for all parts of the ship
         //front
         fm =  comp.getFontMetrics(FONT_VALUE);   
         vLabels[Jumpship.LOC_NOSE] = WidgetUtils.createValueLabel(50, 35, "", fm); //$NON-NLS-1$
@@ -206,69 +244,85 @@ public class JumpshipMapSet implements DisplayMapSet{
         vLabels[10] = WidgetUtils.createValueLabel(40, 255, "", fm); //$NON-NLS-1$
         vLabels[11] = WidgetUtils.createValueLabel(130, 210, "", fm); //$NON-NLS-1$
         vLabels[12] = WidgetUtils.createValueLabel(130, 225, "", fm); //$NON-NLS-1$
-
+        vLabels[13] = WidgetUtils.createValueLabel(130, 240, "", fm); //$NON-NLS-1$
+        vLabels[14] = WidgetUtils.createValueLabel(130, 255, "", fm); //$NON-NLS-1$
+        vLabels[15] = WidgetUtils.createValueLabel(60, 270, "", fm); //$NON-NLS-1$
+        vLabels[16] = WidgetUtils.createValueLabel(60, 285, "", fm); //$NON-NLS-1$
     }
 
-    private void setBackGround(){
-        Image tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "tile.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile,comp);
+    private void setBackGround() {
+        UnitDisplaySkinSpecification udSpec = SkinXMLHandler
+                .getUnitDisplaySkin();
+
+        Image tile = comp.getToolkit()
+                .getImage(
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getBackgroundTile()).toString());
+        PMUtil.setImage(tile, comp);
         int b = BackGroundDrawer.TILING_BOTH;
-        bgDrawers.addElement(new BackGroundDrawer (tile,b));
+        bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_HORIZONTAL | 
-        BackGroundDrawer.VALIGN_TOP;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile,comp);
-        bgDrawers.addElement(new BackGroundDrawer (tile,b));                
+        b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_TOP;
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLine())
+                        .toString());
+        PMUtil.setImage(tile, comp);
+        bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_HORIZONTAL | 
-        BackGroundDrawer.VALIGN_BOTTOM;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile,comp);
-        bgDrawers.addElement(new BackGroundDrawer (tile,b));
+        b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_BOTTOM;
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomLine())
+                        .toString());
+        PMUtil.setImage(tile, comp);
+        bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_VERTICAL | 
-        BackGroundDrawer.HALIGN_LEFT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile,comp);
-        bgDrawers.addElement(new BackGroundDrawer (tile,b));
+        b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_LEFT;
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getLeftLine())
+                        .toString());
+        PMUtil.setImage(tile, comp);
+        bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_VERTICAL | 
-        BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile,comp);
-        bgDrawers.addElement(new BackGroundDrawer (tile,b));
+        b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_RIGHT;
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getRightLine())
+                        .toString());
+        PMUtil.setImage(tile, comp);
+        bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
+                | BackGroundDrawer.HALIGN_LEFT;
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLeftCorner())
+                        .toString());
+        PMUtil.setImage(tile, comp);
+        bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.NO_TILING | 
-        BackGroundDrawer.VALIGN_TOP |
-        BackGroundDrawer.HALIGN_LEFT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "tl_corner.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile,comp);
-        bgDrawers.addElement(new BackGroundDrawer (tile,b));
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
+                | BackGroundDrawer.HALIGN_LEFT;
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec
+                        .getBottomLeftCorner()).toString());
+        PMUtil.setImage(tile, comp);
+        bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.NO_TILING | 
-        BackGroundDrawer.VALIGN_BOTTOM |
-        BackGroundDrawer.HALIGN_LEFT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "bl_corner.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile,comp);
-        bgDrawers.addElement(new BackGroundDrawer (tile,b));
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
+                | BackGroundDrawer.HALIGN_RIGHT;
+        tile = comp.getToolkit()
+                .getImage(
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getTopRightCorner()).toString());
+        PMUtil.setImage(tile, comp);
+        bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.NO_TILING | 
-        BackGroundDrawer.VALIGN_TOP |
-        BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "tr_corner.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile,comp);
-        bgDrawers.addElement(new BackGroundDrawer (tile,b));
-
-        b = BackGroundDrawer.NO_TILING | 
-        BackGroundDrawer.VALIGN_BOTTOM |
-        BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "br_corner.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile,comp);
-        bgDrawers.addElement(new BackGroundDrawer (tile,b));
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
+                | BackGroundDrawer.HALIGN_RIGHT;
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec
+                        .getBottomRightCorner()).toString());
+        PMUtil.setImage(tile, comp);
+        bgDrawers.addElement(new BackGroundDrawer(tile, b));
     }
-
     private void translateAreas(){
 
     }

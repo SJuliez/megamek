@@ -24,6 +24,10 @@ E
 3075
 </year>
 
+<originalBuildYear>
+3075
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 7
@@ -76,33 +83,40 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLGaussRifle
-Clan Gauss Ammo
-Clan Gauss Ammo
-CLPlasmaCannon
-CLPlasmaCannonAmmo
-Clan Heavy Machine Gun Ammo - Full
+CLGaussRifle:OMNI
+CLPlasmaCannon:OMNI
 CLCASE
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLHeavyMG
-CLHeavyMG
-CLHeavyMG
-Clan Heavy Machine Gun Array
+CLHeavyMG:OMNI
+CLHeavyMG:OMNI
+CLHeavyMG:OMNI
+Clan Heavy Machine Gun Array:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLHeavyMG
-CLHeavyMG
-CLHeavyMG
-Clan Heavy Machine Gun Array
+CLHeavyMG:OMNI
+CLHeavyMG:OMNI
+CLHeavyMG:OMNI
+Clan Heavy Machine Gun Array:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLECMSuite
-CLERSmallLaser
+CLECMSuite:OMNI
+CLERSmallLaser:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Gauss Ammo:OMNI
+Clan Gauss Ammo:OMNI
+CLPlasmaCannonAmmo:OMNI
+Clan Heavy Machine Gun Ammo - Full:OMNI
+CLCASE
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Jihad

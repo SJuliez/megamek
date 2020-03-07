@@ -24,6 +24,10 @@ S-HA-OC Comminus
 3072
 </year>
 
+<originalBuildYear>
+3072
+</originalBuildYear>
+
 <type>
 IS Level 3
 </type>
@@ -31,6 +35,9 @@ IS Level 3
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 9
@@ -48,6 +55,10 @@ Aerodyne
 1
 </sink_type>
 
+<omnipodheatsinks>
+2
+</omnipodheatsinks>
+
 <fuel>
 400
 </fuel>
@@ -64,6 +75,10 @@ Aerodyne
 5
 </armor_tech>
 
+<omni>
+1
+</omni>
+
 <armor>
 40
 28
@@ -72,24 +87,30 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-Thunderbolt 10
-IS Ammo Thunderbolt-10
-IS Ammo Thunderbolt-10
-ISCASE
+Thunderbolt 10:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-ISERMediumLaser
-ISERMediumLaser
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-ISERMediumLaser
-ISERMediumLaser
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+IS Ammo Thunderbolt-10:OMNI
+IS Ammo Thunderbolt-10:OMNI
+ISCASE:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3075 - Jihad

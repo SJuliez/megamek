@@ -1,16 +1,18 @@
 /*
- * MegaMek - Copyright (C) 2000-2002 Ben Mazur (bmazur@sev.org)
- *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License as published by the Free
- *  Software Foundation; either version 2 of the License, or (at your option)
- *  any later version.
- *
- *  This program is distributed in the hope that it will be useful, but
- *  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- *  for more details.
- */
+* MegaMek -
+* Copyright (C) 2000-2002 Ben Mazur (bmazur@sev.org)
+* Copyright (C) 2018 The MegaMek Team
+*
+* This program is free software; you can redistribute it and/or modify it under
+* the terms of the GNU General Public License as published by the Free Software
+* Foundation; either version 2 of the License, or (at your option) any later
+* version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+* details.
+*/
 
 package megamek.common;
 
@@ -18,7 +20,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Vector;
 
 /**
@@ -102,14 +106,37 @@ public class Building implements Serializable {
         private static final long serialVersionUID = -6655782801564155668L;
         public int damage;
         public int playerId;
+        public Coords pos;
+        /**
+         * A UUID to keep track of the identify of this demolition charge.
+         * Since we could have multiple charges in the same building hex, we
+         * can't track identity based upon owner and damage.  Additionally,
+         * since we pass objects across the network, we need a mechanism to
+         * track identify other than memory address.
+         */
+        public UUID uuid = UUID.randomUUID();
 
-        public DemolitionCharge(int playerId, int damage) {
+        public DemolitionCharge(int playerId, int damage, Coords p) {
             this.damage = damage;
             this.playerId = playerId;
+            this.pos = p;
         }
-    }
 
-    private ArrayList<DemolitionCharge> demolitionCharges = new ArrayList<DemolitionCharge>();
+        @Override
+        public int hashCode() {
+            return uuid.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof DemolitionCharge) {
+                return uuid.equals(((DemolitionCharge)o).uuid);
+            }
+            return false;
+        }
+     }
+
+    private List<DemolitionCharge> demolitionCharges = new ArrayList<>();
 
     // Public and Protected constants, constructors, and methods.
 
@@ -677,7 +704,7 @@ public class Building implements Serializable {
     /**
      * Override <code>Object#equals(Object)</code>.
      *
-     * @param other
+     * @param obj
      *            - the other <code>Object</code> to compare to this
      *            <code>Building</code>.
      * @return <code>true</code> if the other object is the same as this
@@ -691,14 +718,14 @@ public class Building implements Serializable {
         if(this == obj) {
             return true;
         }
-        if((null == obj) || (getClass() != obj.getClass())) {
+        if(!(obj instanceof Building)) {
             return false;
         }
         // True until we're talking about more than one Board per Game.
         final Building other = (Building) obj;
         return (id == other.id);
     }
-    
+
     @Override
     public int hashCode() {
         return id;
@@ -776,9 +803,21 @@ public class Building implements Serializable {
         burning.put(coords, onFire);
     }
 
-    public void addDemolitionCharge(int playerId, int damage) {
-        DemolitionCharge charge = new DemolitionCharge(playerId, damage);
+    public void addDemolitionCharge(int playerId, int damage, Coords pos) {
+        DemolitionCharge charge = new DemolitionCharge(playerId, damage, pos);
         demolitionCharges.add(charge);
+    }
+
+    public void removeDemolitionCharge(DemolitionCharge charge) {
+        demolitionCharges.remove(charge);
+    }
+
+    public List<DemolitionCharge> getDemolitionCharges() {
+        return demolitionCharges;
+    }
+
+    public void setDemolitionCharges(List<DemolitionCharge> charges) {
+        demolitionCharges = charges;
     }
 
     /**
@@ -847,6 +886,44 @@ public class Building implements Serializable {
         // return (int) Math.ceil(getPhaseCF(pos));
         // }
         return (int) Math.ceil(getPhaseCF(pos) / 10.0);
+    }
+
+    /**
+     * Returns the percentage of damage done to the building for attacks against
+     * infantry in the building from other units within the building.  TW pg175.
+     *
+     * @return
+     */
+    public double getInfDmgFromInside() {
+         switch (getType()) {
+            case Building.LIGHT:
+            case Building.MEDIUM:
+                return 0.0;
+            case Building.HEAVY:
+                return 0.5;
+            case Building.HARDENED:
+                return 0.75;
+            default:
+                return 0;
+        }
+    }
+
+    /**
+     * Per page 172 of Total Warfare, this is the fraction of a weapon's damage that
+     * passes through to infantry inside the building.
+     * @return Damage fraction.
+     */
+    public float getDamageReductionFromOutside() {
+        switch (getType()) {
+            case Building.LIGHT:
+                return 0.75f;
+            case Building.MEDIUM:
+                return 0.5f;
+            case Building.HEAVY:
+                return 0.25f;
+            default:
+                return 0f;
+        }
     }
 
     public BasementType getBasement(Coords coords) {

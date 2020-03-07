@@ -24,6 +24,10 @@ S-HA-O Invictus
 3072
 </year>
 
+<originalBuildYear>
+3072
+</originalBuildYear>
+
 <type>
 IS Level 3
 </type>
@@ -31,6 +35,9 @@ IS Level 3
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 9
@@ -64,6 +71,10 @@ Aerodyne
 5
 </armor_tech>
 
+<omni>
+1
+</omni>
+
 <armor>
 40
 28
@@ -72,10 +83,10 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-Heavy PPC
-ISMediumPulseLaser
-ISMediumPulseLaser
-ISGuardianECMSuite
+Heavy PPC:OMNI
+ISMediumPulseLaser:OMNI
+ISMediumPulseLaser:OMNI
+ISGuardianECMSuite:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
@@ -86,6 +97,12 @@ ISGuardianECMSuite
 
 <Aft Equipment>
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+</Fuselage Equipment>
 
 <source>
 TRO 3075 - Jihad

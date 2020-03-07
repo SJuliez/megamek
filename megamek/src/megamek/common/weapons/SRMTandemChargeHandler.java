@@ -93,6 +93,12 @@ public class SRMTandemChargeHandler extends SRMHandler {
         // Resolve damage normally.
         nDamage = nDamPerHit * Math.min(nCluster, hits);
 
+        // Report calcDmgPerHitReports here
+        if (calcDmgPerHitReport.size() > 0) {
+            vPhaseReport.addAll(calcDmgPerHitReport);
+        }
+
+
         // A building may be damaged, even if the squad is not.
         if (bldgAbsorbs > 0) {
             int toBldg = Math.min(bldgAbsorbs, nDamage);
@@ -104,7 +110,25 @@ public class SRMTandemChargeHandler extends SRMHandler {
                 report.subject = subjectId;
             }
             vPhaseReport.addAll(buildingReport);
+        // Units on same level, report building absorbs no damage
+        } else if (bldgAbsorbs == Integer.MIN_VALUE) {
+            Report.addNewline(vPhaseReport);
+            Report r = new Report(9976);
+            r.subject = ae.getId();
+            r.indent(2);
+            vPhaseReport.add(r);
+        // Cases where absorbed damage doesn't reduce incoming damage
+        } else if (bldgAbsorbs < 0) {
+            int toBldg = -bldgAbsorbs;
+            Report.addNewline(vPhaseReport);
+            Vector<Report> buildingReport = server.damageBuilding(bldg, toBldg,
+                    entityTarget.getPosition());
+            for (Report report : buildingReport) {
+                report.subject = subjectId;
+            }
+            vPhaseReport.addAll(buildingReport);
         }
+
 
         nDamage = checkTerrain(nDamage, entityTarget, vPhaseReport);
 
@@ -127,6 +151,11 @@ public class SRMTandemChargeHandler extends SRMHandler {
             if (bGlancing) {
                 hit.makeGlancingBlow();
             }
+            
+            if(bLowProfileGlancing) {
+                hit.makeGlancingBlow();
+            }
+            
             if (bDirect
                     && (!(target instanceof Infantry) || (target instanceof BattleArmor))) {
                 hit.makeDirectBlow(toHit.getMoS() / 3);
@@ -141,8 +170,9 @@ public class SRMTandemChargeHandler extends SRMHandler {
                 }
             } else if ((target instanceof Tank) || (target instanceof Mech)) {
 
-                if (bGlancing) {
-                    hit.setSpecCritmod(-4);
+                if (bGlancing || bLowProfileGlancing) {
+                    // this will be either -4 or -8
+                    hit.setSpecCritmod(-2 * (int) getTotalGlancingBlowFactor());
                 } else if (bDirect) {
                     hit.setSpecCritmod((toHit.getMoS() / 3) - 2);
                 } else {
@@ -165,14 +195,15 @@ public class SRMTandemChargeHandler extends SRMHandler {
      */
     @Override
     protected int calcDamagePerHit() {
-        if ((target instanceof Infantry) && !(target instanceof BattleArmor)) {
+        if (target.isConventionalInfantry()) {
             double toReturn = Compute.directBlowInfantryDamage(
                     wtype.getRackSize(), bDirect ? toHit.getMoS() / 3 : 0,
                     wtype.getInfantryDamageClass(),
-                    ((Infantry) target).isMechanized());
-            if (bGlancing) {
-                toReturn /= 2;
-            }
+                    ((Infantry) target).isMechanized(),
+                    toHit.getThruBldg() != null, ae.getId(), calcDmgPerHitReport);
+
+            toReturn = applyGlancingBlowModifier(toReturn, true);
+
             return (int) Math.floor(toReturn);
         }
         return 2;

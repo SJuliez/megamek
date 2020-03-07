@@ -25,7 +25,7 @@ Chi-Ha Infantry Combat Vehicle
 </year>
 
 <type>
-IS Level 5
+IS Level 4
 </type>
 
 <motion_type>
@@ -43,6 +43,10 @@ troopspace:3.0
 <engine_type>
 1
 </engine_type>
+
+<fuel>
+1
+</fuel>
 
 <armor>
 11

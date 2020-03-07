@@ -25,6 +25,7 @@ import megamek.common.QuadMech;
 import megamek.common.TargetRoll;
 import megamek.common.Targetable;
 import megamek.common.ToHitData;
+import megamek.common.options.OptionsConstants;
 
 /**
  * The attacker kicks the target.
@@ -57,7 +58,7 @@ public class TripAttackAction extends PhysicalAttackAction {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "You can't attack from a null entity!");
         }
 
-        if (!game.getOptions().booleanOption("tacops_trip_attack")) {
+        if (!game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_TRIP_ATTACK)) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "no Trip attack");
         }
 
@@ -70,7 +71,7 @@ public class TripAttackAction extends PhysicalAttackAction {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "impossible");
         }
 
-        if (!game.getOptions().booleanOption("friendly_fire")) {
+        if (!game.getOptions().booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE)) {
             // a friendly unit can never be the target of a direct attack.
             if (target.getTargetType() == Targetable.TYPE_ENTITY
                     && (((Entity)target).getOwnerId() == ae.getOwnerId()
@@ -86,6 +87,11 @@ public class TripAttackAction extends PhysicalAttackAction {
         // non-mechs can't trip or be tripped
         if (!(ae instanceof Mech) || !(target instanceof Mech)) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Only mechs can trip other mechs");
+        }
+
+        // LAM AirMechs can only trip when grounded.
+        if (ae.isAirborneVTOLorWIGE()) {
+            return new ToHitData(TargetRoll.IMPOSSIBLE, "Cannot trip while airborne");
         }
 
         // described as a leg hook

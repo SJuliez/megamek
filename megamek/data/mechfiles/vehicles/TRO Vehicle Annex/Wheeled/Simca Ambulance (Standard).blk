@@ -24,6 +24,10 @@ Simca Ambulance
 2607
 </year>
 
+<originalBuildYear>
+2607
+</originalBuildYear>
+
 <type>
 IS Level 2
 </type>
@@ -31,6 +35,11 @@ IS Level 2
 <motion_type>
 Wheeled
 </motion_type>
+
+<transporters>
+cargobay:0.136:1:1
+standardseats:7.0:0
+</transporters>
 
 <cruiseMP>
 7
@@ -46,14 +55,6 @@ Wheeled
 0
 0
 </armor>
-
-<barrating>
-2
-</barrating>
-
-<structural_tech_rating>
-3
-</structural_tech_rating>
 
 <Body Equipment>
 Paramedic Equipment
@@ -74,17 +75,27 @@ Paramedic Equipment
 Paramedic Equipment
 </Rear Equipment>
 
-<transporters>
-cargobay:.136:1
-troopspace:.45
-standardseats:.075:1
-</transporters>
+<barrating>
+2
+</barrating>
+
+<structural_tech_rating>
+3
+</structural_tech_rating>
 
 <source>
-TRO VAr
+TRO VAr - Star League
 </source>
 
 <tonnage>
 2.5
 </tonnage>
+
+<fuel>
+0.042
+</fuel>
+
+<fuelType>
+PETROCHEMICALS
+</fuelType>
 

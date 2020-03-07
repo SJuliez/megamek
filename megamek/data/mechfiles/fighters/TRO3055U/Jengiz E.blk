@@ -24,6 +24,10 @@ E
 3064
 </year>
 
+<originalBuildYear>
+3064
+</originalBuildYear>
+
 <type>
 Clan Level 3
 </type>
@@ -31,6 +35,9 @@ Clan Level 3
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 5
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+16
+</omnipodheatsinks>
 
 <fuel>
 320
@@ -76,28 +87,34 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLECMSuite
-CLERSmallLaser
+CLECMSuite:OMNI
+CLERSmallLaser:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLERLargeLaser
-CLERLargeLaser
-CLERLargeLaser
+CLERLargeLaser:OMNI
+CLERLargeLaser:OMNI
+CLERLargeLaser:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLERLargeLaser
-CLERLargeLaser
-CLERLargeLaser
+CLERLargeLaser:OMNI
+CLERLargeLaser:OMNI
+CLERLargeLaser:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLStreakSRM2 (IOS)
-CLStreakSRM2 (IOS)
-CLStreakSRM2 (IOS)
-CLStreakSRM2 (IOS)
+CLStreakSRM2 (IOS):OMNI
+CLStreakSRM2 (IOS):OMNI
+CLStreakSRM2 (IOS):OMNI
+CLStreakSRM2 (IOS):OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Civil War

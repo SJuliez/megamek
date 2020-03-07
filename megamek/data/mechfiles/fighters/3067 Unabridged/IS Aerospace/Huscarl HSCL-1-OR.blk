@@ -24,6 +24,10 @@ HSCL-1-OR
 3079
 </year>
 
+<originalBuildYear>
+3079
+</originalBuildYear>
+
 <type>
 Mixed (IS Chassis) Experimental
 </type>
@@ -31,6 +35,9 @@ Mixed (IS Chassis) Experimental
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 5
@@ -68,34 +75,40 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLUltraAC20
-Clan Ultra AC/20 Ammo
-Clan Ultra AC/20 Ammo
-Clan Ultra AC/20 Ammo
-Clan Ultra AC/20 Ammo
+CLUltraAC20:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLPlasmaCannon
-CLPlasmaCannonAmmo
-CLLRM20
-CLArtemisIV
-Clan Ammo LRM-20 (Clan) Artemis-capable
-Clan Ammo LRM-20 (Clan) Artemis-capable
+CLPlasmaCannon:OMNI
+CLLRM20:OMNI
+CLArtemisIV:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLPlasmaCannon
-CLPlasmaCannonAmmo
-CLLRM20
-CLArtemisIV
-Clan Ammo LRM-20 (Clan) Artemis-capable
-Clan Ammo LRM-20 (Clan) Artemis-capable
+CLPlasmaCannon:OMNI
+CLLRM20:OMNI
+CLArtemisIV:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLPlasmaCannon
+CLPlasmaCannon:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Ultra AC/20 Ammo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+CLPlasmaCannonAmmo:OMNI
+Clan Ammo LRM-20 (Clan) Artemis-capable:OMNI
+Clan Ammo LRM-20 (Clan) Artemis-capable:OMNI
+CLPlasmaCannonAmmo:OMNI
+Clan Ammo LRM-20 (Clan) Artemis-capable:OMNI
+Clan Ammo LRM-20 (Clan) Artemis-capable:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3067 - Jihad

@@ -44,8 +44,12 @@ public class GunEmplacement extends Tank {
     public GunEmplacement() {
         initializeInternal(IArmorState.ARMOR_NA, LOC_GUNS);
         //give it an engine just to avoid NPE on calls to Tank
-        engine = new Engine(0, Engine.NORMAL_ENGINE, Engine.TANK_ENGINE);
+        setEngine(new Engine(0, Engine.NORMAL_ENGINE, Engine.TANK_ENGINE));
+    }
 
+    @Override
+    public int getUnitType() {
+        return UnitType.GUN_EMPLACEMENT;
     }
 
     public boolean isTurret() {
@@ -222,6 +226,10 @@ public class GunEmplacement extends Tank {
                 if ((mLinker.getType() instanceof MiscType)
                         && mLinker.getType().hasFlag(MiscType.F_ARTEMIS)) {
                     dBV *= 1.2;
+                }
+                if ((mLinker.getType() instanceof MiscType)
+                        && mLinker.getType().hasFlag(MiscType.F_ARTEMIS_PROTO)) {
+                    dBV *= 1.1;
                 }
                 if ((mLinker.getType() instanceof MiscType)
                         && mLinker.getType().hasFlag(MiscType.F_ARTEMIS_V)) {
@@ -423,6 +431,11 @@ public class GunEmplacement extends Tank {
     }
 
     @Override
+    public boolean doomedInExtremeTemp() {
+        return false;
+    }
+
+    @Override
     public boolean doomedInVacuum() {
         return false;
     }
@@ -523,5 +536,22 @@ public class GunEmplacement extends Tank {
     @Override
     public long getEntityType(){
         return Entity.ETYPE_TANK | Entity.ETYPE_GUN_EMPLACEMENT;
+    }
+    
+    @Override
+    public boolean hasEngine() {
+        // TODO: Power generators and energy grid setup
+        return false;
+    }
+    
+    @Override
+    public int getArmorType(int loc) {
+        // this is a hack to get around the fact that gun emplacements don't even have armor
+        return 0;
+    }
+    
+    @Override
+    public boolean hasStealth() {
+        return false;
     }
 }

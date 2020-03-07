@@ -20,9 +20,11 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import megamek.common.util.ImageUtil;
 import megamek.common.util.ItemFile;
 import megamek.common.util.ItemFileFactory;
 
@@ -39,7 +41,7 @@ public class ImageFileFactory implements ItemFileFactory {
     /**
      * Accepted image file extentions
      */
-    private final static String JPG = "JPG", JPEG = "JPEG", GIF = "GIF", PNG = "PNG"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+    private static final String JPG = "JPG", JPEG = "JPEG", GIF = "GIF", PNG = "PNG"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 
     /**
      * Implement the Singleton pattern.
@@ -87,10 +89,10 @@ public class ImageFileFactory implements ItemFileFactory {
                 // Cache the image on first use.
                 if (null == image) {
                     String name = itemFile.getAbsolutePath();
-                    image = Toolkit.getDefaultToolkit().getImage(name);
+                    image = ImageUtil.loadImageFromFile(name);
                 }
                 // Return a copy of the image.
-                return image.getScaledInstance(84, 72, Image.SCALE_FAST);
+                return ImageUtil.getScaledImage(image, 84, 72);
             } // End getItem()
         };
 
@@ -166,7 +168,7 @@ public class ImageFileFactory implements ItemFileFactory {
                 } // End get-image
 
                 // Return a copy of the image.
-                return image.getScaledInstance(84, 72, Image.SCALE_FAST);
+                return ImageUtil.getScaledImage(image, 84, 72);
 
             } // End getItem()
         };
@@ -187,7 +189,7 @@ public class ImageFileFactory implements ItemFileFactory {
 
         // Convert the file name to upper case, and compare it to image
         // file extensions. Yeah, it's a bit of a hack, but whatever.
-        String ucName = name.toUpperCase();
+        String ucName = name.toUpperCase(Locale.ROOT);
         return (ucName.endsWith(JPG) || ucName.endsWith(JPEG)
                 || ucName.endsWith(GIF) || ucName.endsWith(PNG));
     }
@@ -205,7 +207,7 @@ public class ImageFileFactory implements ItemFileFactory {
 
         // Convert the file name to upper case, and compare it to image
         // file extensions. Yeah, it's a bit of a hack, but whatever.
-        String ucName = name.toUpperCase();
+        String ucName = name.toUpperCase(Locale.ROOT);
         return (ucName.endsWith(JPG) || ucName.endsWith(JPEG)
                 || ucName.endsWith(GIF) || ucName.endsWith(PNG));
     }

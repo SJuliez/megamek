@@ -24,6 +24,10 @@ MIK-OD
 3072
 </year>
 
+<originalBuildYear>
+3072
+</originalBuildYear>
+
 <type>
 IS Level 2
 </type>
@@ -31,6 +35,9 @@ IS Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 5
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+2
+</omnipodheatsinks>
 
 <fuel>
 400
@@ -68,31 +79,37 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-ISERLargeLaser
+ISERLargeLaser:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-ISMML9
-ISMML9
-IS Ammo MML-9 LRM
-IS Ammo MML-9 LRM
-IS Ammo MML-9 SRM
-IS Ammo MML-9 SRM
+ISMML9:OMNI
+ISMML9:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-ISMML9
-ISMML9
-IS Ammo MML-9 LRM
-IS Ammo MML-9 LRM
-IS Ammo MML-9 SRM
-IS Ammo MML-9 SRM
+ISMML9:OMNI
+ISMML9:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-ISERMediumLaser
-ISERMediumLaser
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+IS Ammo MML-9 LRM:OMNI
+IS Ammo MML-9 LRM:OMNI
+IS Ammo MML-9 SRM:OMNI
+IS Ammo MML-9 SRM:OMNI
+IS Ammo MML-9 LRM:OMNI
+IS Ammo MML-9 LRM:OMNI
+IS Ammo MML-9 SRM:OMNI
+IS Ammo MML-9 SRM:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3067 - Jihad

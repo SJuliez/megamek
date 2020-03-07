@@ -21,7 +21,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Polygon;
-import java.io.File;
 import java.util.Vector;
 
 import javax.swing.JComponent;
@@ -32,6 +31,8 @@ import megamek.client.ui.swing.unitDisplay.UnitDisplay;
 import megamek.common.Configuration;
 import megamek.common.Entity;
 import megamek.common.Mech;
+import megamek.common.options.OptionsConstants;
+import megamek.common.util.MegaMekFile;
 
 /**
  * Very cumbersome class that handles set of polygonal areas and labels for
@@ -156,7 +157,7 @@ public class QuadMapSet implements DisplayMapSet {
         Mech m = (Mech) e;
         boolean mtHeat = false;
         if (e.getGame() != null
-                && e.getGame().getOptions().booleanOption("tacops_heat")) {
+                && e.getGame().getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_HEAT)) {
             mtHeat = true;
         }
         int a = 1;
@@ -364,11 +365,19 @@ public class QuadMapSet implements DisplayMapSet {
     }
 
     private void setBackGround() {
-        Image tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "tile.gif").toString()); //$NON-NLS-1$
+        UnitDisplaySkinSpecification udSpec = SkinXMLHandler
+                .getUnitDisplaySkin();
+
+        Image tile = comp.getToolkit()
+                .getImage(
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getBackgroundTile()).toString());
         PMUtil.setImage(tile, comp);
         int b = BackGroundDrawer.TILING_BOTH;
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "bg_mech.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getMechOutline())
+                        .toString());
         PMUtil.setImage(tile, comp);
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_CENTER
                 | BackGroundDrawer.HALIGN_CENTER;

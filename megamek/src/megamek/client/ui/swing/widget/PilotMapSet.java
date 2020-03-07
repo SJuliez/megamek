@@ -20,7 +20,6 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -35,10 +34,12 @@ import megamek.common.Entity;
 import megamek.common.Infantry;
 import megamek.common.options.IOption;
 import megamek.common.options.IOptionGroup;
+import megamek.common.options.OptionsConstants;
 import megamek.common.util.DirectoryItems;
+import megamek.common.util.MegaMekFile;
 
 /**
- * Set of elements to reperesent pilot information in MechDisplay
+ * Set of elements to represent pilot information in MechDisplay
  */
 
 public class PilotMapSet implements DisplayMapSet {
@@ -48,29 +49,26 @@ public class PilotMapSet implements DisplayMapSet {
     private JComponent comp;
     private PMAreasGroup content = new PMAreasGroup();
     private PMPicArea portraitArea;
-    private PMSimpleLabel nameL, nickL, pilotL, gunneryL, gunneryLL, gunneryML,
-            gunneryBL, toughBL, initBL, commandBL;
-    private PMSimpleLabel pilotR, gunneryR, gunneryLR, gunneryMR, gunneryBR,
-            toughBR, initBR, commandBR, hitsR;
+    private PMSimpleLabel nameL, nickL, pilotL, gunneryL, gunneryLL, gunneryML, gunneryBL, toughBL, initBL, commandBL;
+    private PMSimpleLabel pilotR, gunneryR, gunneryLR, gunneryMR, gunneryBR, toughBR, initBR, commandBR, hitsR;
     private PMSimpleLabel[] advantagesR;
     private Vector<BackGroundDrawer> bgDrawers = new Vector<BackGroundDrawer>();
-    private static final Font FONT_VALUE = new Font(
-            "SansSerif", Font.PLAIN, GUIPreferences.getInstance().getInt("AdvancedMechDisplayLargeFontSize")); //$NON-NLS-1$
-    private static final Font FONT_TITLE = new Font(
-            "SansSerif", Font.ITALIC, GUIPreferences.getInstance().getInt("AdvancedMechDisplayLargeFontSize")); //$NON-NLS-1$
+    private static final Font FONT_VALUE = new Font("SansSerif", Font.PLAIN, //$NON-NLS-1$
+            GUIPreferences.getInstance().getInt("AdvancedMechDisplayLargeFontSize"));
+    private static final Font FONT_TITLE = new Font("SansSerif", Font.ITALIC, //$NON-NLS-1$
+            GUIPreferences.getInstance().getInt("AdvancedMechDisplayLargeFontSize"));
     private int yCoord = 1;
 
     // keep track of portrait images
     private DirectoryItems portraits;
 
     /**
-     * This constructor have to be called anly from addNotify() method
+     * This constructor have to be called only from addNotify() method
      */
     public PilotMapSet(JComponent c) {
         comp = c;
         try {
-            portraits = new DirectoryItems(Configuration.portraitImagesDir(),
-                    "", //$NON-NLS-1$
+            portraits = new DirectoryItems(Configuration.portraitImagesDir(), "", //$NON-NLS-1$
                     ImageFileFactory.getInstance());
         } catch (Exception e) {
             portraits = null;
@@ -91,19 +89,16 @@ public class PilotMapSet implements DisplayMapSet {
     }
 
     private void setAreas() {
-        portraitArea = new PMPicArea(new BufferedImage(72, 72,
-                BufferedImage.TYPE_BYTE_INDEXED));
+        portraitArea = new PMPicArea(new BufferedImage(72, 72, BufferedImage.TYPE_BYTE_INDEXED));
         content.addArea(portraitArea);
         yCoord = 6;
         FontMetrics fm = comp.getFontMetrics(FONT_TITLE);
-        nameL = createLabel(
-                Messages.getString("GeneralInfoMapSet.LocOstLCT"), fm, 0, getYCoord()); //$NON-NLS-1$
+        nameL = createLabel(Messages.getString("GeneralInfoMapSet.LocOstLCT"), fm, 0, getYCoord()); //$NON-NLS-1$
         nameL.setColor(Color.yellow);
         content.addArea(nameL);
 
         fm = comp.getFontMetrics(FONT_VALUE);
-        nickL = createLabel(
-                Messages.getString("GeneralInfoMapSet.LocOstLCT"), fm, 0, getNewYCoord()); //$NON-NLS-1$
+        nickL = createLabel(Messages.getString("GeneralInfoMapSet.LocOstLCT"), fm, 0, getNewYCoord()); //$NON-NLS-1$
         content.addArea(nickL);
 
         hitsR = createLabel(STAR3, fm, 0, getNewYCoord());
@@ -111,69 +106,51 @@ public class PilotMapSet implements DisplayMapSet {
         content.addArea(hitsR);
         getNewYCoord();
 
-        pilotL = createLabel(
-                Messages.getString("PilotMapSet.pilotLAntiMech"), fm, 0, getNewYCoord()); //$NON-NLS-1$
+        pilotL = createLabel(Messages.getString("PilotMapSet.pilotLAntiMech"), fm, 0, getNewYCoord()); //$NON-NLS-1$
         content.addArea(pilotL);
         pilotR = createLabel(STAR3, fm, pilotL.getSize().width + 5, getYCoord());
         content.addArea(pilotR);
 
-        initBL = createLabel(
-                Messages.getString("PilotMapSet.initBL"), fm, pilotL.getSize().width + 50, getYCoord()); //$NON-NLS-1$
+        initBL = createLabel(Messages.getString("PilotMapSet.initBL"), fm, pilotL.getSize().width + 50, getYCoord()); //$NON-NLS-1$
         content.addArea(initBL);
-        initBR = createLabel(STAR3, fm,
-                pilotL.getSize().width + 50 + initBL.getSize().width + 15,
-                getYCoord());
+        initBR = createLabel(STAR3, fm, pilotL.getSize().width + 50 + initBL.getSize().width + 25, getYCoord());
         content.addArea(initBR);
 
-        gunneryL = createLabel(
-                Messages.getString("PilotMapSet.gunneryL"), fm, 0, getNewYCoord()); //$NON-NLS-1$
+        gunneryL = createLabel(Messages.getString("PilotMapSet.gunneryL"), fm, 0, getNewYCoord()); //$NON-NLS-1$
         content.addArea(gunneryL);
-        gunneryR = createLabel(STAR3, fm, pilotL.getSize().width + 5,
-                getYCoord());
+        gunneryR = createLabel(STAR3, fm, pilotL.getSize().width + 5, getYCoord());
         content.addArea(gunneryR);
 
-        commandBL = createLabel(
-                Messages.getString("PilotMapSet.commandBL"), fm, pilotL.getSize().width + 50, getYCoord()); //$NON-NLS-1$
-        content.addArea(commandBL);
-        commandBR = createLabel(STAR3, fm,
-                pilotL.getSize().width + 50 + initBL.getSize().width + 15,
+        commandBL = createLabel(Messages.getString("PilotMapSet.commandBL"), fm, pilotL.getSize().width + 50, //$NON-NLS-1$
                 getYCoord());
+        content.addArea(commandBL);
+        commandBR = createLabel(STAR3, fm, pilotL.getSize().width + 50 + initBL.getSize().width + 25, getYCoord());
         content.addArea(commandBR);
 
-        gunneryLL = createLabel(
-                Messages.getString("PilotMapSet.gunneryLL"), fm, 0, getYCoord()); //$NON-NLS-1$
+        gunneryLL = createLabel(Messages.getString("PilotMapSet.gunneryLL"), fm, 0, getYCoord()); //$NON-NLS-1$
         content.addArea(gunneryLL);
-        gunneryLR = createLabel(STAR3, fm, pilotL.getSize().width + 25,
-                getYCoord());
+        gunneryLR = createLabel(STAR3, fm, pilotL.getSize().width + 25, getYCoord());
         content.addArea(gunneryLR);
 
-        gunneryML = createLabel(
-                Messages.getString("PilotMapSet.gunneryML"), fm, 0, getNewYCoord()); //$NON-NLS-1$
+        gunneryML = createLabel(Messages.getString("PilotMapSet.gunneryML"), fm, 0, getNewYCoord()); //$NON-NLS-1$
         content.addArea(gunneryML);
-        gunneryMR = createLabel(STAR3, fm, pilotL.getSize().width + 25,
-                getYCoord());
+        gunneryMR = createLabel(STAR3, fm, pilotL.getSize().width + 25, getYCoord());
         content.addArea(gunneryMR);
 
-        toughBL = createLabel(
-                Messages.getString("PilotMapSet.toughBL"), fm, pilotL.getSize().width + 50, getYCoord()); //$NON-NLS-1$
+        toughBL = createLabel(Messages.getString("PilotMapSet.toughBL"), fm, pilotL.getSize().width + 50, getYCoord()); //$NON-NLS-1$
         content.addArea(toughBL);
-        toughBR = createLabel(STAR3, fm,
-                pilotL.getSize().width + 50 + initBL.getSize().width + 15,
-                getYCoord());
+        toughBR = createLabel(STAR3, fm, pilotL.getSize().width + 50 + initBL.getSize().width + 25, getYCoord());
         content.addArea(toughBR);
 
-        gunneryBL = createLabel(
-                Messages.getString("PilotMapSet.gunneryBL"), fm, 0, getNewYCoord()); //$NON-NLS-1$
+        gunneryBL = createLabel(Messages.getString("PilotMapSet.gunneryBL"), fm, 0, getNewYCoord()); //$NON-NLS-1$
         content.addArea(gunneryBL);
-        gunneryBR = createLabel(STAR3, fm, pilotL.getSize().width + 25,
-                getYCoord());
+        gunneryBR = createLabel(STAR3, fm, pilotL.getSize().width + 25, getYCoord());
         content.addArea(gunneryBR);
 
         getNewYCoord();
         advantagesR = new PMSimpleLabel[N_ADV];
         for (int i = 0; i < advantagesR.length; i++) {
-            advantagesR[i] = createLabel(new Integer(i).toString(), fm, 10,
-                    getNewYCoord());
+            advantagesR[i] = createLabel(Integer.valueOf(i).toString(), fm, 10, getNewYCoord());
             content.addArea(advantagesR[i]);
         }
         // DO NOT PLACE ANY MORE LABELS BELOW HERE. They will get
@@ -186,94 +163,115 @@ public class PilotMapSet implements DisplayMapSet {
     /**
      * updates fields for the unit
      */
+    @Override
     public void setEntity(Entity en) {
-
+        setEntity(en, 0);
+    }
+    
+    public void setEntity(Entity en, int slot) {
         if (en instanceof Infantry) {
             pilotL.setString(Messages.getString("PilotMapSet.pilotLAntiMech"));
         } else {
             pilotL.setString(Messages.getString("PilotMapSet.pilotL"));
         }
-        nameL.setString(en.getCrew().getName());
-        nickL.setString(en.getCrew().getNickname());
-        pilotR.setString(Integer.toString(en.getCrew().getPiloting()));
-        gunneryR.setString(Integer.toString(en.getCrew().getGunnery()));
-
-        if (null != getPortrait(en.getCrew())) {
-            portraitArea.setIdleImage(getPortrait(en.getCrew()));
-        }
-
-        if ((en.getGame() != null)
-                && en.getGame().getOptions().booleanOption("rpg_gunnery")) {
-            gunneryLR.setString(Integer.toString(en.getCrew().getGunneryL()));
-            gunneryMR.setString(Integer.toString(en.getCrew().getGunneryM()));
-            gunneryBR.setString(Integer.toString(en.getCrew().getGunneryB()));
+        if (en.getCrew().isMissing(slot)) {
+            nameL.setString(Messages.getString("PilotMapSet.empty"));
+            nickL.setString("");
+            pilotL.setVisible(false);
+            pilotR.setVisible(false);
             gunneryL.setVisible(false);
             gunneryR.setVisible(false);
-            gunneryLL.setVisible(true);
-            gunneryLR.setVisible(true);
-            gunneryML.setVisible(true);
-            gunneryMR.setVisible(true);
-            gunneryBL.setVisible(true);
-            gunneryBR.setVisible(true);
-        } else {
             gunneryLL.setVisible(false);
             gunneryLR.setVisible(false);
             gunneryML.setVisible(false);
             gunneryMR.setVisible(false);
             gunneryBL.setVisible(false);
             gunneryBR.setVisible(false);
-            gunneryL.setVisible(true);
-            gunneryR.setVisible(true);
+        } else {
+            nameL.setString(en.getCrew().getName(slot));
+            nickL.setString(en.getCrew().getNickname(slot));
+            pilotR.setString(Integer.toString(en.getCrew().getPiloting(slot)));
+            gunneryR.setString(Integer.toString(en.getCrew().getGunnery(slot)));
+            pilotL.setVisible(true);
+            pilotR.setVisible(true);
+
+            if (null != getPortrait(en.getCrew(), slot)) {
+                portraitArea.setIdleImage(getPortrait(en.getCrew(), slot));
+            }
+
+            if ((en.getGame() != null) && en.getGame().getOptions().booleanOption(OptionsConstants.RPG_RPG_GUNNERY)) {
+                gunneryLR.setString(Integer.toString(en.getCrew().getGunneryL(slot)));
+                gunneryMR.setString(Integer.toString(en.getCrew().getGunneryM(slot)));
+                gunneryBR.setString(Integer.toString(en.getCrew().getGunneryB(slot)));
+                gunneryL.setVisible(false);
+                gunneryR.setVisible(false);
+                gunneryLL.setVisible(true);
+                gunneryLR.setVisible(true);
+                gunneryML.setVisible(true);
+                gunneryMR.setVisible(true);
+                gunneryBL.setVisible(true);
+                gunneryBR.setVisible(true);
+            } else {
+                gunneryLL.setVisible(false);
+                gunneryLR.setVisible(false);
+                gunneryML.setVisible(false);
+                gunneryMR.setVisible(false);
+                gunneryBL.setVisible(false);
+                gunneryBR.setVisible(false);
+                gunneryL.setVisible(true);
+                gunneryR.setVisible(true);
+            }
         }
+
         if ((en.getGame() != null)
-                && en.getGame().getOptions().booleanOption("toughness")) {
-            toughBR.setString(Integer.toString(en.getCrew().getToughness()));
+                && en.getGame().getOptions().booleanOption(OptionsConstants.RPG_TOUGHNESS)
+                && !en.getCrew().isMissing(slot)) {
+            toughBR.setString(Integer.toString(en.getCrew().getToughness(slot)));
         } else {
             toughBL.setVisible(false);
             toughBR.setVisible(false);
         }
         if ((en.getGame() != null)
-                && en.getGame().getOptions()
-                        .booleanOption("individual_initiative")) {
+                && en.getGame().getOptions().booleanOption(OptionsConstants.RPG_INDIVIDUAL_INITIATIVE)
+                && !en.getCrew().isMissing(slot)) {
             initBR.setString(Integer.toString(en.getCrew().getInitBonus()));
         } else {
             initBL.setVisible(false);
             initBR.setVisible(false);
         }
-        if ((en.getGame() != null)
-                && en.getGame().getOptions().booleanOption("command_init")) {
-            commandBR.setString(Integer
-                    .toString(en.getCrew().getCommandBonus()));
+        if ((en.getGame() != null) && en.getGame().getOptions().booleanOption(OptionsConstants.RPG_COMMAND_INIT)
+                && !en.getCrew().isMissing(slot)) {
+            commandBR.setString(Integer.toString(en.getCrew().getCommandBonus()));
         } else {
             commandBL.setVisible(false);
             commandBR.setVisible(false);
         }
-        hitsR.setString(en.getCrew().getStatusDesc());
+        if (en.getCrew().isMissing(slot)) {
+            hitsR.setString("");
+        } else {
+            hitsR.setString(en.getCrew().getStatusDesc(slot));
+        }
         for (int i = 0; i < advantagesR.length; i++) {
             advantagesR[i].setString(""); //$NON-NLS-1$
         }
         int i = 0;
-        for (Enumeration<IOptionGroup> advGroups = en.getCrew().getOptions()
-                .getGroups(); advGroups.hasMoreElements();) {
-            if (i >= (N_ADV - 1)) {
-                advantagesR[i++].setString(Messages
-                        .getString("PilotMapSet.more"));
+        for (Enumeration<IOptionGroup> advGroups = en.getCrew().getOptions().getGroups(); advGroups
+                .hasMoreElements();) {
+            if (i >= advantagesR.length - 1) {
+                advantagesR[advantagesR.length - 1].setString(Messages.getString("PilotMapSet.more"));
                 break;
             }
             IOptionGroup advGroup = advGroups.nextElement();
             if (en.getCrew().countOptions(advGroup.getKey()) > 0) {
                 advantagesR[i++].setString(advGroup.getDisplayableName());
-                for (Enumeration<IOption> advs = advGroup.getOptions(); advs
-                        .hasMoreElements();) {
-                    if (i >= (N_ADV - 1)) {
-                        advantagesR[i++].setString("  "
-                                + Messages.getString("PilotMapSet.more"));
-                        break;
+                for (Enumeration<IOption> advs = advGroup.getOptions(); advs.hasMoreElements();) {
+                    if (i >= advantagesR.length - 1) {
+                        advantagesR[advantagesR.length - 1].setString("  " + Messages.getString("PilotMapSet.more"));
+                        return;
                     }
                     IOption adv = advs.nextElement();
-                    if (adv.booleanValue()) {
-                        advantagesR[i++].setString("  "
-                                + adv.getDisplayableNameWithValue());
+                    if ((adv != null) && adv.booleanValue()) {
+                        advantagesR[i++].setString("  " + adv.getDisplayableNameWithValue());
                     }
                 }
             }
@@ -289,72 +287,55 @@ public class PilotMapSet implements DisplayMapSet {
     }
 
     private void setBackGround() {
-        Image tile = comp.getToolkit().getImage(
-                new File(Configuration.widgetsDir(), "tile.gif").toString()); //$NON-NLS-1$
+        UnitDisplaySkinSpecification udSpec = SkinXMLHandler.getUnitDisplaySkin();
+
+        Image tile = comp.getToolkit()
+                .getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getBackgroundTile()).toString());
         PMUtil.setImage(tile, comp);
         int b = BackGroundDrawer.TILING_BOTH;
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_TOP;
-        tile = comp.getToolkit().getImage(
-                new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLine()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_BOTTOM;
-        tile = comp.getToolkit().getImage(
-                new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomLine()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_LEFT;
-        tile = comp.getToolkit().getImage(
-                new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getLeftLine()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp.getToolkit().getImage(
-                new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getRightLine()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
-                | BackGroundDrawer.HALIGN_LEFT;
-        tile = comp
-                .getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "tl_corner.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP | BackGroundDrawer.HALIGN_LEFT;
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLeftCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
-                | BackGroundDrawer.HALIGN_LEFT;
-        tile = comp
-                .getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "bl_corner.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM | BackGroundDrawer.HALIGN_LEFT;
+        tile = comp.getToolkit()
+                .getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomLeftCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
-                | BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp
-                .getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "tr_corner.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP | BackGroundDrawer.HALIGN_RIGHT;
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopRightCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
-                | BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp
-                .getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "br_corner.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM | BackGroundDrawer.HALIGN_RIGHT;
+        tile = comp.getToolkit()
+                .getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomRightCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
-
     }
 
     private PMSimpleLabel createLabel(String s, FontMetrics fm, int x, int y) {
@@ -370,13 +351,13 @@ public class PilotMapSet implements DisplayMapSet {
      *         be <code>null</code> if no portrait was selected or if there was
      *         an error loading it.
      */
-    public Image getPortrait(Crew pilot) {
+    public Image getPortrait(Crew pilot, int slot) {
 
-        String category = pilot.getPortraitCategory();
-        String file = pilot.getPortraitFileName();
+        String category = pilot.getPortraitCategory(slot);
+        String file = pilot.getPortraitFileName(slot);
 
         // Return a null if the player has selected no portrait file.
-        if ((null == category) || (null == file) || (null == portraits) ) {
+        if ((null == category) || (null == file) || (null == portraits)) {
             return null;
         }
 
@@ -400,8 +381,7 @@ public class PilotMapSet implements DisplayMapSet {
             }
             // make sure no images are longer than 72 pixels
             if (null != portrait) {
-                portrait = portrait.getScaledInstance(-1, 72,
-                        Image.SCALE_DEFAULT);
+                portrait = portrait.getScaledInstance(-1, 72, Image.SCALE_DEFAULT);
             }
         } catch (Exception err) {
             err.printStackTrace();

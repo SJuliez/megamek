@@ -21,13 +21,17 @@ import java.util.Vector;
 
 import megamek.common.BattleArmor;
 import megamek.common.Building;
+import megamek.common.Compute;
 import megamek.common.Entity;
+import megamek.common.EquipmentMode;
+import megamek.common.HitData;
 import megamek.common.IGame;
 import megamek.common.Infantry;
 import megamek.common.Report;
 import megamek.common.TargetRoll;
 import megamek.common.ToHitData;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.options.OptionsConstants;
 import megamek.server.Server;
 
 /**
@@ -47,8 +51,50 @@ public class FlamerHandler extends WeaponHandler {
     public FlamerHandler(ToHitData toHit, WeaponAttackAction waa, IGame g,
             Server s) {
         super(toHit, waa, g, s);
+        generalDamageType = HitData.DAMAGE_ENERGY;
     }
 
+    @Override
+    protected void handleEntityDamage(Entity entityTarget,
+            Vector<Report> vPhaseReport, Building bldg, int hits, int nCluster,
+            int bldgAbsorbs) {
+        
+        boolean bmmFlamerDamage = game.getOptions().booleanOption(OptionsConstants.BASE_FLAMER_HEAT);
+        EquipmentMode currentWeaponMode = game.getEntity(waa.getEntityId()).getEquipment(waa.getWeaponId()).curMode();
+        
+        boolean flamerDoesHeatOnlyDamage = currentWeaponMode != null && currentWeaponMode.equals(Weapon.MODE_FLAMER_HEAT);
+        boolean flamerDoesOnlyDamage = currentWeaponMode != null && currentWeaponMode.equals(Weapon.MODE_FLAMER_DAMAGE);
+        
+        if(bmmFlamerDamage || flamerDoesOnlyDamage || (flamerDoesHeatOnlyDamage && !entityTarget.tracksHeat())) {
+            super.handleEntityDamage(entityTarget, vPhaseReport, bldg, hits, nCluster, bldgAbsorbs);
+            
+            if(bmmFlamerDamage && entityTarget.tracksHeat()) {
+                FlamerHandlerHelper.doHeatDamage(entityTarget, vPhaseReport, wtype, subjectId, hit);
+            }
+        } else if(flamerDoesHeatOnlyDamage) {
+            hit = entityTarget.rollHitLocation(toHit.getHitTable(),
+                    toHit.getSideTable(), waa.getAimedLocation(),
+                    waa.getAimingMode(), toHit.getCover());
+            hit.setAttackerId(getAttackerId());
+
+            if (entityTarget.removePartialCoverHits(hit.getLocation(), toHit
+                    .getCover(), Compute.targetSideTable(ae, entityTarget,
+                            weapon.getCalledShot().getCall()))) {
+                // Weapon strikes Partial Cover.
+                handlePartialCoverHit(entityTarget, vPhaseReport, hit, bldg,
+                        hits, nCluster, bldgAbsorbs);
+                return;
+            }
+            Report r = new Report(3405);
+            r.subject = subjectId;
+            r.add(toHit.getTableDesc());
+            r.add(entityTarget.getLocationAbbr(hit));
+            vPhaseReport.addElement(r);
+            
+            FlamerHandlerHelper.doHeatDamage(entityTarget, vPhaseReport, wtype, subjectId, hit);
+        }
+    }
+    
     /*
      * (non-Javadoc)
      * 
@@ -59,8 +105,7 @@ public class FlamerHandler extends WeaponHandler {
         int toReturn = super.calcDamagePerHit();
         if ((target instanceof Infantry) && !(target instanceof BattleArmor)) {
             // pain shunted infantry get half damage
-            if (((Entity) target).getCrew().getOptions()
-                    .booleanOption("pain_shunt")) {
+            if (((Entity) target).hasAbility(OptionsConstants.MD_PAIN_SHUNT)) {
                 toReturn = (int) Math.floor(toReturn / 2.0);
             }
         } else if ((target instanceof BattleArmor)
@@ -68,37 +113,6 @@ public class FlamerHandler extends WeaponHandler {
             toReturn = 0;
         }
         return toReturn;
-    }
-
-    /**
-     * @return a <code>boolean</code> value indicating wether or not this attack
-     *         needs further calculating, like a missed shot hitting a building,
-     *         or an AMS only shooting down some missiles.
-     */
-    @Override
-    protected boolean handleSpecialMiss(Entity entityTarget,
-            boolean targetInBuilding, Building bldg, Vector<Report> vPhaseReport) {
-        // Shots that miss an entity can set fires.
-        // Buildings can't be accidentally ignited,
-        // and some weapons can't ignite fires.
-        if ((entityTarget != null)
-                && ((bldg == null) && (wtype.getFireTN() != TargetRoll.IMPOSSIBLE))) {
-            server.tryIgniteHex(target.getPosition(), subjectId, true, false,
-                    new TargetRoll(wtype.getFireTN(), wtype.getName()), 3,
-                    vPhaseReport);
-        }
-
-        // shots that miss an entity can also potential cause explosions in a
-        // heavy industrial hex
-        server.checkExplodeIndustrialZone(target.getPosition(), vPhaseReport);
-
-        // BMRr, pg. 51: "All shots that were aimed at a target inside
-        // a building and miss do full damage to the building instead."
-        if (!targetInBuilding
-                || (toHit.getValue() == TargetRoll.AUTOMATIC_FAIL)) {
-            return false;
-        }
-        return true;
     }
 
     @Override

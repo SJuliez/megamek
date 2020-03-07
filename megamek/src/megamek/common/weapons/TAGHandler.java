@@ -88,6 +88,11 @@ public class TAGHandler extends WeaponHandler {
                     entityTarget, priority, false);
             game.addTagInfo(info);
             entityTarget.setTaggedBy(ae.getId());
+            
+            // per errata, being painted by a TAG also spots the target for indirect fire
+            ae.setSpotting(true);
+            ae.setSpotTargetId(entityTarget.getId());
+            
             Report r = new Report(3188);
             r.subject = subjectId;
             vPhaseReport.addElement(r);
@@ -103,7 +108,8 @@ public class TAGHandler extends WeaponHandler {
      */
     @Override
     protected boolean handleSpecialMiss(Entity entityTarget,
-            boolean targetInBuilding, Building bldg, Vector<Report> vPhaseReport) {
+            boolean bldgDamagedOnMiss, Building bldg,
+            Vector<Report> vPhaseReport) {
         int priority = 1;
         EquipmentMode mode = (weapon.curMode());
         if (mode != null) {

@@ -24,6 +24,10 @@ DFC-OA
 3067
 </year>
 
+<originalBuildYear>
+3067
+</originalBuildYear>
+
 <type>
 IS Level 2
 </type>
@@ -31,6 +35,9 @@ IS Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 6
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+8
+</omnipodheatsinks>
 
 <fuel>
 400
@@ -68,22 +79,28 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-ISERMediumLaser
-ISERMediumLaser
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-ISERPPC
+ISERPPC:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-ISERPPC
+ISERPPC:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-SRM 2
-IS Ammo SRM-2
+SRM 2:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+IS Ammo SRM-2:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3067 - Civil War

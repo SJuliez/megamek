@@ -24,6 +24,10 @@ Prime
 2941
 </year>
 
+<originalBuildYear>
+2941
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 14
@@ -76,9 +83,9 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLERSmallLaser
-CLERSmallLaser
-CLActiveProbe
+CLERSmallLaser:OMNI
+CLERSmallLaser:OMNI
+CLActiveProbe:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
@@ -89,6 +96,12 @@ CLActiveProbe
 
 <Aft Equipment>
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Succession Wars

@@ -10,7 +10,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.io.File;
 import java.util.Enumeration;
 
 import javax.swing.DefaultListModel;
@@ -30,11 +29,14 @@ import megamek.client.ui.swing.Slider;
 import megamek.client.ui.swing.widget.BackGroundDrawer;
 import megamek.client.ui.swing.widget.PMUtil;
 import megamek.client.ui.swing.widget.PicMap;
+import megamek.client.ui.swing.widget.SkinXMLHandler;
+import megamek.client.ui.swing.widget.UnitDisplaySkinSpecification;
 import megamek.common.BattleArmor;
 import megamek.common.ComputeECM;
 import megamek.common.Configuration;
 import megamek.common.Coords;
 import megamek.common.Entity;
+import megamek.common.IGame;
 import megamek.common.ILocationExposureStatus;
 import megamek.common.INarcPod;
 import megamek.common.IPlayer;
@@ -42,7 +44,9 @@ import megamek.common.Mech;
 import megamek.common.Mounted;
 import megamek.common.Sensor;
 import megamek.common.Tank;
-import megamek.common.weapons.TSEMPWeapon;
+import megamek.common.options.OptionsConstants;
+import megamek.common.util.MegaMekFile;
+import megamek.common.weapons.other.TSEMPWeapon;
 
 /**
  * This class shows information about a unit that doesn't belong elsewhere.
@@ -85,6 +89,11 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
 
     private int minTopMargin = 8;
     private int minLeftMargin = 8;
+
+    JButton activateHidden = new JButton(
+            Messages.getString("MechDisplay.ActivateHidden.Label"));
+
+    JComboBox<String> activateHiddenPhase = new JComboBox<>();
 
     ExtraPanel(UnitDisplay unitDisplay) {
         this.unitDisplay = unitDisplay;
@@ -167,6 +176,20 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         chSensors = new JComboBox<String>();
         chSensors.addItemListener(this);
 
+        activateHidden.setToolTipText(Messages
+                .getString("MechDisplay.ActivateHidden.ToolTip"));
+        activateHiddenPhase.setToolTipText(Messages
+                .getString("MechDisplay.ActivateHiddenPhase.ToolTip"));
+        activateHidden.addActionListener(this);
+        activateHiddenPhase.addItem(IGame.Phase
+                .getDisplayableName(IGame.Phase.PHASE_MOVEMENT));
+        activateHiddenPhase.addItem(IGame.Phase
+                .getDisplayableName(IGame.Phase.PHASE_FIRING));
+        activateHiddenPhase.addItem(IGame.Phase
+                .getDisplayableName(IGame.Phase.PHASE_PHYSICAL));
+        activateHiddenPhase.addItem(Messages
+                .getString("MechDisplay.ActivateHidden.StopActivating"));
+
         // layout choice panel
         GridBagLayout gridbag;
         GridBagConstraints c;
@@ -236,6 +259,13 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         gridbag.setConstraints(lastTargetR, c);
         add(lastTargetR);
 
+        c.insets = new Insets(1, 9, 1, 9);
+        gridbag.setConstraints(activateHidden, c);
+        c.insets = new Insets(1, 9, 6, 9);
+        gridbag.setConstraints(activateHiddenPhase, c);
+        add(activateHidden);
+        add(activateHiddenPhase);
+
         setBackGround();
         onResize();
     }
@@ -256,77 +286,75 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
     }
 
     private void setBackGround() {
+        UnitDisplaySkinSpecification udSpec = SkinXMLHandler
+                .getUnitDisplaySkin();
+
         Image tile = getToolkit()
                 .getImage(
-                        new File(Configuration.widgetsDir(), "tile.gif").toString()); //$NON-NLS-1$
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getBackgroundTile()).toString());
         PMUtil.setImage(tile, this);
         int b = BackGroundDrawer.TILING_BOTH;
         addBgDrawer(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_HORIZONTAL
-            | BackGroundDrawer.VALIGN_TOP;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_TOP;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLine())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_HORIZONTAL
-            | BackGroundDrawer.VALIGN_BOTTOM;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_BOTTOM;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomLine())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_LEFT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getLeftLine())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_VERTICAL
-            | BackGroundDrawer.HALIGN_RIGHT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile, this);
-        addBgDrawer(new BackGroundDrawer(tile, b));
-
-        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
-            | BackGroundDrawer.HALIGN_LEFT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "tl_corner.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile, this);
-        addBgDrawer(new BackGroundDrawer(tile, b));
-
-        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
-            | BackGroundDrawer.HALIGN_LEFT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "bl_corner.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_RIGHT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getRightLine())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
-            | BackGroundDrawer.HALIGN_RIGHT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "tr_corner.gif").toString()); //$NON-NLS-1$
+                | BackGroundDrawer.HALIGN_LEFT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLeftCorner())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
-            | BackGroundDrawer.HALIGN_RIGHT;
+                | BackGroundDrawer.HALIGN_LEFT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec
+                        .getBottomLeftCorner()).toString());
+        PMUtil.setImage(tile, this);
+        addBgDrawer(new BackGroundDrawer(tile, b));
+
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
+                | BackGroundDrawer.HALIGN_RIGHT;
         tile = getToolkit()
                 .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "br_corner.gif").toString()); //$NON-NLS-1$
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getTopRightCorner()).toString());
+        PMUtil.setImage(tile, this);
+        addBgDrawer(new BackGroundDrawer(tile, b));
+
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
+                | BackGroundDrawer.HALIGN_RIGHT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec
+                        .getBottomRightCorner()).toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
@@ -550,12 +578,12 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
             if (m.hasDoubleHeatSinks()) {
                 sinksR.append(Messages.getString(
                         "MechDisplay.activeSinksTextDouble", //$NON-NLS-1$
-                        new Object[]{new Integer(sinks),
-                                     new Integer(sinks * 2)}));
+                        new Object[]{Integer.valueOf(sinks),
+                                     Integer.valueOf(sinks * 2)}));
             } else {
                 sinksR.append(Messages.getString(
                         "MechDisplay.activeSinksTextSingle", //$NON-NLS-1$
-                        new Object[]{new Integer(sinks)}));
+                        new Object[]{Integer.valueOf(sinks)}));
             }
 
             boolean hasTSM = false;
@@ -566,7 +594,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
 
             if ((clientgui != null)
                     && clientgui.getClient().getGame().getOptions()
-                            .booleanOption("tacops_heat")) { //$NON-NLS-1$
+                            .booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_HEAT)) { //$NON-NLS-1$
                 mtHeat = true;
             }
             heatR.append(HeatEffects.getHeatEffects(en.heat, mtHeat, hasTSM));
@@ -599,7 +627,10 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
             lastTargetR.setText(en.getLastTargetDisplayName());
         } else {
             lastTargetR.setText(Messages.getString("MechDisplay.None")); //$NON-NLS-1$
-        }            
+        }
+
+        activateHidden.setEnabled(!dontChange && en.isHidden());
+        activateHiddenPhase.setEnabled(!dontChange && en.isHidden());
 
         onResize();
     } // End public void displayMech( Entity )
@@ -626,6 +657,10 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         if (clientgui == null) {
             return;
         }
+        // Only act when a new item is selected
+        if (ev.getStateChange() != ItemEvent.SELECTED) {
+            return;
+        }
         if ((ev.getItemSelectable() == chSensors)) {
             int sensorIdx = chSensors.getSelectedIndex();
             Entity en = clientgui.getClient().getGame().getEntity(myMechId);
@@ -647,8 +682,8 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         }
         if ("changeSinks".equals(ae.getActionCommand()) && !dontChange) { //$NON-NLS-1$
             prompt = new Slider(clientgui.frame,
-                    Messages.getString("MechDisplay.changeSinks"),
-                    Messages.getString("MechDisplay.changeSinks"), sinks,
+                    Messages.getString("MechDisplay.changeSinks"), //$NON-NLS-1$
+                    Messages.getString("MechDisplay.changeSinks"), sinks, //$NON-NLS-1$
                     0, ((Mech) clientgui.getClient().getGame()
                             .getEntity(myMechId)).getNumberOfSinks());
             if (!prompt.showDialog()) {
@@ -661,6 +696,11 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
                     .setActiveSinksNextRound(numActiveSinks);
             clientgui.getClient().sendSinksChange(myMechId, numActiveSinks);
             displayMech(clientgui.getClient().getGame().getEntity(myMechId));
+        } else if (activateHidden.equals(ae.getSource()) && !dontChange) {
+            IGame.Phase activationPhase = IGame.Phase
+                    .getPhaseFromName((String) activateHiddenPhase
+                            .getSelectedItem());
+            clientgui.getClient().sendActivateHidden(myMechId, activationPhase);
         }
     }
 }

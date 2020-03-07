@@ -24,6 +24,10 @@ X
 3074
 </year>
 
+<originalBuildYear>
+3074
+</originalBuildYear>
+
 <type>
 Clan Level 4
 </type>
@@ -31,6 +35,9 @@ Clan Level 4
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 6
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+10
+</omnipodheatsinks>
 
 <fuel>
 320
@@ -76,36 +87,43 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLImprovedHeavyLargeLaser
-Clan Coolant Pod
-Clan Coolant Pod
-Clan Coolant Pod
+CLImprovedHeavyLargeLaser:OMNI
 CLCASE
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLImprovedHeavyLargeLaser
-CLImprovedHeavyLargeLaser
-Clan Coolant Pod
-Clan Coolant Pod
-Clan Coolant Pod
-Clan Coolant Pod
+CLImprovedHeavyLargeLaser:OMNI
+CLImprovedHeavyLargeLaser:OMNI
 CLCASE
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLImprovedHeavyLargeLaser
-CLImprovedHeavyLargeLaser
-Clan Coolant Pod
-Clan Coolant Pod
-Clan Coolant Pod
-Clan Coolant Pod
+CLImprovedHeavyLargeLaser:OMNI
+CLImprovedHeavyLargeLaser:OMNI
 CLCASE
 </Right Wing Equipment>
 
 <Aft Equipment>
-WatchdogECMSuite
+WatchdogECMSuite:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+IS Coolant Pod:OMNI
+IS Coolant Pod:OMNI
+IS Coolant Pod:OMNI
+IS Coolant Pod:OMNI
+IS Coolant Pod:OMNI
+IS Coolant Pod:OMNI
+IS Coolant Pod:OMNI
+IS Coolant Pod:OMNI
+IS Coolant Pod:OMNI
+IS Coolant Pod:OMNI
+IS Coolant Pod:OMNI
+CLCASE
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Jihad

@@ -20,6 +20,9 @@ Description=This is an example scenario to show different scenario features
 BoardWidth=2
 BoardHeight=1
 
+# Directories to choose random boards from
+RandomDirs=MapSet2,MapSet3,MapSet4,MapSet5,MapSet6,MapSet7
+
 # Maps can be specified by name.  The order is left-to-right, top-to-bottom
 # Any unspecified boards will be set to RANDOM
 Maps=RANDOM,RANDOM
@@ -176,6 +179,24 @@ Unit_Kurita_6_CritHit=2:10
 # Would set Ammo at Slot 2:11 to 3 points
 # 
 Unit_Kurita_6_SetAmmoTo=2:11-1
+
+# Set Ammo type (works only for 'Mechs, too)
+#
+# Loc and Slots work the same as for critical locations and ammo ammout
+#
+# Ammo name is the unique string used in the 'Mech files themselves.
+# Errors will be logged to the normal log file and the ammo replaced
+# by the standard defined for the 'Mech. The same will happen for ammo
+# which is illegal according to the specified game rules.
+Unit_PlayerA_2_SetAmmoType=3:1-ISAC20 Flak Ammo
+
+# Set Altitude (works only for aerospace fighters, conventional fighters,
+# small craft and dropships)
+#
+# You can set the altitude of a flying unit at the start of the scenario
+# to be anything between 0 and 10. Altitude 0 means the unit deploys landed.
+#
+# Unit_Kurita_666_Altitude=3
 
 # Set game options file
 # This is an xml file which can be created by copying your

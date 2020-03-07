@@ -13,7 +13,7 @@ LargeSupportTank
 </UnitType>
 
 <Name>
-Buffalo BFFL Hovertruck
+BFFL 'Buffalo'
 </Name>
 
 <Model>
@@ -21,8 +21,12 @@ Buffalo BFFL Hovertruck
 </Model>
 
 <year>
-2500
+2670
 </year>
+
+<originalBuildYear>
+2670
+</originalBuildYear>
 
 <type>
 IS Level 2
@@ -31,6 +35,9 @@ IS Level 2
 <motion_type>
 Hover
 </motion_type>
+
+<transporters>
+</transporters>
 
 <cruiseMP>
 5
@@ -48,14 +55,6 @@ Hover
 6
 6
 </armor>
-
-<barrating>
-2
-</barrating>
-
-<structural_tech_rating>
-3
-</structural_tech_rating>
 
 <Body Equipment>
 </Body Equipment>
@@ -82,15 +81,23 @@ Cargo Container (10 tons)
 Cargo Container (10 tons)
 </Rear Equipment>
 
+<barrating>
+2
+</barrating>
+
+<structural_tech_rating>
+3
+</structural_tech_rating>
+
 <source>
-TRO VAr
+TRO VAr - Star League
 </source>
 
 <tonnage>
 100.0
 </tonnage>
 
-<range>
-1000
-</range>
+<fuel>
+6.0
+</fuel>
 

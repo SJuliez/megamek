@@ -24,6 +24,10 @@ X
 3075
 </year>
 
+<originalBuildYear>
+3075
+</originalBuildYear>
+
 <type>
 Clan Level 4
 </type>
@@ -31,6 +35,9 @@ Clan Level 4
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 5
@@ -76,35 +83,41 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLRotaryAC5
-CLRotaryAC5 Ammo
-CLRotaryAC5 Ammo
-CLRotaryAC5 Ammo
-CLCASE
+CLRotaryAC5:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLRotaryAC5
-CLRotaryAC5 Ammo
-CLRotaryAC5 Ammo
-CLRotaryAC5 Ammo
-CLImprovedMediumHeavyLaser
+CLRotaryAC5:OMNI
+CLImprovedMediumHeavyLaser:OMNI
 CLCASE
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLRotaryAC5
-CLRotaryAC5 Ammo
-CLRotaryAC5 Ammo
-CLRotaryAC5 Ammo
-CLImprovedMediumHeavyLaser
+CLRotaryAC5:OMNI
+CLImprovedMediumHeavyLaser:OMNI
 CLCASE
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLERMediumLaser
-WatchdogECMSuite
+CLERMediumLaser:OMNI
+WatchdogECMSuite:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+CLRotaryAC5 Ammo:OMNI
+CLRotaryAC5 Ammo:OMNI
+CLRotaryAC5 Ammo:OMNI
+CLRotaryAC5 Ammo:OMNI
+CLRotaryAC5 Ammo:OMNI
+CLRotaryAC5 Ammo:OMNI
+CLRotaryAC5 Ammo:OMNI
+CLRotaryAC5 Ammo:OMNI
+CLRotaryAC5 Ammo:OMNI
+CLCASE
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Jihad

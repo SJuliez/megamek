@@ -1,5 +1,6 @@
 package megamek.client.bot.princess;
 
+import megamek.client.bot.princess.FireControl.FireControlType;
 import megamek.common.BipedMech;
 import megamek.common.Coords;
 import megamek.common.Entity;
@@ -11,6 +12,8 @@ import megamek.common.Targetable;
 import megamek.common.ToHitData;
 import megamek.common.actions.KickAttackAction;
 import megamek.common.actions.PunchAttackAction;
+import megamek.common.logging.FakeLogger;
+import megamek.common.logging.MMLogger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,10 +32,12 @@ public class PhysicalInfoTest {
 
     @Test
     public void testInitDamage() {
+        MMLogger fakeLogger = new FakeLogger();
         Princess mockPrincess = Mockito.mock(Princess.class);
+        Mockito.when(mockPrincess.getLogger()).thenReturn(fakeLogger);
 
         FireControl mockFireControl = Mockito.mock(FireControl.class);
-        Mockito.when(mockPrincess.getFireControl()).thenReturn(mockFireControl);
+        Mockito.when(mockPrincess.getFireControl(Mockito.any(Entity.class))).thenReturn(mockFireControl);
 
         ToHitData mockToHit = Mockito.mock(ToHitData.class);
         Mockito.when(mockFireControl.guessToHitModifierPhysical(Mockito.any(Entity.class),
@@ -46,7 +51,7 @@ public class PhysicalInfoTest {
 
         Entity mockShooter = Mockito.mock(BipedMech.class);
         Mockito.when(mockShooter.getId()).thenReturn(1);
-        Mockito.when(mockShooter.getWeight()).thenReturn(50F);
+        Mockito.when(mockShooter.getWeight()).thenReturn(50.0);
 
         EntityState mockShooterState = Mockito.mock(EntityState.class);
 
@@ -64,7 +69,7 @@ public class PhysicalInfoTest {
         testPhysicalInfo.setShooter(mockShooter);
         testPhysicalInfo.setTarget(mockTarget);
         Mockito.doNothing().when(testPhysicalInfo).setDamageDirection(Mockito.any(EntityState.class),
-                                                                      Mockito.any(Coords.class));
+                                                                      Mockito.nullable(Coords.class));
         Mockito.doReturn(1).when(testPhysicalInfo).getDamageDirection();
 
         PhysicalAttackType punch = PhysicalAttackType.LEFT_PUNCH;
@@ -101,7 +106,7 @@ public class PhysicalInfoTest {
         Assert.assertEquals(10.0, testPhysicalInfo.getExpectedDamageOnHit(), TOLERANCE);
 
         // Make the puncher heavier.
-        Mockito.when(mockShooter.getWeight()).thenReturn(100F);
+        Mockito.when(mockShooter.getWeight()).thenReturn(100.0);
         testPhysicalInfo.setShooter(mockShooter);
         testPhysicalInfo.setAttackType(punch);
         testPhysicalInfo.initDamage(punch, mockShooterState, mockTargetState, true, mockGame);
@@ -116,7 +121,7 @@ public class PhysicalInfoTest {
         Mockito.when(mockTarget.getArmor(Mockito.anyInt(), Mockito.eq(false))).thenReturn(6);
         Mockito.when(mockTarget.getArmor(Mockito.anyInt(), Mockito.eq(true))).thenReturn(3);
         Mockito.when(mockTarget.getInternal(Mockito.anyInt())).thenReturn(3);
-        Mockito.when(mockShooter.getWeight()).thenReturn(100F);
+        Mockito.when(mockShooter.getWeight()).thenReturn(100.0);
         testPhysicalInfo.setShooter(mockShooter);
         testPhysicalInfo.setAttackType(punch);
         testPhysicalInfo.initDamage(punch, mockShooterState, mockTargetState, true, mockGame);

@@ -24,6 +24,10 @@ S-STR-OC Comminus
 3072
 </year>
 
+<originalBuildYear>
+3072
+</originalBuildYear>
+
 <type>
 IS Level 3
 </type>
@@ -31,6 +35,9 @@ IS Level 3
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 6
@@ -48,6 +55,10 @@ Aerodyne
 1
 </sink_type>
 
+<omnipodheatsinks>
+6
+</omnipodheatsinks>
+
 <fuel>
 400
 </fuel>
@@ -64,6 +75,10 @@ Aerodyne
 5
 </armor_tech>
 
+<omni>
+1
+</omni>
+
 <armor>
 100
 76
@@ -72,33 +87,39 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-ISERMediumLaser
-ISERMediumLaser
-ISERMediumLaser
-ISERMediumLaser
-ISCASE
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-ISStreakSRM6
-ISStreakSRM6
-ISStreakSRM6
-IS Streak SRM 6 Ammo
-IS Streak SRM 6 Ammo
+ISStreakSRM6:OMNI
+ISStreakSRM6:OMNI
+ISStreakSRM6:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-ISStreakSRM6
-ISStreakSRM6
-ISStreakSRM6
-IS Streak SRM 6 Ammo
-IS Streak SRM 6 Ammo
+ISStreakSRM6:OMNI
+ISStreakSRM6:OMNI
+ISStreakSRM6:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-ISERMediumLaser
-ISERMediumLaser
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+ISCASE:OMNI
+IS Streak SRM 6 Ammo:OMNI
+IS Streak SRM 6 Ammo:OMNI
+IS Streak SRM 6 Ammo:OMNI
+IS Streak SRM 6 Ammo:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3075 - Jihad

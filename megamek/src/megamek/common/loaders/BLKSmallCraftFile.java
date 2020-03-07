@@ -25,30 +25,26 @@
  */
 package megamek.common.loaders;
 
-import megamek.common.Aero;
 import megamek.common.Engine;
 import megamek.common.Entity;
 import megamek.common.EntityMovementMode;
 import megamek.common.EquipmentType;
+import megamek.common.IArmorState;
 import megamek.common.LocationFullException;
 import megamek.common.Mounted;
 import megamek.common.SmallCraft;
 import megamek.common.TechConstants;
 import megamek.common.WeaponType;
 import megamek.common.util.BuildingBlock;
+import megamek.common.verifier.TestEntity;
 
 public class BLKSmallCraftFile extends BLKFile implements IMechLoader {
-
-    // armor locatioms
-    public static final int NOSE = 0;
-    public static final int RW = 1;
-    public static final int LW = 2;
-    public static final int AFT = 3;
 
     public BLKSmallCraftFile(BuildingBlock bb) {
         dataFile = bb;
     }
 
+    @Override
     public Entity getEntity() throws EntityLoadingException {
 
         SmallCraft a = new SmallCraft();
@@ -71,18 +67,26 @@ public class BLKSmallCraftFile extends BLKFile implements IMechLoader {
         setFluff(a);
         checkManualBV(a);
 
+        if (dataFile.exists("originalBuildYear")) {
+            a.setOriginalBuildYear(dataFile.getDataAsInt("originalBuildYear")[0]);
+        }
+
         if (!dataFile.exists("tonnage")) {
             throw new EntityLoadingException("Could not find tonnage block.");
         }
-        a.setWeight(dataFile.getDataAsFloat("tonnage")[0]);
+        a.setWeight(dataFile.getDataAsDouble("tonnage")[0]);
 
         if (!dataFile.exists("crew")) {
             throw new EntityLoadingException("Could not find crew block.");
         }
         a.setNCrew(dataFile.getDataAsInt("crew")[0]);
 
-        if (dataFile.exists("passengers")) {
-            a.setNPassenger(dataFile.getDataAsInt("passengers")[0]);
+        if (dataFile.exists("officers")) {
+            a.setNOfficers(dataFile.getDataAsInt("officers")[0]);
+        }
+
+        if (dataFile.exists("gunners")) {
+            a.setNGunners(dataFile.getDataAsInt("gunners")[0]);
         }
 
         if (dataFile.exists("battlearmor")) {
@@ -97,12 +101,20 @@ public class BLKSmallCraftFile extends BLKFile implements IMechLoader {
             a.setNOtherPassenger(dataFile.getDataAsInt("otherpassenger")[0]);
         }
 
+        if (dataFile.exists("life_boat")) {
+            a.setLifeBoats(dataFile.getDataAsInt("life_boat")[0]);
+        }
+
+        if (dataFile.exists("escape_pod")) {
+            a.setEscapePods(dataFile.getDataAsInt("escape_pod")[0]);
+        }
+
         if (!dataFile.exists("motion_type")) {
             throw new EntityLoadingException("Could not find motion_type block.");
         }
         String sMotion = dataFile.getDataAsString("motion_type")[0];
         EntityMovementMode nMotion = EntityMovementMode.AERODYNE;
-        if (sMotion.equals("spheroid")) {
+        if (sMotion.equalsIgnoreCase("spheroid")) {
             nMotion = EntityMovementMode.SPHEROID;
             a.setSpheroid(true);
         }
@@ -122,6 +134,7 @@ public class BLKSmallCraftFile extends BLKFile implements IMechLoader {
             throw new EntityLoadingException("Could not find heatsinks block.");
         }
         a.setHeatSinks(dataFile.getDataAsInt("heatsinks")[0]);
+        a.setOHeatSinks(dataFile.getDataAsInt("heatsinks")[0]);
         if (!dataFile.exists("sink_type")) {
             throw new EntityLoadingException("Could not find sink_type block.");
         }
@@ -142,11 +155,15 @@ public class BLKSmallCraftFile extends BLKFile implements IMechLoader {
 
         a.setEngine(new Engine(400, 0, 0));
 
+        // Switch older files with standard armor to aerospace
+        int at = EquipmentType.T_ARMOR_AEROSPACE;
         if (dataFile.exists("armor_type")) {
-            a.setArmorType(dataFile.getDataAsInt("armor_type")[0]);
-        } else {
-            a.setArmorType(EquipmentType.T_ARMOR_STANDARD);
+            at = dataFile.getDataAsInt("armor_type")[0];
+            if (at == EquipmentType.T_ARMOR_STANDARD) {
+                at = EquipmentType.T_ARMOR_AEROSPACE;
+            }
         }
+        a.setArmorType(at);
         if (dataFile.exists("armor_tech")) {
             a.setArmorTechLevel(dataFile.getDataAsInt("armor_tech")[0]);
         }
@@ -166,19 +183,20 @@ public class BLKSmallCraftFile extends BLKFile implements IMechLoader {
             throw new EntityLoadingException("Incorrect armor array length");
         }
 
-        a.initializeArmor(armor[BLKAeroFile.NOSE], Aero.LOC_NOSE);
-        a.initializeArmor(armor[BLKAeroFile.RW], Aero.LOC_RWING);
-        a.initializeArmor(armor[BLKAeroFile.LW], Aero.LOC_LWING);
-        a.initializeArmor(armor[BLKAeroFile.AFT], Aero.LOC_AFT);
+        a.initializeArmor(armor[BLKAeroFile.NOSE], SmallCraft.LOC_NOSE);
+        a.initializeArmor(armor[BLKAeroFile.RW], SmallCraft.LOC_RWING);
+        a.initializeArmor(armor[BLKAeroFile.LW], SmallCraft.LOC_LWING);
+        a.initializeArmor(armor[BLKAeroFile.AFT], SmallCraft.LOC_AFT);
+        a.initializeArmor(IArmorState.ARMOR_NA, SmallCraft.LOC_HULL);
 
         a.autoSetInternal();
         // This is not working right for arrays for some reason
         a.autoSetThresh();
+        a.recalculateTechAdvancement();
 
-        loadEquipment(a, "Nose", Aero.LOC_NOSE);
-        loadEquipment(a, "Right Side", Aero.LOC_RWING);
-        loadEquipment(a, "Left Side", Aero.LOC_LWING);
-        loadEquipment(a, "Aft", Aero.LOC_AFT);
+        for (int loc = 0; loc < a.locations(); loc++) {
+            loadEquipment(a, a.getLocationName(loc), loc);
+        }
 
         addTransports(a);
         a.setArmorTonnage(a.getArmorWeight());
@@ -243,17 +261,13 @@ public class BLKSmallCraftFile extends BLKFile implements IMechLoader {
 
                 if (etype != null) {
                     try {
-                        Mounted mount = t.addEquipment(etype, nLoc, rearMount);
+                        int useLoc = TestEntity.eqRequiresLocation(t, etype)? nLoc : SmallCraft.LOC_HULL;
+                        Mounted mount = t.addEquipment(etype, useLoc, rearMount);
                         // Need to set facing for VGLs
                         if ((etype instanceof WeaponType) 
                                 && etype.hasFlag(WeaponType.F_VGL)) {
-                            // If no facing specified, assume front
                             if (facing == -1) {
-                                if (rearMount) {
-                                    mount.setFacing(3);
-                                } else {
-                                    mount.setFacing(0);
-                                }
+                                mount.setFacing(defaultVGLFacing(useLoc, rearMount));
                             } else {
                                 mount.setFacing(facing);
                             }

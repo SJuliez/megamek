@@ -24,6 +24,10 @@ D
 3065
 </year>
 
+<originalBuildYear>
+3065
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 6
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+8
+</omnipodheatsinks>
 
 <fuel>
 320
@@ -76,29 +87,35 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLGaussRifle
-Clan Gauss Ammo
-Clan Gauss Ammo
-Clan Gauss Ammo
-Clan Gauss Ammo
-CLERMediumLaser
-CLERMediumLaser
+CLGaussRifle:OMNI
+CLERMediumLaser:OMNI
+CLERMediumLaser:OMNI
 CLCASE
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLHeavyLargeLaser
-CLERLargeLaser
+CLHeavyLargeLaser:OMNI
+CLERLargeLaser:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLHeavyLargeLaser
-CLERLargeLaser
+CLHeavyLargeLaser:OMNI
+CLERLargeLaser:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLERSmallLaser
+CLERSmallLaser:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Gauss Ammo:OMNI
+Clan Gauss Ammo:OMNI
+Clan Gauss Ammo:OMNI
+Clan Gauss Ammo:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Civil War

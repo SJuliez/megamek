@@ -21,6 +21,7 @@ import megamek.common.Protomech;
 import megamek.common.TargetRoll;
 import megamek.common.Targetable;
 import megamek.common.ToHitData;
+import megamek.common.options.OptionsConstants;
 
 /**
  * The attacker grapples the target.
@@ -61,8 +62,13 @@ public class BreakGrappleAttackAction extends PhysicalAttackAction {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "You can't attack from a null entity!");
         }
 
-        if (!game.getOptions().booleanOption("tacops_grappling")) {
+        if (!game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_GRAPPLING)) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "grappling attack not allowed");
+        }
+
+        // LAM AirMechs can only grapple when grounded.
+        if (ae.isAirborneVTOLorWIGE()) {
+            return new ToHitData(TargetRoll.IMPOSSIBLE, "Cannot grapple while airborne");
         }
 
         String impossible = toHitIsImpossible(game, ae, target);

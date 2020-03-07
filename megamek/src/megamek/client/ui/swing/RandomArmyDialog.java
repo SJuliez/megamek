@@ -15,6 +15,7 @@
 package megamek.client.ui.swing;
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -28,6 +29,7 @@ import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -47,6 +49,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
@@ -55,14 +58,27 @@ import javax.swing.tree.TreeSelectionModel;
 
 import megamek.client.Client;
 import megamek.client.RandomUnitGenerator;
+import megamek.client.ratgenerator.FactionRecord;
+import megamek.client.ratgenerator.FormationType;
+import megamek.client.ratgenerator.MissionRole;
+import megamek.client.ratgenerator.ModelRecord;
+import megamek.client.ratgenerator.UnitTable;
 import megamek.client.ui.Messages;
 import megamek.common.Entity;
+import megamek.common.EntityMovementMode;
+import megamek.common.IGame.Phase;
+import megamek.common.IPlayer;
+import megamek.common.event.GameListener;
+import megamek.common.event.GameListenerAdapter;
+import megamek.common.event.GameSettingsChangeEvent;
+import megamek.common.LAMPilot;
 import megamek.common.MechFileParser;
 import megamek.common.MechSearchFilter;
 import megamek.common.MechSummary;
 import megamek.common.TechConstants;
-import megamek.common.IGame.Phase;
+import megamek.common.UnitType;
 import megamek.common.loaders.EntityLoadingException;
+import megamek.common.options.OptionsConstants;
 import megamek.common.preference.IClientPreferences;
 import megamek.common.preference.PreferenceManager;
 import megamek.common.util.RandomArmyCreator;
@@ -74,6 +90,17 @@ WindowListener, TreeSelectionListener {
      *
      */
     private static final long serialVersionUID = 4072453002423681675L;
+    
+    @SuppressWarnings("unused")
+    private static final int TAB_BV_MATCHING       = 0;
+    private static final int TAB_RAT               = 1;
+    private static final int TAB_RAT_GENERATOR     = 2;
+    private static final int TAB_FORMATION_BUILDER = 3;
+    private static final int TAB_FORCE_GENERATOR   = 4;
+    
+    private static final String CARD_PREVIEW    = "card_preview"; //$NON-NLS-1$
+    private static final String CARD_FORCE_TREE = "card_force_tree"; // $NON-NLS-1$
+    
     private ClientGUI m_clientgui;
     private Client m_client;
     AdvancedSearchDialog asd;
@@ -87,18 +114,28 @@ WindowListener, TreeSelectionListener {
     private JComboBox<String> m_chType = new JComboBox<String>();
 
     private JTree m_treeRAT = new JTree();
-    //private JScrollPane m_treeViewRAT = new JScrollPane(m_treeRAT);
     private JTabbedPane m_pMain = new JTabbedPane();
     private JPanel m_pRAT = new JPanel();
+    private JPanel m_pRATGen = new JPanel();
+    private JPanel m_pFormations = new JPanel();
+    private ForceGeneratorViewUi m_pForceGen;
+    private ForceGenerationOptionsPanel m_pRATGenOptions;
+    private JPanel m_pUnitTypeOptions = new JPanel(new CardLayout());
+    private ForceGenerationOptionsPanel m_pFormationOptions;
     private JPanel m_pParameters = new JPanel();
     private JPanel m_pPreview = new JPanel();
     private JPanel m_pButtons = new JPanel();
     private JPanel m_pAdvSearch = new JPanel();
     private JButton m_bOK = new JButton(Messages.getString("Okay"));
     private JButton m_bCancel = new JButton(Messages.getString("Cancel"));
+    private JButton m_bRandomSkills = new JButton(Messages.getString("RandomSkillDialog.title"));
     private JButton m_bAdvSearch = new JButton(Messages.getString("RandomArmyDialog.AdvancedSearch"));
     private JButton m_bAdvSearchClear = new JButton(Messages.getString("RandomArmyDialog.AdvancedSearchClear"));
+    private JButton m_bGenerate = new JButton(Messages.getString("RandomArmyDialog.Generate"));
+    private JButton m_bAddToForce = new JButton(Messages.getString("RandomArmyDialog.AddToForce"));
 
+    private CardLayout m_lRightCards = new CardLayout();
+    private JPanel m_pRightPane = new JPanel(m_lRightCards);
     private JSplitPane m_pSplit;
 
     private JButton m_bAddAll = new JButton(Messages.getString("RandomArmyDialog.AddAll"));
@@ -108,10 +145,11 @@ WindowListener, TreeSelectionListener {
 
     private JTable m_lArmy;
     private JTable m_lUnits;
+    private JTable m_lRAT;
 
     private UnitTableModel armyModel;
     private UnitTableModel unitsModel;
-
+    private RATTableModel ratModel;
 
     private JLabel m_labBV = new JLabel(Messages
             .getString("RandomArmyDialog.BV"));
@@ -144,10 +182,9 @@ WindowListener, TreeSelectionListener {
             .getString("RandomArmyDialog.Pad"));
     private JCheckBox m_chkCanon = new JCheckBox(Messages
             .getString("RandomArmyDialog.Canon"));
-
-
+    
     private RandomUnitGenerator rug;
-
+    private UnitTable generatedRAT;
 
     public RandomArmyDialog(ClientGUI cl) {
         super(cl.frame, Messages.getString("RandomArmyDialog.title"), true); //$NON-NLS-1$
@@ -164,7 +201,7 @@ WindowListener, TreeSelectionListener {
         }
         updatePlayerChoice();
         asd = new AdvancedSearchDialog(m_clientgui.frame,
-                m_client.getGame().getOptions().intOption("year"));
+                m_client.getGame().getOptions().intOption(OptionsConstants.ALLOWED_YEAR));
         
         GUIPreferences guip = GUIPreferences.getInstance();
         // set defaults
@@ -178,7 +215,7 @@ WindowListener, TreeSelectionListener {
         m_tInfantry.setText(guip.getRATNumInf());
         m_chkPad.setSelected(guip.getRATPadBV());
         m_chkCanon.setSelected(m_client.getGame().getOptions().booleanOption(
-        "canon_only"));
+        OptionsConstants.ALLOWED_CANON_ONLY));
         updateTechChoice();
 
         // construct the buttons panel
@@ -187,8 +224,10 @@ WindowListener, TreeSelectionListener {
         m_bOK.addActionListener(this);
         m_pButtons.add(m_bCancel);
         m_bCancel.addActionListener(this);
+        m_bRandomSkills.addActionListener(this);
         m_pButtons.add(m_labelPlayer);
         m_pButtons.add(m_chPlayer);
+        m_pButtons.add(m_bRandomSkills);
 
         // construct the Adv Search Panel
         m_pAdvSearch.setLayout(new FlowLayout(FlowLayout.LEADING));
@@ -333,6 +372,100 @@ WindowListener, TreeSelectionListener {
         treeViewRAT.setPreferredSize(new Dimension(300, 200));
         m_pRAT.add(treeViewRAT, c);
 
+        //construct the RAT Generator panel
+        m_pRATGen.setLayout(new GridBagLayout());
+        //put the general options and the unit-specific options into a single panel so they scroll together.
+        JPanel pRATGenTop = new JPanel(new GridBagLayout());
+
+        c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 0;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.fill = GridBagConstraints.BOTH;
+        c.anchor = GridBagConstraints.WEST;
+        c.weightx = 1.0;
+        c.weighty = 0.5;
+        m_pRATGen.add(new JScrollPane(pRATGenTop), c);
+        
+        m_pRATGenOptions = new ForceGenerationOptionsPanel(ForceGenerationOptionsPanel.Use.RAT_GENERATOR, m_clientgui);
+        m_pFormationOptions = new ForceGenerationOptionsPanel(ForceGenerationOptionsPanel.Use.FORMATION_BUILDER, null);
+        
+        c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 0;
+        c.gridwidth = 1;
+        c.fill = GridBagConstraints.EAST;
+        c.anchor = GridBagConstraints.WEST;
+        c.weightx = 1.0;
+        c.weighty = 0.0;
+        pRATGenTop.add(m_pRATGenOptions, c);
+        m_pRATGenOptions.setYear(m_clientgui.getClient().getGame().getOptions()
+                .intOption("year"));
+        
+        c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 1;
+        c.gridwidth = 1;
+        c.fill = GridBagConstraints.EAST;
+        c.anchor = GridBagConstraints.WEST;
+        c.weightx = 1.0;
+        c.weighty = 0.0;
+        pRATGenTop.add(m_pUnitTypeOptions, c);
+
+        c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 1;
+        c.gridwidth = 1;
+        c.fill = GridBagConstraints.NONE;
+        c.anchor = GridBagConstraints.WEST;
+        c.weightx = 0.0;
+        c.weighty = 0.0;
+        m_pRATGen.add(m_bGenerate, c);
+        m_bGenerate.setToolTipText(Messages.getString("RandomArmyDialog.Generate.tooltip"));
+        m_bGenerate.addActionListener(this);
+        
+        c = new GridBagConstraints();
+        c.gridx = 1;
+        c.gridy = 1;
+        c.gridwidth = 1;
+        c.fill = GridBagConstraints.NONE;
+        c.anchor = GridBagConstraints.EAST;
+        c.weightx = 0.0;
+        c.weighty = 0.0;
+        m_pRATGen.add(m_bAddToForce, c);
+        m_bAddToForce.setToolTipText(Messages.getString("RandomArmyDialog.AddToForce.tooltip"));
+        m_bAddToForce.addActionListener(this);
+        
+        ratModel = new RATTableModel();
+        m_lRAT = new JTable();
+        m_lRAT.setModel(ratModel);
+        m_lRAT.setIntercellSpacing(new Dimension(5, 0));
+        m_lRAT.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        for (int i = 0; i < ratModel.getColumnCount(); i++) {
+        	m_lRAT.getColumnModel().getColumn(i).setPreferredWidth(ratModel.getPreferredWidth(i));
+        }
+		DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+		rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
+		m_lRAT.getColumnModel().getColumn(RATTableModel.COL_BV).setCellRenderer(rightRenderer);
+        c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 2;
+        c.fill = GridBagConstraints.BOTH;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.anchor = GridBagConstraints.WEST;
+        c.weightx = 1.0;
+        c.weighty = 0.5;
+        m_pRATGen.add(new JScrollPane(m_lRAT), c);
+
+        // formation builder tab
+        m_pFormations.setLayout(new BorderLayout());
+
+        m_pFormations.add(new JScrollPane(m_pFormationOptions), BorderLayout.CENTER);
+        m_pFormationOptions.setYear(m_clientgui.getClient().getGame().getOptions()
+                .intOption("year"));
+        
+        m_pForceGen = new ForceGeneratorViewUi(cl);
+
         // construct the preview panel
         m_pPreview.setLayout(new GridBagLayout());
         unitsModel = new UnitTableModel();
@@ -389,8 +522,23 @@ WindowListener, TreeSelectionListener {
 
         m_pMain.addTab(Messages.getString("RandomArmyDialog.BVtab"), m_pParameters);
         m_pMain.addTab(Messages.getString("RandomArmyDialog.RATtab"), m_pRAT);
-
-        m_pSplit = new javax.swing.JSplitPane(javax.swing.JSplitPane.HORIZONTAL_SPLIT,m_pMain, m_pPreview);
+        m_pMain.addTab(Messages.getString("RandomArmyDialog.RATGentab"), m_pRATGen);
+        m_pMain.addTab(Messages.getString("RandomArmyDialog.Formationtab"), m_pFormations);
+        m_pMain.addTab(Messages.getString("RandomArmyDialog.Forcetab"), m_pForceGen.getLeftPanel());
+        m_pMain.addChangeListener(ev -> {
+            if (m_pMain.getSelectedIndex() == TAB_FORCE_GENERATOR) {
+                m_lRightCards.show(m_pRightPane, CARD_FORCE_TREE);
+                this.m_bRandomSkills.setEnabled(false);
+            } else {
+                m_lRightCards.show(m_pRightPane, CARD_PREVIEW);
+                this.m_bRandomSkills.setEnabled(true);
+            }
+        });
+        
+        m_pRightPane.add(m_pPreview, CARD_PREVIEW);
+        m_pRightPane.add(m_pForceGen.getRightPanel(), CARD_FORCE_TREE);
+        
+        m_pSplit = new javax.swing.JSplitPane(javax.swing.JSplitPane.HORIZONTAL_SPLIT,m_pMain, m_pRightPane);
         m_pSplit.setOneTouchExpandable(false);
         m_pSplit.setResizeWeight(0.5);
 
@@ -402,6 +550,8 @@ WindowListener, TreeSelectionListener {
         validate();
         pack();
         setLocationRelativeTo(cl.frame);
+        
+        m_client.getGame().addGameListener(gameListener);
     }
 
     public void valueChanged(TreeSelectionEvent ev) {
@@ -421,43 +571,47 @@ WindowListener, TreeSelectionListener {
 
     public void actionPerformed(ActionEvent ev) {
         if (ev.getSource().equals(m_bOK)) {
-            ArrayList<Entity> entities = new ArrayList<Entity>(
-                    armyModel.getAllUnits().size());
-            Client c = null;
-            if (m_chPlayer.getSelectedIndex() > 0) {
-                String name = (String) m_chPlayer.getSelectedItem();
-                c = m_clientgui.getBots().get(name);
-            }
-            if (c == null) {
-                c = m_client;
-            }
-            for (MechSummary ms : armyModel.getAllUnits()) {
-                try {
-                    Entity e = new MechFileParser(ms.getSourceFile(), 
-                            ms.getEntryName()).getEntity();
-  
-                    autoSetSkillsAndName(e);
-                    e.setOwner(c.getLocalPlayer());
-                    if (c.getGame().getPhase() != Phase.PHASE_LOUNGE){
-                        e.setDeployRound(c.getGame().getRoundCount()+1);
-                        e.setGame(c.getGame());
-                        // Set these to true, otherwise units reinforced in
-                        // the movement turn are considered selectable
-                        e.setDone(true);
-                        e.setUnloaded(true);
-                    }
-                    entities.add(e);
-                } catch (EntityLoadingException ex) {
-                    System.out.println("Unable to load mech: " + //$NON-NLS-1$ 
-                            ms.getSourceFile() + ": " + ms.getEntryName() + //$NON-NLS-1$
-                            ": " + ex.getMessage()); //$NON-NLS-1$ 
-                    ex.printStackTrace();
-                    return;
+            if (m_pMain.getSelectedIndex() == TAB_FORCE_GENERATOR) {
+                m_pForceGen.addChosenUnits((String) m_chPlayer.getSelectedItem());
+            } else {
+                ArrayList<Entity> entities = new ArrayList<Entity>(
+                        armyModel.getAllUnits().size());
+                Client c = null;
+                if (m_chPlayer.getSelectedIndex() > 0) {
+                    String name = (String) m_chPlayer.getSelectedItem();
+                    c = m_clientgui.getBots().get(name);
                 }
+                if (c == null) {
+                    c = m_client;
+                }
+                for (MechSummary ms : armyModel.getAllUnits()) {
+                    try {
+                        Entity e = new MechFileParser(ms.getSourceFile(), 
+                                ms.getEntryName()).getEntity();
+      
+                        autoSetSkillsAndName(e);
+                        e.setOwner(c.getLocalPlayer());
+                        if (c.getGame().getPhase() != Phase.PHASE_LOUNGE){
+                            e.setDeployRound(c.getGame().getRoundCount()+1);
+                            e.setGame(c.getGame());
+                            // Set these to true, otherwise units reinforced in
+                            // the movement turn are considered selectable
+                            e.setDone(true);
+                            e.setUnloaded(true);
+                        }
+                        entities.add(e);
+                    } catch (EntityLoadingException ex) {
+                        System.out.println("Unable to load mech: " + //$NON-NLS-1$ 
+                                ms.getSourceFile() + ": " + ms.getEntryName() + //$NON-NLS-1$
+                                ": " + ex.getMessage()); //$NON-NLS-1$ 
+                        ex.printStackTrace();
+                        return;
+                    }
+                }
+                c.sendAddEntity(entities);
+                armyModel.clearData();
+                unitsModel.clearData();
             }
-            c.sendAddEntity(entities);
-            armyModel.clearData();
-            unitsModel.clearData();
             
             // Save preferences
             GUIPreferences guip = GUIPreferences.getInstance();
@@ -503,11 +657,98 @@ WindowListener, TreeSelectionListener {
         } else if (ev.getSource().equals(m_bRoll)) {
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             try {
-                if(m_pMain.getSelectedIndex() == 1) {
+                if(m_pMain.getSelectedIndex() == TAB_RAT) {
                     int units = Integer.parseInt(m_tUnits.getText());
                     if(units > 0) {
                         unitsModel.setData(RandomUnitGenerator.getInstance().generate(units));
                     }
+                } else if (m_pMain.getSelectedIndex() == TAB_RAT_GENERATOR) {
+                	int units = m_pRATGenOptions.getNumUnits();
+                	if (units > 0 && generatedRAT != null && generatedRAT.getNumEntries() > 0) {
+                		unitsModel.setData(generatedRAT.generateUnits(units));
+                	}
+                	//generateUnits removes salvage entries that have no units meeting criteria
+                	ratModel.refreshData();
+                } else if (m_pMain.getSelectedIndex() == TAB_FORMATION_BUILDER) {
+                    ArrayList<MechSummary> unitList = new ArrayList<>();
+                    FactionRecord fRec = m_pFormationOptions.getFaction();
+                    FormationType ft = FormationType.getFormationType(m_pFormationOptions.getStringOption("formationType"));
+                    List<UnitTable.Parameters> params = new ArrayList<>();
+                    params.add(new UnitTable.Parameters(fRec,
+                            m_pFormationOptions.getUnitType(),
+                            m_pFormationOptions.getYear(),
+                            m_pFormationOptions.getRating(), null,
+                            ModelRecord.NETWORK_NONE,
+                            java.util.EnumSet.noneOf(EntityMovementMode.class),
+                            java.util.EnumSet.noneOf(MissionRole.class), 0, fRec));
+                    List<Integer> numUnits = new ArrayList<>();
+                    numUnits.add(m_pFormationOptions.getNumUnits());
+                    
+                    if (m_pFormationOptions.getIntegerOption("numOtherUnits") > 0) {
+                        if (m_pFormationOptions.getIntegerOption("otherUnitType") >= 0) {
+                            params.add(new UnitTable.Parameters(fRec,
+                                    m_pFormationOptions.getIntegerOption("otherUnitType"),
+                                    m_pFormationOptions.getYear(), m_pFormationOptions.getRating(), null,
+                                    ModelRecord.NETWORK_NONE,
+                                    java.util.EnumSet.noneOf(EntityMovementMode.class),
+                                    java.util.EnumSet.noneOf(MissionRole.class), 0, fRec));
+                            numUnits.add(m_pFormationOptions.getIntegerOption("numOtherUnits"));
+                        } else if (m_pFormationOptions.getBooleanOption("mechBA")) {
+                            // Make sure at least a number units equals to the number of BA points/squads are omni
+                            numUnits.set(0, Math.min(m_pFormationOptions.getIntegerOption("numOtherUnits"),
+                                    m_pFormationOptions.getNumUnits()));
+                            if (m_pFormationOptions.getNumUnits() > m_pFormationOptions.getIntegerOption("numOtherUnits")) {
+                                params.add(params.get(0).copy());
+                                numUnits.add(m_pFormationOptions.getNumUnits() - m_pFormationOptions.getIntegerOption("numOtherUnits"));
+                            }
+                            params.get(0).getRoles().add(MissionRole.MECHANIZED_BA);
+                            //BA do not count for formation rules; add as a separate formation
+                        }
+                    }
+                    
+                    if (ft != null) {
+                        unitList.addAll(ft.generateFormation(params,
+                                numUnits, m_pFormationOptions.getIntegerOption("network"), false));
+                        if (unitList.size() > 0 && m_pFormationOptions.getIntegerOption("numOtherUnits") > 0) {
+                            if (m_pFormationOptions.getBooleanOption("mechBA")) {
+                                /* Try to generate the BA portion using the same formation type as the
+                                 * parent, otherwise generate randomly.
+                                 */
+                                UnitTable.Parameters p = new UnitTable.Parameters(fRec, UnitType.BATTLE_ARMOR,
+                                        m_pFormationOptions.getYear(), m_pFormationOptions.getRating(), null,
+                                        ModelRecord.NETWORK_NONE,
+                                        java.util.EnumSet.noneOf(EntityMovementMode.class),
+                                        java.util.EnumSet.of(MissionRole.MECHANIZED_BA), 0, fRec);
+                                List<MechSummary> ba = ft.generateFormation(p,
+                                        m_pFormationOptions.getIntegerOption("numOtherUnits"),
+                                        ModelRecord.NETWORK_NONE, true);
+                                if (ba.isEmpty()) {
+                                    ba = UnitTable.findTable(p).generateUnits(m_pFormationOptions.getIntegerOption("numOtherUnits"));
+                                }
+                                unitList.addAll(ba);
+                            } else if (m_pFormationOptions.getBooleanOption("airLance")) {
+                                UnitTable t = UnitTable.findTable(fRec, UnitType.AERO,
+                                        m_pFormationOptions.getYear(), m_pFormationOptions.getRating(), null,
+                                        ModelRecord.NETWORK_NONE,
+                                        java.util.EnumSet.noneOf(EntityMovementMode.class),
+                                        java.util.EnumSet.noneOf(MissionRole.class), 0, fRec);
+                                MechSummary unit = t.generateUnit();
+                                if (unit != null) {
+                                    unitList.add(unit);
+                                    MechSummary unit2 = t.generateUnit(ms -> ms.getChassis().equals(unit.getChassis()));
+                                    if (unit2 != null) {
+                                        unitList.add(unit2);
+                                    } else {
+                                        unitList.add(unit);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        System.err.println("Could not find formation type " + m_pFormationOptions.getStringOption("formationType"));
+                    }                      
+                    unitsModel.setData(unitList);
+                    m_pFormationOptions.updateGeneratedUnits(unitList);
                 } else {
                     RandomArmyCreator.Parameters p = new RandomArmyCreator.Parameters();
                     p.advancedSearchFilter=searchFilter;
@@ -529,10 +770,21 @@ WindowListener, TreeSelectionListener {
             }finally{
                 setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             }
+        } else if (ev.getSource().equals(m_bGenerate)) {
+        	generateRAT();
+        } else if (ev.getSource().equals(m_bAddToForce)) {
+            for(int sel : m_lRAT.getSelectedRows()) {
+                MechSummary ms = generatedRAT.getMechSummary(sel);
+                if (ms != null) {
+                	armyModel.addUnit(ms);
+                }
+            }
         } else if (ev.getSource().equals(rug)) {
             m_ratStatus.setText(Messages
                     .getString("RandomArmyDialog.ratStatusDoneLoading"));
             updateRATs();
+        } else if (ev.getSource().equals(m_bRandomSkills)) {
+            m_clientgui.getRandomSkillDialog().showDialog();
         }
     }
 
@@ -564,7 +816,7 @@ WindowListener, TreeSelectionListener {
         //ignored
     }
 
-    private void updatePlayerChoice() {
+	private void updatePlayerChoice() {
         String lastChoice = (String) m_chPlayer.getSelectedItem();
         String clientName = m_clientgui.getClient().getName();
         m_chPlayer.removeAllItems();
@@ -572,7 +824,12 @@ WindowListener, TreeSelectionListener {
         m_chPlayer.addItem(clientName);
         for (Iterator<Client> i = m_clientgui.getBots().values().iterator(); i
         .hasNext();) {
-            m_chPlayer.addItem(i.next().getName());
+            Client client = i.next();
+            IPlayer player = m_client.getGame().getPlayer(client.getLocalPlayerNumber());
+
+            if(!player.isObserver()) {
+                m_chPlayer.addItem(client.getName());
+            }
         }
         if (m_chPlayer.getItemCount() == 1) {
             m_chPlayer.setEnabled(false);
@@ -636,6 +893,14 @@ WindowListener, TreeSelectionListener {
             m_treeRAT.setSelectionPath(path);
         }
     }
+    
+    private void updateRATYear() {
+        int gameYear = m_clientgui.getClient().getGame().getOptions().intOption("year");
+        
+        m_pRATGenOptions.setYear(gameYear);
+        m_pFormationOptions.setYear(gameYear);
+        m_pForceGen.setYear(gameYear);
+    }
 
     private void createRatTreeNodes(DefaultMutableTreeNode parentNode, RandomUnitGenerator.RatTreeNode ratTreeNode) {
         for (RandomUnitGenerator.RatTreeNode child : ratTreeNode.children) {
@@ -679,6 +944,21 @@ WindowListener, TreeSelectionListener {
         // No match at this branch
         return null;
     }
+    
+    @SuppressWarnings("unchecked")
+    private void generateRAT() {
+    	FactionRecord fRec = m_pRATGenOptions.getFaction();
+    	if (fRec != null) {
+			generatedRAT = UnitTable.findTable(fRec, m_pRATGenOptions.getUnitType(),
+			        m_pRATGenOptions.getYear(), m_pRATGenOptions.getRating(),
+			        (List<Integer>)m_pRATGenOptions.getListOption("weightClasses"),
+					m_pRATGenOptions.getIntegerOption("networkMask"),
+					(List<EntityMovementMode>)m_pRATGenOptions.getListOption("motiveTypes"),
+					(List<MissionRole>)m_pRATGenOptions.getListOption("roles"),
+					m_pRATGenOptions.getIntegerOption("roleStrictness"));
+			ratModel.refreshData();
+    	}
+    }
 
     @Override
     public void setVisible(boolean show) {
@@ -692,24 +972,46 @@ WindowListener, TreeSelectionListener {
 
     private void autoSetSkillsAndName(Entity e) {
         IClientPreferences cs = PreferenceManager.getClientPreferences();
-        if(cs.useAverageSkills()) {
-            int skills[] = m_client.getRandomSkillsGenerator().getRandomSkills(e, true);
+        for (int i = 0; i < e.getCrew().getSlotCount(); i++) {
+            if(cs.useAverageSkills()) {
+                int skills[] = m_client.getRandomSkillsGenerator().getRandomSkills(e, true);
+    
+                int gunnery = skills[0];
+                int piloting = skills[1];
+    
+                e.getCrew().setGunnery(gunnery, i);
+                e.getCrew().setPiloting(piloting, i);
 
-            int gunnery = skills[0];
-            int piloting = skills[1];
-
-            e.getCrew().setGunnery(gunnery);
-            e.getCrew().setPiloting(piloting);
-        }
-        if(cs.generateNames()) {
-            e.getCrew().setName(m_client.getRandomNameGenerator().generate());
+                if (e.getCrew() instanceof LAMPilot) {
+                    skills = m_client.getRandomSkillsGenerator().getRandomSkills(e, true);
+                    ((LAMPilot)e.getCrew()).setGunneryAero(skills[0]);
+                    ((LAMPilot)e.getCrew()).setPilotingAero(skills[1]);
+                }
+            }
+            e.getCrew().sortRandomSkills();
+            if(cs.generateNames()) {
+                e.getCrew().setName(m_client.getRandomNameGenerator().generate(), i);
+            }
         }
     }
 
     /**
+     * This class now listens for game settings changes and updates the RAT year whenever
+     * the game year changes. Well, whenever any game settings changes.
+     */
+    private GameListener gameListener = new GameListenerAdapter() {
+        @Override
+        public void gameSettingsChange(GameSettingsChangeEvent e) {
+            if(!e.isMapSettingsOnlyChange()) {
+                updateRATYear();
+            }
+        }
+    };
+    
+    /**
      * A table model for displaying units
      */
-    public class UnitTableModel extends AbstractTableModel {
+    public static class UnitTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = 4819661751806908535L;
 
@@ -718,10 +1020,10 @@ WindowListener, TreeSelectionListener {
         private static final int COL_MOVE = 2;
         private static final int N_COL = 3;
 
-        private ArrayList<MechSummary> data;
+        private List<MechSummary> data;
 
         public UnitTableModel() {
-            data = new ArrayList<MechSummary>();
+            data = new ArrayList<>();
         }
 
         public int getRowCount() {
@@ -729,7 +1031,7 @@ WindowListener, TreeSelectionListener {
         }
 
         public void clearData() {
-            data = new ArrayList<MechSummary>();
+            data = new ArrayList<>();
             fireTableDataChanged();
         }
 
@@ -742,7 +1044,7 @@ WindowListener, TreeSelectionListener {
             fireTableDataChanged();
         }
 
-        public void setData(ArrayList<MechSummary> mechs) {
+        public void setData(List<MechSummary> mechs) {
             data = mechs;
             fireTableDataChanged();
         }
@@ -787,8 +1089,91 @@ WindowListener, TreeSelectionListener {
             return data.get(row);
         }
 
-        public ArrayList<MechSummary> getAllUnits() {
+        public List<MechSummary> getAllUnits() {
             return data;
+        }
+    }
+    
+    /**
+     * A table model for displaying a generated RAT
+     */
+    public class RATTableModel extends AbstractTableModel {
+
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 7807207311532173654L;
+		
+		private static final int COL_WEIGHT = 0;
+        private static final int COL_UNIT = 1;
+        private static final int COL_BV = 2;
+        private static final int N_COL = 3;
+
+        public int getRowCount() {
+        	if (generatedRAT == null) {
+        		return 0;
+        	}
+            return generatedRAT.getNumEntries();
+        }
+
+        public void refreshData() {
+            fireTableDataChanged();
+        }
+
+        public int getColumnCount() {
+            return N_COL;
+        }
+        
+        public int getPreferredWidth(int col) {
+        	switch (col) {
+        	case COL_WEIGHT:
+        		return 12;
+        	case COL_UNIT:
+        		return 240;
+        	case COL_BV:
+        		return 18;
+        	}
+        	return 0;
+        }
+        
+        @Override
+        public String getColumnName(int column) {
+            switch (column) {
+                case (COL_WEIGHT):
+                    return Messages.getString("RandomArmyDialog.colWeight");
+                case (COL_UNIT):
+                    return Messages.getString("RandomArmyDialog.colUnit");
+                case (COL_BV):
+                    return Messages.getString("RandomArmyDialog.colBV");
+            }
+            return "??";
+        }
+
+        @Override
+        public Class<?> getColumnClass(int c) {
+            return getValueAt(0, c).getClass();
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int col) {
+            return false;
+        }
+
+        public Object getValueAt(int row, int col) {
+        	if (generatedRAT != null) {
+		    	switch (col) {
+		    	case COL_WEIGHT:
+		    		return generatedRAT.getEntryWeight(row);
+		    	case COL_UNIT:
+		    		return generatedRAT.getEntryText(row);
+		    	case COL_BV:
+		    		int bv = generatedRAT.getBV(row);
+		    		if (bv > 0) {
+		    			return String.valueOf(bv);
+		    		}
+		    	}
+        	}
+		   	return "";
         }
     }
 }

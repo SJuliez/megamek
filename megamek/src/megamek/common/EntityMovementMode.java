@@ -26,7 +26,7 @@ public enum EntityMovementMode {
     TRACKED ("tracked"),
     WHEELED ("wheeled"),
     HOVER ("hover"),
-    VTOL ("vtol"),
+    VTOL ("vtol", "microcopter", "micro-copter", "microlite"),
     NAVAL ("naval"),
     HYDROFOIL ("hydrofoil"),
     SUBMARINE ("submarine"),
@@ -36,11 +36,12 @@ public enum EntityMovementMode {
     BIPED_SWIM,
     QUAD_SWIM,
     WIGE ("wige", "glider"),
-    AERODYNE,
-    SPHEROID,
-    INF_UMU,
-    AIRMECH,
+    AERODYNE ("aerodyne"),
+    SPHEROID ("spheroid"),
+    INF_UMU ("umu", "scuba", "motorized scuba"),
     AEROSPACE, // this might be a synonym for AERODYNE.
+    AIRSHIP ("airship"),
+    STATION_KEEPING ("station", "station_keeping", "satellite"),
     RAIL ("rail"),
     MAGLEV ("maglev");
 

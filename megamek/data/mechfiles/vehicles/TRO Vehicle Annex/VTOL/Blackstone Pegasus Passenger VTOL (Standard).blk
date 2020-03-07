@@ -24,6 +24,10 @@ Blackstone Pegasus Passenger VTOL
 3066
 </year>
 
+<originalBuildYear>
+3066
+</originalBuildYear>
+
 <type>
 IS Level 2
 </type>
@@ -33,8 +37,8 @@ VTOL
 </motion_type>
 
 <transporters>
-troopspace:7.5
-cargobay:5:1
+cargobay:5.0:1:2
+standardseats:100.0:0
 </transporters>
 
 <cruiseMP>
@@ -52,14 +56,6 @@ cargobay:5:1
 0
 0
 </armor>
-
-<barrating>
-2
-</barrating>
-
-<structural_tech_rating>
-2
-</structural_tech_rating>
 
 <Body Equipment>
 </Body Equipment>
@@ -79,11 +75,23 @@ cargobay:5:1
 <Rotor Equipment>
 </Rotor Equipment>
 
+<barrating>
+2
+</barrating>
+
+<structural_tech_rating>
+2
+</structural_tech_rating>
+
 <source>
-TRO VAr
+TRO VAr - Civil War
 </source>
 
 <tonnage>
 30.0
 </tonnage>
+
+<fuel>
+2.0
+</fuel>
 

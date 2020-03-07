@@ -4,18 +4,18 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 
-import megamek.common.Aero;
 import megamek.common.Coords;
 import megamek.common.Entity;
+import megamek.common.IAero;
 import megamek.common.IBoard;
 import megamek.common.IGame;
 import megamek.common.IHex;
 import megamek.common.Infantry;
 import megamek.common.MovePath;
-import megamek.common.Terrains;
 import megamek.common.MovePath.MoveStepType;
 import megamek.common.MoveStep;
 import megamek.common.Tank;
+import megamek.common.Terrains;
 
 /**
  * Implementation of MovePathFinder designed to find the shortest path between
@@ -184,8 +184,8 @@ public class ShortestPathFinder extends MovePathFinder<MovePath> {
             int h1 = 0, h2 = 0;
             // We cannot estimate the needed cost for aeros
             // However, Dropships basically follow ground movement rules
-            if ((first.getEntity() instanceof Aero) 
-                    && !((Aero)first.getEntity()).isSpheroid()) {
+            if ((first.getEntity().isAero()) 
+                    && !((IAero)first.getEntity()).isSpheroid()) {
                 // We want to pick paths that use fewer MP, and are also shorter
                 // unlike ground units which could benefit from better target
                 // movement modifiers for longer paths
@@ -220,10 +220,11 @@ public class ShortestPathFinder extends MovePathFinder<MovePath> {
             }
 
             int dd = (first.getMpUsed() + h1) - (second.getMpUsed() + h2);
+
             if (dd != 0) {
                 return dd;
             } else {
-                return -(first.getHexesMoved() - second.getHexesMoved());
+                return first.getHexesMoved() - second.getHexesMoved();
             }
         }
     }
@@ -347,22 +348,37 @@ public class ShortestPathFinder extends MovePathFinder<MovePath> {
     
     public static int getFacingDiff(final MovePath mp, Coords dest,
             boolean backward) {
+        // Facing doesn't matter for jumping
         if (mp.isJumping()) {
             return 0;
         }
+
+        // Ignore facing if we are on the destination
         if (mp.getFinalCoords().equals(dest)) {
             return 0;
         }
-        int firstFacing = Math
-                .abs(((mp.getFinalCoords().direction(dest) + (backward ? 3 : 0)) % 6)
-                        - mp.getFinalFacing());
+
+        // Direction dest hex is from current location, in hex facings
+        int destDir = mp.getFinalCoords().direction(dest);
+        // Direction dest hex is from current location, in degrees
+        int destAngle = mp.getFinalCoords().degree(dest);
+        // Estimate the number of facing changes to reach destination
+        int firstFacing = Math.abs(((destDir + (backward ? 3 : 0)) % 6)
+                - mp.getFinalFacing());
+
+        // Adjust for circular nature of facing
         if (firstFacing > 3) {
             firstFacing = 6 - firstFacing;
         }
+
+        // Ability to shift can ease facing costs
         if (mp.canShift()) {
             firstFacing = Math.max(0, firstFacing - 1);
         }
-        if ((mp.getFinalCoords().degree(dest) % 60) != 0) {
+
+        // If the angle to the goal doesn't fall along a hex facing, then we
+        // need to make another facing change, which needs to be accounted for
+        if ((destAngle % 60) != 0) {
             firstFacing++;
         }
         return firstFacing;
@@ -389,12 +405,21 @@ public class ShortestPathFinder extends MovePathFinder<MovePath> {
         }
         IHex currHex = board.getHex(mp.getFinalCoords());
         if (currHex == null) {
-            System.out.println("getLevelDiff: currHex was null! Coords: "
-                    + mp.getFinalCoords());
+            System.out.println("getLevelDiff: currHex was null!" +
+                               "\nStart: " + mp.getStartCoords() +
+                               "\ncurrHex:  " + mp.getFinalCoords() +
+                               "\nPath: " + mp.toString());
             return 0;
         }
         IHex destHex = board.getHex(dest);
-        return Math.abs(destHex.getLevel() - currHex.getLevel());        
+        if (destHex == null) {
+            System.out.println("getLevelDiff: destHex was null!" +
+                               "\nStart: " + mp.getStartCoords() +
+                               "\ndestHex: " + dest +
+                               "\nPath: " + mp.toString());
+            return 0;
+        }
+        return Math.abs(destHex.getLevel() - currHex.getLevel());
     }
     
     /**
@@ -436,6 +461,11 @@ public class ShortestPathFinder extends MovePathFinder<MovePath> {
         // Infantry elevation changes are doubled 
         if (ent instanceof Infantry) {
             elevationDiff *= 2;
+        }
+        // Penalty for standing
+        if (ent.isProne() && !(mp.contains(MoveStepType.GET_UP)
+                || mp.contains(MoveStepType.CAREFUL_STAND))) {
+            elevationDiff += 2;
         }
         return elevationDiff;
     }    

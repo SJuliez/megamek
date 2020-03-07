@@ -2,7 +2,8 @@
 <BlockVersion>
 1
 </BlockVersion>
-#Write the version number just in case...
+
+##Write the version number just in case...
 <Version>
 MAM0
 </Version>
@@ -19,68 +20,32 @@ Claymore
 Interceptor
 </Model>
 
-<Tonnage>
-1400
-</Tonnage>
+<year>
+3075
+</year>
+
+<originalBuildYear>
+3075
+</originalBuildYear>
+
+<type>
+Mixed (IS Chassis) Experimental
+</type>
+
+<motion_type>
+Aerodyne
+</motion_type>
+
+<transporters>
+cargobay:263.5:2:1
+1stclassquarters:30.0:0
+2ndclassquarters:0.0:0
+crewquarters:84.0:0
+</transporters>
 
 <SafeThrust>
 6
 </SafeThrust>
-
-<Armor>
-250
-200
-200
-150
-</Armor>
-
-<Nose Equipment>
-ISBombastLaser
-ISBombastLaser
-ISBombastLaser
-CLERMediumLaser
-CLERMediumLaser
-CLERMediumLaser
-ISSBGaussRifle
-ISSBGaussRifle
-ISSBGauss Ammo:24
-IS Laser AMS
-IS Laser AMS
-IS Laser AMS
-</Nose Equipment>
-
-<Left Side Equipment>
-CLERLargeLaser
-CLERLargeLaser
-ISExtendedLRM15
-ISExtendedLRM15
-ISExtended LRM15 Ammo:24
-(R) IS Laser AMS
-(R) IS Laser AMS
-</Left Side Equipment>
-
-<Right Side Equipment> 
-CLERLargeLaser
-CLERLargeLaser
-ISExtendedLRM15
-ISExtendedLRM15
-ISExtended LRM15 Ammo:24
-(R) IS Laser AMS
-(R) IS Laser AMS
-</Right Side Equipment>
-
-<Aft Equipment> 
-CLLargePulseLaser
-CLLargePulseLaser
-CLERMediumLaser
-CLERMediumLaser
-CLERMediumLaser
-CLERMediumLaser
-</Aft Equipment>
-
-<structural_integrity>
-12
-</structural_integrity>
 
 <heatsinks>
 110
@@ -94,50 +59,121 @@ CLERMediumLaser
 4000
 </fuel>
 
-<type>
-Mixed (IS Chassis) Experimental
-</type>
-
-<year>
-3075
-</year>
-
-<internal_type>
-0
-</internal_type>
-
-<armor_type>
-0
-</armor_type>
-
 <engine_type>
-0
+1
 </engine_type>
 
-<motion_type>
-aerodyne
-</motion_type>
+<armor_type>
+41
+</armor_type>
 
-<transporters>
-CargoBay:263.5:2
-</transporters>
+<armor_tech>
+7
+</armor_tech>
 
-<escape_pod>
-0
-</escape_pod>
+<armor>
+250
+200
+200
+150
+</armor>
 
-<life_boat>
-2
-</life_boat>
+<Nose Equipment>
+(B) Bombast Laser
+Bombast Laser
+Bombast Laser
+CLERMediumLaser
+CLERMediumLaser
+CLERMediumLaser
+(B) ISSBGR
+ISSBGR
+Silver Bullet Gauss Ammo:24
+(B) ISLaserAntiMissileSystem
+ISLaserAntiMissileSystem
+ISLaserAntiMissileSystem
+</Nose Equipment>
+
+<Left Side Equipment>
+(B) CLERLargeLaser
+CLERLargeLaser
+(B) Extended LRM 15
+Extended LRM 15
+IS Ammo Extended LRM-15:24
+(R) (B) ISLaserAntiMissileSystem
+(R) ISLaserAntiMissileSystem
+</Left Side Equipment>
+
+<Right Side Equipment>
+(B) CLERLargeLaser
+CLERLargeLaser
+(B) Extended LRM 15
+Extended LRM 15
+IS Ammo Extended LRM-15:24
+(R) (B) ISLaserAntiMissileSystem
+(R) ISLaserAntiMissileSystem
+</Right Side Equipment>
+
+<Aft Equipment>
+(B) CLLargePulseLaser
+CLLargePulseLaser
+(B) CLERMediumLaser
+CLERMediumLaser
+CLERMediumLaser
+CLERMediumLaser
+</Aft Equipment>
+
+<Hull Equipment>
+</Hull Equipment>
+
+<structural_integrity>
+12
+</structural_integrity>
+
+<source>
+XTRO Steiner - Jihad
+</source>
+
+<tonnage>
+1400.0
+</tonnage>
+
+<designtype>
+1
+</designtype>
 
 <crew>
 15
 </crew>
 
+<officers>
+3
+</officers>
+
+<gunners>
+5
+</gunners>
+
 <passengers>
 0
 </passengers>
 
-<source>
-XTRO Steiner - Jihad
-</source>
+<marines>
+0
+</marines>
+
+<battlearmor>
+0
+</battlearmor>
+
+<otherpassenger>
+0
+</otherpassenger>
+
+<life_boat>
+2
+</life_boat>
+
+<escape_pod>
+0
+</escape_pod>
+

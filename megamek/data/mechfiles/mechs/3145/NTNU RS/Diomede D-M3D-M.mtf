@@ -4,7 +4,7 @@ D-M3D-M
 
 Config:Biped
 TechBase:Inner Sphere
-Era:3130
+Era:3092
 Source:RS 3145 NT NU
 Rules Level:2
 
@@ -113,7 +113,7 @@ Head:
 Life Support
 Sensors
 Cockpit
-Ejection Seat
+Ejection Seat (Industrial Mech)
 Sensors
 Life Support
 -Empty-

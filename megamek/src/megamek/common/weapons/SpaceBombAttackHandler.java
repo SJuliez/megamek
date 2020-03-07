@@ -17,10 +17,12 @@
  */
 package megamek.common.weapons;
 
-import java.util.Vector;
+import java.util.Collections;
+import java.util.List;
 
 import megamek.common.Aero;
 import megamek.common.BombType;
+import megamek.common.Entity;
 import megamek.common.FighterSquadron;
 import megamek.common.HitData;
 import megamek.common.IGame;
@@ -70,10 +72,9 @@ public class SpaceBombAttackHandler extends WeaponHandler {
         if (bDirect) {
             nbombs = Math.min(nbombs + (toHit.getMoS() / 3), nbombs * 2);
         }
-        if (bGlancing) {
-            nbombs = (int) Math.floor(nbombs / 2.0);
-
-        }
+        
+        nbombs = applyGlancingBlowModifier(nbombs, false);
+        
         return nbombs;
     }
 
@@ -89,7 +90,7 @@ public class SpaceBombAttackHandler extends WeaponHandler {
     @Override
     protected void useAmmo() {
         int[] payload = waa.getBombPayload();
-        if (!(ae instanceof Aero) || null == payload) {
+        if (!(ae.isAero()) || null == payload) {
             return;
         }
         
@@ -99,14 +100,17 @@ public class SpaceBombAttackHandler extends WeaponHandler {
             //  The salvo consists of one bomb from each fighter equipped with
             //  a bomb of the proper type.  
             for (int type = 0; type < payload.length; type++) {
-                Vector<Aero> fighters = ((FighterSquadron)ae).getFighters();
+                List<Entity> activeFighters = ae.getActiveSubEntities().orElse(Collections.emptyList());
+                if(activeFighters.isEmpty()) {
+                    break;
+                }
                 int fighterIndex = 0;                                
                 for (int i = 0; i < payload[type]; i++) {
                     boolean bombRemoved = false;
                     int iterations = 0;
-                    while (!bombRemoved && iterations <= fighters.size())
+                    while (!bombRemoved && iterations <= activeFighters.size())
                     {
-                        Aero fighter = fighters.get(fighterIndex);
+                        Aero fighter = (Aero) activeFighters.get(fighterIndex);
                         // find the first mounted bomb of this type and drop it
                         for (Mounted bomb : fighter.getBombs()) {
                             if (((BombType) bomb.getType()).getBombType() == type && 
@@ -118,17 +122,16 @@ public class SpaceBombAttackHandler extends WeaponHandler {
                             }
                         }
                         iterations++;
-                        fighterIndex = (fighterIndex + 1) % fighters.size();
+                        fighterIndex = (fighterIndex + 1) % activeFighters.size();
                     }
-                    if (iterations > fighters.size()){
+                    if (iterations > activeFighters.size()){
                         System.err.println("Error: couldn't find ammo for a " +
                                 "dropped bomb in SpaceBombAttackHandler.useAmmo()");
                     }                    
                 }
                 // Now remove a bomb from the squadron
                 if (payload[type] > 0){
-                    double numSalvos = Math.ceil((payload[type] + 0.0)
-                            / ((FighterSquadron) ae).getNFighters());
+                    double numSalvos = Math.ceil((payload[type] + 0.0) / activeFighters.size());
                     for (int salvo = 0; salvo < numSalvos; salvo++){
                         for (Mounted bomb : ae.getBombs()) {
                             if (((BombType) bomb.getType()).getBombType() == type
@@ -141,7 +144,7 @@ public class SpaceBombAttackHandler extends WeaponHandler {
                     }
                 }
             }
-        }else{ // Ammo expenditure for a single fighter        
+        } else { // Ammo expenditure for a single fighter        
             for (int type = 0; type < payload.length; type++) {
                 for (int i = 0; i < payload[type]; i++) {
                     // find the first mounted bomb of this type and drop it

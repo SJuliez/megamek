@@ -26,14 +26,7 @@
  */
 package megamek.common.loaders;
 
-import megamek.common.AmmoType;
-import megamek.common.BattleArmor;
-import megamek.common.Entity;
-import megamek.common.EntityMovementMode;
-import megamek.common.EquipmentType;
-import megamek.common.LocationFullException;
-import megamek.common.Mounted;
-import megamek.common.TechConstants;
+import megamek.common.*;
 import megamek.common.util.BuildingBlock;
 
 public class BLKBattleArmorFile extends BLKFile implements IMechLoader {
@@ -147,6 +140,18 @@ public class BLKBattleArmorFile extends BLKFile implements IMechLoader {
         if (dataFile.exists("armor_tech")) {
             t.setArmorTechLevel(dataFile.getDataAsInt("armor_tech")[0]);
         }
+        if (dataFile.exists("Turret")) {
+            String field = dataFile.getDataAsString("Turret")[0];
+            int index = field.indexOf(":");
+            if (index >= 0) {
+                t.setTurretSize(Integer.parseInt(field.substring(index + 1)));
+                if (field.toLowerCase().startsWith("modular")
+                        || field.toLowerCase().startsWith("configurable")) {
+                    t.setModularTurret(true);
+                }
+            }
+        }
+        t.recalculateTechAdvancement();
 
         String[] abbrs = t.getLocationAbbrs();
         for (int loop = 0; loop < t.locations(); loop++) {
@@ -175,7 +180,8 @@ public class BLKBattleArmorFile extends BLKFile implements IMechLoader {
         } else {
             prefix = "IS ";
         }
-
+        // Track the last potential anti-personnel mount and put any APM weapon there
+        Mounted lastAPM = null;
         if (saEquip[0] != null) {
             for (int x = 0; x < saEquip.length; x++) {
                 int mountLoc = BattleArmor.MOUNT_LOC_NONE;
@@ -188,6 +194,9 @@ public class BLKBattleArmorFile extends BLKFile implements IMechLoader {
                 } else if  (saEquip[x].contains(":RA")){
                     mountLoc = BattleArmor.MOUNT_LOC_RARM;
                     saEquip[x] = saEquip[x].replace(":RA", "");
+                } else if  (saEquip[x].contains(":TU")){
+                    mountLoc = BattleArmor.MOUNT_LOC_TURRET;
+                    saEquip[x] = saEquip[x].replace(":TU", "");
                 }
                 
                 boolean dwpMounted = saEquip[x].contains(":DWP");
@@ -222,12 +231,24 @@ public class BLKBattleArmorFile extends BLKFile implements IMechLoader {
                     try {
                         Mounted m = t.addEquipment(etype, nLoc, false, 
                                 mountLoc, dwpMounted);
-                        if (numShots != 0 && m != null 
-                                && (m.getType() instanceof AmmoType)){
+                        if (numShots != 0 && (m.getType() instanceof AmmoType)){
                             m.setShotsLeft(numShots);
                             m.setOriginalShots(numShots);
+                            m.setAmmoCapacity(numShots * ((AmmoType) m.getType()).getKgPerShot() / 1000.0);
                         }
-                        m.setAPMMounted(apmMounted);
+                        if ((etype instanceof MiscType)
+                                && (etype.hasFlag(MiscType.F_AP_MOUNT) || etype.hasFlag(MiscType.F_ARMORED_GLOVE))) {
+                            lastAPM = m;
+                        } else if (apmMounted) {
+                            m.setAPMMounted(true);
+                            // Link to the last AP mount or armored glove. If we haven't found one yet or
+                            // the last one has been used, the post load init will match with the first
+                            // available.
+                            if (lastAPM != null) {
+                                lastAPM.setLinked(m);
+                                lastAPM = null;
+                            }
+                        }
                         m.setSquadSupportWeapon(sswMounted);
                     } catch (LocationFullException ex) {
                         throw new EntityLoadingException(ex.getMessage());

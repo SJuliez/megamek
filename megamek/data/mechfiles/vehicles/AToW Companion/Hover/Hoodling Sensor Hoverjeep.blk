@@ -25,7 +25,7 @@ Hoodling Sensor HoverJeep
 </year>
 
 <type>
-IS Level 5
+IS Level 4
 </type>
 
 <motion_type>
@@ -56,7 +56,7 @@ Hover
 </structural_tech_rating>
 
 <Body Equipment>
-Enviromental Sealed Chassis
+Environmental Sealed Chassis
 CommsGear:1
  </Body Equipment>
 

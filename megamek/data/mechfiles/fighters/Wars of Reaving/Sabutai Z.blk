@@ -24,6 +24,10 @@ Z
 3072
 </year>
 
+<originalBuildYear>
+3072
+</originalBuildYear>
+
 <type>
 Clan Level 4
 </type>
@@ -31,6 +35,9 @@ Clan Level 4
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 6
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+1
+</omnipodheatsinks>
 
 <fuel>
 240
@@ -76,39 +87,45 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLERPPC
-NovaCEWS
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-Clan Ammo iATM-9
-CLCASE
+CLERPPC:OMNI
+NovaCEWS:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLiATM9
-CLiATM9
+CLiATM9:OMNI
+CLiATM9:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLiATM9
-CLiATM9
+CLiATM9:OMNI
+CLiATM9:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+Clan Ammo iATM-9:OMNI
+CLCASE
+</Fuselage Equipment>
 
 <source>
 The Wars of Reaving (s) - Jihad

@@ -15,7 +15,7 @@
 package megamek.common;
 
 /**
- * Represtents a volume of space set aside for carrying refrigerated cargo
+ * Represents a volume of space set aside for carrying refrigerated cargo
  */
 
 public final class RefrigeratedCargoBay extends Bay {
@@ -25,7 +25,7 @@ public final class RefrigeratedCargoBay extends Bay {
      */
     private static final long serialVersionUID = 4161027191694822726L;
 
-    private float weight = 0;
+    private double weight = 0;
 
     /**
      * The default constructor is only for serialization.
@@ -47,11 +47,12 @@ public final class RefrigeratedCargoBay extends Bay {
      * @param bayNumber
      */
     public RefrigeratedCargoBay(double space, int doors, int bayNumber) {
-        totalSpace = space * 0.87;
-        weight = (float) space;
-        currentSpace = space * 0.87;
+        totalSpace = space;
+        weight = space / 0.87;
+        currentSpace = space;
         this.doors = doors;
         this.bayNumber = bayNumber;
+        currentdoors = doors;
     }
 
     /**
@@ -73,12 +74,13 @@ public final class RefrigeratedCargoBay extends Bay {
 
     @Override
     public String getUnusedString(boolean showrecovery) {
-        StringBuffer returnString = new StringBuffer("Refrigerated Cargo Space - ");
+        StringBuffer returnString = new StringBuffer(
+                "Refrigerated Cargo Space " + numDoorsString() + " - ");
 
-        if (currentSpace != Math.round(currentSpace)) {
-            returnString.append(String.format("%1$,.3f", currentSpace));
+        if (getUnused() != Math.round(getUnused())) {
+            returnString.append(String.format("%1$,.3f", getUnused()));
         } else {
-            returnString.append(String.format("%1$,.0f", currentSpace));
+            returnString.append(String.format("%1$,.0f", getUnused()));
         }
 
         returnString.append(" tons");
@@ -87,17 +89,29 @@ public final class RefrigeratedCargoBay extends Bay {
 
     @Override
     public String getType() {
-        return "Refrigerated Cargo";
+        return "Reefer";
     }
 
     @Override
-    public float getWeight() {
+    public double getWeight() {
         return weight;
     }
 
     @Override
     public String toString() {
         return "refrigeratedcargobay:" + totalSpace + ":" + doors + ":"+ bayNumber;
+    }
+
+    
+    @Override
+    public boolean isCargo() {
+        return true;
+    }
+
+    @Override
+    public long getCost() {
+        // Based on the weight of the equipment (not capacity), rounded up to the whole ton
+        return 200L * (long) Math.ceil(getWeight());
     }
 
 }

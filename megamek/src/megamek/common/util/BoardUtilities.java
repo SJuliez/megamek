@@ -1,16 +1,18 @@
 /*
- * MegaMek - Copyright (C) 2005 Ben Mazur (bmazur@sev.org)
- *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License as published by the Free
- *  Software Foundation; either version 2 of the License, or (at your option)
- *  any later version.
- *
- *  This program is distributed in the hope that it will be useful, but
- *  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- *  for more details.
- */
+* MegaMek -
+* Copyright (C) 2005 Ben Mazur (bmazur@sev.org)
+* Copyright (C) 2018 The MegaMek Team
+*
+* This program is free software; you can redistribute it and/or modify it under
+* the terms of the GNU General Public License as published by the Free Software
+* Foundation; either version 2 of the License, or (at your option) any later
+* version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+* details.
+*/
 
 package megamek.common.util;
 
@@ -19,11 +21,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
+import megamek.client.bot.princess.CardinalEdge;
 import megamek.common.Board;
 import megamek.common.Compute;
 import megamek.common.Coords;
+import megamek.common.Entity;
 import megamek.common.Hex;
 import megamek.common.IBoard;
 import megamek.common.IHex;
@@ -46,7 +51,7 @@ public class BoardUtilities {
     public static int getAmountElevationGenerators() {
         return 3 + elevationGenerators.size();
     }
-    
+
     /**
      * Combines one or more boards into one huge megaboard!
      *
@@ -55,16 +60,19 @@ public class BoardUtilities {
      * @param sheetWidth how many sheets wide the combined map is
      * @param sheetHeight how many sheets tall the combined map is
      * @param boards an array of the boards to be combined
+     * @param isRotated Flag that determines if any of the maps are rotated
+     * @param medium Sets the medium the map is in (ie., ground, atmo, space)
      */
     public static IBoard combine(int width, int height, int sheetWidth,
-            int sheetHeight, IBoard[] boards, int medium) {
+            int sheetHeight, IBoard[] boards, List<Boolean> isRotated,
+            int medium) {
 
         int resultWidth = width * sheetWidth;
         int resultHeight = height * sheetHeight;
 
         IHex[] resultData = new IHex[resultWidth * resultHeight];
         boolean roadsAutoExit = true;
-
+        boolean boardListContainsBackground = false;
         // Copy the data from the sub-boards.
         for (int i = 0; i < sheetHeight; i++) {
             for (int j = 0; j < sheetWidth; j++) {
@@ -81,13 +89,25 @@ public class BoardUtilities {
                 if (boards[i * sheetWidth + j].getRoadsAutoExit() == false) {
                     roadsAutoExit = false;
                 }
+                boardListContainsBackground |= b.hasBoardBackground();
             }
         }
 
         IBoard result = new Board();
         result.setRoadsAutoExit(roadsAutoExit);
         // Initialize all hexes - buildings, exits, etc
-        result.newData(resultWidth, resultHeight, resultData);
+        result.newData(resultWidth, resultHeight, resultData, null);
+        if (boardListContainsBackground) {
+            result.setNumBoardsHeight(sheetHeight);
+            result.setNumBoardsWidth(sheetWidth);
+            result.setSubBoardHeight(height);
+            result.setSubBoardWidth(width);
+            ListIterator<Boolean> flipIt = isRotated.listIterator();
+            for (IBoard b : boards) {
+                boolean flip = flipIt.next();
+                result.addBackgroundPath(b.getBackgroundPath(), flip, flip);
+            }
+        }
 
         //assuming that the map setting and board types match
         result.setType(medium);
@@ -609,6 +629,9 @@ public class BoardUtilities {
 
     /**
      * calculate the distance between two points
+     *
+     * @param p1
+     * @param p2
      */
     private static double distance(Point p1, Point p2) {
         double x = p1.x - p2.x;
@@ -982,11 +1005,14 @@ public class BoardUtilities {
 
                 //heavy rain - mud in all hexes except buildings, depth 1+ water, and non-dirt roads
                 //rapids in all depth 1+ water
-                if(weatherCond == PlanetaryConditions.WE_HEAVY_RAIN) {
+                if ((weatherCond == PlanetaryConditions.WE_HEAVY_RAIN)
+                        || (weatherCond == PlanetaryConditions.WE_GUSTING_RAIN)) {
                     if(hex.containsTerrain(Terrains.WATER) && !hex.containsTerrain(Terrains.RAPIDS) && (hex.depth() > 0)) {
                         hex.addTerrain(tf.createTerrain(Terrains.RAPIDS, 1));
                     }
-                    else if(!hex.containsTerrain(Terrains.BUILDING) && !hex.containsTerrain(Terrains.ROAD)) {
+                    else if(!hex.containsTerrain(Terrains.BUILDING)
+                            && !hex.containsTerrain(Terrains.PAVEMENT)
+                            && !hex.containsTerrain(Terrains.ROAD)) {
                         hex.addTerrain(tf.createTerrain(Terrains.MUD, 1));
                         if(hex.containsTerrain(Terrains.WATER)) {
                             hex.removeTerrain(Terrains.WATER);
@@ -1004,7 +1030,9 @@ public class BoardUtilities {
                         hex.addTerrain(tf.createTerrain(Terrains.SWAMP, 1));
                         hex.removeTerrain(Terrains.WATER);
                     }
-                    else if(!hex.containsTerrain(Terrains.BUILDING) && !hex.containsTerrain(Terrains.ROAD)) {
+                    else if(!hex.containsTerrain(Terrains.BUILDING)
+                            && !hex.containsTerrain(Terrains.PAVEMENT)
+                            && !hex.containsTerrain(Terrains.ROAD)) {
                         hex.addTerrain(tf.createTerrain(Terrains.MUD, 1));
                     }
                 }
@@ -1533,6 +1561,30 @@ public class BoardUtilities {
         factor++;
         return (2 * (Compute.randomInt(factor) + Compute.randomInt(factor) + Compute
                 .randomInt(factor)) - 3 * (factor - 1)) / 32;
+    }
+
+    /**
+     * Figures out the "opposite" edge for the given entity on the entity's game board
+     * @param entity Entity to evaluate
+     * @return the Board.START_ constant representing the "opposite" edge
+     */
+    public static CardinalEdge getClosestEdge(Entity entity) {
+        int distanceToWest = entity.getPosition().getX();
+        int distanceToEast = entity.getGame().getBoard().getWidth() - entity.getPosition().getX();
+        int distanceToNorth = entity.getPosition().getY();
+        int distanceToSouth = entity.getGame().getBoard().getHeight() - entity.getPosition().getY();
+
+        boolean closerWestThanEast = distanceToWest < distanceToEast;
+        boolean closerNorthThanSouth = distanceToNorth < distanceToSouth;
+
+        int horizontalDistance = Math.min(distanceToWest, distanceToEast);
+        int verticalDistance = Math.min(distanceToNorth, distanceToSouth);
+
+        if(horizontalDistance < verticalDistance) {
+            return closerWestThanEast ? CardinalEdge.WEST : CardinalEdge.EAST;
+        } else {
+            return closerNorthThanSouth ? CardinalEdge.NORTH : CardinalEdge.SOUTH;
+        }
     }
 
     protected static class Point {

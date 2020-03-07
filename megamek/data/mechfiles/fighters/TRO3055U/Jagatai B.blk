@@ -24,6 +24,10 @@ B
 3019
 </year>
 
+<originalBuildYear>
+3019
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 6
@@ -76,27 +83,33 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLGaussRifle
-CLGaussRifle
-Clan Gauss Ammo
-Clan Gauss Ammo
-Clan Gauss Ammo
-Clan Gauss Ammo
+CLGaussRifle:OMNI
+CLGaussRifle:OMNI
 CLCASE
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLERLargeLaser
+CLERLargeLaser:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLERLargeLaser
+CLERLargeLaser:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLERMediumLaser
-CLMediumPulseLaser
+CLERMediumLaser:OMNI
+CLMediumPulseLaser:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Gauss Ammo:OMNI
+Clan Gauss Ammo:OMNI
+Clan Gauss Ammo:OMNI
+Clan Gauss Ammo:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Succession Wars

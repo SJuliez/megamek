@@ -73,14 +73,13 @@ Trailer
 </Rear Equipment>
 
 <transporters>
-liquidcargobay:67:4
+liquidcargobay:60.5:4
 </transporters>
 
 <source>
-HB HM
+HB:House Marik - Age of War
 </source>
 
 <tonnage>
 80
 </tonnage>
-

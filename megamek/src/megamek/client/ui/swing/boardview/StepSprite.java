@@ -11,20 +11,16 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.awt.image.FilteredImageSource;
 
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.GUIPreferences;
-import megamek.client.ui.swing.util.KeyAlphaFilter;
-import megamek.common.Aero;
 import megamek.common.Entity;
 import megamek.common.EntityMovementMode;
 import megamek.common.EntityMovementType;
+import megamek.common.IAero;
 import megamek.common.MiscType;
-import megamek.common.MoveStep;
-import megamek.common.Tank;
-import megamek.common.VTOL;
 import megamek.common.MovePath.MoveStepType;
+import megamek.common.MoveStep;
 
 /**
  * Sprite for a step in a movement path. Only one sprite should exist for
@@ -59,9 +55,7 @@ class StepSprite extends Sprite {
             return;
         }
 
-        image = bv.getScaledImage(bv.createImage(new FilteredImageSource(
-                baseScaleImage.getSource(), new KeyAlphaFilter(
-                        BoardView1.TRANSPARENT))), false);
+        image = bv.getScaledImage(baseScaleImage, false);
     }
 
     @Override
@@ -117,6 +111,7 @@ class StepSprite extends Sprite {
                         "AdvancedMoveJumpColor");
                 break;
             case MOVE_SPRINT:
+            case MOVE_VTOL_SPRINT:
                 col = GUIPreferences.getInstance().getColor(
                         "AdvancedMoveSprintColor");
                 break;
@@ -125,7 +120,9 @@ class StepSprite extends Sprite {
                         "AdvancedMoveIllegalColor");
                 break;
             default:
-                if (step.getType() == MoveStepType.BACKWARDS) {
+                if ((step.getType() == MoveStepType.BACKWARDS)
+                        || (step.getType() == MoveStepType.LATERAL_LEFT_BACKWARDS)
+                        || (step.getType() == MoveStepType.LATERAL_RIGHT_BACKWARDS)) {
                     col = GUIPreferences.getInstance().getColor(
                             "AdvancedMoveBackColor");
                 } else {
@@ -271,6 +268,18 @@ class StepSprite extends Sprite {
                     drawMovementCost(step, isLastStep, stepPos, graph, col, false);
                 }
                 break;
+            case BOOTLEGGER:
+                // draw arrows showing them entering the next
+                graph.setColor(Color.darkGray);
+                CurrentArrow = StepOffset.createTransformedShape(moveArrow);
+                ((Graphics2D) graph).fill(CurrentArrow);
+                
+                graph.setColor(col);
+                CurrentArrow = ShadowOffset.createTransformedShape(CurrentArrow);
+                ((Graphics2D) graph).fill(CurrentArrow);
+
+                drawMovementCost(step, isLastStep, stepPos, graph, col, true);
+                break;
             case LOAD:
                 // Announce load.
                 String load = Messages.getString("BoardView1.Load"); //$NON-NLS-1$
@@ -285,6 +294,38 @@ class StepSprite extends Sprite {
                 graph.drawString(load, loadX, stepPos.y + 39);
                 graph.setColor(col);
                 graph.drawString(load, loadX - 1, stepPos.y + 38);
+                break;
+            case TOW:
+                // Announce tow.
+                String tow = Messages.getString("BoardView1.Tow"); //$NON-NLS-1$
+                if (step.isPastDanger()) {
+                    tow = "(" + tow + ")"; //$NON-NLS-1$ //$NON-NLS-2$
+                }
+                graph.setFont(new Font("SansSerif", Font.PLAIN, 12)); //$NON-NLS-1$
+                int towX = (stepPos.x + 42)
+                        - (graph.getFontMetrics(graph.getFont())
+                                .stringWidth(tow) / 2);
+                graph.setColor(Color.darkGray);
+                graph.drawString(tow, towX, stepPos.y + 39);
+                graph.setColor(col);
+                graph.drawString(tow, towX - 1, stepPos.y + 38);
+                break;
+            case DISCONNECT:
+                // Announce unload.
+                String disconnect = Messages.getString("BoardView1.Disconnect"); //$NON-NLS-1$
+                if (step.isPastDanger()) {
+                    disconnect = "(" + disconnect + ")"; //$NON-NLS-1$ //$NON-NLS-2$
+                }
+                graph.setFont(new Font("SansSerif", Font.PLAIN, 12)); //$NON-NLS-1$
+                int disconnectX = (stepPos.x + 42)
+                        - (graph.getFontMetrics(graph.getFont())
+                                .stringWidth(disconnect) / 2);
+                int DisconnectY = stepPos.y + 38
+                        + graph.getFontMetrics(graph.getFont()).getHeight();
+                graph.setColor(Color.darkGray);
+                graph.drawString(disconnect, disconnectX, DisconnectY + 1);
+                graph.setColor(col);
+                graph.drawString(disconnect, disconnectX - 1, DisconnectY);
                 break;
             case LAUNCH:
             case UNDOCK:
@@ -410,8 +451,35 @@ class StepSprite extends Sprite {
                 graph.setColor(col);
                 graph.drawString(land, landX - 1, landY);
                 break;
+            case CONVERT_MODE:
+                int modePos = stepPos.y + 38;
+                if (step.getMp() > 0) {
+                    // draw movement cost
+                    drawMovementCost(step, isLastStep, stepPos, graph, col, true);
+                    modePos += 16;
+                }
+                // show new movement mode
+                String mode = Messages.getString("BoardView1.ConversionMode."
+                        + step.getMovementMode());
+                graph.setFont(new Font("SansSerif", Font.PLAIN, 12)); //$NON-NLS-1$
+                int modeX = (stepPos.x + 42)
+                        - (graph.getFontMetrics(graph.getFont())
+                                .stringWidth(mode) / 2);
+                graph.setColor(Color.darkGray);
+                graph.drawString(mode, modeX, modePos - 1);
+                graph.setColor(col);
+                graph.drawString(mode, modeX - 1, modePos);
+
+                break;
             default:
                 break;
+        }
+        
+        if (step.isVTOLBombingStep() || step.isStrafingStep()) {
+            graph.setColor(col);
+            ((Graphics2D)graph).fill(
+                    AffineTransform.getTranslateInstance(stepPos.x, stepPos.y).createTransformedShape(
+                    HexDrawUtilities.getHexFullBorderArea(3, 0)));
         }
 
         baseScaleImage = bv.createImage(tempImage.getSource());
@@ -518,11 +586,11 @@ class StepSprite extends Sprite {
         }
 
         if (!step.getEntity().isAirborne()
-                || !(step.getEntity() instanceof Aero)) {
+                || !step.getEntity().isAero()) {
             return;
         }
 
-        if (((Aero) step.getEntity()).isSpheroid()) {
+        if (((IAero) step.getEntity()).isSpheroid()) {
             return;
         }
 
@@ -587,10 +655,13 @@ class StepSprite extends Sprite {
         
         // If the step is using a road bonus, mark it.
         if (step.isOnlyPavement()
-                && (e instanceof Tank)
-                && !(e instanceof VTOL)
-                && (e.getMovementMode() != EntityMovementMode.WIGE)) {
+                && e.isEligibleForPavementBonus()) {
             costStringBuf.append("+"); //$NON-NLS-1$
+        }
+        
+        // Show WiGE descent bonus
+        for (int i = 0; i < step.getWiGEBonus(); i++) {
+            costStringBuf.append("+");
         }
 
         // If the step is dangerous, mark it.
@@ -615,13 +686,14 @@ class StepSprite extends Sprite {
         EntityMovementType moveType = step.getMovementType(isLastStep);
         if ((moveType == EntityMovementType.MOVE_VTOL_WALK)
                 || (moveType == EntityMovementType.MOVE_VTOL_RUN)
+                || (moveType == EntityMovementType.MOVE_VTOL_SPRINT)
                 || (moveType == EntityMovementType.MOVE_SUBMARINE_WALK)
                 || (moveType == EntityMovementType.MOVE_SUBMARINE_RUN)) {
             costStringBuf.append("{").append(step.getElevation())
                     .append("}");
         }
 
-        if (step.getEntity().isAirborne()) {
+        if (step.getAltitude() > 0) {
             costStringBuf.append("{").append(step.getAltitude())
                     .append("}");
         }

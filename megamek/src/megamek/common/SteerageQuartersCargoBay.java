@@ -15,7 +15,7 @@
 package megamek.common;
 
 /**
- * Represtents a volume of space set aside for carrying livestock
+ * Represents a (cramped) volume of space set aside for carrying a mobile structure or spacecraft's crew
  */
 
 public final class SteerageQuartersCargoBay extends Bay {
@@ -25,7 +25,7 @@ public final class SteerageQuartersCargoBay extends Bay {
      */
     private static final long serialVersionUID = 4161027191694822726L;
 
-    private float weight = 0;
+    private double weight = 0;
 
     /**
      * The default constructor is only for serialization.
@@ -42,14 +42,23 @@ public final class SteerageQuartersCargoBay extends Bay {
      * weight of the troops (and their equipment) are considered; if you'd like
      * to think that they are stacked like lumber, be my guest.
      *
-     * @param space
-     *            - The weight of troops (in tons) this space can carry.
+     * @param weight The weight of troops (in tons) this space can carry.
      */
-    public SteerageQuartersCargoBay(double space, int doors) {
-        totalSpace = ((int)space)/5;
-        weight = (float) space;
-        currentSpace = ((int)space)/5;
+    public SteerageQuartersCargoBay(double weight, int doors) {
+        totalSpace = ((int) weight)/5;
+        this.weight = weight;
+        currentSpace = ((int) weight)/5;
         this.doors = doors;
+        currentdoors = doors;
+    }
+
+    /**
+     * Create space for certain number of crew/passengers
+     *
+     * @param space The number of crew or passengers to accomodate
+     */
+    public SteerageQuartersCargoBay(int space) {
+        this(space * 5, 0);
     }
 
     /**
@@ -64,14 +73,13 @@ public final class SteerageQuartersCargoBay extends Bay {
     @Override
     public boolean canLoad(Entity unit) {
         // Assume that we cannot carry the unit.
-        boolean result = false;
-
-        return result;
+        return false;
     }
 
     @Override
     public String getUnusedString(boolean showrecovery) {
-        StringBuffer returnString = new StringBuffer("Steerage Quarters - ");
+        StringBuffer returnString = new StringBuffer("Steerage Quarters ("
+                + getCurrentDoors() + " doors) - ");
         returnString.append((int)currentSpace);
         return returnString.toString();
     }
@@ -82,13 +90,23 @@ public final class SteerageQuartersCargoBay extends Bay {
     }
 
     @Override
-    public float getWeight() {
+    public double getWeight() {
         return weight;
     }
 
     @Override
+    public boolean isQuarters() {
+        return true;
+    }
+
+    @Override
     public String toString() {
-        return "steeragequarters:" + totalSpace + ":" + doors;
+        return "steeragequarters:" + weight + ":" + doors;
+    }
+
+    @Override
+    public long getCost() {
+        return 5000L * (long) totalSpace;
     }
 
 }

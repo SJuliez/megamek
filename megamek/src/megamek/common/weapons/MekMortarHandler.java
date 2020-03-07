@@ -116,15 +116,15 @@ public class MekMortarHandler extends AmmoWeaponHandler {
      */
     @Override
     protected int calcDamagePerHit() {
-        if ((target instanceof Infantry) && !(target instanceof BattleArmor)) {
+        if (target.isConventionalInfantry()) {
             double toReturn = Compute.directBlowInfantryDamage(
                     wtype.getRackSize(), bDirect ? toHit.getMoS() / 3 : 0,
                     wtype.getInfantryDamageClass(),
-                    ((Infantry) target).isMechanized());
-            if (bGlancing) {
-                toReturn /= 2;
-            }
-            return (int) Math.floor(toReturn);
+                    ((Infantry) target).isMechanized(),
+                    toHit.getThruBldg() != null, ae.getId(), calcDmgPerHitReport);
+            
+            toReturn = applyGlancingBlowModifier(toReturn, true);
+            return (int) toReturn;
         }
         return 2;
     }

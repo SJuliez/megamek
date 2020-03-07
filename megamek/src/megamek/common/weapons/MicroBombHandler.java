@@ -28,6 +28,7 @@ import megamek.common.Infantry;
 import megamek.common.Report;
 import megamek.common.ToHitData;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.options.OptionsConstants;
 import megamek.server.Server;
 
 /**
@@ -57,8 +58,7 @@ public class MicroBombHandler extends AmmoWeaponHandler {
      * megamek.common.Entity, boolean)
      */
     @Override
-    protected boolean specialResolution(Vector<Report> vPhaseReport,
-            Entity entityTarget) {
+    protected boolean specialResolution(Vector<Report> vPhaseReport, Entity entityTarget) {
         Coords coords = target.getPosition();
         if (!bMissed) {
             Report r = new Report(3190);
@@ -66,7 +66,15 @@ public class MicroBombHandler extends AmmoWeaponHandler {
             r.add(coords.getBoardNum());
             vPhaseReport.add(r);
         } else {
-            coords = Compute.scatterDiveBombs(coords);
+            int moF = -toHit.getMoS();
+            if (ae.hasAbility(OptionsConstants.GUNNERY_GOLDEN_GOOSE)) {
+                if ((-toHit.getMoS() - 2) < 1) {
+                    moF = 0;
+                } else {
+                    moF = -toHit.getMoS() - 2;
+                }
+            }
+            coords = Compute.scatterDiveBombs(coords, moF);
             if (game.getBoard().contains(coords)) {
                 Report r = new Report(3195);
                 r.subject = subjectId;

@@ -1,17 +1,19 @@
-/**
- * MegaMek - Copyright (C) 2003,2004 Ben Mazur (bmazur@sev.org)
- * Copyright © 2013 Edward Cullen (eddy@obsessedcomputers.co.uk)
- *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License as published by the Free
- *  Software Foundation; either version 2 of the License, or (at your option)
- *  any later version.
- *
- *  This program is distributed in the hope that it will be useful, but
- *  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- *  for more details.
- */
+/*
+* MegaMek -
+* Copyright (C) 2003, 2004 Ben Mazur (bmazur@sev.org)
+* Copyright (C) 2013 Edward Cullen (eddy@obsessedcomputers.co.uk)
+* Copyright (C) 2018 The MegaMek Team
+*
+* This program is free software; you can redistribute it and/or modify it under
+* the terms of the GNU General Public License as published by the Free Software
+* Foundation; either version 2 of the License, or (at your option) any later
+* version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+* details.
+*/
 
 package megamek.client.ui.swing.widget;
 
@@ -19,7 +21,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Image;
-import java.io.File;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -27,23 +28,30 @@ import javax.swing.JComponent;
 
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.GUIPreferences;
-import megamek.common.Aero;
 import megamek.common.Configuration;
 import megamek.common.Crew;
 import megamek.common.Entity;
+import megamek.common.EntityMovementMode;
 import megamek.common.EntityMovementType;
 import megamek.common.GunEmplacement;
+import megamek.common.IAero;
 import megamek.common.Infantry;
 import megamek.common.Jumpship;
+import megamek.common.LandAirMech;
 import megamek.common.Mech;
+import megamek.common.QuadVee;
+import megamek.common.Sensor;
 import megamek.common.Tank;
 import megamek.common.Warship;
 import megamek.common.options.IOption;
 import megamek.common.options.IOptionGroup;
+import megamek.common.options.IOptions;
+import megamek.common.options.OptionsConstants;
 import megamek.common.options.PilotOptions;
+import megamek.common.util.MegaMekFile;
 
 /**
- * Set of elements to reperesent general unit information in MechDisplay
+ * Set of elements to represent general unit information in MechDisplay
  */
 
 public class GeneralInfoMapSet implements DisplayMapSet {
@@ -58,8 +66,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
     private PMSimpleLabel statusR, pilotR, playerR, teamR, weightR, bvR, mpR0,
             mpR1, mpR2, mpR3, mpR4, curMoveR, heatR, movementTypeR, ejectR,
             elevationR, fuelR, curSensorsR, visualRangeR;
-    private PMSimpleLabel[] quirksR;
-    private PMSimpleLabel[] partRepsR;
+    private PMMultiLineLabel quirksAndPartReps;
     private Vector<BackGroundDrawer> bgDrawers = new Vector<BackGroundDrawer>();
     private static final Font FONT_VALUE = new Font(
             "SansSerif", Font.PLAIN, GUIPreferences.getInstance().getInt("AdvancedMechDisplayLargeFontSize")); //$NON-NLS-1$
@@ -104,11 +111,11 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         pilotL = createLabel(
                 Messages.getString("GeneralInfoMapSet.pilotL"), fm, 0, getNewYCoord()); //$NON-NLS-1$
         content.addArea(pilotL);
-        
+
         pilotR = createLabel(
                 Messages.getString("GeneralInfoMapSet.playerR"), fm, pilotL.getSize().width + 10, getYCoord()); //$NON-NLS-1$
         content.addArea(pilotR);
-        
+
         playerL = createLabel(
                 Messages.getString("GeneralInfoMapSet.playerL"), fm, 0, getNewYCoord()); //$NON-NLS-1$
         content.addArea(playerL);
@@ -243,20 +250,11 @@ public class GeneralInfoMapSet implements DisplayMapSet {
                 visualRangeL.getSize().width + 10, getYCoord());
         content.addArea(visualRangeR);
 
-        quirksR = new PMSimpleLabel[40];
-        for (int i = 0; i < quirksR.length; i++) {
-            quirksR[i] = createLabel(new Integer(i).toString(), fm, 0,
-                    getNewYCoord());
-            content.addArea(quirksR[i]);
-        }
+        getNewYCoord(); // skip a line for readability
 
-        partRepsR = new PMSimpleLabel[20];
-        for (int i = 0; i < partRepsR.length; i++) {
-            partRepsR[i] = createLabel(new Integer(i).toString(), fm, 0,
-                    getNewYCoord());
-            content.addArea(partRepsR[i]);
-        }
-
+        quirksAndPartReps = new PMMultiLineLabel(fm, Color.white);
+        quirksAndPartReps.moveTo(0, getNewYCoord());
+        content.addArea(quirksAndPartReps);
     }
 
     /**
@@ -303,10 +301,10 @@ public class GeneralInfoMapSet implements DisplayMapSet {
                 teamR.setVisible(true);
             }
         }
-        
+
         if (en.getCrew() != null) {
             Crew c = en.getCrew();
-            String pilotString = c.getDesc() + " (";
+            String pilotString = c.getDesc(c.getCurrentPilotIndex()) + " (";
             pilotString += c.getGunnery() + "/" + c.getPiloting();
             int crewAdvCount = c.countOptions(PilotOptions.LVL3_ADVANTAGES);
             if (crewAdvCount > 0) {
@@ -319,7 +317,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         }
 
         if (en instanceof Infantry) {
-            weightR.setString(Float.toString(en.getWeight()));
+            weightR.setString(Double.toString(en.getWeight()));
         } else {
             weightR.setString(Integer.toString((int) en.getWeight()));
         }
@@ -344,46 +342,19 @@ public class GeneralInfoMapSet implements DisplayMapSet {
                     .getString("GeneralInfoMapSet.elevationL"));
         }
 
-        for (PMSimpleLabel element : quirksR) {
-            element.setString(""); //$NON-NLS-1$
-        }
-        for (PMSimpleLabel element : partRepsR) {
-            element.setString(""); //$NON-NLS-1$
+        quirksAndPartReps.clear();
+
+        if ((null != en.getGame())
+                && en.getGame().getOptions().booleanOption(OptionsConstants.ADVANCED_STRATOPS_QUIRKS)) {
+            addOptionsToList(en.getQuirks(), quirksAndPartReps);
         }
 
-        int i = 0;
         if ((null != en.getGame())
-                && en.getGame().getOptions().booleanOption("stratops_quirks")) {
-            for (Enumeration<IOptionGroup> qGroups = en.getQuirks().getGroups(); qGroups
-                    .hasMoreElements();) {
-                IOptionGroup qGroup = qGroups.nextElement();
-                if (en.countQuirks(qGroup.getKey()) > 0) {
-                    quirksR[i++].setString(qGroup.getDisplayableName());
-                    for (Enumeration<IOption> quirks = qGroup.getOptions(); quirks
-                            .hasMoreElements();) {
-                        IOption quirk = quirks.nextElement();
-                        if (quirk.booleanValue()) {
-                            quirksR[i++].setString("  "
-                                    + quirk.getDisplayableNameWithValue());
-                        }
-                    }
-                }
-            }
-        }
-        for (Enumeration<IOptionGroup> repGroups = en.getPartialRepairs()
-                .getGroups(); repGroups.hasMoreElements();) {
-            IOptionGroup repGroup = repGroups.nextElement();
-            if (en.countPartialRepairs() > 0) {
-                partRepsR[i++].setString(repGroup.getDisplayableName());
-                for (Enumeration<IOption> partreps = repGroup.getOptions(); partreps
-                        .hasMoreElements();) {
-                    IOption partrep = partreps.nextElement();
-                    if (partrep.booleanValue()) {
-                        partRepsR[i++].setString("  "
-                                + partrep.getDisplayableNameWithValue());
-                    }
-                }
-            }
+                && en.getGame().getOptions().booleanOption(OptionsConstants.ADVANCED_STRATOPS_PARTIALREPAIRS)) {
+            // skip a line for readability
+            quirksAndPartReps.addString("");
+
+            addOptionsToList(en.getPartialRepairs(), quirksAndPartReps);
         }
 
         if (en.mpUsed > 0) {
@@ -406,18 +377,26 @@ public class GeneralInfoMapSet implements DisplayMapSet {
             mpL4.setVisible(true);
             mpR4.setVisible(true);
             mpR4.setString(Integer.toString(en.getActiveUMUCount()));
+        } else if (en instanceof LandAirMech
+                && en.getMovementMode() == EntityMovementMode.WIGE) {
+            mpL4.setVisible(true);
+            mpR4.setVisible(true);
+            mpR1.setString(Integer.toString(((LandAirMech)en).getAirMechWalkMP()));
+            mpR2.setString(Integer.toString(((LandAirMech)en).getAirMechRunMP()));
+            mpR3.setString(Integer.toString(((LandAirMech)en).getAirMechCruiseMP()));
+            mpR4.setString(Integer.toString(((LandAirMech)en).getAirMechFlankMP()));
         } else {
             mpL4.setVisible(false);
             mpR4.setVisible(false);
         }
 
-        if (en instanceof Aero) {
-            Aero a = (Aero) en;
+        if (en.isAero()) {
+            IAero a = (IAero) en;
             curMoveR.setString(Integer.toString(a.getCurrentVelocity())
                     + Messages.getString("GeneralInfoMapSet.velocity"));
-            int currentFuel = a.getFuel();
-            int safeThrust = a.getWalkMP();
-            fuelR.setString(Integer.toString(a.getFuel()));
+            int currentFuel = a.getCurrentFuel();
+            int safeThrust = en.getWalkMP();
+            fuelR.setString(Integer.toString(a.getCurrentFuel()));
             if (currentFuel < (5 * safeThrust)) {
                 fuelR.setColor(Color.red);
             } else if (currentFuel < (10 * safeThrust)) {
@@ -454,16 +433,31 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         }
 
         if (en instanceof Tank) {
+            movementTypeL.setString(Messages.getString("GeneralInfoMapSet.movementTypeL"));
             movementTypeL.setVisible(true);
             movementTypeR.setString(Messages.getString("MovementType."
                     + en.getMovementModeAsString()));
+            movementTypeR.setVisible(true);
+        } else if (en instanceof QuadVee || en instanceof LandAirMech
+                || (en instanceof Mech && ((Mech)en).hasTracks())) {
+            movementTypeL.setString(Messages.getString("GeneralInfoMapSet.movementModeL"));
+            if (en.getMovementMode() == EntityMovementMode.AERODYNE) {
+                //Show "Fighter/AirMech" instead of "Aerodyne/WiGE"
+                movementTypeR.setString(Messages.getString("BoardView1.ConversionMode.AERODYNE"));
+            } else if (en.getMovementMode() == EntityMovementMode.WIGE) {
+                movementTypeR.setString(Messages.getString("BoardView1.ConversionMode.WIGE"));
+            } else {
+                movementTypeR.setString(Messages.getString("MovementType."
+                        + en.getMovementModeAsString()));
+            }
+            movementTypeL.setVisible(true);
             movementTypeR.setVisible(true);
         } else {
             movementTypeL.setVisible(false);
             movementTypeR.setVisible(false);
         }
 
-        if ((en.getGame() != null) && en.getGame().getOptions().booleanOption("double_blind")) {
+        if ((en.getGame() != null) && en.getGame().getOptions().booleanOption(OptionsConstants.ADVANCED_DOUBLE_BLIND)) {
             curSensorsR.setVisible(true);
             visualRangeR.setVisible(true);
             curSensorsL.setVisible(true);
@@ -471,6 +465,23 @@ public class GeneralInfoMapSet implements DisplayMapSet {
             curSensorsR.setString(en.getSensorDesc());
             visualRangeR.setString(Integer.toString(en.getGame()
                     .getPlanetaryConditions().getVisualRange(en, false)));
+            //If using sensors, update our visual range display to the automatic detection range of the current sensor
+            if (en.isSpaceborne() && en.getGame().getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ADVANCED_SENSORS)) {
+                int autoVisualRange = 0;
+                //For squadrons. Default to the passive thermal/optical value used by component fighters
+                if (en.hasETypeFlag(Entity.ETYPE_FIGHTER_SQUADRON)) {
+                    autoVisualRange = Sensor.ASF_OPTICAL_FIRING_SOLUTION_RANGE;
+                }
+                if (en.getActiveSensor() != null) {
+                    if (en.getActiveSensor().getType() == Sensor.TYPE_AERO_SENSOR) {
+                        //required because the return on this from the method below is for ground maps
+                        autoVisualRange = Sensor.ASF_RADAR_AUTOSPOT_RANGE;
+                    } else {
+                        autoVisualRange = (int) Math.ceil(en.getActiveSensor().getRangeByBracket() / 10.0);
+                    }
+                }
+                visualRangeR.setString(Integer.toString(autoVisualRange));
+            }
         } else {
             curSensorsR.setVisible(false);
             visualRangeR.setVisible(false);
@@ -506,25 +517,58 @@ public class GeneralInfoMapSet implements DisplayMapSet {
             curMoveR.setVisible(true);
         }
 
-        if (en instanceof Aero) {
+        if (en.isAero()) {
             heatL.setVisible(true);
             heatR.setVisible(true);
-            mpR3.setVisible(false);
-            mpL3.setVisible(false);
             curMoveL.setVisible(true);
             curMoveR.setVisible(true);
             fuelL.setVisible(true);
             fuelR.setVisible(true);
-            // TODO: there must be a better way to do this
             mpL0.setString(Messages.getString("GeneralInfoMapSet.thrust"));
             mpL1.setString(Messages.getString("GeneralInfoMapSet.safe"));
             mpL2.setString(Messages.getString("GeneralInfoMapSet.over"));
+            if (en.getMovementMode() == EntityMovementMode.WHEELED) {
+                mpR1.setString(Integer.toString(((IAero)en).getCurrentThrust()));
+                mpR2.setString(Integer.toString((int)Math.ceil(((IAero)en).getCurrentThrust() * 1.5)));
+                mpL3.setString(Messages.getString("GeneralInfoMapSet.vehicle.mpL1"));
+                mpR3.setString(Integer.toString(en.getWalkMP()));
+                mpR3.setVisible(true);
+                mpL3.setVisible(true);
+            } else {
+                mpR3.setVisible(false);
+                mpL3.setVisible(false);
+            }
+        } else if (en instanceof Tank
+                || (en instanceof QuadVee && en.getConversionMode() == QuadVee.CONV_MODE_VEHICLE)) {
+            mpL0.setString(Messages.getString("GeneralInfoMapSet.mpL0"));
+            mpL1.setString(Messages.getString("GeneralInfoMapSet.vehicle.mpL1"));
+            mpL2.setString(Messages.getString("GeneralInfoMapSet.vehicle.mpL2"));
+            mpL3.setString(Messages.getString("GeneralInfoMapSet.mpL3"));
+            fuelL.setVisible(false);
+            fuelR.setVisible(false);
+        } else if (en instanceof LandAirMech
+                && en.getMovementMode() == EntityMovementMode.WIGE) {
+            mpL0.setString(Messages.getString("GeneralInfoMapSet.mpL0"));
+            mpL1.setString(Messages.getString("GeneralInfoMapSet.mpL1"));
+            mpL2.setString(Messages.getString("GeneralInfoMapSet.mpL2"));
+            mpL3.setString(Messages.getString("GeneralInfoMapSet.vehicle.mpL1"));
+            mpL4.setString(Messages.getString("GeneralInfoMapSet.vehicle.mpL2"));
+            fuelL.setVisible(false);
+            fuelR.setVisible(false);
         } else {
             mpL0.setString(Messages.getString("GeneralInfoMapSet.mpL0"));
             mpL1.setString(Messages.getString("GeneralInfoMapSet.mpL1"));
             mpL2.setString(Messages.getString("GeneralInfoMapSet.mpL2"));
+            mpL3.setString(Messages.getString("GeneralInfoMapSet.mpL3"));
             fuelL.setVisible(false);
             fuelR.setVisible(false);
+            if (en instanceof LandAirMech
+                    && en.getMovementMode() == EntityMovementMode.WIGE) {
+                mpL3.setString(Messages.getString("GeneralInfoMapSet.vehicle.mpL1"));
+                mpL4.setString(Messages.getString("GeneralInfoMapSet.vehicle.mpL2"));
+            } else {
+                mpL3.setString(Messages.getString("GeneralInfoMapSet.mpL3"));
+            }
         }
         if ((en.getGame() != null) && en.getGame().getBoard().inSpace()) {
             elevationL.setVisible(false);
@@ -536,6 +580,27 @@ public class GeneralInfoMapSet implements DisplayMapSet {
 
     }
 
+    /**
+     * Add all options from the given IOptions instance into an array of PMSimpleLabel elements.
+     * @param optionsInstance IOptions instance
+     * @param quirksAndPartReps
+     */
+    public void addOptionsToList(IOptions optionsInstance, PMMultiLineLabel quirksAndPartReps) {
+        for (Enumeration<IOptionGroup> optionGroups = optionsInstance.getGroups(); optionGroups.hasMoreElements();) {
+            IOptionGroup group = optionGroups.nextElement();
+            if (optionsInstance.count(group.getKey()) > 0) {
+                quirksAndPartReps.addString(group.getDisplayableName());
+
+                for (Enumeration<IOption> options = group.getOptions(); options.hasMoreElements();) {
+                    IOption option = options.nextElement();
+                    if (option != null && option.booleanValue()) {
+                        quirksAndPartReps.addString("  " + option.getDisplayableNameWithValue());
+                    }
+                }
+            }
+        }
+    }
+
     public PMAreasGroup getContentGroup() {
         return content;
     }
@@ -545,52 +610,55 @@ public class GeneralInfoMapSet implements DisplayMapSet {
     }
 
     private void setBackGround() {
-        Image tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "tile.gif").toString()); //$NON-NLS-1$
+        UnitDisplaySkinSpecification udSpec = SkinXMLHandler
+                .getUnitDisplaySkin();
+
+        Image tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getBackgroundTile()).toString()); //$NON-NLS-1$
         PMUtil.setImage(tile, comp);
         int b = BackGroundDrawer.TILING_BOTH;
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_TOP;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLine()).toString()); //$NON-NLS-1$
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_BOTTOM;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomLine()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_LEFT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getLeftLine()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getRightLine()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
                 | BackGroundDrawer.HALIGN_LEFT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "tl_corner.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLeftCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
                 | BackGroundDrawer.HALIGN_LEFT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "bl_corner.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomLeftCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
                 | BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "tr_corner.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopRightCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
                 | BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "br_corner.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomRightCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 

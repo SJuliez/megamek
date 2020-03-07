@@ -205,7 +205,7 @@ public class TestBot extends BotClient {
             for (CalculateEntityMove task : tasks) {
                 MoveOption[] result = task.getResult();
                 CEntity cen = centities.get(task.getEntity());
-                if (game.getOptions().booleanOption("skip_ineligable_movement")
+                if (game.getOptions().booleanOption(OptionsConstants.BASE_SKIP_INELIGABLE_MOVEMENT)
                     && cen.getEntity().isImmobile()) {
                     cen.moved = true;
                 } else if (result == null) {
@@ -227,7 +227,7 @@ public class TestBot extends BotClient {
                     lance.evolve();
                     min = lance.getResult();
                     old_moves = lance;
-                } else if ((possible.get(0) != null)
+                } else if (possible.size() > 0 && (possible.get(0) != null)
                            && (possible.get(0).length > 0)) {
                     min = possible.get(0)[0];
                 }
@@ -286,7 +286,7 @@ public class TestBot extends BotClient {
 
                         test_weapon = (WeaponType) equip.getType();
                         if (((test_weapon.getAmmoType() == AmmoType.T_AC_ROTARY)
-                             || (game.getOptions().booleanOption("uac_tworolls")
+                             || (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_UAC_TWOROLLS)
                                  && ((test_weapon.getAmmoType() == AmmoType.T_AC_ULTRA)
                                      || (test_weapon.getAmmoType() == AmmoType.T_AC_ULTRA_THB))))
                             && (equip.isJammed() == true)) {
@@ -435,8 +435,7 @@ public class TestBot extends BotClient {
                            + move_array.length + " moves");
         for (MoveOption option : move_array) {
             option.setState();
-            boolean aptPiloting = option.getEntity().getCrew().getOptions()
-                                        .booleanOption(OptionsConstants.PILOT_APTITUDE_PILOTING);
+            boolean aptPiloting = option.getEntity().hasAbility(OptionsConstants.PILOT_APTITUDE_PILOTING);
             for (int e = 0; e < enemies.size(); e++) { // for each enemy
                 Entity en = enemies.get(e);
 
@@ -900,8 +899,7 @@ public class TestBot extends BotClient {
                                         enemy_option, modifiers[1],
                                         modifiers[MoveOption.DEFENCE_PC]);
                             } else {
-                                boolean enemyAptGunnery = enemy.getEntity().getCrew().getOptions()
-                                                               .booleanOption(OptionsConstants.PILOT_APTITUDE_GUNNERY);
+                                boolean enemyAptGunnery = enemy.getEntity().hasAbility(OptionsConstants.PILOT_APTITUDE_GUNNERY);
                                 max_threat = .8 * enemy
                                         .getModifiedDamage(
                                                 (modifiers[MoveOption.DEFENCE_PC] == 1) ? CEntity.TT
@@ -1133,9 +1131,8 @@ public class TestBot extends BotClient {
         WeaponAttackAction wep_test;
         WeaponType spinner;
         AttackOption a = null;
-        AttackOption max = new AttackOption(null, null, 0, null, 1, en.getCrew().getOptions()
-                                                                      .booleanOption(
-                                                                              OptionsConstants.PILOT_APTITUDE_GUNNERY));
+        AttackOption max = new AttackOption(null, null, 0, null, 1, 
+                en.hasAbility(OptionsConstants.PILOT_APTITUDE_GUNNERY));
         for (Entity e : ents) {
             CEntity enemy = centities.get(e);
             // long entry = System.currentTimeMillis();
@@ -1191,7 +1188,7 @@ public class TestBot extends BotClient {
                 }
 
                 a = new AttackOption(enemy, mw, expectedDmg, th, starg_mod,
-                                     en.getCrew().getOptions().booleanOption(OptionsConstants.PILOT_APTITUDE_GUNNERY));
+                                     en.hasAbility(OptionsConstants.PILOT_APTITUDE_GUNNERY));
                 if (a.value > max.value) {
                     if (best_only) {
                         max = a;
@@ -1207,9 +1204,7 @@ public class TestBot extends BotClient {
             result.add(max);
         }
         if (result.size() > 0) {
-            result.add(new AttackOption(null, mw, 0, null, 1, en.getCrew().getOptions()
-                                                                .booleanOption(OptionsConstants
-                                                                                       .PILOT_APTITUDE_GUNNERY)));
+            result.add(new AttackOption(null, mw, 0, null, 1, en.hasAbility(OptionsConstants.PILOT_APTITUDE_GUNNERY)));
         }
         return result;
     }
@@ -1735,10 +1730,10 @@ public class TestBot extends BotClient {
 
         Coords pointing_to = new Coords();
 
-        int entNum = game.getFirstDeployableEntityNum();
+        int entNum = game.getFirstDeployableEntityNum(game.getTurnForPlayer(localPlayerNumber));
         assert (entNum != Entity.NONE) : "The bot is trying to deploy without units being left.";
 
-        List<Coords> cStart = getStartingCoordsArray();
+        List<Coords> cStart = getStartingCoordsArray(game.getEntity(entNum));
         Coords cDeploy = getFirstValidCoords(getEntity(entNum), cStart);
 
         if (cDeploy == null) {
@@ -2198,8 +2193,7 @@ public class TestBot extends BotClient {
                     // Get the weapon
 
                     Mounted test_weapon = current_option.weapon;
-                    boolean aptGunnery = current_option.target.getEntity().getCrew().getOptions()
-                                                              .booleanOption(OptionsConstants.PILOT_APTITUDE_GUNNERY);
+                    boolean aptGunnery = current_option.target.getEntity().hasAbility(OptionsConstants.PILOT_APTITUDE_GUNNERY);
 
                     // If the weapon is not LBX cannon or LBX cannon loaded with
                     // slug

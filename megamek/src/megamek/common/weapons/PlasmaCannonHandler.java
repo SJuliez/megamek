@@ -15,7 +15,6 @@ package megamek.common.weapons;
 
 import java.util.Vector;
 
-import megamek.common.Aero;
 import megamek.common.BattleArmor;
 import megamek.common.Building;
 import megamek.common.BuildingTarget;
@@ -34,6 +33,7 @@ import megamek.common.TargetRoll;
 import megamek.common.Targetable;
 import megamek.common.ToHitData;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.options.OptionsConstants;
 import megamek.server.Server;
 
 public class PlasmaCannonHandler extends AmmoWeaponHandler {
@@ -71,6 +71,7 @@ public class PlasmaCannonHandler extends AmmoWeaponHandler {
      *      entityTarget, Vector<Report> vPhaseReport, HitData hit, Building
      *      bldg, int hits, int nCluster, int bldgAbsorbs)
      */
+    @Override
     protected void handlePartialCoverHit(Entity entityTarget,
             Vector<Report> vPhaseReport, HitData hit, Building bldg, int hits,
             int nCluster, int bldgAbsorbs) {
@@ -214,7 +215,7 @@ public class PlasmaCannonHandler extends AmmoWeaponHandler {
             Vector<Report> vPhaseReport, Building bldg, int hits, int nCluster,
             int bldgAbsorbs) {
 
-        if ((entityTarget instanceof Mech) || (entityTarget instanceof Aero)) {
+        if (entityTarget.tracksHeat()) {
             hit = entityTarget.rollHitLocation(toHit.getHitTable(),
                     toHit.getSideTable(), waa.getAimedLocation(),
                     waa.getAimingMode(), toHit.getCover());
@@ -279,26 +280,23 @@ public class PlasmaCannonHandler extends AmmoWeaponHandler {
      */
     @Override
     protected int calcDamagePerHit() {
-        if ((target instanceof Mech) || (target instanceof Aero)) {
+        if (target.tracksHeat()) {
             return 0;
         }
         int toReturn = 1;
-        if ((target instanceof Infantry) && !(target instanceof BattleArmor)) {
+        if (target.isConventionalInfantry()) {
             toReturn = Compute.d6(3);
             // pain shunted infantry get half damage
             if (bDirect) {
                 toReturn += toHit.getMoS() / 3;
             }
-            if (((Entity) target).getCrew().getOptions()
-                    .booleanOption("pain_shunt")) {
+            if (((Entity) target).hasAbility(OptionsConstants.MD_PAIN_SHUNT)) {
                 toReturn = Math.max(toReturn / 2, 1);
             }
         } else if (bDirect) {
             toReturn = Math.min(toReturn + (toHit.getMoS() / 3), toReturn * 2);
         }
-        if (bGlancing) {
-            toReturn = (int) Math.floor(toReturn / 2.0);
-        }
+        toReturn = applyGlancingBlowModifier(toReturn, target.isConventionalInfantry());
         return toReturn;
     }
 
@@ -309,7 +307,7 @@ public class PlasmaCannonHandler extends AmmoWeaponHandler {
      */
     @Override
     protected int calcnCluster() {
-        if ((target instanceof Mech) || (target instanceof Aero)) {
+        if (target.tracksHeat()) {
             bSalvo = false;
             return 1;
         }
@@ -329,7 +327,7 @@ public class PlasmaCannonHandler extends AmmoWeaponHandler {
         if ((target instanceof Infantry) && !(target instanceof BattleArmor)) {
             return 1;
         }
-        if ((target instanceof Mech) || (target instanceof Aero)) {
+        if (target.tracksHeat()) {
             return 1;
         }
         if ((target instanceof BattleArmor)
@@ -337,37 +335,6 @@ public class PlasmaCannonHandler extends AmmoWeaponHandler {
             return 0;
         }
         return Compute.d6(3);
-    }
-
-    /**
-     * @return a <code>boolean</code> value indicating wether or not this attack
-     *         needs further calculating, like a missed shot hitting a building,
-     *         or an AMS only shooting down some missiles.
-     */
-    @Override
-    protected boolean handleSpecialMiss(Entity entityTarget,
-            boolean targetInBuilding, Building bldg, Vector<Report> vPhaseReport) {
-        // Shots that miss an entity can set fires.
-        // Buildings can't be accidentally ignited,
-        // and some weapons can't ignite fires.
-        if ((entityTarget != null)
-                && ((bldg == null) && (wtype.getFireTN() != TargetRoll.IMPOSSIBLE))) {
-            server.tryIgniteHex(target.getPosition(), subjectId, true, false,
-                    new TargetRoll(wtype.getFireTN(), wtype.getName()), 3,
-                    vPhaseReport);
-        }
-
-        // shots that miss an entity can also potential cause explosions in a
-        // heavy industrial hex
-        server.checkExplodeIndustrialZone(target.getPosition(), vPhaseReport);
-
-        // BMRr, pg. 51: "All shots that were aimed at a target inside
-        // a building and miss do full damage to the building instead."
-        if (!targetInBuilding
-                || (toHit.getValue() == TargetRoll.AUTOMATIC_FAIL)) {
-            return false;
-        }
-        return true;
     }
 
     @Override

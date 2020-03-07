@@ -67,11 +67,28 @@ public class PlayerColors {
             0xFFCC00, 0xFFCC33, 0xFFCC66, 0xFFCC99, 0xFFCCCC, 0xFFCCFF,
             0xFFFF00, 0xFFFF33, 0xFFFF66, 0xFFFF99, 0xFFFFCC, 0xFFFFFF };
 
+    public static Color getColor(String colorName) {
+        for (int idx = 0; idx < colorNames.length; idx++) {
+            if (colorNames[idx].equals(colorName)) {
+                return getColor(idx);
+            }
+        }
+        return getColor(0);
+    }
+
     public static Color getColor(int colorIndex) {
+        return getColor(colorIndex, true);
+    }
+
+    public static Color getColor(int colorIndex, boolean allowTransparency) {
         int colour = colorRGBs[colorIndex];
+        if (allowTransparency) {
         int transparency = GUIPreferences.getInstance().getInt(
                 GUIPreferences.ADVANCED_ATTACK_ARROW_TRANSPARENCY);
-        return new Color(colour | (transparency << 24), true);
+            return new Color(colour | (transparency << 24), true);
+        } else {
+            return new Color(colour);
+        }
     }
 
     public static int getColorRGB(int colorIndex) {
@@ -79,7 +96,7 @@ public class PlayerColors {
     }
 
     public static Color getAdvColor(int colorIndex, int plrIndex) {
-        if (colorIndex > advancedColorRGBs.length) {
+        if (colorIndex >= advancedColorRGBs.length) {
             return getColor(plrIndex);
         }
         int colour = advancedColorRGBs[colorIndex];
@@ -89,7 +106,7 @@ public class PlayerColors {
     }
 
     public static int getAdvColorRGB(int colorIndex, int plrIndex) {
-        if (colorIndex > advancedColorRGBs.length) {
+        if (colorIndex >= advancedColorRGBs.length) {
             return getColorRGB(plrIndex);
         }
         return advancedColorRGBs[colorIndex];

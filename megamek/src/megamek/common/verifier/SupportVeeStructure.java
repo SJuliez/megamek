@@ -14,21 +14,21 @@
  */
 package megamek.common.verifier;
 
+import megamek.common.Entity;
 import megamek.common.MiscType;
-import megamek.common.Tank;
 
 public class SupportVeeStructure extends Structure {
 
-    static final float[] SV_TECH_RATING_STRUCTURE_MULTIPLIER = 
-        { 1.60f, 1.30f, 1.15f, 1.00f, 0.85f, 0.66f };
+    static final double[] SV_TECH_RATING_STRUCTURE_MULTIPLIER = 
+        { 1.60, 1.30, 1.15, 1.00, 0.85, 0.66 };
     
-    Tank sv;
+    Entity sv;
     
-    public SupportVeeStructure(Tank supportVee) {
+    public SupportVeeStructure(Entity supportVee) {
         this.sv = supportVee;
     }
     
-    public static  float getWeightStructure(Tank sv) {
+    public static double getWeightStructure(Entity sv) {
         double baseChassisVal = sv.getBaseChassisValue();
         double trMult = SV_TECH_RATING_STRUCTURE_MULTIPLIER[sv
                 .getStructuralTechRating()];
@@ -50,6 +50,9 @@ public class SupportVeeStructure extends Structure {
         }
         if (sv.hasMisc(MiscType.F_ENVIRONMENTAL_SEALING)) {
             chassisModMult *= 2;
+        }
+        if (sv.hasMisc(MiscType.F_EXTERNAL_POWER_PICKUP)) {
+            chassisModMult *= 1.1;
         }
         if (sv.hasMisc(MiscType.F_HYDROFOIL)) {
             chassisModMult *= 1.7;
@@ -86,14 +89,15 @@ public class SupportVeeStructure extends Structure {
         }
         
         double weight = baseChassisVal * trMult * chassisModMult * sv.getWeight();
-        float roundWeight = TestEntity.CEIL_HALFTON;
+        TestEntity.Ceil roundWeight = TestEntity.Ceil.HALFTON;
         if (sv.getWeight() < 5) {
-            roundWeight = TestEntity.CEIL_KILO;
+            roundWeight = TestEntity.Ceil.KILO;
         }
-        return TestEntity.ceil((float)weight,roundWeight);
+        return TestEntity.floor(weight,roundWeight);
     }
     
-    public float getWeightStructure(float weight, float roundWeight) {
+    @Override
+    public double getWeightStructure(double weight, TestEntity.Ceil roundWeight) {
         return getWeightStructure(sv);
     }
     

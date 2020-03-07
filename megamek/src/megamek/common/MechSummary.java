@@ -40,7 +40,9 @@ public class MechSummary implements Serializable {
     private String m_sEntryName; // for files in zips
     private int m_nYear;
     private int m_nType;
-    private float m_nTons;
+    private int[] altTypes = new int[] { TechConstants.T_IS_TW_NON_BOX, TechConstants.T_IS_ADVANCED,
+            TechConstants.T_IS_EXPERIMENTAL }; // tech level constant at standard, advanced, and experimental rules levels
+    private double m_nTons;
     private int m_nBV;
     /**
      * Stores the BV of the unit computed using the geometric mean method.
@@ -53,6 +55,8 @@ public class MechSummary implements Serializable {
     private long m_aCost;
     private long m_lModified; // for comparison when loading
     private String m_sLevel;
+    private int m_nAdvTechYear; // year after which the unit is advanced level
+    private int m_nStdTechYear; // year after which the unit is standard level
     private boolean canon;
     private boolean clan;
     private boolean support;
@@ -68,9 +72,9 @@ public class MechSummary implements Serializable {
     /**
      * For BattleArmor, we want to know the weight of an individual suit.
      */
-    private float m_TWsuitTons;
-    private float m_TOsuitTons;
-    private float suitWeight;
+    private double m_TWsuitTons;
+    private double m_TOsuitTons;
+    private double suitWeight;
     
 
     /** Stores the type of internal structure on this unit **/
@@ -94,7 +98,7 @@ public class MechSummary implements Serializable {
     
     
     public MechSummary(){
-        armorTypeSet = new HashSet<Integer>();
+        armorTypeSet = new HashSet<>();
     }
     
     /**
@@ -140,44 +144,38 @@ public class MechSummary implements Serializable {
         return m_sUnitSubType;
     }
 
-    public static String determineUnitType(Entity e) {
-        EntityMovementMode mm = e.getMovementMode();
-        if (e instanceof BattleArmor) {
-            return "BattleArmor";
-        } else if (e instanceof Infantry) {
-            return "Infantry";
-        } else if (e instanceof VTOL) { // for now
-            return "VTOL";
-        } else if ((mm == EntityMovementMode.NAVAL)
-                || (mm == EntityMovementMode.HYDROFOIL)
-                || (mm == EntityMovementMode.SUBMARINE)) {
-            return "Naval";
-        } else if (e instanceof GunEmplacement) {
-            return "Gun Emplacement";
-        } else if (e instanceof Tank) {
-            return "Tank";
-        } else if (e instanceof Mech) {
-            return "Mek";
-        } else if (e instanceof Protomech) {
-            return "ProtoMek";
-        } else if (e instanceof SpaceStation) {
-            return "Space Station";
-        } else if (e instanceof Warship) {
-            return "Warship";
-        } else if (e instanceof Jumpship) {
-            return "Jumpship";
-        } else if (e instanceof Dropship) {
-            return "Dropship";
-        } else if (e instanceof SmallCraft) {
-            return "Small Craft";
-        } else if (e instanceof ConvFighter) {
-            return "Conventional Fighter";
-        } else if (e instanceof Aero) {
-            return "Aero";
-        } else {
-            // Hmm...this is not a good case, should throw excep. instead?
-            return "Unknown";
+    public static String determineETypeName(MechSummary ms) {
+        switch (ms.getUnitType()) {
+            case "BattleArmor":
+            case "Infantry":
+                return Entity.getEntityMajorTypeName(Entity.ETYPE_INFANTRY);
+            case "VTOL":
+                return Entity.getEntityMajorTypeName(Entity.ETYPE_VTOL);
+            case "Naval":
+            case "Gun Emplacement":
+            case "Tank":
+                return Entity.getEntityMajorTypeName(Entity.ETYPE_TANK);
+            case "Mek":
+                return Entity.getEntityMajorTypeName(Entity.ETYPE_MECH);
+            case "ProtoMek":
+                return Entity.getEntityMajorTypeName(Entity.ETYPE_PROTOMECH);
+            case "Space Station":
+            case "Jumpship":
+            case "Dropship":
+            case "Small Craft":
+            case "Conventional Fighter":
+            case "Aero":
+                return Entity.getEntityMajorTypeName(Entity.ETYPE_AERO);
+            case "Unknown":
+                return Entity.getEntityMajorTypeName(-1);
         }
+        return Entity.getEntityMajorTypeName(-1);
+    }
+    
+    // This is here for legacy purposes to not break the API
+    @Deprecated
+    public static String determineUnitType(Entity e) {
+        return UnitType.determineUnitType(e);
     }
 
     public File getSourceFile() {
@@ -195,16 +193,30 @@ public class MechSummary implements Serializable {
     public int getType() {
         return (m_nType);
     }
+    
+    public int[] getAltTypes() {
+        return altTypes;
+    }
+    
+    public int getType(int year) {
+        if (year >= m_nStdTechYear) {
+            return altTypes[0];
+        } else if (year >= m_nAdvTechYear) {
+            return altTypes[1];
+        } else {
+            return altTypes[2];
+        }
+    }
 
-    public float getTons() {
+    public double getTons() {
         return (m_nTons);
     }
 
-    public float getTOweight() {
+    public double getTOweight() {
         return (m_TOsuitTons);
     }
 
-    public float getTWweight() {
+    public double getTWweight() {
         return (m_TWsuitTons);
     }
 
@@ -230,6 +242,31 @@ public class MechSummary implements Serializable {
 
     public String getLevel() {
         return (m_sLevel);
+    }
+    
+    public int getAdvancedTechYear() {
+        return m_nAdvTechYear;
+    }
+
+    public int getStandardTechYear() {
+        return m_nStdTechYear;
+    }
+    
+    public String getLevel(int year) {
+        if (m_sLevel.equals("F")) {
+            return m_sLevel;
+        }
+        if (year >= m_nStdTechYear) {
+            if (m_nType == TechConstants.T_INTRO_BOXSET) {
+                return m_sLevel;
+            } else {
+                return String.valueOf(TechConstants.T_SIMPLE_STANDARD + 1);
+            }
+        } else if (year >= m_nAdvTechYear) {
+            return String.valueOf(TechConstants.T_SIMPLE_ADVANCED + 1);
+        } else {
+            return String.valueOf(TechConstants.T_SIMPLE_EXPERIMENTAL + 1);
+        }
     }
 
     public void setName(String m_sName) {
@@ -263,16 +300,20 @@ public class MechSummary implements Serializable {
     public void setType(int m_nType) {
         this.m_nType = m_nType;
     }
-
-    public void setTons(float m_nTons) {
+    
+    public void setAltTypes(int[] altTypes) {
+        this.altTypes = altTypes;
+    }
+    
+    public void setTons(double m_nTons) {
         this.m_nTons = m_nTons;
     }
 
-    public void setTOweight(float m_TOsuitTons) {
+    public void setTOweight(double m_TOsuitTons) {
         this.m_TOsuitTons = m_TOsuitTons;
     }
 
-    public void setTWweight(float m_TWsuitTons) {
+    public void setTWweight(double m_TWsuitTons) {
         this.m_TWsuitTons = m_TWsuitTons;
     }
 
@@ -299,6 +340,14 @@ public class MechSummary implements Serializable {
     public void setLevel(String level) {
         m_sLevel = level;
     }
+    
+    public void setAdvancedYear(int year) {
+        m_nAdvTechYear = year;
+    }
+    
+    public void setStandardYear(int year) {
+        m_nStdTechYear = year;
+    }
 
     public void setCanon(boolean canon) {
         this.canon = canon;
@@ -317,7 +366,7 @@ public class MechSummary implements Serializable {
     }
 
     public int getWeightClass() {
-        float tons;
+        double tons;
         if (getUnitType().equals("BattleArmor")){
             tons = getSuitWeight();
         } else {
@@ -361,20 +410,19 @@ public class MechSummary implements Serializable {
      */
     public void setEquipment(List<Mounted> mountedList)
     {
-        equipmentNames = new Vector<String>(mountedList.size());
-        equipmentQuantities = new Vector<Integer>(mountedList.size());
+        equipmentNames = new Vector<>(mountedList.size());
+        equipmentQuantities = new Vector<>(mountedList.size());
         for (Mounted mnt : mountedList)
         {
             String eqName = mnt.getType().getInternalName();
             int index = equipmentNames.indexOf(eqName);
-            if (index == -1){ //We haven't seen this piece of equipment before
+            if (index == -1) { //We haven't seen this piece of equipment before
                 equipmentNames.add(eqName);
                 equipmentQuantities.add(1);
-            }else{ //We've seen this before, update count
+            } else { //We've seen this before, update count
                 equipmentQuantities.set(index, equipmentQuantities.get(index)+1);
             }               
         }
-        
     }
     
     public Vector<String> getEquipmentNames()
@@ -419,8 +467,8 @@ public class MechSummary implements Serializable {
      */
     public void setArmorType(int[] locsArmor) {
         armorTypeSet.clear();
-        for (int i = 0; i < locsArmor.length; i++){
-            armorTypeSet.add(locsArmor[i]);
+        for (int value : locsArmor) {
+            armorTypeSet.add(value);
         }
         
     }
@@ -478,11 +526,11 @@ public class MechSummary implements Serializable {
         this.myomerName = myomerName;
     }
 
-    public float getSuitWeight() {
+    public double getSuitWeight() {
         return suitWeight;
     }
 
-    public void setSuitWeight(float suitWeight) {
+    public void setSuitWeight(double suitWeight) {
         this.suitWeight = suitWeight;
     }
 

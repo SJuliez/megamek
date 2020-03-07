@@ -24,6 +24,10 @@ S-STR-OE Eminus
 3072
 </year>
 
+<originalBuildYear>
+3072
+</originalBuildYear>
+
 <type>
 IS Level 3
 </type>
@@ -31,6 +35,9 @@ IS Level 3
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 6
@@ -64,6 +71,10 @@ Aerodyne
 5
 </armor_tech>
 
+<omni>
+1
+</omni>
+
 <armor>
 100
 76
@@ -72,27 +83,33 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-ISLightGaussRifle
-ISLightGaussRifle
-ISLightGaussRifle
-IS Light Gauss Ammo
-IS Light Gauss Ammo
-IS Light Gauss Ammo
-ISCASE
+ISLightGaussRifle:OMNI
+ISLightGaussRifle:OMNI
+ISLightGaussRifle:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-ISERMediumLaser
-ISERMediumLaser
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-ISERMediumLaser
-ISERMediumLaser
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+IS Light Gauss Ammo:OMNI
+IS Light Gauss Ammo:OMNI
+IS Light Gauss Ammo:OMNI
+ISCASE:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3075 - Jihad

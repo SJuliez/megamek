@@ -24,6 +24,10 @@ S-HA-OA Dominus
 3072
 </year>
 
+<originalBuildYear>
+3072
+</originalBuildYear>
+
 <type>
 IS Level 3
 </type>
@@ -31,6 +35,9 @@ IS Level 3
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 9
@@ -48,6 +55,10 @@ Aerodyne
 1
 </sink_type>
 
+<omnipodheatsinks>
+1
+</omnipodheatsinks>
+
 <fuel>
 400
 </fuel>
@@ -64,6 +75,10 @@ Aerodyne
 5
 </armor_tech>
 
+<omni>
+1
+</omni>
+
 <armor>
 40
 28
@@ -72,25 +87,31 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-LRM 15
-IS Ammo LRM-15 Artemis-capable
-IS Ammo LRM-15 Artemis-capable
-ISArtemisIV
-ISCASE
+LRM 15:OMNI
+ISArtemisIV:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-ISERMediumLaser
-ISERMediumLaser
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-ISERMediumLaser
-ISERMediumLaser
+ISERMediumLaser:OMNI
+ISERMediumLaser:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+IS Ammo LRM-15 Artemis-capable:OMNI
+IS Ammo LRM-15 Artemis-capable:OMNI
+ISCASE:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3075 - Jihad

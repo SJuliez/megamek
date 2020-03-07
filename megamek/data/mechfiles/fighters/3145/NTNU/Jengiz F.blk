@@ -21,8 +21,12 @@ F
 </Model>
 
 <year>
-3130
+3099
 </year>
+
+<originalBuildYear>
+3099
+</originalBuildYear>
 
 <type>
 Clan Level 3
@@ -31,6 +35,9 @@ Clan Level 3
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 5
@@ -76,29 +83,35 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLLongTomCannon
-CLUltraAC20
-CLLongTomCannonAmmo
-CLLongTomCannonAmmo
-Clan Ultra AC/20 Ammo
-Clan Ultra AC/20 Ammo
-Clan Ultra AC/20 Ammo
-Clan Ultra AC/20 Ammo
-CLCASE
+ISLongTomCannon:OMNI
+CLUltraAC20:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLERMediumLaser
+CLERMediumLaser:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLERMediumLaser
+CLERMediumLaser:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLERSmallLaser
-CLTargeting Computer
+CLERSmallLaser:OMNI
+CLTargeting Computer:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+ISLongTomCannonAmmo:OMNI
+ISLongTomCannonAmmo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+CLCASE
+</Fuselage Equipment>
 
 <source>
 TRO 3145 NTNU - Late Republic

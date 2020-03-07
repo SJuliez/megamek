@@ -24,6 +24,10 @@ CRX-OA
 3067
 </year>
 
+<originalBuildYear>
+3067
+</originalBuildYear>
+
 <type>
 IS Level 2
 </type>
@@ -31,6 +35,9 @@ IS Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 9
@@ -71,19 +78,25 @@ Aerodyne
 </Nose Equipment>
 
 <Left Wing Equipment>
-SRM 6
-IS Ammo SRM-6
+SRM 6:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-SRM 6
-IS Ammo SRM-6
+SRM 6:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-Small Laser
-Small Laser
+Small Laser:OMNI
+Small Laser:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+IS Ammo SRM-6:OMNI
+IS Ammo SRM-6:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3067 - Civil War

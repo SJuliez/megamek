@@ -18,12 +18,12 @@
 package megamek.common.weapons.battlearmor;
 
 import megamek.common.AmmoType;
+import megamek.common.BattleForceElement;
 import megamek.common.IGame;
 import megamek.common.ToHitData;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.weapons.AttackHandler;
 import megamek.common.weapons.FlamerHandler;
-import megamek.common.weapons.FlamerHeatHandler;
 import megamek.common.weapons.Weapon;
 import megamek.server.Server;
 
@@ -42,18 +42,19 @@ public abstract class BAFlamerWeapon extends Weapon {
         flags = flags.or(F_FLAMER).or(F_ENERGY).or(F_BA_WEAPON)
                 .or(F_BURST_FIRE).andNot(F_MECH_WEAPON).andNot(F_TANK_WEAPON).andNot(F_AERO_WEAPON).andNot(F_PROTO_WEAPON);
         ammoType = AmmoType.T_NA;
-        String[] modeStrings = { "Damage", "Heat" };
-        setModes(modeStrings);
         atClass = CLASS_POINT_DEFENSE;
     }
 
     @Override
     protected AttackHandler getCorrectHandler(ToHitData toHit,
             WeaponAttackAction waa, IGame game, Server server) {
-        if ((game.getEntity(waa.getEntityId()).getEquipment(waa.getWeaponId())
-                .curMode().equals("Heat"))) {
-            return new FlamerHeatHandler(toHit, waa, game, server);
-        }
         return new FlamerHandler(toHit, waa, game, server);
+    }
+
+    public int getBattleForceHeatDamage(int range) {
+        if (range < BattleForceElement.MEDIUM_RANGE) {
+            return getDamage();
+        }
+        return 0;
     }
 }

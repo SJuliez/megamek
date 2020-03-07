@@ -21,7 +21,7 @@ Ironhold Assault Battle Armor
 </Model>
 
 <year>
-3130
+3097
 </year>
 
 <type>
@@ -45,8 +45,8 @@ Jump
 </armor_tech>
 
 <Point Equipment>
-Battle Armor LB-X AC:LA
-Battle Armor LB-X AC:RA
+CLBALBX:LA
+CLBALBX:RA
 CLBASRM1OS:Body
 BABasicManipulator:LA
 BABasicManipulator:RA

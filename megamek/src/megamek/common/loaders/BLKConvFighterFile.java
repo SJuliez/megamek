@@ -1,5 +1,6 @@
 /*
  * MegaMek - Copyright (C) 2000-2002 Ben Mazur (bmazur@sev.org)
+ * Copyright (C) 2019 The MegaMek Team
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -12,17 +13,6 @@
  * details.
  */
 
-/*
- * BLkFile.java
- *
- * Created on April 6, 2002, 2:06 AM
- */
-
-/**
- *
- * @author taharqa
- * @version
- */
 package megamek.common.loaders;
 
 import megamek.common.Aero;
@@ -36,7 +26,15 @@ import megamek.common.Mounted;
 import megamek.common.TechConstants;
 import megamek.common.WeaponType;
 import megamek.common.util.BuildingBlock;
+import megamek.common.verifier.TestEntity;
 
+/**
+ * BLkFile.java
+ *
+ * Created on April 6, 2002, 2:06 AM
+ *
+ * @author taharqa
+ */
 public class BLKConvFighterFile extends BLKFile implements IMechLoader {
 
     // armor locatioms
@@ -74,7 +72,7 @@ public class BLKConvFighterFile extends BLKFile implements IMechLoader {
         if (!dataFile.exists("tonnage")) {
             throw new EntityLoadingException("Could not find weight block.");
         }
-        a.setWeight(dataFile.getDataAsFloat("tonnage")[0]);
+        a.setWeight(dataFile.getDataAsDouble("tonnage")[0]);
 
         // how many bombs can it carry
         a.autoSetMaxBombPoints();
@@ -91,7 +89,7 @@ public class BLKConvFighterFile extends BLKFile implements IMechLoader {
         if (!dataFile.exists("sink_type")) {
             throw new EntityLoadingException("Could not find sink_type block.");
         }
-        a.setHeatType(dataFile.getDataAsInt("sink_type")[0]);
+//        a.setHeatType(dataFile.getDataAsInt("sink_type")[0]);
 
         // figure out fuel
         if (!dataFile.exists("fuel")) {
@@ -105,7 +103,12 @@ public class BLKConvFighterFile extends BLKFile implements IMechLoader {
             engineCode = dataFile.getDataAsInt("engine_type")[0];
         }
         int engineFlags = 0;
-        if (a.isClan()) {
+        // Support for mixed tech units with an engine with a different tech base
+        if (dataFile.exists("clan_engine")) {
+            if (Boolean.parseBoolean(dataFile.getDataAsString("clan_engine")[0])) {
+                engineFlags |= Engine.CLAN_ENGINE;
+            }
+        } else if (a.isClan()) {
             engineFlags |= Engine.CLAN_ENGINE;
         }
         if (!dataFile.exists("SafeThrust")) {
@@ -144,14 +147,14 @@ public class BLKConvFighterFile extends BLKFile implements IMechLoader {
         a.initializeArmor(armor[BLKAeroFile.AFT], Aero.LOC_AFT);
 
         a.autoSetInternal();
+        a.recalculateTechAdvancement();
         a.autoSetSI();
         // This is not working right for arrays for some reason
         a.autoSetThresh();
 
-        loadEquipment(a, "Nose", Aero.LOC_NOSE);
-        loadEquipment(a, "Right Wing", Aero.LOC_RWING);
-        loadEquipment(a, "Left Wing", Aero.LOC_LWING);
-        loadEquipment(a, "Aft", Aero.LOC_AFT);
+        for (int loc = 0; loc < a.locations(); loc++) {
+            loadEquipment(a, a.getLocationName(loc), loc);
+        }
 
         if (dataFile.exists("omni")) {
             a.setOmni(true);
@@ -227,17 +230,14 @@ public class BLKConvFighterFile extends BLKFile implements IMechLoader {
 
                 if (etype != null) {
                     try {
-                        Mounted mount = t.addEquipment(etype, nLoc, rearMount);
+                        int useLoc = TestEntity.eqRequiresLocation(t, etype)? nLoc : Aero.LOC_FUSELAGE;
+                        Mounted mount = t.addEquipment(etype, useLoc, rearMount);
                         // Need to set facing for VGLs
                         if ((etype instanceof WeaponType) 
                                 && etype.hasFlag(WeaponType.F_VGL)) {
                             // If no facing specified, assume front
                             if (facing == -1) {
-                                if (rearMount) {
-                                    mount.setFacing(3);
-                                } else {
-                                    mount.setFacing(0);
-                                }
+                                mount.setFacing(defaultVGLFacing(useLoc, rearMount));
                             } else {
                                 mount.setFacing(facing);
                             }

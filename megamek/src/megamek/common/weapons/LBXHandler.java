@@ -59,15 +59,14 @@ public class LBXHandler extends AmmoWeaponHandler {
      */
     @Override
     protected int calcDamagePerHit() {
-        if ((target instanceof Infantry) && !(target instanceof BattleArmor)) {
+        if (target.isConventionalInfantry()) {
             double toReturn = Compute.directBlowInfantryDamage(
                     wtype.getDamage(), bDirect ? toHit.getMoS() / 3 : 0,
                     WeaponType.WEAPON_CLUSTER_BALLISTIC,
-                    ((Infantry) target).isMechanized());
-            if (bGlancing) {
-                toReturn /= 2;
-            }
-            return (int) Math.floor(toReturn);
+                    ((Infantry) target).isMechanized(),
+                    toHit.getThruBldg() != null, ae.getId(), calcDmgPerHitReport);
+            toReturn = applyGlancingBlowModifier(toReturn, true);
+            return (int) toReturn;
         }
         return 1;
     }
@@ -84,14 +83,6 @@ public class LBXHandler extends AmmoWeaponHandler {
             // basically 60% of normal
             return (int) Math.floor(0.6 * av);
         }
-        if (bDirect) {
-            av = Math.min(av + (toHit.getMoS() / 3), av * 2);
-        }
-        if (bGlancing) {
-            av = (int) Math.floor(av / 2.0);
-
-        }
-        av = (int) Math.floor(getBracketingMultiplier() * av);
         return av;
     }
 
@@ -114,11 +105,11 @@ public class LBXHandler extends AmmoWeaponHandler {
 
         if (allShotsHit()) {
             shotsHit = wtype.getRackSize();
-            if (game.getOptions().booleanOption(OptionsConstants.AC_TAC_OPS_RANGE)
+            if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_RANGE)
                 && (nRange > wtype.getRanges(weapon)[RangeType.RANGE_LONG])) {
                 shotsHit = (int) Math.ceil(shotsHit * .75);
             }
-            if (game.getOptions().booleanOption(OptionsConstants.AC_TAC_OPS_LOS_RANGE)
+            if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_LOS_RANGE)
                     && (nRange > wtype.getRanges(weapon)[RangeType.RANGE_EXTREME])) {
                 shotsHit = (int) Math.ceil(shotsHit * .5);
             }

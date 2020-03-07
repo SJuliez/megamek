@@ -24,6 +24,10 @@ B (Bulldozer)
 3060
 </year>
 
+<originalBuildYear>
+3060
+</originalBuildYear>
+
 <type>
 IS Level 3
 </type>
@@ -33,7 +37,8 @@ Wheeled
 </motion_type>
 
 <transporters>
-cargobay:1:1
+cargobay:1.0:1:1
+BattleArmorHandles - troopers:-1
 </transporters>
 
 <cruiseMP>
@@ -44,6 +49,10 @@ cargobay:1:1
 1
 </engine_type>
 
+<omni>
+1
+</omni>
+
 <armor>
 5
 5
@@ -51,16 +60,13 @@ cargobay:1:1
 3
 </armor>
 
-<barrating>
-4
-</barrating>
-
 <Body Equipment>
 ISOffRoadChassis
+OmniChassisMod
 </Body Equipment>
 
 <Front Equipment>
-Bulldozer
+Bulldozer:OMNI
 </Front Equipment>
 
 <Right Equipment>
@@ -72,18 +78,31 @@ Bulldozer
 <Rear Equipment>
 </Rear Equipment>
 
+<barrating>
+4
+</barrating>
+
+<structural_tech_rating>
+4
+</structural_tech_rating>
+
 <source>
-TRO Var
+TRO VAr - Clan Invasion
 </source>
 
 <tonnage>
 7.0
 </tonnage>
 
-<structural_tech_rating>
-4
-</structural_tech_rating>
+<baseChassisFireConWeight>
+0.0
+</baseChassisFireConWeight>
 
-<omni>
-</omni>
+<fuel>
+0.5
+</fuel>
+
+<fuelType>
+ALCOHOL
+</fuelType>
 

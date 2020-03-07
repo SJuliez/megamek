@@ -27,6 +27,7 @@ import megamek.common.Infantry;
 import megamek.common.Report;
 import megamek.common.ToHitData;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.options.OptionsConstants;
 import megamek.server.Server;
 
 /**
@@ -36,7 +37,7 @@ import megamek.server.Server;
  * @author arlith
  *
  */ 
-class CenturionWeaponSystemHandler extends EnergyWeaponHandler {
+public class CenturionWeaponSystemHandler extends EnergyWeaponHandler {
 
     /**
      * 
@@ -98,9 +99,9 @@ class CenturionWeaponSystemHandler extends EnergyWeaponHandler {
                 entityTarget.setTaserShutdownRounds(1);
             }
         } else { // Otherwise, there's a shutdown check
-            boolean mtHeat = game.getOptions().booleanOption("tacops_heat");
+            boolean mtHeat = game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_HEAT);
             int hotDogMod = 0;
-            if (entityTarget.getCrew().getOptions().booleanOption("hot_dog")) {
+            if (entityTarget.hasAbility(OptionsConstants.PILOT_HOT_DOG)) {
                 hotDogMod = 1;
             }
             int shutdown = (4 + (((entityTarget.heat) / 4) * 2))

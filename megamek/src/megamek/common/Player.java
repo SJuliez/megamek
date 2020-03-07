@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import megamek.common.event.GamePlayerChangeEvent;
+import megamek.common.options.OptionsConstants;
 
 /**
  * Represents a player in the game.
@@ -281,6 +282,9 @@ public final class Player extends TurnOrdered implements IPlayer {
         if (!observer) {
             setSeeAll(false);
         }
+        if (game != null && game.getTeamForPlayer(this) != null) {
+            game.getTeamForPlayer(this).cacheObversverStatus();
+        }
     }
 
     @Override
@@ -318,9 +322,11 @@ public final class Player extends TurnOrdered implements IPlayer {
 
     @Override
     public boolean isEnemyOf(IPlayer other) {
-        return ((id != other.getId()) 
-                && ((team == TEAM_NONE) || (team == TEAM_UNASSIGNED) 
-                        || (team != other.getTeam())));
+        if(null == other) {
+            return true;
+        }
+        return (id != other.getId()) 
+            && ((team == TEAM_NONE) || (team == TEAM_UNASSIGNED) || (team != other.getTeam()));
     }
 
     /**
@@ -444,17 +450,22 @@ public final class Player extends TurnOrdered implements IPlayer {
     }
 
     @Override
+    public void increaseInitialBV(int bv) {
+        initialBV += bv;
+    }
+
+    @Override
     public int getInitialBV() {
         return initialBV;
     }
 
     @Override
-    public void setCompensationInitBonus(int newBonus) {
+    public void setInitCompensationBonus(int newBonus) {
         streakCompensationBonus = newBonus;
     }
 
     @Override
-    public int getCompensationInitBonus() {
+    public int getInitCompensationBonus() {
         return streakCompensationBonus;
     }
 
@@ -484,14 +495,18 @@ public final class Player extends TurnOrdered implements IPlayer {
         }
         for (Entity entity : game.getEntitiesVector()) {
             if (entity.getOwner().equals(this)) {
-                if (game.getOptions().booleanOption("tacops_mobile_hqs")
+                if (game.getOptions().booleanOption(OptionsConstants.ADVANCED_TACOPS_MOBILE_HQS)
                     && (bonusHQ == 0) && (entity.getHQIniBonus() > 0)) {
                     bonusHQ = entity.getHQIniBonus();
                 }
-                if (game.getOptions().booleanOption("manei_domini")
-                    && (bonusMD == 0) && (entity.getMDIniBonus() > 0)) {
-                    bonusMD = entity.getMDIniBonus();
-                }
+                
+				/*
+				 * REMOVED IN IO. 
+				 * if (game.getOptions().booleanOption(OptionsConstants.
+				 * RPG_MANEI_DOMINI) && (bonusMD == 0) &&
+				 * (entity.getMDIniBonus() > 0)) { bonusMD =
+				 * entity.getMDIniBonus(); }
+				 */
                 if (entity.getQuirkIniBonus() > bonusQ) {
                     //TODO: I am assuming that the quirk initiative bonuses go to the highest,
                     //rather than being cumulative
@@ -510,9 +525,8 @@ public final class Player extends TurnOrdered implements IPlayer {
     @Override
     public int getCommandBonus() {
         int commandb = 0;
-        if (game.getOptions().booleanOption("command_init")) {
-            for (Entity entity : game.getEntitiesVector()) {
-                if ((null != entity.getOwner())
+        for (Entity entity : game.getEntitiesVector()) {
+            if ((null != entity.getOwner())
                     && entity.getOwner().equals(this)
                     && !entity.isDestroyed()
                     && entity.isDeployed()
@@ -520,9 +534,20 @@ public final class Player extends TurnOrdered implements IPlayer {
                     && entity.getCrew().isActive()
                     && !entity.isCaptured()
                     && !(entity instanceof MechWarrior)) {
-                    if (entity.getCrew().getCommandBonus() > commandb) {
-                        commandb = entity.getCrew().getCommandBonus();
-                    }
+                int bonus = 0;
+                if (game.getOptions().booleanOption(OptionsConstants.RPG_COMMAND_INIT)) {
+                    bonus = entity.getCrew().getCommandBonus();
+                }
+                //Even if the RPG option is not enabled, we still get the command bonus provided by special equipment.
+                //Since we are not designating a single force commander at this point, we assume a superheavy tripod
+                //is the force commander if that gives the highest bonus.
+                if (entity.hasCommandConsoleBonus() || entity.getCrew().hasActiveTechOfficer()) {
+                    bonus += 2;
+                }
+                //Once we've gotten the status of the command console (if any), reset the flag that tracks
+                //the previous turn's action.
+                if (bonus > commandb) {
+                    commandb = bonus;
                 }
             }
         }

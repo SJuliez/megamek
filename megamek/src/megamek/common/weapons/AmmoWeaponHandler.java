@@ -75,7 +75,7 @@ public class AmmoWeaponHandler extends WeaponHandler {
             ammo = weapon.getLinked();
         }
     }
-
+    
     /**
      * For ammo weapons, this number can be less than the full number if the
      * amount of ammo is not high enough

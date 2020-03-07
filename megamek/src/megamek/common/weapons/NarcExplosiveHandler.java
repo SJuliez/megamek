@@ -125,16 +125,16 @@ public class NarcExplosiveHandler extends MissileWeaponHandler {
         } else {
             toReturn = 4;
         }
-        if ((target instanceof Infantry) && !(target instanceof BattleArmor)) {
+        if (target.isConventionalInfantry()) {
             toReturn = Compute.directBlowInfantryDamage(toReturn,
                     bDirect ? toHit.getMoS() / 3 : 0,
                     WeaponType.WEAPON_DIRECT_FIRE,
-                    ((Infantry) target).isMechanized());
+                    ((Infantry) target).isMechanized(),
+                    toHit.getThruBldg() != null, ae.getId(), calcDmgPerHitReport);
             toReturn = Math.ceil(toReturn);
         }
-        if (bGlancing) {
-            return (int) Math.floor(toReturn / 2.0);
-        }
+        
+        toReturn = applyGlancingBlowModifier(toReturn, target.isConventionalInfantry());
         return (int) toReturn;
     }
 }

@@ -112,7 +112,7 @@ public class ChargeAttackAction extends DisplacementAttackAction {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Invalid Target");
         }
 
-        if (!game.getOptions().booleanOption("friendly_fire")) {
+        if (!game.getOptions().booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE)) {
             // a friendly unit can never be the target of a direct attack.
             if (!skid
                 && (target.getTargetType() == Targetable.TYPE_ENTITY)
@@ -281,7 +281,7 @@ public class ChargeAttackAction extends DisplacementAttackAction {
         }
 
         // attacker is spotting
-        if (ae.isSpotting()) {
+        if (ae.isSpotting() && !ae.getCrew().hasActiveCommandConsole()) {
             toHit.addModifier(+1, "attacker is spotting");
         }
         // piloting skill differential
@@ -362,7 +362,7 @@ public class ChargeAttackAction extends DisplacementAttackAction {
         }
 
         // Attacking Weight Class Modifier.
-        if (game.getOptions().booleanOption(OptionsConstants.AGM_TAC_OPS_PHYSICAL_ATTACK_PSR)) {
+        if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_PHYSICAL_ATTACK_PSR)) {
             if (ae.getWeightClass() == EntityWeightClass.WEIGHT_LIGHT) {
                 toHit.addModifier(-2, "Weight Class Attack Modifier");
             } else if (ae.getWeightClass() == EntityWeightClass.WEIGHT_MEDIUM) {
@@ -509,9 +509,8 @@ public class ChargeAttackAction extends DisplacementAttackAction {
      */
     public static int getDamageTakenBy(Entity entity, Building bldg,
                                        Coords coords) {
-        // ASSUMPTION: 10% of buildings CF at start of phase, round up.
-        return (int) Math.floor(bldg.getDamageFromScale()
-                                * Math.ceil(bldg.getPhaseCF(coords) / 10.0));
+        // Charges against targets that have no tonnage use the attacker's tonnage to compute damage.
+        return getDamageTakenBy(entity, entity, false, entity.delta_distance);
     }
 
     public static int getDamageTakenBy(Entity entity, Entity target) {

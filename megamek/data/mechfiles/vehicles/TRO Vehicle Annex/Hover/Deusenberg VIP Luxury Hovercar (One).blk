@@ -17,12 +17,16 @@ Deusenberg VIP Luxury Hovercar
 </Name>
 
 <Model>
-(One)
+(Standard)
 </Model>
 
 <year>
-3055
+3059
 </year>
+
+<originalBuildYear>
+3059
+</originalBuildYear>
 
 <type>
 IS Level 3
@@ -33,8 +37,9 @@ Hover
 </motion_type>
 
 <transporters>
-1stclassquarters:10:1
-cargobay:1.55:1
+1stclassquarters:10.0:1
+cargobay:1.55:1:2
+standardseats:0.45:0
 </transporters>
 
 <cruiseMP>
@@ -51,14 +56,6 @@ cargobay:1.55:1
 13
 12
 </armor>
-
-<structural_tech_rating>
-4
-</structural_tech_rating>
-
-<barrating>
-10
-</barrating>
 
 <Body Equipment>
 Armored Chassis
@@ -81,15 +78,23 @@ ISAntiPersonnelPod
 <Rear Equipment>
 </Rear Equipment>
 
+<barrating>
+10
+</barrating>
+
+<structural_tech_rating>
+3
+</structural_tech_rating>
+
 <source>
-TRO VAr
+TRO VAr - Clan Invasion
 </source>
 
 <tonnage>
 50.0
 </tonnage>
 
-<range>
-1000
-</range>
+<fuel>
+0.0
+</fuel>
 

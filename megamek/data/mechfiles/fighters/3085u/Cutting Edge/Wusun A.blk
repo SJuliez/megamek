@@ -24,6 +24,10 @@ A
 3084
 </year>
 
+<originalBuildYear>
+3084
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 8
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+1
+</omnipodheatsinks>
 
 <fuel>
 320
@@ -76,30 +87,35 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLMediumPulseLaser
-CLMediumPulseLaser
-CLMediumPulseLaser
-CLTargeting Computer
+CLMediumPulseLaser:OMNI
+CLMediumPulseLaser:OMNI
+CLMediumPulseLaser:OMNI
+CLTargeting Computer:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLLRM15
-Clan Ammo LRM-15 (Clan) Artemis-capable
-Clan Ammo LRM-15 (Clan) Artemis-capable
-CLArtemisIV
-CLCASE
+CLLRM15:OMNI
+CLArtemisIV:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLLRM15
-Clan Ammo LRM-15 (Clan) Artemis-capable
-Clan Ammo LRM-15 (Clan) Artemis-capable
-CLArtemisIV
-CLCASE
+CLLRM15:OMNI
+CLArtemisIV:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Ammo LRM-15 (Clan) Artemis-capable:OMNI
+Clan Ammo LRM-15 (Clan) Artemis-capable:OMNI
+Clan Ammo LRM-15 (Clan) Artemis-capable:OMNI
+Clan Ammo LRM-15 (Clan) Artemis-capable:OMNI
+CLCASE
+</Fuselage Equipment>
 
 <source>
 TRO 3085 - Jihad

@@ -18,13 +18,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
-
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.widget.MegamekButton;
+import megamek.client.ui.swing.widget.SkinSpecification;
 import megamek.common.Coords;
 import megamek.common.IGame;
 import megamek.common.IHex;
@@ -68,7 +69,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
     }
 
     // buttons
-    protected Hashtable<Command,MegamekButton> buttons;
+    protected Map<Command,MegamekButton> buttons;
     
     private boolean deployM = false;
     private boolean deployC = false;
@@ -93,12 +94,17 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
 
         p = clientgui.getClient().getLocalPlayer();
 
-        buttons = new Hashtable<Command, MegamekButton>(
+        buttons = new HashMap<Command, MegamekButton>(
                 (int) (Command.values().length * 1.25 + 0.5));
         for (Command cmd : Command.values()) {
             String title = Messages.getString("DeployMinefieldDisplay."
                     + cmd.getCmd());
-            MegamekButton newButton = new MegamekButton(title, "PhaseDisplayButton");
+            MegamekButton newButton = new MegamekButton(title,
+                    SkinSpecification.UIComponents.PhaseDisplayButton.getComp());
+            String ttKey = "DeployMinefieldDisplay." + cmd.getCmd() + ".tooltip";
+            if (Messages.keyExists(ttKey)) {
+                newButton.setToolTipText(Messages.getString(ttKey));
+            }
             newButton.addActionListener(this);
             newButton.setActionCommand(cmd.getCmd());
             newButton.setEnabled(false);
@@ -484,7 +490,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
     private void setConventionalEnabled(int nbr) {
         buttons.get(Command.DEPLOY_MINE_CONV).setText(Messages.getString(
                 "DeployMinefieldDisplay." + Command.DEPLOY_MINE_CONV.getCmd(), 
-                new Object[] { new Integer(nbr) })); //$NON-NLS-1$
+                new Object[] { Integer.valueOf(nbr) })); //$NON-NLS-1$
         buttons.get(Command.DEPLOY_MINE_CONV).setEnabled(nbr > 0);
         clientgui.getMenuBar().setDeployConventionalEnabled(nbr);
     }
@@ -492,7 +498,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
     private void setCommandEnabled(int nbr) {
         buttons.get(Command.DEPLOY_MINE_COM).setText(Messages.getString(
                 "DeployMinefieldDisplay." + Command.DEPLOY_MINE_COM.getCmd(), 
-                new Object[] { new Integer(nbr) })); //$NON-NLS-1$
+                new Object[] { Integer.valueOf(nbr) })); //$NON-NLS-1$
         buttons.get(Command.DEPLOY_MINE_COM).setEnabled(nbr > 0);
         clientgui.getMenuBar().setDeployCommandEnabled(nbr);
     }
@@ -500,7 +506,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
     private void setVibrabombEnabled(int nbr) {
         buttons.get(Command.DEPLOY_MINE_VIBRA).setText(Messages.getString(
                 "DeployMinefieldDisplay." + Command.DEPLOY_MINE_VIBRA.getCmd(), 
-                new Object[] { new Integer(nbr) })); //$NON-NLS-1$
+                new Object[] { Integer.valueOf(nbr) })); //$NON-NLS-1$
         buttons.get(Command.DEPLOY_MINE_VIBRA).setEnabled(nbr > 0);
         clientgui.getMenuBar().setDeployVibrabombEnabled(nbr);
     }
@@ -508,7 +514,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
     private void setActiveEnabled(int nbr) {
         buttons.get(Command.DEPLOY_MINE_ACTIVE).setText(Messages.getString(
                 "DeployMinefieldDisplay." + Command.DEPLOY_MINE_ACTIVE.getCmd(), 
-                new Object[] { new Integer(nbr) })); //$NON-NLS-1$
+                new Object[] { Integer.valueOf(nbr) })); //$NON-NLS-1$
         buttons.get(Command.DEPLOY_MINE_ACTIVE).setEnabled(nbr > 0);
         clientgui.getMenuBar().setDeployActiveEnabled(nbr);
     }
@@ -516,7 +522,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
     private void setInfernoEnabled(int nbr) {
         buttons.get(Command.DEPLOY_MINE_INFERNO).setText(Messages.getString(
                 "DeployMinefieldDisplay." + Command.DEPLOY_MINE_INFERNO.getCmd(), 
-                new Object[] { new Integer(nbr) })); //$NON-NLS-1$
+                new Object[] { Integer.valueOf(nbr) })); //$NON-NLS-1$
         buttons.get(Command.DEPLOY_MINE_INFERNO).setEnabled(nbr > 0);
         clientgui.getMenuBar().setDeployInfernoEnabled(nbr);
     }

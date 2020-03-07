@@ -25,10 +25,17 @@ import java.text.DecimalFormatSymbols;
 import java.util.Iterator;
 
 import megamek.client.ui.Messages;
-import megamek.common.weapons.BayWeapon;
+import megamek.common.weapons.bayweapons.BayWeapon;
 
 /**
  * A utility class for retrieving mech information in a formatted string.
+ * 
+ * @deprecated Use {@link MechView#MechView(Entity, boolean, boolean, false)} instead.
+ * 
+ * This class has not been maintained and rather than copy the changes from MechView
+ * and continuing to maintain two nearly-identical classes, MechView has been reworked
+ * to provide the functionality of both.
+ * 
  */
 public class MechTextView {
 
@@ -137,7 +144,7 @@ public class MechTextView {
         if (isMech || isVehicle
                 || (isAero && !isSmallCraft && !isJumpship && !isSquadron)) {
             sBasic.append(Messages.getString("MechView.Engine")); //$NON-NLS-1$
-            sBasic.append(entity.getEngine().getShortEngineName());
+            sBasic.append(entity.hasEngine() ? entity.getEngine().getShortEngineName() : "(none)");
             if (entity.getEngineHits() > 0) {
                 sBasic.append(" (" + entity.getEngineHits() + " hits)");
             }
@@ -301,8 +308,8 @@ public class MechTextView {
                 // Skip empty sections.
                 if ((IArmorState.ARMOR_NA == entity.getInternal(loc))
                         || (isVehicle
-                                && (loc == ((Tank) entity).getLocTurret()) && ((Tank) entity)
-                                    .hasNoTurret()) || (loc == Tank.LOC_BODY)) {
+                                && ((loc == ((Tank) entity).getLocTurret()) && ((Tank) entity)
+                                    .hasNoTurret() || (loc == Tank.LOC_BODY)))) {
                     continue;
                 }
                 String armor = "";

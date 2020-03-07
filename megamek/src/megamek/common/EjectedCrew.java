@@ -6,6 +6,7 @@
 
 package megamek.common;
 
+import megamek.common.options.OptionsConstants;
 import megamek.common.weapons.infantry.InfantryWeapon;
 
 /** This class describes a vehicle crew that has abandoned its vehicle and now
@@ -16,10 +17,14 @@ import megamek.common.weapons.infantry.InfantryWeapon;
 public class EjectedCrew extends Infantry {
     protected int originalRideId;
     protected String originalRideExternalId;
+    // set up movement for Aero pilots and vessel crews
+    protected int currentVelocity = 0;
+    protected int nextVelocity = currentVelocity;
     
     private static final long serialVersionUID = 8136710237585797372L;
     
     public static final String VEE_EJECT_NAME = "Vehicle Crew";
+    public static final String PILOT_EJECT_NAME = "Pilot";
     public static final String MW_EJECT_NAME = "MechWarrior";
 
     public EjectedCrew(Entity originalRide) {
@@ -38,16 +43,25 @@ public class EjectedCrew extends Infantry {
         // Finish initializing this unit.
         setOwner(originalRide.getOwner());
         initializeInternal(originalRide.getCrew().getSize(), Infantry.LOC_INFANTRY);
+        if (originalRide.getCrew().getSlotCount() > 1) {
+            int dead = 0;
+            for (int i = 0; i < originalRide.getCrew().getSlotCount(); i++) {
+                if (originalRide.getCrew().isDead(i)) {
+                    dead++;
+                }
+            }
+            setInternal(originalRide.getCrew().getSize() - dead, Infantry.LOC_INFANTRY);
+        }
         setOriginalRideId(originalRide.getId());
         setOriginalRideExternalId(originalRide.getExternalIdAsString());
         IGame tmpGame = originalRide.getGame();
         if (tmpGame != null
             && (!(this instanceof MechWarrior) 
-                    || tmpGame.getOptions().booleanOption("armed_mechwarriors"))) {
+                    || tmpGame.getOptions().booleanOption(OptionsConstants.ADVANCED_ARMED_MECHWARRIORS))) {
             try {
-                addEquipment(EquipmentType.get("InfantryAssaultRifle"),
+                addEquipment(EquipmentType.get(EquipmentTypeLookup.INFANTRY_ASSAULT_RIFLE),
                         Infantry.LOC_INFANTRY);
-                setPrimaryWeapon((InfantryWeapon) InfantryWeapon.get("InfantryAssaultRifle"));
+                setPrimaryWeapon((InfantryWeapon) InfantryWeapon.get(EquipmentTypeLookup.INFANTRY_ASSAULT_RIFLE));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -59,7 +73,7 @@ public class EjectedCrew extends Infantry {
      */
     public EjectedCrew() {
         super();
-        setCrew(new Crew(1));
+        setCrew(new Crew(CrewType.CREW));
         setChassis(VEE_EJECT_NAME);
         //this constructor is just so that the MUL parser can read these units in so
         //assign some arbitrarily large number here for the internal so that locations will get 
@@ -81,14 +95,23 @@ public class EjectedCrew extends Infantry {
         // Finish initializing this unit.
         setOwner(owner);
         initializeInternal(crew.getSize(), Infantry.LOC_INFANTRY);
+        if (crew.getSlotCount() > 1) {
+            int dead = 0;
+            for (int i = 0; i < crew.getSlotCount(); i++) {
+                if (crew.isDead(i)) {
+                    dead++;
+                }
+            }
+            setInternal(crew.getSize() - dead, Infantry.LOC_INFANTRY);
+        }
         IGame tmpGame = game;
         if (tmpGame != null
             && (!(this instanceof MechWarrior) 
-                    || tmpGame.getOptions().booleanOption("armed_mechwarriors"))) {
+                    || tmpGame.getOptions().booleanOption(OptionsConstants.ADVANCED_ARMED_MECHWARRIORS))) {
             try {
-                addEquipment(EquipmentType.get("InfantryAssaultRifle"),
+                addEquipment(EquipmentType.get(EquipmentTypeLookup.INFANTRY_ASSAULT_RIFLE),
                         Infantry.LOC_INFANTRY);
-                setPrimaryWeapon((InfantryWeapon) InfantryWeapon.get("InfantryAssaultRifle"));
+                setPrimaryWeapon((InfantryWeapon) InfantryWeapon.get(EquipmentTypeLookup.INFANTRY_ASSAULT_RIFLE));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -155,6 +178,35 @@ public class EjectedCrew extends Infantry {
     public boolean isCrippled() {
         // Ejected crew should always attempt to flee according to Forced Withdrawal.
         return true;
+    }
+    
+    // Handle pilot/escape pod velocity for Aeros
+    
+    public int getCurrentVelocity() {
+        // if using advanced movement then I just want to sum up
+        // the different vectors
+        if ((game != null) && game.useVectorMove()) {
+            return getVelocity();
+        }
+        return currentVelocity;
+    }
+
+    public void setCurrentVelocity(int velocity) {
+        currentVelocity = velocity;
+    }
+
+    public int getNextVelocity() {
+        return nextVelocity;
+    }
+
+    public void setNextVelocity(int velocity) {
+        nextVelocity = velocity;
+    }
+    
+    //Is this pilot/crew suited for vacuum/harsh environmental conditions?
+    @Override
+    public boolean doomedInSpace() {
+        return !hasSpaceSuit();
     }
 
 }

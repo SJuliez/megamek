@@ -32,6 +32,7 @@ import megamek.common.Engine;
 import megamek.common.Entity;
 import megamek.common.EntityMovementMode;
 import megamek.common.EquipmentType;
+import megamek.common.IArmorState;
 import megamek.common.LocationFullException;
 import megamek.common.Mounted;
 import megamek.common.TechConstants;
@@ -40,16 +41,11 @@ import megamek.common.util.BuildingBlock;
 
 public class BLKDropshipFile extends BLKFile implements IMechLoader {
 
-    // armor locatioms
-    public static final int NOSE = 0;
-    public static final int RW = 1;
-    public static final int LW = 2;
-    public static final int AFT = 3;
-
     public BLKDropshipFile(BuildingBlock bb) {
         dataFile = bb;
     }
 
+    @Override
     public Entity getEntity() throws EntityLoadingException {
 
         Dropship a = new Dropship();
@@ -72,10 +68,22 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
             a.setSource(dataFile.getDataAsString("source")[0]);
         }
 
+        if (dataFile.exists("originalBuildYear")) {
+            a.setOriginalBuildYear(dataFile.getDataAsInt("originalBuildYear")[0]);
+        }
+
         if (!dataFile.exists("crew")) {
             throw new EntityLoadingException("Could not find crew block.");
         }
         a.setNCrew(dataFile.getDataAsInt("crew")[0]);
+
+        if (dataFile.exists("officers")) {
+            a.setNOfficers(dataFile.getDataAsInt("officers")[0]);
+        }
+
+        if (dataFile.exists("gunners")) {
+            a.setNGunners(dataFile.getDataAsInt("gunners")[0]);
+        }
 
         if (dataFile.exists("passengers")) {
             a.setNPassenger(dataFile.getDataAsInt("passengers")[0]);
@@ -106,7 +114,7 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
         if (!dataFile.exists("tonnage")) {
             throw new EntityLoadingException("Could not find tonnage block.");
         }
-        a.setWeight(dataFile.getDataAsFloat("tonnage")[0]);
+        a.setWeight(dataFile.getDataAsDouble("tonnage")[0]);
 
         // get a movement mode - lets try Aerodyne
         if (!dataFile.exists("motion_type")) {
@@ -114,7 +122,7 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
         }
         String sMotion = dataFile.getDataAsString("motion_type")[0];
         EntityMovementMode nMotion = EntityMovementMode.AERODYNE;
-        if (sMotion.equals("spheroid")) {
+        if (sMotion.equalsIgnoreCase("spheroid")) {
             nMotion = EntityMovementMode.SPHEROID;
             a.setSpheroid(true);
         }
@@ -126,15 +134,19 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
         // figure out structural integrity
         if (!dataFile.exists("structural_integrity")) {
             throw new EntityLoadingException(
-                    "Could not find structual integrity block.");
+                    "Could not find structural integrity block.");
         }
         a.set0SI(dataFile.getDataAsInt("structural_integrity")[0]);
 
+        if (dataFile.exists("collartype")) {
+            a.setCollarType(dataFile.getDataAsInt("collartype")[0]);
+        }
         // figure out heat
         if (!dataFile.exists("heatsinks")) {
             throw new EntityLoadingException("Could not find heatsink block.");
         }
         a.setHeatSinks(dataFile.getDataAsInt("heatsinks")[0]);
+        a.setOHeatSinks(dataFile.getDataAsInt("heatsinks")[0]);
         if (!dataFile.exists("sink_type")) {
             throw new EntityLoadingException("Could not find sink_type block.");
         }
@@ -156,11 +168,15 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
 
         a.setEngine(new Engine(400, 0, 0));
 
+        // Switch older files with standard armor to aerospace
+        int at = EquipmentType.T_ARMOR_AEROSPACE;
         if (dataFile.exists("armor_type")) {
-            a.setArmorType(dataFile.getDataAsInt("armor_type")[0]);
-        } else {
-            a.setArmorType(EquipmentType.T_ARMOR_STANDARD);
+            at = dataFile.getDataAsInt("armor_type")[0];
+            if (at == EquipmentType.T_ARMOR_STANDARD) {
+                at = EquipmentType.T_ARMOR_AEROSPACE;
+            }
         }
+        a.setArmorType(at);
         if (dataFile.exists("armor_tech")) {
             a.setArmorTechLevel(dataFile.getDataAsInt("armor_tech")[0]);
         }
@@ -168,6 +184,11 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
             a.setStructureType(dataFile.getDataAsInt("internal_type")[0]);
         } else {
             a.setStructureType(EquipmentType.T_STRUCTURE_STANDARD);
+        }
+        if (dataFile.exists("designtype")) {
+            a.setDesignType(dataFile.getDataAsInt("designtype")[0]);
+        } else {
+            a.setDesignType(Aero.MILITARY);
         }
 
         if (!dataFile.exists("armor")) {
@@ -180,20 +201,20 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
             throw new EntityLoadingException("Incorrect armor array length");
         }
 
-        a.initializeArmor(armor[BLKAeroFile.NOSE], Aero.LOC_NOSE);
-        a.initializeArmor(armor[BLKAeroFile.RW], Aero.LOC_RWING);
-        a.initializeArmor(armor[BLKAeroFile.LW], Aero.LOC_LWING);
-        a.initializeArmor(armor[BLKAeroFile.AFT], Aero.LOC_AFT);
+        a.initializeArmor(armor[BLKAeroFile.NOSE], Dropship.LOC_NOSE);
+        a.initializeArmor(armor[BLKAeroFile.RW], Dropship.LOC_RWING);
+        a.initializeArmor(armor[BLKAeroFile.LW], Dropship.LOC_LWING);
+        a.initializeArmor(armor[BLKAeroFile.AFT], Dropship.LOC_AFT);
+        a.initializeArmor(IArmorState.ARMOR_NA, Dropship.LOC_HULL);
 
         a.autoSetInternal();
+        a.recalculateTechAdvancement();
         // This is not working right for arrays for some reason
         a.autoSetThresh();
 
-        loadEquipment(a, "Nose", Aero.LOC_NOSE);
-        loadEquipment(a, "Right Side", Aero.LOC_RWING);
-        loadEquipment(a, "Left Side", Aero.LOC_LWING);
-        loadEquipment(a, "Aft", Aero.LOC_AFT);
-        loadEquipment(a, "System Wide", Entity.LOC_NONE);
+        for (int loc = 0; loc < a.locations(); loc++) {
+            loadEquipment(a, a.getLocationName(loc), loc);
+        }
 
         if (dataFile.exists("omni")) {
             a.setOmni(true);
@@ -264,7 +285,8 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
                 }
 
                 // check for ammo loadouts
-                if (equipName.contains(":") && equipName.contains("Ammo")) {
+                if (equipName.contains(":") && (equipName.contains("Ammo")
+                        || equipName.contains("Pod"))) {
                     // then split by the :
                     String[] temp;
                     temp = equipName.split(":");

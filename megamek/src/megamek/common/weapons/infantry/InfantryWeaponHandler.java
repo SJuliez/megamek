@@ -29,6 +29,7 @@ import megamek.common.Report;
 import megamek.common.ToHitData;
 import megamek.common.WeaponType;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.options.OptionsConstants;
 import megamek.common.weapons.WeaponHandler;
 import megamek.server.Server;
 import megamek.server.Server.DamageType;
@@ -82,9 +83,15 @@ public class InfantryWeaponHandler extends WeaponHandler {
     @Override
     protected int calcHits(Vector<Report> vPhaseReport) {
         int nHitMod = 0;
+        
         if (bGlancing) {
             nHitMod -= 4;
         }
+        
+        if(this.bLowProfileGlancing) {
+            nHitMod -= 4;
+        }
+        
         int troopersHit = 0;
         //when swarming all troopers hit
         if (ae.getSwarmTargetId() == target.getTargetId()) {
@@ -93,7 +100,7 @@ public class InfantryWeaponHandler extends WeaponHandler {
             troopersHit = 1;
         } else {
             troopersHit = Compute.missilesHit(((Infantry) ae)
-                .getShootingStrength(), nHitMod, bGlancing);
+                .getShootingStrength(), nHitMod);
         }
         double damage = ((InfantryWeapon)wtype).getInfantryDamage();
         if((ae instanceof Infantry) && !(ae instanceof BattleArmor)) {
@@ -103,7 +110,7 @@ public class InfantryWeaponHandler extends WeaponHandler {
         }
         if((ae instanceof Infantry)
                 && nRange == 0
-                && ae.getCrew().getOptions().booleanOption("tsm_implant")) {
+                && ae.hasAbility(OptionsConstants.MD_TSM_IMPLANT)) {
             damage += 0.14;
         }
         int damageDealt = (int) Math.round(damage * troopersHit);
@@ -112,7 +119,7 @@ public class InfantryWeaponHandler extends WeaponHandler {
         }
         if((ae instanceof Infantry)
                 && nRange == 0
-                && ae.getCrew().getOptions().booleanOption("tsm_implant")) {
+                && ae.hasAbility(OptionsConstants.MD_TSM_IMPLANT)) {
 
         }
         if ((target instanceof Infantry) && ((Infantry)target).isMechanized()) {
@@ -164,9 +171,7 @@ public class InfantryWeaponHandler extends WeaponHandler {
         if(bDirect) {
             av = Math.min(av+(toHit.getMoS()/3), av*2);
         }
-        if(bGlancing) {
-            av = (int) Math.floor(av / 2.0);
-        }
+        av = applyGlancingBlowModifier(av, false);
         return av;
     }
 

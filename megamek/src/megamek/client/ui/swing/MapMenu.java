@@ -17,6 +17,7 @@ package megamek.client.ui.swing;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,8 +34,11 @@ import javax.swing.UIManager;
 import megamek.client.Client;
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.boardview.BoardView1;
+import megamek.client.event.BoardViewEvent;
 import megamek.common.AmmoType;
 import megamek.common.BipedMech;
+import megamek.common.Building;
+import megamek.common.Building.DemolitionCharge;
 import megamek.common.BuildingTarget;
 import megamek.common.Coords;
 import megamek.common.Entity;
@@ -45,10 +49,12 @@ import megamek.common.IBoard;
 import megamek.common.IGame;
 import megamek.common.IHex;
 import megamek.common.IPlayer;
+import megamek.common.LandAirMech;
 import megamek.common.Mech;
 import megamek.common.MinefieldTarget;
 import megamek.common.MiscType;
 import megamek.common.Mounted;
+import megamek.common.QuadVee;
 import megamek.common.SpecialHexDisplay;
 import megamek.common.Tank;
 import megamek.common.TargetRoll;
@@ -61,8 +67,9 @@ import megamek.common.actions.BAVibroClawAttackAction;
 import megamek.common.actions.BreakGrappleAttackAction;
 import megamek.common.actions.GrappleAttackAction;
 import megamek.common.actions.WeaponAttackAction;
-import megamek.common.weapons.CLFireExtinguisher;
-import megamek.common.weapons.ISFireExtinguisher;
+import megamek.common.options.OptionsConstants;
+import megamek.common.weapons.other.CLFireExtinguisher;
+import megamek.common.weapons.other.ISFireExtinguisher;
 
 /**
  * Context menu for the board.
@@ -166,6 +173,13 @@ public class MapMenu extends JPopupMenu {
                     itemCount++;
                 }
 
+                menu = createConvertMenu();
+
+                if (menu.getItemCount() > 0) {
+                    this.add(menu);
+                    itemCount++;
+                }
+
                 menu = createPhysicalMenu(true);
 
                 if (menu.getItemCount() > 0) {
@@ -243,13 +257,21 @@ public class MapMenu extends JPopupMenu {
             item.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     try {
-                        ((MovementDisplay) currentPanel).actionPerformed(e);
+                        if (currentPanel instanceof MovementDisplay) {
+                            ((MovementDisplay) currentPanel).actionPerformed(e);
+                        }
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
                 }
             });
             this.add(item);
+        }
+        
+        menu = touchOffExplosivesMenu();
+        if (menu.getItemCount() > 0) {
+            this.add(menu);
+            itemCount++;
         }
 
         menu = createSpecialHexDisplayMenu();
@@ -385,6 +407,27 @@ public class MapMenu extends JPopupMenu {
         return item;
     }
 
+    private JMenu touchOffExplosivesMenu() {
+        JMenu menu = new JMenu("Touch off explosives");
+
+        Building bldg = client.getBoard().getBuildingAt(coords);
+        if ((bldg != null)) {
+            for (final DemolitionCharge charge : bldg.getDemolitionCharges()) {
+                if (charge.playerId == client.getLocalPlayer().getId()
+                        && coords.equals(charge.pos)) {
+                    JMenuItem item = new JMenuItem(charge.damage + " Damage");
+                    item.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            client.sendExplodeBuilding(charge);
+                        }
+                    });
+                    menu.add(item);
+                }
+            }
+        }
+        return menu;
+    }
+
     /**
      * Create various menus related to <code>SpecialHexDisplay</code>.
      *
@@ -394,7 +437,7 @@ public class MapMenu extends JPopupMenu {
         JMenu menu = new JMenu("Special Hex Display");
 
         final Collection<SpecialHexDisplay> shdList = game.getBoard()
-                                                          .getSpecialHexDisplay(coords);
+                .getSpecialHexDisplay(coords);
 
         SpecialHexDisplay note = null;
         if (shdList != null) {
@@ -416,8 +459,7 @@ public class MapMenu extends JPopupMenu {
         } else {
             finalNote = note;
         }
-        JMenuItem item = new JMenuItem(Messages
-                                               .getString("NoteDialog.action")); //$NON-NLS-1$
+        JMenuItem item = new JMenuItem(Messages.getString("NoteDialog.action")); //$NON-NLS-1$
         item.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 NoteDialog nd = new NoteDialog(gui.frame, finalNote);
@@ -432,8 +474,7 @@ public class MapMenu extends JPopupMenu {
         menu.add(item);
 
         if (note != null) {
-            item = new JMenuItem(Messages
-                                         .getString("NoteDialog.delete")); //$NON-NLS-1$
+            item = new JMenuItem(Messages.getString("NoteDialog.delete")); //$NON-NLS-1$
             item.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     client.sendSpecialHexDisplayDelete(coords, finalNote);
@@ -450,7 +491,7 @@ public class MapMenu extends JPopupMenu {
         // add select options
         if (canSelectEntities()) {
             for (Entity entity : client.getGame().getEntitiesVector(coords,
-                                                                    canTargetEntities())) {
+                    canTargetEntities())) {
                 if (client.getMyTurn().isValidEntity(entity, client.getGame())) {
                     menu.add(selectJMenuItem(entity));
                 }
@@ -547,7 +588,7 @@ public class MapMenu extends JPopupMenu {
                 menu.add(item);
             }
 
-            if (game.getOptions().booleanOption("tacops_evade")) {
+            if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_EVADE)) {
                 item = new JMenuItem(
                         Messages.getString("MovementDisplay.butEvade"));
 
@@ -565,9 +606,27 @@ public class MapMenu extends JPopupMenu {
                 menu.add(item);
             }
 
+            if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_ADVANCED_MANEUVERS)) {
+                item = new JMenuItem(
+                        Messages.getString("MovementDisplay.butEvade"));
+
+                item.setActionCommand(MovementDisplay.MoveCommand.MOVE_BOOTLEGGER
+                                              .getCmd());
+                item.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            ((MovementDisplay) currentPanel).actionPerformed(e);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
+                menu.add(item);
+            }
+
             if (game.getPlanetaryConditions().isRecklessConditions()
                 && !game.getBoard().inSpace()
-                && !game.getOptions().booleanOption("no_night_move_pen")) {
+                && !game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_NO_NIGHT_MOVE_PEN)) {
                 item = new JMenuItem(
                         Messages.getString("MovementDisplay.butReckless"));
 
@@ -673,7 +732,7 @@ public class MapMenu extends JPopupMenu {
 
             menu.add(item);
 
-            if (game.getOptions().booleanOption("tacops_evade")) {
+            if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_EVADE)) {
                 item = new JMenuItem(
                         Messages.getString("MovementDisplay.butEvade"));
 
@@ -693,7 +752,7 @@ public class MapMenu extends JPopupMenu {
 
             if (game.getPlanetaryConditions().isRecklessConditions()
                 && !game.getBoard().inSpace()
-                && !game.getOptions().booleanOption("no_night_move_pen")) {
+                && !game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_NO_NIGHT_MOVE_PEN)) {
                 item = new JMenuItem(
                         Messages.getString("MovementDisplay.butReckless"));
 
@@ -1011,13 +1070,13 @@ public class MapMenu extends JPopupMenu {
             menu.setText("Stand");
             menu.add(createStandJMenuItem(false));
 
-            if (game.getOptions().booleanOption("tacops_careful_stand")
+            if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_CAREFUL_STAND)
                 && (myEntity.getWalkMP() > 2)
                 && (myEntity.moved == EntityMovementType.MOVE_NONE)) {
                 menu.add(createStandJMenuItem(true));
             }
 
-            if (game.getOptions().booleanOption("tacops_hull_down")) {
+            if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_HULL_DOWN)) {
                 menu.add(createHullDownJMenuItem());
             }
 
@@ -1025,7 +1084,7 @@ public class MapMenu extends JPopupMenu {
             menu.setText("Stand");
             menu.add(createStandJMenuItem(false));
 
-            if (game.getOptions().booleanOption("tacops_careful_stand")) {
+            if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_CAREFUL_STAND)) {
                 menu.add(createStandJMenuItem(true));
             }
 
@@ -1034,7 +1093,7 @@ public class MapMenu extends JPopupMenu {
             menu.setText("Prone");
             menu.add(createProneJMenuItem());
 
-            if (game.getOptions().booleanOption("tacops_hull_down")) {
+            if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_HULL_DOWN)) {
                 menu.add(createHullDownJMenuItem());
             }
         }
@@ -1105,6 +1164,68 @@ public class MapMenu extends JPopupMenu {
         return item;
     }
 
+    private JMenu createConvertMenu() {
+        JMenu menu = new JMenu(Messages.getString("MovementDisplay.moveModeConvert"));
+        
+        if (myEntity instanceof Mech && ((Mech)myEntity).hasTracks()) {
+            menu.add(createConvertMenuItem("MovementDisplay.moveModeLeg",
+                    MovementDisplay.MoveCommand.MOVE_MODE_LEG, false));
+            menu.add(createConvertMenuItem("MovementDisplay.moveModeTrack",
+                    MovementDisplay.MoveCommand.MOVE_MODE_VEE, false));
+        } else if (myEntity instanceof QuadVee) {
+            menu.add(createConvertMenuItem("MovementDisplay.moveModeMech",
+                    MovementDisplay.MoveCommand.MOVE_MODE_LEG,
+                    myEntity.getConversionMode() == QuadVee.CONV_MODE_MECH));
+            menu.add(createConvertMenuItem("MovementDisplay.moveModeVee",
+                    MovementDisplay.MoveCommand.MOVE_MODE_VEE,
+                    myEntity.getConversionMode() == QuadVee.CONV_MODE_VEHICLE));            
+        } else if (myEntity instanceof LandAirMech) {
+            int currentMode = myEntity.getConversionMode();
+            JMenuItem item = createConvertMenuItem("MovementDisplay.moveModeMech",
+                    MovementDisplay.MoveCommand.MOVE_MODE_LEG,
+                    currentMode == LandAirMech.CONV_MODE_MECH);
+            item.setEnabled(currentMode == LandAirMech.CONV_MODE_MECH
+                    || ((LandAirMech)myEntity).canConvertTo(currentMode,
+                            LandAirMech.CONV_MODE_MECH));
+            menu.add(item);
+            if (((LandAirMech)myEntity).getLAMType() == LandAirMech.LAM_STANDARD) {
+                item = createConvertMenuItem("MovementDisplay.moveModeAirmech",
+                        MovementDisplay.MoveCommand.MOVE_MODE_VEE,
+                        currentMode == LandAirMech.CONV_MODE_AIRMECH);
+                item.setEnabled(currentMode == LandAirMech.CONV_MODE_AIRMECH
+                        || ((LandAirMech)myEntity).canConvertTo(currentMode,
+                                LandAirMech.CONV_MODE_AIRMECH));
+                menu.add(item);
+            }
+            item = createConvertMenuItem("MovementDisplay.moveModeFighter",
+                    MovementDisplay.MoveCommand.MOVE_MODE_AIR,
+                    currentMode == LandAirMech.CONV_MODE_FIGHTER);
+            item.setEnabled(currentMode == LandAirMech.CONV_MODE_FIGHTER
+                    || ((LandAirMech)myEntity).canConvertTo(currentMode,
+                            LandAirMech.CONV_MODE_FIGHTER));
+            menu.add(item);
+        }
+        return menu;
+    }
+    
+    private JMenuItem createConvertMenuItem(String resourceKey, MovementDisplay.MoveCommand cmd,
+            boolean isCurrent) {
+        String text = Messages.getString(resourceKey);
+        if (isCurrent) {
+            text = "No Conversion";
+        }
+        JMenuItem item = new JMenuItem(text);
+        item.setActionCommand(cmd.getCmd());
+        item.addActionListener(e -> {
+            try {
+                ((MovementDisplay) currentPanel).actionPerformed(e);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+        return item;
+    }
+
     private JMenu createTargetMenu() {
         JMenu menu = new JMenu("Target");
 
@@ -1113,10 +1234,17 @@ public class MapMenu extends JPopupMenu {
             return menu;
         }
 
+        // VTOLs/AirMechs making strafing or bombing attacks already declared the target hex(es)
+        // in the movement phase and cannot change them.
+        if (myEntity.isMakingVTOLGroundAttack()) {
+            menu.setEnabled(false);
+            return menu;
+        }
+
         final boolean isFiringDisplay = (currentPanel instanceof FiringDisplay);
         final boolean isTargetingDisplay = (currentPanel instanceof TargetingPhaseDisplay);
         final boolean canStartFires = client.getGame().getOptions()
-                .booleanOption("tacops_start_fire"); //$NON-NLS-1$
+                .booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_START_FIRE); //$NON-NLS-1$
         
         IPlayer localPlayer = client.getLocalPlayer();
         
@@ -1168,7 +1296,9 @@ public class MapMenu extends JPopupMenu {
             if (board.inSpace() && hasAmmoType(AmmoType.T_SCREEN_LAUNCHER)) {
                 menu.add(TargetMenuItem(new HexTarget(coords, board, Targetable.TYPE_HEX_SCREEN)));
             } else {
-                if ((hasAmmoType(AmmoType.T_LRM) || hasAmmoType(AmmoType.T_MML))
+                if ((hasAmmoType(AmmoType.T_LRM)
+                        || hasAmmoType(AmmoType.T_LRM_IMP)
+                        || hasAmmoType(AmmoType.T_MML))
                     && (hasMunitionType(AmmoType.M_FASCAM)
                         || hasMunitionType(AmmoType.M_THUNDER)
                         || hasMunitionType(AmmoType.M_THUNDER_ACTIVE)
@@ -1240,10 +1370,10 @@ public class MapMenu extends JPopupMenu {
     void plotCourse(ActionEvent e) {
         ((MovementDisplay) currentPanel).actionPerformed(e);
 
-        // Drag
-        ((BoardView1) gui.bv).mouseAction(coords, 3, 16);
+        // Cursor over the hex.
+        ((BoardView1) gui.bv).mouseAction(coords, BoardViewEvent.BOARD_HEX_CURSOR, InputEvent.BUTTON1_MASK);
         // Click
-        ((BoardView1) gui.bv).mouseAction(coords, 1, 16);
+        ((BoardView1) gui.bv).mouseAction(coords, BoardViewEvent.BOARD_HEX_CLICKED, InputEvent.BUTTON1_MASK);
     }
 
     Targetable decodeTargetInfo(String info) {
@@ -1473,7 +1603,7 @@ public class MapMenu extends JPopupMenu {
 
         IPlayer localPlayer = client.getLocalPlayer();
         boolean friendlyFire = (game.getOptions()
-                .booleanOption("friendly_fire"));
+                .booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE));
 
         for (Entity en : game.getEntitiesVector(coords)) {
             // Only add the unit if it's actually visible

@@ -15,7 +15,7 @@
 package megamek.common;
 
 /**
- * Represtents a volume of space set aside for carrying livestock
+ * Represents a volume of space set aside for carrying livestock
  */
 
 public final class LivestockCargoBay extends Bay {
@@ -25,7 +25,7 @@ public final class LivestockCargoBay extends Bay {
      */
     private static final long serialVersionUID = 4161027191694822726L;
 
-    private float weight = 0;
+    private double weight = 0;
 
     /**
      * The default constructor is only for serialization.
@@ -47,11 +47,12 @@ public final class LivestockCargoBay extends Bay {
      * @param bayNumber
      */
     public LivestockCargoBay(double space, int doors, int bayNumber) {
-        totalSpace = space * 0.83;
-        weight = (float) space;
-        currentSpace = space * 0.83;
+        totalSpace = space;
+        weight = space / 0.83;
+        currentSpace = space;
         this.doors = doors;
         this.bayNumber = bayNumber;
+        currentdoors = doors;
     }
 
     /**
@@ -73,12 +74,13 @@ public final class LivestockCargoBay extends Bay {
 
     @Override
     public String getUnusedString(boolean showrecovery) {
-        StringBuffer returnString = new StringBuffer("Livestock Cargo Space - ");
+        StringBuffer returnString = new StringBuffer("Livestock Cargo Space "
+                + numDoorsString() + " - ");
 
-        if (currentSpace != Math.round(currentSpace)) {
-            returnString.append(String.format("%1$,.3f", currentSpace));
+        if (getUnused() != Math.round(getUnused())) {
+            returnString.append(String.format("%1$,.3f", getUnused()));
         } else {
-            returnString.append(String.format("%1$,.0f", currentSpace));
+            returnString.append(String.format("%1$,.0f", getUnused()));
         }
 
         returnString.append(" tons");
@@ -91,7 +93,7 @@ public final class LivestockCargoBay extends Bay {
     }
 
     @Override
-    public float getWeight() {
+    public double getWeight() {
         return weight;
     }
 
@@ -100,4 +102,15 @@ public final class LivestockCargoBay extends Bay {
         return "livestockcargobay:" + totalSpace + ":" + doors + ":"+ bayNumber;
     }
 
+    
+    @Override
+    public boolean isCargo() {
+        return true;
+    }
+
+    @Override
+    public long getCost() {
+        // Based on the weight of the equipment (not capacity), rounded up to the whole ton
+        return 2500L * (long) Math.ceil(getWeight());
+    }
 }

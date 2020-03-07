@@ -24,6 +24,10 @@ C
 3048
 </year>
 
+<originalBuildYear>
+3048
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 6
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+22
+</omnipodheatsinks>
 
 <fuel>
 240
@@ -76,27 +87,33 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLERLargeLaser
-CLERLargeLaser
-CLERLargeLaser
-CLERLargeLaser
-CLERSmallLaser
+CLERLargeLaser:OMNI
+CLERLargeLaser:OMNI
+CLERLargeLaser:OMNI
+CLERLargeLaser:OMNI
+CLERSmallLaser:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLERMediumLaser
-CLERMediumLaser
-CLERMediumLaser
+CLERMediumLaser:OMNI
+CLERMediumLaser:OMNI
+CLERMediumLaser:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLERMediumLaser
-CLERMediumLaser
-CLERMediumLaser
+CLERMediumLaser:OMNI
+CLERMediumLaser:OMNI
+CLERMediumLaser:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Succession Wars

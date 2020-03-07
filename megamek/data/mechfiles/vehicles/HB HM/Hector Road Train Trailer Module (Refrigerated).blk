@@ -70,18 +70,16 @@ Trailer
 </Left Equipment>
 
 <Rear Equipment>
-Hitch
 </Rear Equipment>
 
 <transporters>
-refrigeratedcargobay:67:4
+refrigeratedcargobay:58:4
 </transporters>
 
 <source>
-HB HM
+HB:House Marik - Age of War
 </source>
 
 <tonnage>
 80
 </tonnage>
-

@@ -27,6 +27,7 @@ import megamek.common.Mounted;
 import megamek.common.PlanetaryConditions;
 import megamek.common.Targetable;
 import megamek.common.ToHitData;
+import megamek.common.options.OptionsConstants;
 import megamek.common.options.PilotOptions;
 
 /**
@@ -171,7 +172,9 @@ public abstract class AbstractAttackAction extends AbstractEntityAction
         // Certain ammunitions reduce the penalty
         else if (atype != null) {
             if (((atype.getAmmoType() == AmmoType.T_AC) 
-                    || (atype.getAmmoType() == AmmoType.T_LAC))
+                    || (atype.getAmmoType() == AmmoType.T_LAC)
+                    || (atype.getAmmoType() == AmmoType.T_AC_IMP)
+                    || (atype.getAmmoType() == AmmoType.T_PAC))
                     && ((atype.getMunitionType() == AmmoType.M_INCENDIARY_AC) 
                             || (atype.getMunitionType() 
                                     == AmmoType.M_TRACER))) {
@@ -233,9 +236,8 @@ public abstract class AbstractAttackAction extends AbstractEntityAction
             }
         }
         
-        PilotOptions pOpts = attacker.getCrew().getOptions();
-        if((toHit.getValue() > 0) && (null != attacker.getCrew()) 
-                && pOpts.booleanOption("blind_fighter")) {
+        if ((toHit.getValue() > 0) && (null != attacker.getCrew())
+                && attacker.hasAbility(OptionsConstants.UNOFF_BLIND_FIGHTER)) {
             toHit.addModifier(-1, "blind fighter");
         }
 

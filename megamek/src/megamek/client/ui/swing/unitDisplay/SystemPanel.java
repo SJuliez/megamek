@@ -11,7 +11,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.io.File;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -34,6 +33,8 @@ import megamek.client.ui.swing.ClientGUI;
 import megamek.client.ui.swing.widget.BackGroundDrawer;
 import megamek.client.ui.swing.widget.PMUtil;
 import megamek.client.ui.swing.widget.PicMap;
+import megamek.client.ui.swing.widget.SkinXMLHandler;
+import megamek.client.ui.swing.widget.UnitDisplaySkinSpecification;
 import megamek.common.Aero;
 import megamek.common.AmmoType;
 import megamek.common.BattleArmor;
@@ -49,6 +50,8 @@ import megamek.common.Mounted;
 import megamek.common.Protomech;
 import megamek.common.Tank;
 import megamek.common.WeaponType;
+import megamek.common.options.OptionsConstants;
+import megamek.common.util.MegaMekFile;
 
 /**
  * This class shows the critical hits and systems for a mech
@@ -280,6 +283,14 @@ class SystemPanel extends PicMap implements ItemListener, ActionListener,
         }
         if (cs.getType() == CriticalSlot.TYPE_SYSTEM) {
             return null;
+        }
+        if ((cs.getMount().getType() instanceof MiscType)
+                && cs.getMount().getType().hasFlag(MiscType.F_BOMB_BAY)) {
+            Mounted m = cs.getMount();
+            while (m.getLinked() != null) {
+                m = m.getLinked();
+            }
+            return m;
         }
         if (cs.getMount2() != null) {
             ChoiceDialog choiceDialog = new ChoiceDialog(unitDisplay.getClientGUI().frame,
@@ -701,77 +712,75 @@ class SystemPanel extends PicMap implements ItemListener, ActionListener,
     }
 
     private void setBackGround() {
+        UnitDisplaySkinSpecification udSpec = SkinXMLHandler
+                .getUnitDisplaySkin();
+
         Image tile = getToolkit()
                 .getImage(
-                        new File(Configuration.widgetsDir(), "tile.gif").toString()); //$NON-NLS-1$
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getBackgroundTile()).toString());
         PMUtil.setImage(tile, this);
         int b = BackGroundDrawer.TILING_BOTH;
         addBgDrawer(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_HORIZONTAL
-            | BackGroundDrawer.VALIGN_TOP;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_TOP;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLine())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_HORIZONTAL
-            | BackGroundDrawer.VALIGN_BOTTOM;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_BOTTOM;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomLine())
+                        .toString()); //$NON-NLS-1$
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_LEFT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getLeftLine())
+                        .toString()); //$NON-NLS-1$
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_VERTICAL
-            | BackGroundDrawer.HALIGN_RIGHT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile, this);
-        addBgDrawer(new BackGroundDrawer(tile, b));
-
-        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
-            | BackGroundDrawer.HALIGN_LEFT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "tl_corner.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile, this);
-        addBgDrawer(new BackGroundDrawer(tile, b));
-
-        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
-            | BackGroundDrawer.HALIGN_LEFT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "bl_corner.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_RIGHT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getRightLine())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
-            | BackGroundDrawer.HALIGN_RIGHT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "tr_corner.gif").toString()); //$NON-NLS-1$
+                | BackGroundDrawer.HALIGN_LEFT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLeftCorner())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
-            | BackGroundDrawer.HALIGN_RIGHT;
+                | BackGroundDrawer.HALIGN_LEFT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec
+                        .getBottomLeftCorner()).toString());
+        PMUtil.setImage(tile, this);
+        addBgDrawer(new BackGroundDrawer(tile, b));
+
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
+                | BackGroundDrawer.HALIGN_RIGHT;
         tile = getToolkit()
                 .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "br_corner.gif").toString()); //$NON-NLS-1$
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getTopRightCorner()).toString());
+        PMUtil.setImage(tile, this);
+        addBgDrawer(new BackGroundDrawer(tile, b));
+
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
+                | BackGroundDrawer.HALIGN_RIGHT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec
+                        .getBottomRightCorner()).toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
@@ -833,7 +842,7 @@ class SystemPanel extends PicMap implements ItemListener, ActionListener,
                         && (m.getUsableShotsLeft() > 0)
                         && !m.isDumping()
                         && en.isActive()
-                        && (client.getGame().getOptions().intOption("dumping_from_round") 
+                        && (client.getGame().getOptions().intOption(OptionsConstants.BASE_DUMPING_FROM_ROUND) 
                                 <= client.getGame().getRoundCount())
                         && !carryingBAsOnBack && !invalidEnvironment) {
                     m_bDumpAmmo.setEnabled(true);
@@ -868,17 +877,33 @@ class SystemPanel extends PicMap implements ItemListener, ActionListener,
                     }// if the maxtech eccm option is not set then the ECM
                      // should not show anything.
                     if (m.getType().hasFlag(MiscType.F_ECM)
-                            && !(client.getGame().getOptions().booleanOption("tacops_eccm")
-                                    || client.getGame().getOptions().booleanOption("tacops_ghost_target"))) {
+                            && !(client.getGame().getOptions().booleanOption(OptionsConstants.ADVANCED_TACOPS_ECCM)
+                                    || client.getGame().getOptions().booleanOption(OptionsConstants.ADVANCED_TACOPS_GHOST_TARGET))) {
                         return;
                     }
                     for (Enumeration<EquipmentMode> e = m.getType()
                             .getModes(); e.hasMoreElements();) {
                         EquipmentMode em = e.nextElement();
+                        //Hack to prevent showing an option that is disabled by the server, but would
+                        //be overwritten by every entity update if made also in the client
+                        if (em.equals("HotLoad") && en instanceof Mech
+                                && !client.getGame().getOptions().booleanOption(OptionsConstants.ADVCOMBAT_HOTLOAD_IN_GAME)) {
+                            continue;
+                        }
                         m_chMode.addItem(em.getDisplayableName());
                     }
-                    m_chMode.setSelectedItem(m.curMode()
-                            .getDisplayableName());
+                    if (m_chMode.getModel().getSize() <= 1) {
+                        m_chMode.removeAllItems();
+                        m_chMode.setEnabled(false);
+                    } else {
+                        if (m.pendingMode().equals("None")) {
+                            m_chMode.setSelectedItem(m.curMode()
+                                    .getDisplayableName());
+                        } else {
+                            m_chMode.setSelectedItem(m.pendingMode()
+                                    .getDisplayableName());
+                        }
+                    }
                 } else {
                     CriticalSlot cs = getSelectedCritical();
                     if ((cs != null)
@@ -890,7 +915,7 @@ class SystemPanel extends PicMap implements ItemListener, ActionListener,
                             m_chMode.addItem("EI Off");
                             m_chMode.addItem("EI On");
                             m_chMode.addItem("Aimed shot");
-                            m_chMode.setSelectedItem(new Integer(
+                            m_chMode.setSelectedItem(Integer.valueOf(
                                     ((Mech) en).getCockpitStatusNextRound()));
                         }
                     }

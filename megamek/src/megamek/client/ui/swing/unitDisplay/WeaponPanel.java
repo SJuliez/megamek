@@ -11,7 +11,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,6 +41,8 @@ import megamek.client.ui.swing.TargetingPhaseDisplay;
 import megamek.client.ui.swing.widget.BackGroundDrawer;
 import megamek.client.ui.swing.widget.PMUtil;
 import megamek.client.ui.swing.widget.PicMap;
+import megamek.client.ui.swing.widget.SkinXMLHandler;
+import megamek.client.ui.swing.widget.UnitDisplaySkinSpecification;
 import megamek.common.Aero;
 import megamek.common.AmmoType;
 import megamek.common.BattleArmor;
@@ -56,19 +57,23 @@ import megamek.common.IHex;
 import megamek.common.ILocationExposureStatus;
 import megamek.common.Infantry;
 import megamek.common.Jumpship;
+import megamek.common.LandAirMech;
 import megamek.common.Mech;
 import megamek.common.Mounted;
+import megamek.common.RangeType;
 import megamek.common.SmallCraft;
 import megamek.common.Targetable;
 import megamek.common.Terrains;
+import megamek.common.WeaponComparatorArc;
 import megamek.common.WeaponComparatorCustom;
 import megamek.common.WeaponComparatorDamage;
 import megamek.common.WeaponComparatorNum;
 import megamek.common.WeaponComparatorRange;
 import megamek.common.WeaponType;
 import megamek.common.options.OptionsConstants;
-import megamek.common.weapons.BayWeapon;
-import megamek.common.weapons.HAGWeapon;
+import megamek.common.util.MegaMekFile;
+import megamek.common.weapons.bayweapons.BayWeapon;
+import megamek.common.weapons.gaussrifles.HAGWeapon;
 import megamek.common.weapons.infantry.InfantryWeapon;
 
 /**
@@ -256,7 +261,8 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
             wn.append(']');
             // determine shots left & total shots left
             if ((wtype.getAmmoType() != AmmoType.T_NA)
-                && !wtype.hasFlag(WeaponType.F_ONESHOT)) {
+                    && (!wtype.hasFlag(WeaponType.F_ONESHOT)
+                            || wtype.hasFlag(WeaponType.F_BA_INDIVIDUAL))) {
                 int shotsLeft = 0;
                 if ((mounted.getLinked() != null)
                     && !mounted.getLinked().isDumping()) {
@@ -275,6 +281,15 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                 wn.append('/'); //$NON-NLS-1$
                 wn.append(totalShotsLeft);
                 wn.append(')'); //$NON-NLS-1$
+            } else if (wtype.hasFlag(WeaponType.F_DOUBLE_ONESHOT)) {
+                int shotsLeft = 0;
+                int totalShots = 0;
+                for (Mounted current = mounted.getLinked(); current != null; current = current.getLinked()) {
+                    shotsLeft += current.getUsableShotsLeft();
+                    totalShots++;
+                }
+                wn.append(" (").append(shotsLeft) //$NON-NLS-1$
+                    .append("/").append(totalShots).append(")"); //$NON-NLS-1$ //$NON-NLS-2$
             }
 
             // MG rapidfire
@@ -299,7 +314,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                 }
             }
             if ((game != null)
-                    && game.getOptions().booleanOption("tacops_called_shots")) { //$NON-NLS-1$
+                    && game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_CALLED_SHOTS)) { //$NON-NLS-1$
                 wn.append(' ');
                 wn.append(mounted.getCalledShot().getDisplayableName());
             }
@@ -849,77 +864,76 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
     }
 
     private void setBackGround() {
+        UnitDisplaySkinSpecification udSpec = SkinXMLHandler
+                .getUnitDisplaySkin();
+
         Image tile = getToolkit()
                 .getImage(
-                        new File(Configuration.widgetsDir(), "tile.gif").toString()); //$NON-NLS-1$
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getBackgroundTile()).toString());
         PMUtil.setImage(tile, this);
         int b = BackGroundDrawer.TILING_BOTH;
         addBgDrawer(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_HORIZONTAL
-            | BackGroundDrawer.VALIGN_TOP;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_TOP;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLine())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_HORIZONTAL
-            | BackGroundDrawer.VALIGN_BOTTOM;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_BOTTOM;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomLine())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_LEFT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getLeftLine())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
-        b = BackGroundDrawer.TILING_VERTICAL
-            | BackGroundDrawer.HALIGN_RIGHT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile, this);
-        addBgDrawer(new BackGroundDrawer(tile, b));
-
-        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
-            | BackGroundDrawer.HALIGN_LEFT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "tl_corner.gif").toString()); //$NON-NLS-1$
-        PMUtil.setImage(tile, this);
-        addBgDrawer(new BackGroundDrawer(tile, b));
-
-        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
-            | BackGroundDrawer.HALIGN_LEFT;
-        tile = getToolkit()
-                .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "bl_corner.gif").toString()); //$NON-NLS-1$
+        b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_RIGHT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getRightLine())
+                        .toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
-            | BackGroundDrawer.HALIGN_RIGHT;
+                | BackGroundDrawer.HALIGN_LEFT;
         tile = getToolkit()
                 .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "tr_corner.gif").toString()); //$NON-NLS-1$
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getTopLeftCorner()).toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
-            | BackGroundDrawer.HALIGN_RIGHT;
+                | BackGroundDrawer.HALIGN_LEFT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec
+                        .getBottomLeftCorner()).toString());
+        PMUtil.setImage(tile, this);
+        addBgDrawer(new BackGroundDrawer(tile, b));
+
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
+                | BackGroundDrawer.HALIGN_RIGHT;
         tile = getToolkit()
                 .getImage(
-                        new File(Configuration.widgetsDir(),
-                                 "br_corner.gif").toString()); //$NON-NLS-1$
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getTopRightCorner()).toString());
+        PMUtil.setImage(tile, this);
+        addBgDrawer(new BackGroundDrawer(tile, b));
+
+        b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
+                | BackGroundDrawer.HALIGN_RIGHT;
+        tile = getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec
+                        .getBottomRightCorner()).toString());
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
@@ -944,7 +958,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         entity = en;
 
         // Check Game Options for max external heat
-        int max_ext_heat = game != null ? game.getOptions().intOption("max_external_heat") : 15;
+        int max_ext_heat = game != null ? game.getOptions().intOption(OptionsConstants.ADVCOMBAT_MAX_EXTERNAL_HEAT) : 15;
         if (max_ext_heat < 0) {
             max_ext_heat = 15; // Standard value specified in TW p.159
         }
@@ -1037,6 +1051,15 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         for (int i = 0; i < entity.getWeaponList().size(); i++) {
             Mounted mounted = entity.getWeaponList().get(i);
 
+            // Don't add bomb weapons for LAMs in mech mode except RL and TAG.
+            if ((entity instanceof LandAirMech)
+                    && (entity.getConversionMode() == LandAirMech.CONV_MODE_MECH)
+                    && mounted.getType().hasFlag(WeaponType.F_BOMB_WEAPON)
+                    && ((WeaponType)mounted.getType()).getAmmoType() != AmmoType.T_RL_BOMB
+                    && !mounted.getType().hasFlag(WeaponType.F_TAG)) {
+                continue;
+            }
+            
             ((WeaponListModel) weaponList.getModel()).addWeapon(mounted);
             if (mounted.isUsedThisRound()
                 && (game.getPhase() == mounted.usedInPhase())
@@ -1045,7 +1068,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                 // add heat from weapons fire to heat tracker
                 if (entity.usesWeaponBays()) {
                     // if using bay heat option then don't add total arc
-                    if (game.getOptions().booleanOption("heat_by_bay")) {
+                    if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_HEAT_BY_BAY)) {
                         for (int wId : mounted.getBayWeapons()) {
                             currentHeatBuildup += entity.getEquipment(wId)
                                                         .getCurrentHeat();
@@ -1153,7 +1176,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wInfantryRange5L.setVisible(false);
         wInfantryRange5R.setVisible(false);
 
-        if (entity.isAirborne() || entity.usesWeaponBays()) {
+        if (entity.isAero() && (entity.isAirborne() || entity.usesWeaponBays())) {
             wAVL.setVisible(true);
             wShortAVR.setVisible(true);
             wMedAVR.setVisible(true);
@@ -1172,8 +1195,8 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         }
 
         // If MaxTech range rules are in play, display the extreme range.
-        if (((game != null) && game.getOptions().booleanOption(OptionsConstants.AC_TAC_OPS_RANGE)) ||
-            (entity.isAirborne() || entity.usesWeaponBays())) { //$NON-NLS-1$
+        if (((game != null) && game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_RANGE))
+                || (entity.isAero() && (entity.isAirborne() || entity.usesWeaponBays()))) { // $NON-NLS-1$
             wExtL.setVisible(true);
             wExtR.setVisible(true);
         } else {
@@ -1404,6 +1427,9 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         Mounted mounted = ((WeaponListModel) weaponList.getModel())
                 .getWeaponAt(weaponList.getSelectedIndex());
         WeaponType wtype = (WeaponType) mounted.getType();
+        // The rules are a bit sparse on airborne (dropping) ground units, but it seems they should
+        // still attack like ground units.
+        boolean aerospaceAttack = entity.isAero() && (entity.isAirborne() || entity.usesWeaponBays());
         // update weapon display
         wNameR.setText(mounted.getDesc());
         wHeatR.setText(Integer.toString(mounted.getCurrentHeat()));
@@ -1411,7 +1437,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wArcHeatR.setText(Integer.toString(entity.getHeatInArc(
                 mounted.getLocation(), mounted.isRearMounted())));
 
-        if (wtype instanceof InfantryWeapon) {
+        if (wtype instanceof InfantryWeapon && !wtype.hasFlag(WeaponType.F_TAG)) {
             wDamageTrooperL.setVisible(true);
             wDamageTrooperR.setVisible(true);
             InfantryWeapon inftype = (InfantryWeapon) wtype;
@@ -1462,7 +1488,12 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
             if (inftype.hasFlag(WeaponType.F_INF_BURST)) {
                 zeromods--;
             }
-            switch (inftype.getInfantryRange()) {
+            
+            int range = inftype.getInfantryRange();
+            if (entity.getLocationStatus(mounted.getLocation()) == ILocationExposureStatus.WET) {
+            	range /= 2;
+            }
+            switch (range) {
                 case 0:
                     wInfantryRange0L.setText("0");
                     wInfantryRange0R.setText("+" + zeromods);
@@ -1659,13 +1690,13 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
             wMedR.setVisible(true);
             wLongR.setVisible(true);
 
-            if (!(entity.isAirborne() || entity.usesWeaponBays())) {
+            if (!aerospaceAttack) {
                 wMinL.setVisible(true);
                 wMinR.setVisible(true);
             }
-            if (((entity.getGame() != null) && entity.getGame().getOptions().booleanOption(OptionsConstants
-                                                                                                   .AC_TAC_OPS_RANGE))
-                || (entity.isAirborne() || entity.usesWeaponBays())) {
+            if (((entity.getGame() != null)
+                    && entity.getGame().getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_RANGE))
+                    || aerospaceAttack) {
                 wExtL.setVisible(true);
                 wExtR.setVisible(true);
             }
@@ -1694,7 +1725,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         } else if (wtype.hasFlag(WeaponType.F_ENERGY)
                    && wtype.hasModes()
                    && (unitDisplay.getClientGUI() != null) && unitDisplay.getClientGUI().getClient().getGame().getOptions().booleanOption(
-                "tacops_energy_weapons")) {
+                OptionsConstants.ADVCOMBAT_TACOPS_ENERGY_WEAPONS)) {
             if (mounted.hasChargedCapacitor() != 0) {
                 if (mounted.hasChargedCapacitor() == 1) {
                     wDamR.setText(Integer.toString(Compute.dialDownDamage(
@@ -1717,12 +1748,24 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         int mediumR = wtype.getMediumRange();
         int longR = wtype.getLongRange();
         int extremeR = wtype.getExtremeRange();
+        if (mounted.isInBearingsOnlyMode()) {
+            extremeR = RangeType.RANGE_BEARINGS_ONLY_OUT;
+        }
         if ((entity.getLocationStatus(mounted.getLocation()) == ILocationExposureStatus.WET)
             || (longR == 0)) {
             shortR = wtype.getWShortRange();
             mediumR = wtype.getWMediumRange();
             longR = wtype.getWLongRange();
             extremeR = wtype.getWExtremeRange();
+        } else if (wtype.hasFlag(WeaponType.F_PDBAY)) {
+        //Point Defense bays have a variable range, depending on the mode they're in
+            if (wtype.hasModes() && mounted.curMode().equals("Point Defense")) {
+                shortR = 1;
+                wShortR.setText("1"); //$NON-NLS-1$
+            } else {
+                shortR = 6;
+                wShortR.setText("1-6"); //$NON-NLS-1$
+            }
         }
         // We need to adjust the ranges for Centurion Weapon Systems: it's
         //  default range is 6/12/18 but that's only for units that are
@@ -1775,7 +1818,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
             updateRangeDisplayForAmmo(mounted.getLinked());
         }
 
-        if (entity.isAirborne() || entity.usesWeaponBays()) {
+        if (aerospaceAttack) {
             // change damage report to a statement of standard or capital
             if (wtype.isCapital()) {
                 wDamR.setText(Messages.getString("MechDisplay.CapitalD")); //$NON-NLS-1$
@@ -1811,7 +1854,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                 m_chBayWeapon.addItem(formatBayWeapon(curWeapon));
             }
 
-            if (chosen == -1) {
+            if (chosen == -1 || chosen >= m_chBayWeapon.getItemCount()) {
                 m_chBayWeapon.setSelectedIndex(0);
             } else {
                 m_chBayWeapon.setSelectedIndex(chosen);
@@ -1830,8 +1873,27 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                                                  .elementAt(n));
             wtype = (WeaponType) mounted.getType();
         }
+        
         if (wtype.getAmmoType() == AmmoType.T_NA) {
             m_chAmmo.setEnabled(false);
+        } else if (wtype.hasFlag(WeaponType.F_DOUBLE_ONESHOT)) {
+            int count = 0;
+            vAmmo = new ArrayList<>();
+            for (Mounted current = mounted.getLinked(); current != null; current = current.getLinked()) {
+                if (current.getUsableShotsLeft() > 0) {
+                    vAmmo.add(current);
+                    m_chAmmo.addItem(formatAmmo(current));
+                    count++;
+                }
+            }
+            // If there is no remaining ammo, show the last one linked and disable
+            if (count == 0) {
+                m_chAmmo.addItem(formatAmmo(mounted.getLinked()));
+            }
+            m_chAmmo.setSelectedIndex(0);
+            m_chAmmo.setEnabled(count > 0);
+
+        // this is the situation where there's some kind of ammo but it's not changeable
         } else if (wtype.hasFlag(WeaponType.F_ONESHOT)) {
             m_chAmmo.setEnabled(false);
             Mounted mountedAmmo = mounted.getLinked();
@@ -1860,8 +1922,14 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                     rightBay = oldmount.ammoInBay(entity
                                                           .getEquipmentNum(mountedAmmo));
                 }
+                
+                // covers the situation where a weapon using non-caseless ammo should 
+                // not be able to switch to caseless on the fly and vice versa
+                boolean amCaseless = ((AmmoType) mounted.getLinked().getType()).getMunitionType() == AmmoType.M_CASELESS;
+                boolean etCaseless = ((AmmoType) atype).getMunitionType() == AmmoType.M_CASELESS;
+                boolean caselessMismatch = amCaseless != etCaseless;                
 
-                if (mountedAmmo.isAmmoUsable() && same && rightBay
+                if (mountedAmmo.isAmmoUsable() && same && rightBay && !caselessMismatch
                     && (atype.getAmmoType() == wtype.getAmmoType())
                     && (atype.getRackSize() == wtype.getRackSize())) {
 
@@ -1880,7 +1948,11 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         }
 
         // send event to other parts of the UI which care
-        setFieldofFire(mounted);
+        if (oldmount.isInWaypointLaunchMode()) {
+            setFieldofFire(oldmount);
+        } else {
+            setFieldofFire(mounted);
+        }
         unitDisplay.processMechDisplayEvent(new MechDisplayEvent(this, entity, mounted));
         onResize();
         addListeners();
@@ -1908,8 +1980,10 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         ranges[1] = wtype.getWRanges();
         if (atype != null) {
             if ((wtype.getAmmoType() == AmmoType.T_SRM)
+                    || (wtype.getAmmoType() == AmmoType.T_SRM_IMP)
                     || (wtype.getAmmoType() == AmmoType.T_MRM)
                     || (wtype.getAmmoType() == AmmoType.T_LRM)
+                    || (wtype.getAmmoType() == AmmoType.T_LRM_IMP)
                     || (wtype.getAmmoType() == AmmoType.T_MML)) {
                 if (atype.getMunitionType() == AmmoType.M_TORPEDO) {
                     ranges[1] = wtype.getRanges(mounted);
@@ -1928,6 +2002,8 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
             int iR = inftype.getInfantryRange();
             ranges[0] = 
                     new int[] { 0, iR, iR * 2, iR * 3, 0 };
+            ranges[1] =
+            		new int[] { 0, iR / 2, (iR / 2) * 2, (iR / 2) * 3, 0 }; 
         }
 
         // Artillery gets fixed ranges, 100 as an arbitrary
@@ -1977,15 +2053,13 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         }
 
         // Aero
-        if (entity.isAirborne() 
-                || entity.usesWeaponBays()) {
+        if (entity.isAirborne()) {
 
             // prepare fresh ranges, no underwater
             ranges[0] = new int[] { 0, 0, 0, 0, 0 };  
             ranges[1] = new int[] { 0, 0, 0, 0, 0 };
             int maxr = WeaponType.RANGE_SHORT;
-
-            maxr = WeaponType.RANGE_SHORT;
+            
             // In the WeaponPanel, when the weapon is out of ammo
             // or otherwise nonfunctional, SHORT range will be listed;
             // the field of fire is instead disabled
@@ -2012,22 +2086,17 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                 }
 
                 // set the standard ranges, depending on capital or no
-                boolean isCap = wtype.isCapital();
-                ranges[0][0] = 0;
-                ranges[0][1] = isCap ? 12 : 6;
-                if (maxr > WeaponType.RANGE_SHORT) 
-                    ranges[0][2] = isCap ? 24 : 12;
-                if (maxr > WeaponType.RANGE_MED)
-                    ranges[0][3] = isCap ? 40 : 20;
-                if (maxr > WeaponType.RANGE_LONG) 
-                    ranges[0][4] = isCap ? 50 : 25;
-                
+                //boolean isCap = wtype.isCapital();
+                int rangeMultiplier = wtype.isCapital() ? 2 : 1;
                 final IGame game = unitDisplay.getClientGUI().getClient().getGame();
                 if (game.getBoard().onGround()) {
-                    ranges[0][1] *= 8;
-                    ranges[0][2] *= 8;
-                    ranges[0][3] *= 8;
-                    ranges[0][4] *= 8;
+                    rangeMultiplier *= 8;
+                }
+                
+                for(int rangeIndex = RangeType.RANGE_MINIMUM; rangeIndex <= RangeType.RANGE_EXTREME; rangeIndex++) {
+                    if(maxr >= rangeIndex) {
+                        ranges[0][rangeIndex] = WeaponType.AIRBORNE_WEAPON_RANGES[rangeIndex] * rangeMultiplier;
+                    }
                 }
             }
         }
@@ -2067,6 +2136,9 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         } else {
             sb.append(m.getDesc().substring(0, ammoIndex));
             sb.append(m.getDesc().substring(ammoIndex + 4));
+        }
+        if (m.isHotLoaded()) {
+            sb.append(Messages.getString("MechDisplay.isHotLoaded"));
         }
         return sb.toString();
     }
@@ -2154,7 +2226,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                 wMedR.setText("6 - 10"); //$NON-NLS-1$
                 wLongR.setText("11 - 15"); //$NON-NLS-1$
                 wExtR.setText("16 - 20"); //$NON-NLS-1$
-            }
+            }           
         }
 
         // Min range 0 for hotload
@@ -2186,7 +2258,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
             maxr = (int) changes[4];
         }
 
-        if (entity.getGame().getOptions().booleanOption("aero_sanity") && wtype.isCapital()) {
+        if (entity.getGame().getOptions().booleanOption(OptionsConstants.ADVAERORULES_AERO_SANITY) && wtype.isCapital()) {
             avShort *= 10;
             avMed *= 10;
             avLong *= 10;
@@ -2206,6 +2278,13 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wShortAVR.setText(Integer.toString(avShort));
         if (wtype.isCapital()) {
             wShortR.setText("1-12"); //$NON-NLS-1$
+        } else if (wtype.hasFlag(WeaponType.F_PDBAY)) {
+                //Point Defense bays have a variable range too, depending on the mode they're in
+                if (wtype.hasModes() && weapon.curMode().equals("Point Defense")) {
+                    wShortR.setText("1"); //$NON-NLS-1$
+                } else {
+                    wShortR.setText("1-6"); //$NON-NLS-1$
+                }
         } else {
             wShortR.setText("1-6"); //$NON-NLS-1$
         }
@@ -2277,17 +2356,19 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                 avExt = 0;
             }
         } // end weapon is MML
-        else if ((atype.getAmmoType() == AmmoType.T_LRM)
-                 || (atype.getAmmoType() == AmmoType.T_SRM)) {
+        else if ((atype.getAmmoType() == AmmoType.T_LRM) 
+                || (atype.getAmmoType() == AmmoType.T_LRM_IMP)
+                || (atype.getAmmoType() == AmmoType.T_SRM)
+                || (atype.getAmmoType() == AmmoType.T_SRM_IMP)) {
 
             if (atype.getMunitionType() == AmmoType.M_ARTEMIS_CAPABLE) {
-                if (atype.getAmmoType() == AmmoType.T_LRM) {
+                if ((atype.getAmmoType() == AmmoType.T_LRM) || (atype.getAmmoType() == AmmoType.T_LRM_IMP)) {
                     int bonus = (int) Math.ceil(atype.getRackSize() / 5.0);
                     avShort = avShort + bonus;
                     avMed = avMed + bonus;
                     avLong = avLong + bonus;
                 }
-                if (atype.getAmmoType() == AmmoType.T_SRM) {
+                if ((atype.getAmmoType() == AmmoType.T_SRM) || (atype.getAmmoType() == AmmoType.T_SRM_IMP)) {
                     avShort = avShort + 2;
                 }
             }
@@ -2316,11 +2397,45 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                 avMed = 3;
                 avLong = 3;
                 avExt = 3;
+            } else if (atype.hasFlag(AmmoType.F_SANTA_ANNA)) {
+                avShort = 100;
+                avMed = 100;
+                avLong = 100;
+                avExt = 100;
+            } else if (atype.hasFlag(AmmoType.F_PEACEMAKER)) {
+                avShort = 1000;
+                avMed = 1000;
+                avLong = 1000;
+                avExt = 1000;
             } else {
                 avShort = 2;
                 avMed = 2;
                 avLong = 2;
                 avExt = 2;
+            }
+        } else if (atype.getAmmoType() == AmmoType.T_KILLER_WHALE) {
+            if (atype.hasFlag(AmmoType.F_PEACEMAKER)) {
+                avShort = 1000;
+                avMed = 1000;
+                avLong = 1000;
+                avExt = 1000; 
+            } else {
+                avShort = 4;
+                avMed = 4;
+                avLong = 4;
+                avExt = 4;
+            }
+        } else if (atype.getAmmoType() == AmmoType.T_WHITE_SHARK) {
+            if (atype.hasFlag(AmmoType.F_SANTA_ANNA)) {
+                avShort = 100;
+                avMed = 100;
+                avLong = 100;
+                avExt = 100; 
+            } else {
+                avShort = 3;
+                avMed = 3;
+                avLong = 3;
+                avExt = 3;
             }
         }
 
@@ -2404,7 +2519,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         avLong = mult * avLong;
         avExt = mult * avExt;
 
-        if (entity.getGame().getOptions().booleanOption("aero_sanity") && wtype.isCapital()) {
+        if (entity.getGame().getOptions().booleanOption(OptionsConstants.ADVAERORULES_AERO_SANITY) && wtype.isCapital()) {
             avShort *= 10;
             avMed *= 10;
             avLong *= 10;
@@ -2621,6 +2736,9 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         } else if (sortIdx == Entity.WeaponSortOrder.CUSTOM.ordinal()) {
             entity.setWeaponSortOrder(Entity.WeaponSortOrder.CUSTOM);
             weapComparator = new WeaponComparatorCustom(entity);
+        } else if (sortIdx == Entity.WeaponSortOrder.ARC.ordinal()) {
+            entity.setWeaponSortOrder(Entity.WeaponSortOrder.ARC);
+            weapComparator = new WeaponComparatorArc(entity);
         } else { // Default
             entity.setWeaponSortOrder(Entity.WeaponSortOrder.DEFAULT);
             weapComparator = new WeaponComparatorNum(entity);

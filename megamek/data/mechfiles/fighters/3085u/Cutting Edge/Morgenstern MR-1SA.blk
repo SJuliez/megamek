@@ -24,6 +24,10 @@ MR-1SA
 3086
 </year>
 
+<originalBuildYear>
+3086
+</originalBuildYear>
+
 <type>
 IS Level 2
 </type>
@@ -31,6 +35,9 @@ IS Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 6
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+8
+</omnipodheatsinks>
 
 <fuel>
 320
@@ -76,12 +87,9 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-ISERPPC
-ISPlasmaRifle
-ISPlasmaRifle
-ISPlasmaRifleAmmo
-ISPlasmaRifleAmmo
-ISPlasmaRifleAmmo
+ISERPPC:OMNI
+ISPlasmaRifle:OMNI
+ISPlasmaRifle:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
@@ -91,8 +99,17 @@ ISPlasmaRifleAmmo
 </Right Wing Equipment>
 
 <Aft Equipment>
-ISERMediumLaser
+ISERMediumLaser:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+ISPlasmaRifleAmmo:OMNI
+ISPlasmaRifleAmmo:OMNI
+ISPlasmaRifleAmmo:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3085 - Early Republic

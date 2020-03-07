@@ -12,7 +12,7 @@ Mass:125
 Engine:375 XL Engine
 Structure:Endo-Steel
 Myomer:Standard
-Gyro:Standard Gyro
+Gyro:Superheavy Gyro
 Cockpit:Superheavy Tripod Cockpit
 
 Heat Sinks:20 Double
@@ -89,7 +89,7 @@ ISLRM5
 ISSRM2
 ISSRM2 Ammo
 ISMRM20 Ammo
-ISCaseII
+CLCaseII
 Endo Steel
 
 
@@ -104,7 +104,7 @@ ISLRM5
 ISSRM2
 ISLRM5 Ammo
 ISMRM20 Ammo
-ISCaseII
+CLCaseII
 Endo Steel
 
 Center Torso:

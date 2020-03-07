@@ -15,6 +15,7 @@ package megamek.common;
 
 import java.util.ArrayList;
 
+import megamek.common.options.OptionsConstants;
 import megamek.common.preference.PreferenceManager;
 
 /**
@@ -36,6 +37,8 @@ public class LargeSupportTank extends SupportTank {
     public static final int LOC_REAR = 6;
     public static final int LOC_TURRET = 7;
     public static final int LOC_TURRET_2 = 8;
+    
+    private double fuelTonnage = 0;
 
     private static String[] LOCATION_ABBRS = { "BD", "FR", "FRRS", "FRLS",
             "RRRS", "RRLS", "RR", "TU", "TU2" };
@@ -154,13 +157,13 @@ public class LargeSupportTank extends SupportTank {
                 case 8:
                     if ((bSide || bRearSide)
                             && !game.getOptions().booleanOption(
-                                    "tacops_vehicle_effective")) {
+                                    OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_EFFECTIVE)) {
                         rv.setEffect(HitData.EFFECT_CRITICAL);
                     }
                     break;
                 case 9:
                     if (!game.getOptions().booleanOption(
-                            "tacops_vehicle_effective")) {
+                            OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_EFFECTIVE)) {
                         rv.setEffect(HitData.EFFECT_VEHICLE_MOVE_DAMAGED);
                         rv.setMotiveMod(motiveMod);
                     }
@@ -287,9 +290,9 @@ public class LargeSupportTank extends SupportTank {
                 && mounted.getType().hasFlag(WeaponType.F_B_POD)) {
             return Compute.ARC_360;
         }
-        // VGLs always be considered forward, since arc is set by VGL facing
+        // VGLs base arc on their facing
         if (mounted.getType().hasFlag(WeaponType.F_VGL)) {
-            return Compute.ARC_FORWARD;
+            return Compute.firingArcFromVGLFacing(mounted.getFacing());
         }
         switch (mounted.getLocation()) {
             case LOC_BODY:
@@ -300,11 +303,11 @@ public class LargeSupportTank extends SupportTank {
                 if (mounted.isPintleTurretMounted()) {
                     return Compute.ARC_PINTLE_TURRET_FRONT;
                 }
-                if (game.getOptions().booleanOption("tacops_vehicle_arcs")) {
+                if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
                     return Compute.ARC_NOSE;
                 }
             case LOC_TURRET:
-                if (game.getOptions().booleanOption("tacops_vehicle_arcs")) {
+                if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
                     return Compute.ARC_TURRET;
                 }
                 return Compute.ARC_FORWARD;
@@ -316,7 +319,7 @@ public class LargeSupportTank extends SupportTank {
                 if (mounted.isPintleTurretMounted()) {
                     return Compute.ARC_PINTLE_TURRET_RIGHT;
                 }
-                if (game.getOptions().booleanOption("tacops_vehicle_arcs")) {
+                if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
                     return Compute.ARC_RIGHT_BROADSIDE;
                 }
                 return Compute.ARC_RIGHTSIDE;
@@ -328,7 +331,7 @@ public class LargeSupportTank extends SupportTank {
                 if (mounted.isPintleTurretMounted()) {
                     return Compute.ARC_PINTLE_TURRET_LEFT;
                 }
-                if (game.getOptions().booleanOption("tacops_vehicle_arcs")) {
+                if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
                     return Compute.ARC_LEFT_BROADSIDE;
                 }
                 return Compute.ARC_LEFTSIDE;
@@ -336,7 +339,7 @@ public class LargeSupportTank extends SupportTank {
                 if (mounted.isPintleTurretMounted()) {
                     return Compute.ARC_PINTLE_TURRET_REAR;
                 }
-                if (game.getOptions().booleanOption("tacops_vehicle_arcs")) {
+                if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
                     return Compute.ARC_AFT;
                 }
                 return Compute.ARC_REAR;
@@ -433,5 +436,45 @@ public class LargeSupportTank extends SupportTank {
     @Override
     public long getEntityType(){
         return Entity.ETYPE_TANK | Entity.ETYPE_SUPPORT_TANK | Entity.ETYPE_LARGE_SUPPORT_TANK;
+    }
+
+    /**
+     * Tanks have all sorts of prohibited terrain.
+     */
+    @Override
+    public boolean isLocationProhibited(Coords c, int currElevation) {
+        IHex hex = game.getBoard().getHex(c);
+        // Additional restrictions for hidden large support tanks
+        if (isHidden()) {
+            // Can't deploy in paved hexes
+            if (hex.containsTerrain(Terrains.PAVEMENT)
+                    || hex.containsTerrain(Terrains.ROAD)) {
+                return true;
+            }
+            // Can't deploy on a bridge
+            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == currElevation)
+                    && hex.containsTerrain(Terrains.BRIDGE)) {
+                return true;
+            }
+            // Can't deploy on the surface of water
+            if (hex.containsTerrain(Terrains.WATER) && (currElevation == 0)) {
+                return true;
+            }
+            // Can't deploy in clear hex
+            if (hex.isClearHex()) {
+                return true;
+            }
+        }
+        return super.isLocationProhibited(c, currElevation);
+    }
+
+    //FUEL CAPACITY TM 128
+    @Override
+    public double getFuelTonnage() {
+        return fuelTonnage;
+    }
+
+    public void setFuelTonnage(double fuel) {
+        fuelTonnage = fuel;
     }
 }

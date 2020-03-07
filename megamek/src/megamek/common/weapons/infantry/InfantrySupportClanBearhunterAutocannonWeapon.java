@@ -18,7 +18,6 @@
 package megamek.common.weapons.infantry;
 
 import megamek.common.AmmoType;
-import megamek.common.TechConstants;
 
 /**
  * @author Ben Grills
@@ -32,8 +31,8 @@ public class InfantrySupportClanBearhunterAutocannonWeapon extends InfantryWeapo
 
     public InfantrySupportClanBearhunterAutocannonWeapon() {
         super();
-        techLevel.put(3071,TechConstants.T_CLAN_TW);
-        name = "Autocannon (Bearhunter)";
+
+        name = "Autocannon (Bearhunter Superheavy)";
         setInternalName(name);
         addLookupName("InfantryBearhunter");
         addLookupName("InfantryBearhunterAutocannon");
@@ -41,14 +40,17 @@ public class InfantrySupportClanBearhunterAutocannonWeapon extends InfantryWeapo
         ammoType = AmmoType.T_NA;
         cost = 3000;
         bv = 2.13;
-        tonnage = 0.040f;
+        tonnage = 0.040;
         flags = flags.or(F_NO_FIRES).or(F_DIRECT_FIRE).or(F_BALLISTIC).or(F_INF_BURST).or(F_INF_SUPPORT);
         infantryDamage = 2.33;
         infantryRange = 0;
         crew = 2;
-        introDate = 3062;
-        techLevel.put(3062,techLevel.get(3071));
-        availRating = new int[]{RATING_X,RATING_X,RATING_D};
-        techRating = RATING_D;
+        rulesRefs = "273,TM";
+		techAdvancement.setTechBase(TECH_BASE_CLAN)
+		        .setClanAdvancement(3059, 3062, DATE_NONE, DATE_NONE, DATE_NONE)
+		        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CHH)
+		        .setProductionFactions(F_CHH).setTechRating(RATING_D)
+		        .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D);
+
     }
 }

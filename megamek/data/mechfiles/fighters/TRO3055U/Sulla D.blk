@@ -24,6 +24,10 @@ D
 3064
 </year>
 
+<originalBuildYear>
+3064
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 9
@@ -76,25 +83,31 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLStreakSRM6
-CLStreakSRM6
-Clan Streak SRM 6 Ammo
-Clan Streak SRM 6 Ammo
-CLMediumPulseLaser
-CLCASE
+CLStreakSRM6:OMNI
+CLStreakSRM6:OMNI
+CLMediumPulseLaser:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLMediumPulseLaser
+CLMediumPulseLaser:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLMediumPulseLaser
+CLMediumPulseLaser:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLHeavySmallLaser
+CLHeavySmallLaser:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Streak SRM 6 Ammo:OMNI
+Clan Streak SRM 6 Ammo:OMNI
+CLCASE
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Civil War

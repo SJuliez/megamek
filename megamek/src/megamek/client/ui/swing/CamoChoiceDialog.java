@@ -45,6 +45,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.UIManager;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -237,10 +238,8 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
         }
 
         boolean matched = false;
-        for (@SuppressWarnings("unchecked")
-        Enumeration<DefaultMutableTreeNode> e = node.children(); e
-                .hasMoreElements();) {
-            DefaultMutableTreeNode childNode = e.nextElement();
+        for (Enumeration<?> e = node.children(); e.hasMoreElements();) {
+            DefaultMutableTreeNode childNode = (DefaultMutableTreeNode) e.nextElement();
             String nodeName = (String) childNode.getUserObject();
             if (nodeName.equals(names[0])) {
                 if (names.length > 1) {
@@ -288,7 +287,9 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
                 entity.setCamoFileName(filename);
             }
         } else {
-            player.setColorIndex(colorIndex);
+            if (colorIndex >= 0) {
+                player.setColorIndex(colorIndex);
+            }
             player.setCamoCategory(category);
             player.setCamoFileName(filename);
             sourceButton.setIcon(generateIcon(category, filename));
@@ -313,8 +314,15 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
         camoModel.reset();
         camoModel.setCategory(category);
         if (IPlayer.NO_CAMO.equals(category)) {
-            for (String color : IPlayer.colorNames) {
-                camoModel.addCamo(color);
+            // If we are setting colors for a player, allow all colors
+            if (entity == null) {
+                for (String color : IPlayer.colorNames) {
+                    camoModel.addCamo(color);
+                }
+            // If we are setting individual cammo, then selecting colors other
+            // than the player color has no effect
+            } else {
+                camoModel.addCamo(IPlayer.colorNames[player.getColorIndex()]);
             }
         } else {
             // Translate the "root camo" category name.
@@ -338,9 +346,14 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
 
     public void setPlayer(IPlayer p) {
         player = p;
-        colorIndex = player.getColorIndex();
+
         category = player.getCamoCategory();
-        filename = player.getCamoFileName();
+        if (category.equals(IPlayer.NO_CAMO) && (null != entity) && (p.getColorIndex() >= 0)) {
+            filename = (String) camoModel.getValueAt(
+                    p.getColorIndex(), 0);
+        } else {
+            filename = player.getCamoFileName();
+        }
         if (sourceButton != null) {
             sourceButton.setIcon(generateIcon(category, filename));
         }
@@ -350,10 +363,8 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeCategories
                 .getModel().getRoot();
         for (int i = 0; i < names.length; i++) {
-            for (@SuppressWarnings("unchecked")
-            Enumeration<DefaultMutableTreeNode> e = node.children(); e
-                    .hasMoreElements();) {
-                DefaultMutableTreeNode child = e.nextElement();
+            for (Enumeration<?> e = node.children(); e.hasMoreElements();) {
+                DefaultMutableTreeNode child = (DefaultMutableTreeNode) e.nextElement();
                 if (names[i].equals(child.getUserObject())) {
                     node = child;
                     break;
@@ -369,7 +380,12 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
                 break;
             }
         }
-        tableCamo.setRowSelectionInterval(rowIndex, rowIndex);
+        
+        if(rowIndex < 0 || rowIndex >= tableCamo.getRowCount()) {
+            System.out.println("Attempting to set invalid camo index " + rowIndex + " for player " + p.getName() + ". Using default instead.");
+        } else {
+            tableCamo.setRowSelectionInterval(rowIndex, rowIndex);
+        }
     }
 
     public void setEntity(Entity e) {
@@ -387,10 +403,8 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeCategories
                 .getModel().getRoot();
         for (int i = 0; i < names.length; i++) {
-            for (@SuppressWarnings("unchecked")
-            Enumeration<DefaultMutableTreeNode> enm = node.children(); enm
-                    .hasMoreElements();) {
-                DefaultMutableTreeNode child = enm.nextElement();
+            for (Enumeration<?> enm = node.children(); enm.hasMoreElements();) {
+                DefaultMutableTreeNode child = (DefaultMutableTreeNode) enm.nextElement();
                 if (names[i].equals(child.getUserObject())) {
                     node = child;
                     break;
@@ -399,14 +413,17 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
         }
         treeCategories.setSelectionPath(new TreePath(node.getPath()));
         fillTable(category);
-        int rowIndex = 0;
+        int modelRowIndex = -1;
         for (int i = 0; i < camoModel.getRowCount(); i++) {
             if (((String) camoModel.getValueAt(i, 0)).equals(filename)) {
-                rowIndex = i;
+                modelRowIndex = i;
                 break;
             }
         }
-        tableCamo.setRowSelectionInterval(rowIndex, rowIndex);
+        int viewRowIndex = modelRowIndex != -1
+                         ? tableCamo.convertRowIndexToView(modelRowIndex)
+                         : 0;
+        tableCamo.setRowSelectionInterval(viewRowIndex, viewRowIndex);
     }
 
     Icon generateIcon(String cat, String item) {
@@ -539,14 +556,15 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
                     Object value, boolean isSelected, boolean hasFocus,
                     int row, int column) {
                 Component c = this;
-                setOpaque(true);
                 String name = getValueAt(row, column).toString();
                 setText(getValueAt(row, column).toString());
-                setImage(category, name, row);
+                setImage(category, name);
                 if (isSelected) {
-                    setBackground(new Color(220, 220, 220));
+                    setBackground(UIManager.getColor("Table.selectionBackground"));
+                    setForeground(UIManager.getColor("Table.selectionForeground"));
                 } else {
-                    setBackground(Color.WHITE);
+                    setBackground(UIManager.getColor("Table.background"));
+                    setForeground(UIManager.getColor("Table.foreground"));
                 }
 
                 return c;
@@ -581,20 +599,17 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
             lblImage.setText(text);
         }
 
-        public void setImage(String category, String name, int colorInd) {
+        public void setImage(String category, String name) {
 
             if (null == category) {
                 return;
             }
 
             if (IPlayer.NO_CAMO.equals(category)) {
-                if (colorInd == -1) {
-                    colorInd = 0;
-                }
                 BufferedImage tempImage = new BufferedImage(84, 72,
                         BufferedImage.TYPE_INT_RGB);
                 Graphics2D graphics = tempImage.createGraphics();
-                graphics.setColor(PlayerColors.getColor(colorInd));
+                graphics.setColor(PlayerColors.getColor(name));
                 graphics.fillRect(0, 0, 84, 72);
                 lblImage.setIcon(new ImageIcon(tempImage));
                 return;
@@ -634,6 +649,10 @@ public class CamoChoiceDialog extends JDialog implements TreeSelectionListener {
     public void valueChanged(TreeSelectionEvent ev) {
         if (ev.getSource().equals(treeCategories)) {
             TreePath[] paths = treeCategories.getSelectionPaths();
+            // If nothing is selected, there's nothing to populate the table with.
+            if (null == paths) {
+                return;
+            }
             for (TreePath path : paths) {
                 Object[] values = path.getPath();
                 String category = "";

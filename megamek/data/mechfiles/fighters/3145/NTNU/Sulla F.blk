@@ -21,8 +21,12 @@ F
 </Model>
 
 <year>
-3130
+3108
 </year>
+
+<originalBuildYear>
+3108
+</originalBuildYear>
 
 <type>
 Clan Level 3
@@ -31,6 +35,9 @@ Clan Level 3
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 9
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+5
+</omnipodheatsinks>
 
 <fuel>
 400
@@ -79,18 +90,24 @@ Aerodyne
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLImprovedHeavyLargeLaser
+CLImprovedHeavyLargeLaser:OMNI
 CLCASE
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLImprovedHeavyLargeLaser
+CLImprovedHeavyLargeLaser:OMNI
 CLCASE
 </Right Wing Equipment>
 
 <Aft Equipment>
-WatchdogECMSuite
+WatchdogECMSuite:OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+</Fuselage Equipment>
 
 <source>
 TRO 3145 NTNU - Late Republic

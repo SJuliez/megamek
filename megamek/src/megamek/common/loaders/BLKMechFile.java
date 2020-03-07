@@ -104,7 +104,7 @@ public class BLKMechFile extends BLKFile implements IMechLoader {
         if (!dataFile.exists("tonnage")) {
             throw new EntityLoadingException("Could not find block.");
         }
-        mech.setWeight(dataFile.getDataAsFloat("tonnage")[0]);
+        mech.setWeight(dataFile.getDataAsDouble("tonnage")[0]);
 
         int engineCode = BLKFile.FUSION;
         if (dataFile.exists("engine_type")) {
@@ -186,6 +186,8 @@ public class BLKMechFile extends BLKFile implements IMechLoader {
         mech.initializeRearArmor(armor[BLKMechFile.LB], Mech.LOC_LT);
         mech.initializeRearArmor(armor[BLKMechFile.RB], Mech.LOC_RT);
 
+        mech.recalculateTechAdvancement();
+
         if (!dataFile.exists("internal armor")) {
             // try to guess...
             mech.setInternal(3, (armor[CF] + armor[CB]) / 2, (armor[LF] + armor[LB]) / 2, (armor[LA] / 2), (armor[LL] / 2));
@@ -254,6 +256,9 @@ public class BLKMechFile extends BLKFile implements IMechLoader {
                     armored = true;
                     critName = critName.substring(4);
                 }
+                
+                boolean isOmniMounted = critName.endsWith(":OMNI");
+                critName = critName.replace(":OMNI", "");
                 int facing = -1;
                 if (critName.toUpperCase().endsWith("(FL)")) {
                     facing = 5;
@@ -298,6 +303,7 @@ public class BLKMechFile extends BLKFile implements IMechLoader {
                         Mounted mount = mech.addEquipment(etype, loc,
                                 rearMounted, BattleArmor.MOUNT_LOC_NONE, false,
                                 turretMounted);
+                        mount.setOmniPodMounted(isOmniMounted);
                         if ((etype instanceof WeaponType) && etype.hasFlag(WeaponType.F_VGL)) {
                             // vehicular grenade launchers need to have their
                             // facing set

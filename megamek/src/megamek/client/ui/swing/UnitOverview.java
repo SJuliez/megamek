@@ -24,7 +24,6 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -38,12 +37,15 @@ import megamek.common.Configuration;
 import megamek.common.Entity;
 import megamek.common.GameTurn;
 import megamek.common.GunEmplacement;
+import megamek.common.IAero;
 import megamek.common.IArmorState;
 import megamek.common.IGame;
 import megamek.common.Infantry;
 import megamek.common.Mech;
 import megamek.common.Protomech;
 import megamek.common.Tank;
+import megamek.common.options.OptionsConstants;
+import megamek.common.util.MegaMekFile;
 import megamek.common.util.StringUtil;
 
 public class UnitOverview implements IDisplayable {
@@ -85,13 +87,13 @@ public class UnitOverview implements IDisplayable {
         fm = clientgui.getFontMetrics(FONT);
 
         Toolkit toolkit = clientgui.getToolkit();
-        scrollUp = toolkit.getImage(new File(Configuration.widgetsDir(), "scrollUp.gif").toString()); //$NON-NLS-1$
+        scrollUp = toolkit.getImage(new MegaMekFile(Configuration.widgetsDir(), "scrollUp.gif").toString()); //$NON-NLS-1$
         PMUtil.setImage(scrollUp, clientgui);
-        scrollDown = toolkit.getImage(new File(Configuration.widgetsDir(), "scrollDown.gif").toString()); //$NON-NLS-1$
+        scrollDown = toolkit.getImage(new MegaMekFile(Configuration.widgetsDir(), "scrollDown.gif").toString()); //$NON-NLS-1$
         PMUtil.setImage(scrollDown, clientgui);
-        pageUp = toolkit.getImage(new File(Configuration.widgetsDir(), "pageUp.gif").toString()); //$NON-NLS-1$
+        pageUp = toolkit.getImage(new MegaMekFile(Configuration.widgetsDir(), "pageUp.gif").toString()); //$NON-NLS-1$
         PMUtil.setImage(pageUp, clientgui);
-        pageDown = toolkit.getImage(new File(Configuration.widgetsDir(), "pageDown.gif").toString()); //$NON-NLS-1$
+        pageDown = toolkit.getImage(new MegaMekFile(Configuration.widgetsDir(), "pageDown.gif").toString()); //$NON-NLS-1$
         PMUtil.setImage(pageDown, clientgui);
         
         visible = GUIPreferences.getInstance().getShowUnitOverview();
@@ -164,7 +166,7 @@ public class UnitOverview implements IDisplayable {
             
             Entity se = clientgui == null ? null : clientgui.getClient()
                     .getEntity(clientgui.getSelectedEntityNum());
-            if (e == se && game.getTurn() != null && 
+            if ((e == se) && (game.getTurn() != null) &&
                     game.getTurn().isValidEntity(e,game)) {
                 Color oldColor = graph.getColor();
                 graph.setColor(GUIPreferences.getInstance().getColor(
@@ -304,7 +306,7 @@ public class UnitOverview implements IDisplayable {
         boolean mtHeat = false;
         int mHeat = 30;
         if ((entity.getGame() != null)
-                && entity.getGame().getOptions().booleanOption("tacops_heat")) {
+                && entity.getGame().getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_HEAT)) {
             mHeat = 50;
             mtHeat = true;
         }
@@ -384,8 +386,8 @@ public class UnitOverview implements IDisplayable {
             int y) {
 
 //      out of control conditions for ASF
-        if(entity instanceof Aero) {
-            Aero a = (Aero)entity;
+        if(entity.isAero()) {
+            IAero a = (IAero)entity;
 
             if(a.isRolled()) {
                 // draw "rolled"
@@ -409,7 +411,7 @@ public class UnitOverview implements IDisplayable {
             }
 
             //is the unit evading? - can't evade and be out of control so just draw on top
-            if(a.isEvading()) {
+            if(entity.isEvading()) {
                 //draw evasion
                 graph.setColor(Color.darkGray);
                 graph.drawString(Messages.getString("UnitOverview.EVADE"), x +11, y + 24); //$NON-NLS-1$

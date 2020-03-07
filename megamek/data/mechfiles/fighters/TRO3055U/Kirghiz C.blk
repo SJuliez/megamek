@@ -24,6 +24,10 @@ C
 2874
 </year>
 
+<originalBuildYear>
+2874
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
@@ -31,6 +35,9 @@ Clan Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 5
@@ -68,37 +75,43 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-CLUltraAC20
-Clan Ultra AC/20 Ammo
-Clan Ultra AC/20 Ammo
-CLLargePulseLaser
-CLLargePulseLaser
-CLERSmallLaser
-CLCASE
+CLUltraAC20:OMNI
+CLLargePulseLaser:OMNI
+CLLargePulseLaser:OMNI
+CLERSmallLaser:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-CLERPPC
+CLERPPC:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-CLERPPC
+CLERPPC:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
-CLERLargeLaser
-CLERLargeLaser
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
+CLERLargeLaser:OMNI
+CLERLargeLaser:OMNI
+Cargo (1 ton):OMNI
+Cargo (1 ton):OMNI
+Cargo (1 ton):OMNI
+Cargo (1 ton):OMNI
+Cargo (1 ton):OMNI
+Cargo (1 ton):OMNI
+Cargo (1 ton):OMNI
+Cargo (1 ton):OMNI
+Cargo (1 ton):OMNI
+Cargo (1 ton):OMNI
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+Clan Ultra AC/20 Ammo:OMNI
+Clan Ultra AC/20 Ammo:OMNI
+CLCASE
+</Fuselage Equipment>
 
 <source>
 TRO 3055u - Succession Wars

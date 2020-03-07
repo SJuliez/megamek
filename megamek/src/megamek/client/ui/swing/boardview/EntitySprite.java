@@ -1,6 +1,7 @@
 package megamek.client.ui.swing.boardview;
 
 import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -9,27 +10,35 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Stroke;
 import java.awt.Transparency;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.GUIPreferences;
 import megamek.client.ui.swing.util.PlayerColors;
-import megamek.common.Aero;
 import megamek.common.Compute;
+import megamek.common.Configuration;
 import megamek.common.Coords;
 import megamek.common.Entity;
 import megamek.common.EntityMovementType;
+import megamek.common.EntityVisibilityUtils;
 import megamek.common.GunEmplacement;
-import megamek.common.IGame.Phase;
+import megamek.common.IAero;
+import megamek.common.IArmorState;
 import megamek.common.IBoard;
+import megamek.common.IGame;
+import megamek.common.IGame.Phase;
 import megamek.common.IPlayer;
 import megamek.common.Infantry;
 import megamek.common.Mech;
 import megamek.common.Mounted;
 import megamek.common.Protomech;
+import megamek.common.QuadVee;
 import megamek.common.RangeType;
 import megamek.common.Tank;
 import megamek.common.TechConstants;
@@ -45,9 +54,9 @@ import megamek.common.options.PilotOptions;
 class EntitySprite extends Sprite {
 
     // Statics
-    private final static int SMALL = 0;
-    private final static boolean DIRECT = true;
-    private final static Color LABEL_TEXT_COLOR = Color.WHITE;
+    private static final int SMALL = 0;
+    private static final boolean DIRECT = true;
+    private static final Color LABEL_TEXT_COLOR = Color.WHITE;
     private static final Color LABEL_CRITICAL_BACK = new Color(200,0,0,200);
     private static final Color LABEL_SPACE_BACK = new Color(0,0,200,200);
     private static final Color LABEL_GROUND_BACK = new Color(50,50,50,200);
@@ -133,6 +142,10 @@ class EntitySprite extends Sprite {
     }
 
     private void updateLabel() {
+        Rectangle oldRect = new Rectangle();
+        if (labelRect != null)
+            oldRect = new Rectangle(labelRect);
+        
         int face = (entity.isCommander() && !onlyDetectedBySensors()) ? 
                 Font.ITALIC : Font.PLAIN;
         labelFont = new Font("SansSerif", face, (int)(10*Math.max(bv.scale,0.9))); //$NON-NLS-1$
@@ -167,8 +180,19 @@ class EntitySprite extends Sprite {
         } 
 
         // If multiple units are present in a hex, fan out the labels
-        labelRect.y += (bv.getFontMetrics(labelFont).getAscent()+4) * 
-                bv.game.getEntitiesVector(position).indexOf(entity);
+        // In the deployment phase, indexOf returns -1 for the current unit
+        int indexEntity = bv.game.getEntitiesVector(position).indexOf(entity);
+        if (indexEntity != -1) {
+            labelRect.y += (bv.getFontMetrics(labelFont).getAscent()+4) * 
+                    indexEntity;
+        } else {
+            labelRect.y += (bv.getFontMetrics(labelFont).getAscent()+4) * 
+                    bv.game.getEntitiesVector(position).size();
+        }
+
+        // If the label has changed, force a redraw (necessary
+        // for the Deployment phase
+        if (!labelRect.equals(oldRect)) image = null;
     }
 
     // Happy little class to hold status info until it gets drawn
@@ -277,7 +301,7 @@ class EntitySprite extends Sprite {
     @Override
     public void prepare() {
         final IBoard board = bv.game.getBoard();
-   
+        final GUIPreferences guip = GUIPreferences.getInstance();
         // recalculate bounds & label
         getBounds();
         
@@ -302,10 +326,11 @@ class EntitySprite extends Sprite {
                 // draw the unit icon translucent if:
                 // hidden from the enemy (and activated graphics setting); or
                 // submerged
-                boolean translucentHiddenUnits = GUIPreferences.getInstance()
+                boolean translucentHiddenUnits = guip
                         .getBoolean(GUIPreferences.ADVANCED_TRANSLUCENT_HIDDEN_UNITS);
-                if ((trackThisEntitiesVisibilityInfo(entity)
-                        && !entity.isVisibleToEnemy() && translucentHiddenUnits)
+                boolean shouldBeTranslucent = (trackThisEntitiesVisibilityInfo(entity)
+                        && !entity.isVisibleToEnemy()) || entity.isHidden();
+                if ((shouldBeTranslucent && translucentHiddenUnits)
                         || (entity.relHeight() < 0)) {
                     graph.setComposite(AlphaComposite.getInstance(
                             AlphaComposite.SRC_OVER, 0.5f));
@@ -321,9 +346,9 @@ class EntitySprite extends Sprite {
         graph.scale(bv.scale, bv.scale);
         
         boolean isInfantry = (entity instanceof Infantry);
-        boolean isAero = (entity instanceof Aero);
+        boolean isAero = entity.isAero();
         
-        if ((isAero && ((Aero) entity).isSpheroid() && !board.inSpace())
+        if ((isAero && ((IAero) entity).isSpheroid() && !board.inSpace())
                 && (secondaryPos == 1)) {
             graph.setColor(Color.WHITE);
             graph.draw(bv.facingPolys[entity.getFacing()]);
@@ -365,11 +390,22 @@ class EntitySprite extends Sprite {
             }
             
             // Prone, Hulldown, Stuck, Immobile, Jammed
-            if (entity.isProne()) stStr.add(new Status(Color.RED, "PRONE"));
-            if (entity.isHullDown()) stStr.add(new Status(Color.ORANGE, "HULLDOWN"));
-            if ((entity.isStuck())) stStr.add(new Status(Color.ORANGE, "STUCK"));
-            if (!ge && entity.isImmobile()) stStr.add(new Status(Color.RED, "IMMOBILE"));
-            if (isAffectedByECM()) stStr.add(new Status(Color.YELLOW, "Jammed"));
+            if (entity.isProne()) 
+                stStr.add(new Status(Color.RED, "PRONE"));
+            if (entity.isHiddenActivating())
+                stStr.add(new Status(Color.RED, "ACTIVATING"));
+            if (entity.isHidden())
+                stStr.add(new Status(Color.RED, "HIDDEN"));
+            if (entity.isGyroDestroyed())
+                stStr.add(new Status(Color.RED, "NO_GYRO"));
+            if (entity.isHullDown())
+                stStr.add(new Status(Color.ORANGE, "HULLDOWN"));
+            if ((entity.isStuck()))
+                stStr.add(new Status(Color.ORANGE, "STUCK"));
+            if (!ge && entity.isImmobile())
+                stStr.add(new Status(Color.RED, "IMMOBILE"));
+            if (isAffectedByECM())
+                stStr.add(new Status(Color.YELLOW, "Jammed"));
             
             // Turret Lock 
             if (turretLocked) stStr.add(new Status(Color.YELLOW, "LOCKED"));
@@ -387,8 +423,12 @@ class EntitySprite extends Sprite {
             }
 
             // Transporting
-            if ((entity.getLoadedUnits()).size() > 0) {
+            if (entity.getLoadedUnits().size() > 0) {
                 stStr.add(new Status(Color.YELLOW, "T", SMALL));
+            }
+            
+            if (entity.getAllTowedUnits().size() > 0) {
+                stStr.add(new Status(Color.YELLOW, "TOWING"));
             }
 
             // Hidden, Unseen Unit
@@ -408,23 +448,29 @@ class EntitySprite extends Sprite {
             
             // Infantry
             if (isInfantry) {
-                int dig = ((Infantry) entity).getDugIn();
+                Infantry inf = ((Infantry) entity);
+                int dig = inf.getDugIn();
                 if (dig == Infantry.DUG_IN_COMPLETE) {
                     stStr.add(new Status(Color.PINK, "D", SMALL));
                 } else if (dig != Infantry.DUG_IN_NONE) {
                     stStr.add(new Status(Color.YELLOW, "Working", DIRECT));
                     stStr.add(new Status(Color.PINK, "D", SMALL));
-                } else if (((Infantry)entity).isTakingCover()) {
+                } else if (inf.isTakingCover()) {
                     stStr.add(new Status(Color.YELLOW, "TakingCover"));
+                }
+                
+                if (inf.turnsLayingExplosives >= 0) {
+                    stStr.add(new Status(Color.YELLOW, "Working", DIRECT));
+                    stStr.add(new Status(Color.PINK, "E", SMALL));
                 }
             }
             
             // Aero
             if (isAero) {
-                Aero a = (Aero) entity;
+                IAero a = (IAero) entity;
                 if (a.isRolled()) stStr.add(new Status(Color.YELLOW, "ROLLED"));
-                if (a.getFuel() <= 0) stStr.add(new Status(Color.RED, "FUEL"));
-                if (a.isEvading()) stStr.add(new Status(Color.GREEN, "EVADE"));
+                if (a.getCurrentFuel() <= 0) stStr.add(new Status(Color.RED, "FUEL"));
+                if (entity.isEvading()) stStr.add(new Status(Color.GREEN, "EVADE"));
                 
                 if (a.isOutControlTotal() & a.isRandomMove()) {
                     stStr.add(new Status(Color.RED, "RANDOM"));
@@ -433,7 +479,7 @@ class EntitySprite extends Sprite {
                 }
             }
             
-            if (GUIPreferences.getInstance().getShowDamageLevel()) {
+            if (guip.getShowDamageLevel()) {
                 Color damageColor = getDamageColor();
                 if (damageColor != null) {
                     stStr.add(new Status(damageColor, 0, SMALL));
@@ -447,27 +493,41 @@ class EntitySprite extends Sprite {
             graph.scale(1/bv.scale, 1/bv.scale);
             
             // Label background
-            if (criticalStatus) {
-                graph.setColor(LABEL_CRITICAL_BACK);
-            } else {
-                graph.setColor(LABEL_BACK);
+            if (guip.getBoolean(GUIPreferences.ADVANCED_DRAW_ENTITY_LABEL)) {
+                if (criticalStatus) {
+                    graph.setColor(LABEL_CRITICAL_BACK);
+                } else {
+                    graph.setColor(LABEL_BACK);
+                }
+                graph.fillRoundRect(labelRect.x, labelRect.y, labelRect.width,
+                        labelRect.height, 5, 10);
+
+                if (guip.getEntityOwnerLabelColor()) {
+                    graph.setColor(PlayerColors.getColor(
+                            entity.getOwner().getColorIndex(), false));
+                    Stroke oldStroke = graph.getStroke();
+                    graph.setStroke(new BasicStroke(3));
+                    graph.drawRoundRect(labelRect.x - 1, labelRect.y - 1,
+                            labelRect.width + 1, labelRect.height + 1, 5, 10);
+                    graph.setStroke(oldStroke);
+                }
+
+                // Label text
+                graph.setFont(labelFont);
+                Color textColor = LABEL_TEXT_COLOR;
+                if (!entity.isDone() && !onlyDetectedBySensors()) {
+                    textColor = guip.getColor(
+                            GUIPreferences.ADVANCED_UNITOVERVIEW_VALID_COLOR);
+                }
+                if (isSelected) {
+                    textColor = guip.getColor(
+                            GUIPreferences.ADVANCED_UNITOVERVIEW_SELECTED_COLOR);
+                }
+                bv.drawCenteredText(graph, getAdjShortName(),
+                        labelRect.x + labelRect.width / 2,
+                        labelRect.y + labelRect.height / 2 - 1, textColor,
+                        (entity.isDone() && !onlyDetectedBySensors()));
             }
-            graph.fillRoundRect(labelRect.x, labelRect.y, 
-                    labelRect.width, labelRect.height, 5, 10);
-            
-            // Label text
-            graph.setFont(labelFont);
-            Color textColor = LABEL_TEXT_COLOR;
-            if (!entity.isDone() && !onlyDetectedBySensors()) {
-                textColor = GUIPreferences.getInstance().getColor(
-                        GUIPreferences.ADVANCED_UNITOVERVIEW_VALID_COLOR);
-            }
-            if (isSelected) {
-                textColor = GUIPreferences.getInstance().getColor(
-                        GUIPreferences.ADVANCED_UNITOVERVIEW_SELECTED_COLOR);
-            }
-            bv.drawCenteredText(graph, getAdjShortName(), labelRect.x+labelRect.width/2,
-                    labelRect.y+labelRect.height/2-1, textColor, (entity.isDone() && !onlyDetectedBySensors()));
 
             // Past here, everything is drawing status that shouldn't be seen
             // on a sensor return, so we'll just quit here
@@ -487,14 +547,15 @@ class EntitySprite extends Sprite {
             if ((entity.getFacing() != -1)
                     && !(isInfantry && !((Infantry) entity).hasFieldGun()
                             && !((Infantry) entity).isTakingCover())
-                    && !(isAero && ((Aero) entity).isSpheroid() && !board
+                    && !(isAero && ((IAero) entity).isSpheroid() && !board
                             .inSpace())) {
                 graph.draw(bv.facingPolys[entity.getFacing()]);
             }
 
             // determine secondary facing for non-mechs & flipped arms
             int secFacing = entity.getFacing();
-            if (!((entity instanceof Mech) || (entity instanceof Protomech))) {
+            if (!((entity instanceof Mech) || (entity instanceof Protomech))
+                    || (entity instanceof QuadVee)) {
                 secFacing = entity.getSecondaryFacing();
             } else if (entity.getArmsFlipped()) {
                 secFacing = (entity.getFacing() + 3) % 6;
@@ -504,7 +565,7 @@ class EntitySprite extends Sprite {
                 graph.setColor(Color.red);
                 graph.draw(bv.facingPolys[secFacing]);
             }
-            if ((entity instanceof Aero) && this.bv.game.useVectorMove()) {
+            if (entity.isAero() && this.bv.game.useVectorMove()) {
                 for (int head : entity.getHeading()) {
                     graph.setColor(Color.red);
                     graph.draw(bv.facingPolys[head]);
@@ -562,17 +623,7 @@ class EntitySprite extends Sprite {
      * mechs and teammates mechs (assuming team vision option).
      */
     private boolean trackThisEntitiesVisibilityInfo(Entity e) {
-        IPlayer localPlayer = bv.getLocalPlayer();
-        if (localPlayer == null) {
-            return false;
-        }
-        if (bv.game.getOptions().booleanOption("double_blind") //$NON-NLS-1$
-                && ((e.getOwner().getId() == localPlayer.getId()) || (bv.game
-                        .getOptions().booleanOption("team_vision") //$NON-NLS-1$
-                && (e.getOwner().getTeam() == localPlayer.getTeam())))) {
-            return true;
-        }
-        return false;
+        return EntityVisibilityUtils.trackThisEntitiesVisibilityInfo(bv.getLocalPlayer(), e);
     }
 
     /**
@@ -581,23 +632,8 @@ class EntitySprite extends Sprite {
      *
      * @return
      */
-    private boolean onlyDetectedBySensors() {
-        boolean sensors = bv.game.getOptions().booleanOption(
-                "tacops_sensors");
-        boolean sensorsDetectAll = bv.game.getOptions().booleanOption(
-                "sensors_detect_all");
-        boolean doubleBlind = bv.game.getOptions().booleanOption(
-                "double_blind");
-        boolean hasVisual = entity.hasSeenEntity(bv.getLocalPlayer());
-        boolean hasDetected = entity.hasDetectedEntity(bv.getLocalPlayer());
-
-        if (sensors && doubleBlind && !sensorsDetectAll
-                && !trackThisEntitiesVisibilityInfo(entity)
-                && hasDetected && !hasVisual) {
-            return true;
-        } else {
-            return false;
-        }
+    public boolean onlyDetectedBySensors() {
+        return EntityVisibilityUtils.onlyDetectedBySensors(bv.getLocalPlayer(), entity);
     }
 
     private Color getStatusBarColor(double percentRemaining) {
@@ -625,7 +661,101 @@ class EntitySprite extends Sprite {
     private StringBuffer tooltipString;
     private final boolean BR = true;
     private final boolean NOBR = false;
-    
+    private boolean skipBRafterTable = false;
+
+    /**
+     * Builds a small table representing a unit's armor using visual block characters
+     * and adds it to the current tooltipString.
+     */
+    private void addArmorMiniVisToTT() {
+        String armorChar = GUIPreferences.getInstance().getString("AdvancedArmorMiniArmorChar");
+        String internalChar = GUIPreferences.getInstance().getString("AdvancedArmorMiniISChar");
+        String destroyedChar = GUIPreferences.getInstance().getString("AdvancedArmorMiniDestroyedChar");
+        String fontSize = Integer.toString(GUIPreferences.getInstance().getInt("AdvancedArmorMiniFrontSizeMod"));
+        // HTML color String from Preferences
+        String colorIntact = Integer
+                .toHexString(GUIPreferences.getInstance()
+                        .getColor("AdvancedArmorMiniColorIntact").getRGB() & 0xFFFFFF);
+        String colorPartialDmg = Integer
+                .toHexString(GUIPreferences.getInstance()
+                        .getColor("AdvancedArmorMiniColorPartialDmg").getRGB() & 0xFFFFFF);
+        String colorDamaged = Integer
+                .toHexString(GUIPreferences.getInstance()
+                        .getColor("AdvancedArmorMiniColorDamaged").getRGB() & 0xFFFFFF);
+        int visUnit = GUIPreferences.getInstance().getInt("AdvancedArmorMiniUnitsPerBlock");
+        addToTT("ArmorMiniPanelStart", BR);
+        for (int loc = 0 ; loc < entity.locations(); loc++) {
+            // addToTT("ArmorMiniPanelPart", BR, entity.getLocationAbbr(loc));
+            // If location is destroyed, mark it and move on
+            if (entity.getInternal(loc) == IArmorState.ARMOR_DOOMED ||
+                    entity.getInternal(loc) == IArmorState.ARMOR_DESTROYED) {
+                // This is a really awkward way of making sure
+                addToTT("ArmorMiniPanelPartNoRear", BR, entity.getLocationAbbr(loc), fontSize);
+                for (int a = 0; a <= entity.getOInternal(loc)/visUnit; a++) {
+                    addToTT("BlockColored", NOBR, destroyedChar, fontSize, colorIntact);
+                }
+
+            } else {
+                // Put rear armor blocks first, with some spacing, if unit has any.
+                if (entity.hasRearArmor(loc)) {
+                    addToTT("ArmorMiniPanelPartRear", BR, entity.getLocationAbbr(loc), fontSize);
+                    for (int a = 0; a <= (entity.getOArmor(loc, true)/visUnit); a++) {
+                        if (a < (entity.getArmor(loc, true)/visUnit)) {
+                            addToTT("BlockColored", NOBR, armorChar, fontSize, colorIntact);
+                        } else if (a == (entity.getArmor(loc, true)/visUnit) &&
+                                (entity.getArmor(loc, true) % visUnit) > 0) {
+                            // Fraction of a visUnit left, but still display a "full" if at starting max armor
+                            if (entity.getArmor(loc, true) == entity.getOArmor(loc, true)) {
+                                addToTT("BlockColored", NOBR, armorChar, fontSize, colorIntact);
+                            } else {
+                                addToTT("BlockColored", NOBR, armorChar, fontSize, colorPartialDmg);;
+                            }
+                        } else if ((entity.getOArmor(loc, true) % visUnit) > 0) {
+                            addToTT("BlockColored", NOBR, armorChar, fontSize, colorDamaged);
+                        }
+                    }
+                    addToTT("ArmorMiniPanelPart", BR, entity.getLocationAbbr(loc), fontSize);
+                } else {
+                    addToTT("ArmorMiniPanelPartNoRear", BR, entity.getLocationAbbr(loc), fontSize);
+                }
+                // Add IS shade blocks.
+                for (int a = 0; a <= (entity.getOInternal(loc)/visUnit); a++) {
+                    if (a < (entity.getInternal(loc)/visUnit)) {
+                        addToTT("BlockColored", NOBR, internalChar, fontSize, colorIntact);
+                    } else if (a == (entity.getInternal(loc)/visUnit) &&
+                            (entity.getInternal(loc) % visUnit) > 0) {
+                        // Fraction of a visUnit left, but still display a "full" if at starting max armor
+                        if (entity.getInternal(loc) == entity.getOInternal(loc)) {
+                            addToTT("BlockColored", NOBR, internalChar, fontSize, colorIntact);
+                        } else {
+                            addToTT("BlockColored", NOBR, internalChar, fontSize, colorPartialDmg);
+                        }
+                    } else if ((entity.getOInternal(loc) % visUnit) > 0) {
+                        addToTT("BlockColored", NOBR, internalChar, fontSize, colorDamaged);
+                    }
+                }
+                // Add main armor blocks.
+                for (int a = 0; a <= (entity.getOArmor(loc)/visUnit); a++) {
+                    if (a < (entity.getArmor(loc)/visUnit)) {
+                        addToTT("BlockColored", NOBR, armorChar, fontSize, colorIntact);
+                    } else if (a == (entity.getArmor(loc)/visUnit) &&
+                            (entity.getArmor(loc) % visUnit) > 0) {
+                        // Fraction of a visUnit left, but still display a "full" if at starting max armor
+                        if (entity.getArmor(loc) == entity.getOArmor(loc)) {
+                            addToTT("BlockColored", NOBR, armorChar, fontSize, colorIntact);
+                        } else {
+                            addToTT("BlockColored", NOBR, armorChar, fontSize, colorPartialDmg);
+                        }
+                    } else if ((entity.getOArmor(loc) % visUnit) > 0){
+                        addToTT("BlockColored", NOBR, armorChar, fontSize, colorDamaged);
+                    }
+                }
+            }
+
+        }
+        addToTT("ArmorMiniPanelEnd", NOBR);
+    }
+
     /**
      * Adds a resource string to the entity tooltip
      * 
@@ -635,8 +765,13 @@ class EntitySprite extends Sprite {
      * @param ttO a list of Objects to insert into the {x} places in the resource.
      */
     private void addToTT(String ttSName, boolean startBR, Object... ttO) {
-        if (startBR == BR)
-            tooltipString.append("<BR>");
+        if (startBR == BR){
+            if (skipBRafterTable) {
+                skipBRafterTable = false;
+            } else {
+                tooltipString.append("<BR>");
+            }
+        }
         if (ttO != null) {
             tooltipString.append(Messages.getString("BoardView1.Tooltip."
                     + ttSName, ttO));
@@ -669,8 +804,8 @@ class EntitySprite extends Sprite {
         if (entity instanceof Infantry) thisInfantry = (Infantry) entity;
         GunEmplacement thisGunEmp = null;
         if (entity instanceof GunEmplacement) thisGunEmp = (GunEmplacement) entity;
-        Aero thisAero = null;
-        if (entity instanceof Aero) thisAero = (Aero) entity;
+        IAero thisAero = null;
+        if (entity.isAero()) thisAero = (IAero) entity;
         
         tooltipString = new StringBuffer();
 
@@ -682,26 +817,38 @@ class EntitySprite extends Sprite {
                 entity.getOwner().getName());
         
         // Pilot Info
+        //put everything in table to allow for a pilot photo in second column
+        addToTT("PilotStart",BR);
+        
         // Nickname > Name > "Pilot"
-        String pnameStr = "Pilot";
-
-        if ((entity.getCrew().getName() != null)
-                && !entity.getCrew().getName().equals("")) 
-            pnameStr = entity.getCrew().getName();
-        
-        if ((entity.getCrew().getNickname() != null)
-                && !entity.getCrew().getNickname().equals("")) 
-            pnameStr = "'" + entity.getCrew().getNickname() + "'";
-        
-        addToTT("Pilot", BR,
-                pnameStr, 
-                entity.getCrew().getGunnery(), 
-                entity.getCrew().getPiloting());
-
-        // Pilot Status
-        if (!entity.getCrew().getStatusDesc().equals(""))
-            addToTT("PilotStatus", NOBR, 
-                    entity.getCrew().getStatusDesc());
+        for (int i = 0; i < entity.getCrew().getSlotCount(); i++) {
+            String pnameStr = "Pilot";
+    
+            if (entity.getCrew().isMissing(i)) {
+                continue;
+            }
+            if ((entity.getCrew().getName(i) != null)
+                    && !entity.getCrew().getName(i).equals("")) 
+                pnameStr = entity.getCrew().getName(i);
+            
+            if ((entity.getCrew().getNickname(i) != null)
+                    && !entity.getCrew().getNickname(i).equals("")) 
+                pnameStr = "'" + entity.getCrew().getNickname(i) + "'";
+            
+            if (entity.getCrew().getSlotCount() > 1) {
+                pnameStr += " (" + entity.getCrew().getCrewType().getRoleName(i) + ")";
+            }
+            
+            addToTT("Pilot", NOBR,
+                    pnameStr, 
+                    entity.getCrew().getGunnery(i), 
+                    entity.getCrew().getPiloting(i));
+    
+            // Pilot Status
+            if (!entity.getCrew().getStatusDesc(i).equals(""))
+                addToTT("PilotStatus", NOBR, 
+                        entity.getCrew().getStatusDesc(i));
+        }
         
         // Pilot Advantages
         int numAdv = entity.getCrew().countOptions(
@@ -716,6 +863,30 @@ class EntitySprite extends Sprite {
                 PilotOptions.MD_ADVANTAGES) > 0)) 
             addToTT("MD", NOBR);
         
+        if (entity instanceof Infantry) {
+            Infantry inf = (Infantry) entity;
+            int spec = inf.getSpecializations();
+            if (spec > 0) {
+                addToTT("InfSpec", BR, Infantry.getSpecializationName(spec));
+            }
+        }
+        
+        //add portrait?
+        if(null != entity.getCrew()) {
+            String category = entity.getCrew().getPortraitCategory(0);
+            String file = entity.getCrew().getPortraitFileName(0);
+            if (GUIPreferences.getInstance().getBoolean(GUIPreferences.SHOW_PILOT_PORTRAIT_TT) &&
+                    (null != category) && (null != file)) {
+                String imagePath = Configuration.portraitImagesDir() + "/" + category + file;
+                File f = new File(imagePath);
+                if(f.exists()) {
+                    addToTT("PilotPortrait",BR,imagePath);
+                }
+            }
+        }
+        
+        addToTT("PilotEnd",NOBR);
+
         // Unit movement ability
         if (thisGunEmp == null) {
             addToTT("Movement", BR, entity.getWalkMP(), entity.getRunMPasString());
@@ -725,6 +896,28 @@ class EntitySprite extends Sprite {
         // Armor and Internals
         addToTT("ArmorInternals", BR, entity.getTotalArmor(),
                 entity.getTotalInternal());
+
+        // Build a "status bar" visual representation of each
+        // component of the unit using block element characters.
+        if (GUIPreferences.getInstance().getBoolean(GUIPreferences.SHOW_ARMOR_MINIVIS_TT)) {
+            addArmorMiniVisToTT();
+            skipBRafterTable = true;
+        }
+
+
+        // BV Info
+        // Only show this if we aren't in double blind and hide enemy bv isn't selected.
+        // Should always see this on your own Entities.
+        boolean suppressEnemyBV = bv.game.getOptions().booleanOption(OptionsConstants.ADVANCED_SUPPRESS_DB_BV) &&
+                bv.game.getOptions().booleanOption(OptionsConstants.ADVANCED_DOUBLE_BLIND);
+
+        if (!(suppressEnemyBV && !trackThisEntitiesVisibilityInfo(entity))) {
+            int currentBV = entity.calculateBattleValue(false, false);
+            int initialBV = entity.getInitialBV();
+            double percentage = (double) currentBV / initialBV;
+
+            addToTT("BV", BR, currentBV, initialBV, percentage);
+        }
 
         // Heat, not shown for units with 999 heat sinks (vehicles)
         if (entity.getHeatCapacity() != 999) {
@@ -745,10 +938,11 @@ class EntitySprite extends Sprite {
             } else if (
                     (entity.isDone() && this.bv.game.getPhase() == Phase.PHASE_MOVEMENT) 
                     || this.bv.game.getPhase() == Phase.PHASE_FIRING) {
-                
+                int tmm = Compute.getTargetMovementModifier(bv.game,
+                        entity.getId()).getValue();
                 // Unit didn't move
                 if (entity.moved == EntityMovementType.MOVE_NONE) {
-                    addToTT("NoMove", BR);
+                    addToTT("NoMove", BR, tmm);
                     
                 // Unit did move
                 } else {
@@ -759,7 +953,8 @@ class EntitySprite extends Sprite {
                             || (entity.moved == EntityMovementType.MOVE_VTOL_RUN)
                             || (entity.moved == EntityMovementType.MOVE_OVER_THRUST)) 
                         guipName = "AdvancedMoveRunColor";
-                    else if (entity.moved == EntityMovementType.MOVE_SPRINT) 
+                    else if (entity.moved == EntityMovementType.MOVE_SPRINT
+                            || entity.moved == EntityMovementType.MOVE_VTOL_SPRINT) 
                         guipName = "AdvancedMoveSprintColor";
                     else if (entity.moved == EntityMovementType.MOVE_JUMP) 
                         guipName = "AdvancedMoveJumpColor";
@@ -776,7 +971,7 @@ class EntitySprite extends Sprite {
                     addToTT("MovementF", NOBR,
                             entity.getMovementString(entity.moved),
                             entity.delta_distance,
-                            Compute.getTargetMovementModifier(this.bv.game,entity.getId()).getValue());
+                            tmm);
                 }
                 // Special Moves
                 if (entity.isEvading()) 
@@ -807,17 +1002,37 @@ class EntitySprite extends Sprite {
         // Unit Immobile
         if ((thisGunEmp == null) && (entity.isImmobile()))
             addToTT("Immobile", BR);
-        
+
+        if (entity.isHiddenActivating()) {
+            addToTT("HiddenActivating", BR,
+                    IGame.Phase.getDisplayableName(entity
+                            .getHiddenActivationPhase()));
+        } else if (entity.isHidden()) {
+            addToTT("Hidden", BR);
+        }
+
         // Jammed by ECM
         if (isAffectedByECM()) {
             addToTT("Jammed", BR);
         }
-        
+
+        // Swarmed
+        if (entity.getSwarmAttackerId() != Entity.NONE) {
+            addToTT("Swarmed", BR,
+                    bv.game.getEntity(entity.getSwarmAttackerId())
+                            .getDisplayName());
+        }
+
+        // Spotting
+        if (entity.isSpotting()) {
+            addToTT("Spotting", BR, bv.game.getEntity(entity.getSpotTargetId()).getDisplayName());
+        }
+
         // If DB, add information about who sees this Entity
-        if (bv.game.getOptions().booleanOption("double_blind")) {
+        if (bv.game.getOptions().booleanOption(OptionsConstants.ADVANCED_DOUBLE_BLIND)) {
             StringBuffer playerList = new StringBuffer();
             boolean teamVision = bv.game.getOptions().booleanOption(
-                    "team_vision");
+                    OptionsConstants.ADVANCED_TEAM_VISION);
             for (IPlayer player : entity.getWhoCanSee()) {
                 if (player.isEnemyOf(entity.getOwner()) || !teamVision) {
                     playerList.append(player.getName());
@@ -831,8 +1046,19 @@ class EntitySprite extends Sprite {
         }
 
         // If sensors, display what sensors this unit is using
-        if (bv.game.getOptions().booleanOption("tacops_sensors")) {
+        if (bv.game.getOptions().booleanOption(OptionsConstants.ADVANCED_TACOPS_SENSORS)
+                || bv.game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ADVANCED_SENSORS)) {
             addToTT("Sensors", BR, entity.getSensorDesc());
+        }
+        
+        // Towing
+        if (entity.getAllTowedUnits().size() > 0) {
+            String unitList = entity.getAllTowedUnits().stream()
+                    .map(id -> entity.getGame().getEntity(id).getDisplayName())
+                    .collect(Collectors.joining(", "));
+            if (unitList.length() > 1) {
+                addToTT("Towing", BR, unitList);
+            }
         }
 
         // Weapon List
@@ -849,7 +1075,7 @@ class EntitySprite extends Sprite {
                 // Append ranges
                 WeaponType wtype = (WeaponType)curWp.getType();
                 int ranges[];
-                if (entity instanceof Aero) {
+                if (entity.isAero()) {
                     ranges = wtype.getATRanges();
                 } else {
                     ranges = wtype.getRanges(curWp);
@@ -863,7 +1089,7 @@ class EntitySprite extends Sprite {
                 }
                 int maxRange = RangeType.RANGE_LONG;
                 if (bv.game.getOptions().booleanOption(
-                        OptionsConstants.AC_TAC_OPS_RANGE)) {
+                        OptionsConstants.ADVCOMBAT_TACOPS_RANGE)) {
                     maxRange = RangeType.RANGE_EXTREME;
                 }
                 for (int i = RangeType.RANGE_SHORT; i <= maxRange; i++) {
@@ -973,6 +1199,10 @@ class EntitySprite extends Sprite {
     /** Returns if the entity is marked as selected for movement etc., recoloring the label */
     public boolean getSelected() {
         return isSelected;
+    }
+
+    protected int getSpritePriority() {
+        return entity.getSpriteDrawPriority();
     }
 }
 

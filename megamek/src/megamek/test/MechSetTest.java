@@ -80,7 +80,11 @@ public class MechSetTest {
                 st.nextToken();
                 imageName = st.sval;
                 entryName = "entry: chassis " + name + " ";
-                testImageName(dir, imageName, entryName);
+                if (imageName == null) {
+                    System.out.println("Error with entry " + entryName + " : no image specified!");
+                } else {
+                    testImageName(dir, imageName, entryName);
+                }
             } else if ((st.ttype == StreamTokenizer.TT_WORD)
                     && st.sval.equalsIgnoreCase("exact")) { //$NON-NLS-1$
                 st.nextToken();
@@ -103,6 +107,10 @@ public class MechSetTest {
         if (!exactmatch) {
             System.out.print("Error with " + entryName + ": ");
             String dirFiles[] = imgFile.getParentFile().list();
+            if (dirFiles == null) {
+                System.out.println("File is not a directory! Entry Path: " + imageName);
+                return;
+            }
             Arrays.sort(dirFiles, new StringCompCaseInsensitive());
             int result = Arrays.binarySearch(dirFiles, imgFile.getName(),
                     new StringCompCaseInsensitive());

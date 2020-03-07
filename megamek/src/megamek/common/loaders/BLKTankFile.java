@@ -1,5 +1,6 @@
 /*
  * MegaMek - Copyright (C) 2000-2002 Ben Mazur (bmazur@sev.org)
+ * Copyright (C) 2019 The MegaMek Team
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -12,40 +13,68 @@
  * details.
  */
 
-/*
+package megamek.common.loaders;
+
+import megamek.common.*;
+import megamek.common.logging.DefaultMmLogger;
+import megamek.common.util.BuildingBlock;
+
+/**
  * BLkFile.java
  *
  * Created on April 6, 2002, 2:06 AM
- */
-
-/**
  *
  * @author njrkrynn
- * @version
  */
-package megamek.common.loaders;
-
-import megamek.common.Engine;
-import megamek.common.Entity;
-import megamek.common.EntityMovementMode;
-import megamek.common.EquipmentType;
-import megamek.common.SuperHeavyTank;
-import megamek.common.Tank;
-import megamek.common.util.BuildingBlock;
-
 public class BLKTankFile extends BLKFile implements IMechLoader {
+    
+    private boolean superheavy = false;
+    
     public BLKTankFile(BuildingBlock bb) {
         dataFile = bb;
     }
 
+    @Override
+    protected int defaultVGLFacing(int location, boolean rearFacing) {
+        if (superheavy) {
+            switch (location) {
+                case SuperHeavyTank.LOC_FRONTRIGHT:
+                    return 1;
+                case SuperHeavyTank.LOC_REARRIGHT:
+                case SuperHeavyTank.LOC_REAR:
+                    return 2;
+                case SuperHeavyTank.LOC_REARLEFT:
+                case SuperHeavyTank.LOC_FRONTLEFT:
+                    return 4;
+                case SuperHeavyTank.LOC_FRONT:
+                case SuperHeavyTank.LOC_TURRET:
+                case SuperHeavyTank.LOC_TURRET_2:
+                default:
+                    return 0;
+            }
+        } else {
+            switch (location) {
+                case Tank.LOC_RIGHT:
+                    return 2;
+                case Tank.LOC_REAR:
+                    return 3;
+                case Tank.LOC_LEFT:
+                    return 5;
+                case Tank.LOC_FRONT:
+                case Tank.LOC_TURRET:
+                case Tank.LOC_TURRET_2:
+                default:
+                    return 0;
+            }
+        }
+    }
+
+    @Override
     public Entity getEntity() throws EntityLoadingException {
-
-        boolean superheavy = false;
-
         if (!dataFile.exists("tonnage")) {
             throw new EntityLoadingException("Could not find weight block.");
         }
-        float weight = dataFile.getDataAsFloat("tonnage")[0];
+        double weight = dataFile.getDataAsDouble("tonnage")[0];
         String sMotion = dataFile.getDataAsString("motion_type")[0];
         EntityMovementMode nMotion = EntityMovementMode.getMode(sMotion);
         if (nMotion == EntityMovementMode.NONE) {
@@ -114,7 +143,12 @@ public class BLKTankFile extends BLKFile implements IMechLoader {
             engineCode = dataFile.getDataAsInt("engine_type")[0];
         }
         int engineFlags = Engine.TANK_ENGINE;
-        if (t.isClan()) {
+        // Support for mixed tech units with an engine with a different tech base
+        if (dataFile.exists("clan_engine")) {
+            if (Boolean.parseBoolean(dataFile.getDataAsString("clan_engine")[0])) {
+                engineFlags |= Engine.CLAN_ENGINE;
+            }
+        } else if (t.isClan()) {
             engineFlags |= Engine.CLAN_ENGINE;
         }
         if (!dataFile.exists("cruiseMP")) {
@@ -183,8 +217,9 @@ public class BLKTankFile extends BLKFile implements IMechLoader {
                 t.setArmorTechLevel(dataFile.getDataAsInt(t.getLocationName(i) + "_armor_type")[0], i);
             }
         }
-
+        
         t.autoSetInternal();
+        t.recalculateTechAdvancement();
 
         if (superheavy) {
             loadEquipment(t, "Front", Tank.LOC_FRONT);
@@ -227,17 +262,35 @@ public class BLKTankFile extends BLKFile implements IMechLoader {
         t.setArmorTonnage(t.getArmorWeight());
 
         if (dataFile.exists("baseChassisTurretWeight")) {
-            t.setBaseChassisTurretWeight(dataFile
-                    .getDataAsFloat("baseChassisTurretWeight")[0]);
+            t.setBaseChassisTurretWeight(dataFile.getDataAsDouble("baseChassisTurretWeight")[0]);
         }
 
         if (dataFile.exists("baseChassisTurret2Weight")) {
-            t.setBaseChassisTurret2Weight(dataFile
-                    .getDataAsFloat("baseChassisTurret2Weight")[0]);
+            t.setBaseChassisTurret2Weight(dataFile.getDataAsDouble("baseChassisTurret2Weight")[0]);
+        }
+
+        if (dataFile.exists("baseChassisSponsonPintleWeight")) {
+            t.setBaseChassisSponsonPintleWeight(dataFile.getDataAsDouble("baseChassisSponsonPintleWeight")[0]);
+        }
+
+        if (dataFile.exists("fuelType")) {
+            try {
+                t.setICEFuelType(FuelType.valueOf(dataFile.getDataAsString("fuelType")[0]));
+            } catch (IllegalArgumentException ex) {
+                DefaultMmLogger.getInstance().error(getClass(), "getEntity()",
+                        "While loading " + t.getShortNameRaw()
+                                + ": Could not parse ICE fuel type "
+                                + dataFile.getDataAsString("fuelType")[0]);
+                t.setICEFuelType(FuelType.PETROCHEMICALS);
+            }
         }
 
         if (dataFile.exists("hasNoControlSystems")) {
             t.setHasNoControlSystems(true);
+        }
+
+        if (dataFile.exists("trailer")) {
+            t.setTrailer(true);
         }
 
         return t;

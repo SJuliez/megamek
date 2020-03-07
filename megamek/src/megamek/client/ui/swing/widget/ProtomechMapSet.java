@@ -20,7 +20,6 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Image;
 import java.awt.Polygon;
-import java.io.File;
 import java.util.Vector;
 
 import javax.swing.JComponent;
@@ -30,6 +29,7 @@ import megamek.client.ui.swing.unitDisplay.UnitDisplay;
 import megamek.common.Configuration;
 import megamek.common.Entity;
 import megamek.common.Protomech;
+import megamek.common.util.MegaMekFile;
 
 /**
  * Class which keeps set of all areas required to represent Protomech unit in
@@ -107,30 +107,32 @@ public class ProtomechMapSet implements DisplayMapSet {
             internalLabels[i] = new PMValueLabel(fm, Color.red.brighter());
             content.addArea(internalLabels[i]);
         }
-        sectionLabels[0].moveTo(70, 30);
-        armorLabels[0].moveTo(60, 45);
-        internalLabels[0].moveTo(80, 45);
-        sectionLabels[1].moveTo(70, 70);
-        armorLabels[1].moveTo(70, 85);
-        internalLabels[1].moveTo(70, 100);
-        sectionLabels[2].moveTo(125, 55);
-        armorLabels[2].moveTo(125, 70);
-        internalLabels[2].moveTo(125, 85);
-        sectionLabels[3].moveTo(15, 55);
-        armorLabels[3].moveTo(15, 70);
-        internalLabels[3].moveTo(15, 85);
-        sectionLabels[4].moveTo(70, 150);
-        armorLabels[4].moveTo(60, 165);
-        internalLabels[4].moveTo(80, 165);
-        sectionLabels[5].moveTo(35, 15);
-        armorLabels[5].moveTo(25, 30);
-        internalLabels[5].moveTo(45, 30);
+        sectionLabels[Protomech.LOC_HEAD].moveTo(70, 30);
+        armorLabels[Protomech.LOC_HEAD].moveTo(60, 45);
+        internalLabels[Protomech.LOC_HEAD].moveTo(80, 45);
+        sectionLabels[Protomech.LOC_TORSO].moveTo(70, 70);
+        armorLabels[Protomech.LOC_TORSO].moveTo(70, 85);
+        internalLabels[Protomech.LOC_TORSO].moveTo(70, 100);
+        sectionLabels[Protomech.LOC_RARM].moveTo(125, 55);
+        armorLabels[Protomech.LOC_RARM].moveTo(125, 70);
+        internalLabels[Protomech.LOC_RARM].moveTo(125, 85);
+        sectionLabels[Protomech.LOC_LARM].moveTo(15, 55);
+        armorLabels[Protomech.LOC_LARM].moveTo(15, 70);
+        internalLabels[Protomech.LOC_LARM].moveTo(15, 85);
+        sectionLabels[Protomech.LOC_LEG].moveTo(70, 150);
+        armorLabels[Protomech.LOC_LEG].moveTo(60, 165);
+        internalLabels[Protomech.LOC_LEG].moveTo(80, 165);
+        sectionLabels[Protomech.LOC_MAINGUN].moveTo(35, 15);
+        armorLabels[Protomech.LOC_MAINGUN].moveTo(25, 30);
+        internalLabels[Protomech.LOC_MAINGUN].moveTo(45, 30);
     }
 
+    @Override
     public PMAreasGroup getContentGroup() {
         return content;
     }
 
+    @Override
     public Vector<BackGroundDrawer> getBackgroundDrawers() {
         return bgDrawers;
     }
@@ -141,18 +143,19 @@ public class ProtomechMapSet implements DisplayMapSet {
      * @param entity - the <code>Entity</code> to be displayed. This should be
      *            a <code>Protomech</code> unit.
      */
+    @Override
     public void setEntity(Entity entity) {
         Protomech proto = (Protomech) entity;
 
         int loc = proto.locations();
-        if (loc != Protomech.NUM_PMECH_LOCATIONS) {
-            armorLabels[5].setVisible(false);
-            internalLabels[5].setVisible(false);
-            sectionLabels[5].setVisible(false);
+        if (!proto.hasMainGun()) {
+            armorLabels[Protomech.LOC_MAINGUN].setVisible(false);
+            internalLabels[Protomech.LOC_MAINGUN].setVisible(false);
+            sectionLabels[Protomech.LOC_MAINGUN].setVisible(false);
         } else {
-            armorLabels[5].setVisible(true);
-            internalLabels[5].setVisible(true);
-            sectionLabels[5].setVisible(true);
+            armorLabels[Protomech.LOC_MAINGUN].setVisible(true);
+            internalLabels[Protomech.LOC_MAINGUN].setVisible(true);
+            sectionLabels[Protomech.LOC_MAINGUN].setVisible(true);
         }
         for (int i = 0; i < loc; i++) {
             // armor = proto.getArmor(i);
@@ -167,55 +170,77 @@ public class ProtomechMapSet implements DisplayMapSet {
      * * Sets the background on the mapset.
      */
     private void setBackGround() {
-        Image tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "tile.gif").toString()); //$NON-NLS-1$
+        UnitDisplaySkinSpecification udSpec = SkinXMLHandler
+                .getUnitDisplaySkin();
+
+        Image tile = comp.getToolkit()
+                .getImage(
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getBackgroundTile()).toString());
         PMUtil.setImage(tile, comp);
         int b = BackGroundDrawer.TILING_BOTH;
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_TOP;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLine())
+                        .toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_HORIZONTAL | BackGroundDrawer.VALIGN_BOTTOM;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "h_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getBottomLine())
+                        .toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_LEFT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getLeftLine())
+                        .toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.TILING_VERTICAL | BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "v_line.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getRightLine())
+                        .toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
                 | BackGroundDrawer.HALIGN_LEFT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "tl_corner.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec.getTopLeftCorner())
+                        .toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
                 | BackGroundDrawer.HALIGN_LEFT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "bl_corner.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec
+                        .getBottomLeftCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_TOP
                 | BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "tr_corner.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit()
+                .getImage(
+                        new MegaMekFile(Configuration.widgetsDir(), udSpec
+                                .getTopRightCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
 
         b = BackGroundDrawer.NO_TILING | BackGroundDrawer.VALIGN_BOTTOM
                 | BackGroundDrawer.HALIGN_RIGHT;
-        tile = comp.getToolkit().getImage(new File(Configuration.widgetsDir(), "br_corner.gif").toString()); //$NON-NLS-1$
+        tile = comp.getToolkit().getImage(
+                new MegaMekFile(Configuration.widgetsDir(), udSpec
+                        .getBottomRightCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
-
     }
 
 }

@@ -34,8 +34,12 @@ InfantryGrandMauler
 IS Level 2
 </type>
 <year>
-3061
+3062
 </year>
 <motion_type>
 Motorized
 </motion_type>
+
+<armorKit>
+GenericKit
+</armorKit>

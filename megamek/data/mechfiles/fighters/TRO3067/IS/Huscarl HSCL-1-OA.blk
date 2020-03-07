@@ -24,6 +24,10 @@ HSCL-1-OA
 3064
 </year>
 
+<originalBuildYear>
+3064
+</originalBuildYear>
+
 <type>
 IS Level 2
 </type>
@@ -31,6 +35,9 @@ IS Level 2
 <motion_type>
 Aerodyne
 </motion_type>
+
+<transporters>
+</transporters>
 
 <SafeThrust>
 5
@@ -47,6 +54,10 @@ Aerodyne
 <sink_type>
 1
 </sink_type>
+
+<omnipodheatsinks>
+1
+</omnipodheatsinks>
 
 <fuel>
 400
@@ -68,27 +79,33 @@ Aerodyne
 </armor>
 
 <Nose Equipment>
-ISGaussRifle
-IS Gauss Ammo
-IS Gauss Ammo
-SRM 4
-IS Ammo SRM-4
+ISGaussRifle:OMNI
+SRM 4:OMNI
 </Nose Equipment>
 
 <Left Wing Equipment>
-ISERPPC
-ISMediumPulseLaser
-ISMediumPulseLaser
+ISERPPC:OMNI
+ISMediumPulseLaser:OMNI
+ISMediumPulseLaser:OMNI
 </Left Wing Equipment>
 
 <Right Wing Equipment>
-ISERPPC
-ISMediumPulseLaser
-ISMediumPulseLaser
+ISERPPC:OMNI
+ISMediumPulseLaser:OMNI
+ISMediumPulseLaser:OMNI
 </Right Wing Equipment>
 
 <Aft Equipment>
 </Aft Equipment>
+
+<Wings Equipment>
+</Wings Equipment>
+
+<Fuselage Equipment>
+IS Gauss Ammo:OMNI
+IS Gauss Ammo:OMNI
+IS Ammo SRM-4:OMNI
+</Fuselage Equipment>
 
 <source>
 TRO 3067 - Civil War

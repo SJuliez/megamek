@@ -24,9 +24,11 @@ import megamek.common.IGame;
 import megamek.common.Infantry;
 import megamek.common.Report;
 import megamek.common.TargetRoll;
+import megamek.common.Targetable;
 import megamek.common.ToHitData;
 import megamek.common.WeaponType;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.options.OptionsConstants;
 import megamek.server.Server;
 
 /**
@@ -62,7 +64,8 @@ public class StreakHandler extends MissileWeaponHandler {
             int toReturn = Compute.directBlowInfantryDamage(
                     wtype.getRackSize() * 2, bDirect ? toHit.getMoS() / 3 : 0,
                     wtype.getInfantryDamageClass(),
-                    ((Infantry) target).isMechanized());
+                    ((Infantry) target).isMechanized(),
+                    toHit.getThruBldg() != null, ae.getId(), calcDmgPerHitReport);
             return toReturn;
         }
         return 2;
@@ -102,6 +105,15 @@ public class StreakHandler extends MissileWeaponHandler {
 
         int missilesHit;
         int amsMod = getAMSHitsMod(vPhaseReport);
+        
+        if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_AERO_SANITY)) {
+            Entity entityTarget = (target.getTargetType() == Targetable.TYPE_ENTITY) ? (Entity) target
+                    : null;
+            if (entityTarget != null && entityTarget.isLargeCraft()) {
+                amsMod = (int) -getAeroSanityAMSHitsMod();
+            }
+        }
+        
         if (amsMod == 0 && allShotsHit()) {
             missilesHit = wtype.getRackSize();
         } else {
@@ -210,7 +222,8 @@ public class StreakHandler extends MissileWeaponHandler {
      */
     @Override
     protected boolean handleSpecialMiss(Entity entityTarget,
-            boolean targetInBuilding, Building bldg, Vector<Report> vPhaseReport) {
+            boolean bldgDamagedOnMiss, Building bldg,
+            Vector<Report> vPhaseReport) {
         return false;
     }
 

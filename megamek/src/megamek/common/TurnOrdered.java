@@ -22,6 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
+import megamek.common.options.OptionsConstants;
+
 public abstract class TurnOrdered implements ITurnOrdered {
 
     /**
@@ -34,22 +36,24 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
     private transient int turns_other = 0;
     private transient int turns_even = 0;
-    private transient HashMap<Integer, Integer> turns_multi = 
-            new HashMap<Integer, Integer>();
+    private transient HashMap<Integer, Integer> turns_multi = new HashMap<Integer, Integer>();
 
-    //these are special turns for all of the aero units (only used in the movement phase)
+    // these are special turns for all of the aero units (only used in the
+    // movement phase)
     private transient int turns_aero = 0;
     private transient int turns_ss = 0;
     private transient int turns_js = 0;
     private transient int turns_ws = 0;
     private transient int turns_ds = 0;
     private transient int turns_sc = 0;
+    private transient int turns_tm = 0;
 
     /**
      * Return the number of "normal" turns that this item requires. This is
-     * normally the sum of multi-unit turns and the other turns. <p/> Subclasses
-     * are expected to override this value in order to make the "move even" code
-     * work correctly.
+     * normally the sum of multi-unit turns and the other turns.
+     * <p/>
+     * Subclasses are expected to override this value in order to make the "move
+     * even" code work correctly.
      *
      * @return the <code>int</code> number of "normal" turns this item should
      *         take in a phase.
@@ -76,39 +80,35 @@ public abstract class TurnOrdered implements ITurnOrdered {
         if (turns_multi == null) {
             turns_multi = new HashMap<Integer, Integer>();
         }
-        if (game.getOptions().booleanOption("mek_lance_movement")) {
-            double lanceSize = 
-                    game.getOptions().intOption("mek_lance_movement_number"); 
+        if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_MEK_LANCE_MOVEMENT)) {
+            double lanceSize = game.getOptions().intOption(OptionsConstants.ADVGRNDMOV_MEK_LANCE_MOVEMENT_NUMBER);
             Integer numMekMultis = turns_multi.get(GameTurn.CLASS_MECH);
             if (numMekMultis != null) {
-                turns += (int)Math.ceil(numMekMultis / lanceSize);
-            }
-        }
-        
-        if (game.getOptions().booleanOption("vehicle_lance_movement")) {
-            double lanceSize = game.getOptions().intOption(
-                    "vehicle_lance_movement_number");
-            Integer numTankMultis = turns_multi.get(GameTurn.CLASS_TANK);
-            if (numTankMultis != null) {
-                turns += (int)Math.ceil(numTankMultis / lanceSize);
+                turns += (int) Math.ceil(numMekMultis / lanceSize);
             }
         }
 
-        if (game.getOptions().booleanOption("protos_move_multi")) {
-            double lanceSize = 
-                    game.getOptions().intOption("inf_proto_move_multi"); 
-            Integer numProtoMultis = turns_multi.get(GameTurn.CLASS_PROTOMECH);
-            if (numProtoMultis != null) {
-                turns += (int)Math.ceil(numProtoMultis / lanceSize);
+        if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_LANCE_MOVEMENT)) {
+            double lanceSize = game.getOptions().intOption(OptionsConstants.ADVGRNDMOV_VEHICLE_LANCE_MOVEMENT_NUMBER);
+            Integer numTankMultis = turns_multi.get(GameTurn.CLASS_TANK);
+            if (numTankMultis != null) {
+                turns += (int) Math.ceil(numTankMultis / lanceSize);
             }
         }
-        
-        if (game.getOptions().booleanOption("inf_move_multi")) {
-            double lanceSize = 
-                    game.getOptions().intOption("inf_proto_move_multi"); 
+
+        if (game.getOptions().booleanOption(OptionsConstants.INIT_PROTOS_MOVE_MULTI)) {
+            double lanceSize = game.getOptions().intOption(OptionsConstants.INIT_INF_PROTO_MOVE_MULTI);
+            Integer numProtoMultis = turns_multi.get(GameTurn.CLASS_PROTOMECH);
+            if (numProtoMultis != null) {
+                turns += (int) Math.ceil(numProtoMultis / lanceSize);
+            }
+        }
+
+        if (game.getOptions().booleanOption(OptionsConstants.INIT_INF_MOVE_MULTI)) {
+            double lanceSize = game.getOptions().intOption(OptionsConstants.INIT_INF_PROTO_MOVE_MULTI);
             Integer numInfMultis = turns_multi.get(GameTurn.CLASS_INFANTRY);
             if (numInfMultis != null) {
-                turns += (int)Math.ceil(numInfMultis / lanceSize);
+                turns += (int) Math.ceil(numInfMultis / lanceSize);
             }
         }
         return turns;
@@ -137,6 +137,11 @@ public abstract class TurnOrdered implements ITurnOrdered {
     @Override
     public int getSmallCraftTurns() {
         return turns_sc;
+    }
+    
+    @Override
+    public int getTeleMissileTurns() {
+        return turns_tm;
     }
 
     @Override
@@ -192,6 +197,11 @@ public abstract class TurnOrdered implements ITurnOrdered {
     public void incrementSmallCraftTurns() {
         turns_sc++;
     }
+    
+    @Override
+    public void incrementTeleMissileTurns() {
+        turns_tm++;
+    }
 
     @Override
     public void incrementAeroTurns() {
@@ -242,6 +252,11 @@ public abstract class TurnOrdered implements ITurnOrdered {
     public void resetSmallCraftTurns() {
         turns_sc = 0;
     }
+    
+    @Override
+    public void resetTeleMissileTurns() {
+        turns_tm = 0;
+    }
 
     @Override
     public void resetAeroTurns() {
@@ -266,38 +281,69 @@ public abstract class TurnOrdered implements ITurnOrdered {
         getInitiative().clear();
     }
 
-    public static void rollInitiative(List<? extends ITurnOrdered> v,
-            boolean bUseInitiativeCompensation) {
+    public static void rollInitiative(List<? extends ITurnOrdered> v, boolean bUseInitiativeCompensation) {
         // Clear all rolls
         for (ITurnOrdered item : v) {
             item.clearInitiative(bUseInitiativeCompensation);
         }
 
         rollInitAndResolveTies(v, null, bUseInitiativeCompensation);
+    }
+    
+    /**
+     * This takes a vector of TurnOrdered (Teams or Players), and does post
+     * initiative phase cleanup of the initiative streak bonus.
+     * 
+     * @param v
+     *            A vector of items that need to have turns.
+     * @param bInitCompBonus
+     *            A flag that determines whether initiative compensation bonus
+     *            should be used: used to prevent one side getting long init win
+     *            streaks
+     */
+    public static void resetInitiativeCompensation(List<? extends ITurnOrdered> v,
+            boolean bInitCompBonus) {
+        // initiative compensation
+        if (bInitCompBonus && (v.size() > 0)) {
+            final ITurnOrdered comparisonElement = v.get(0);
+            int difference = 0;
+            ITurnOrdered winningElement = comparisonElement;
 
-        // This is the *auto-reroll* code for the Tactical Genius (lvl 3)
-        // pilot ability. It is NOT CURRENTLY IMPLEMENTED. This code may
-        // be incomplete/buggy/just plain wrong.
-        // TODO : fix me
-        /**
-         * if (v.firstElement() instanceof Team) { //find highest init roll int
-         * highestInit = 2; for (Enumeration i = v.elements();
-         * i.hasMoreElements();) { final TurnOrdered item =
-         * (TurnOrdered)i.nextElement(); highestInit =
-         * Math.max(item.getInitiative().getRoll(item.getInitiative().size() -
-         * 1), highestInit); } System.out.println("\n\n--->HIGH INIT ROLL: " +
-         * highestInit); //loop through teams for (Enumeration i = v.elements();
-         * i.hasMoreElements();) { final TurnOrdered item =
-         * (TurnOrdered)i.nextElement(); //loop through players for (Enumeration
-         * j = ((Team)item).getPlayers(); j.hasMoreElements();) { final Player
-         * player = (Player)j.nextElement(); if
-         * (player.getGame().hasTacticalGenius(player) &&
-         * item.getInitiative().getRoll(item.getInitiative().size() - 1) <
-         * highestInit && v.size() < 3) { System.out.println("-->AUTO REROLL: " +
-         * player.getName()); Vector rv = new Vector(); rv.addElement(item);
-         * rollInitAndResolveTies(v, rv); } } } }
-         */
+            // figure out who won initiative this round
+            for (ITurnOrdered item : v) {
+                // Observers don't have initiative, and they don't get initiative compensation
+                if ((item instanceof IPlayer && ((Player)item).isObserver()) || (item instanceof Team && ((Team)item).isObserverTeam())) {
+                    continue;
+                }
+                if (item.getInitiative().compareTo(comparisonElement.getInitiative()) > difference) {
+                    difference = item.getInitiative().compareTo(comparisonElement.getInitiative());
+                    winningElement = item;
+                }
+            }
 
+            // set/reset the initiative compensation counters
+            if (lastRoundInitWinner != null) {
+                for (ITurnOrdered item : v) {
+                    if (!item.equals(winningElement)) {
+                        int newBonus = 0;
+                        boolean observer = false;
+                        // Observers don't have initiative, and they don't get initiative compensation
+                        if ((item instanceof IPlayer && ((Player)item).isObserver()) || (item instanceof Team && ((Team)item).isObserverTeam())) {
+                            observer = true;
+                        }
+                        
+                        if (!item.equals(lastRoundInitWinner) && !observer) {
+                            newBonus = item.getInitCompensationBonus() + 1;
+                        }
+                        item.setInitCompensationBonus(newBonus);
+                    }  else {
+                        // Reset our bonus to 0 if we won
+                        item.setInitCompensationBonus(0);
+                    }
+                }
+            }
+            lastRoundInitWinner = winningElement;
+        }
     }
 
     /**
@@ -305,29 +351,33 @@ public abstract class TurnOrdered implements ITurnOrdered {
      * and resolves ties. The second argument is used when a specific teams
      * initiative should be re-rolled.
      * 
-     * @param v                 A vector of items that need to have turns.
+     * @param v
+     *            A vector of items that need to have turns.
      * @param rerollRequests
-     * @param bInitCompBonus    A flag that determines whether initiative
-     *                          compensation bonus should be used: used to
-     *                          prevent one side getting long init win streaks
+     * @param bInitCompBonus
+     *            A flag that determines whether initiative compensation bonus
+     *            should be used: used to prevent one side getting long init win
+     *            streaks
      */
     public static void rollInitAndResolveTies(List<? extends ITurnOrdered> v,
-            List<? extends ITurnOrdered> rerollRequests,
-            boolean bInitCompBonus) {
+            List<? extends ITurnOrdered> rerollRequests, boolean bInitCompBonus) {
         for (ITurnOrdered item : v) {
+            // Observers don't have initiative, set it to -1
+            if ((item instanceof IPlayer && ((Player)item).isObserver()) || (item instanceof Team && ((Team)item).isObserverTeam())) {
+                item.getInitiative().observerRoll();
+            }
+            
             int bonus = 0;
             if (item instanceof Team) {
                 bonus = ((Team) item).getTotalInitBonus(bInitCompBonus);
             }
             if (item instanceof Entity) {
                 Entity e = (Entity) item;
-                bonus = e.game.getTeamForPlayer(e.owner).getTotalInitBonus(
-                        false)
-                        + e.getCrew().getInitBonus();
+                bonus = e.getGame().getTeamForPlayer(e.getOwner()).getTotalInitBonus(false) + e.getCrew().getInitBonus();
             }
             if (rerollRequests == null) { // normal init roll
-                item.getInitiative().addRoll(bonus); // add a roll for all
-                // teams
+                // add a roll for all teams
+                item.getInitiative().addRoll(bonus);
             } else {
                 // Resolve Tactical Genius (lvl 3) pilot ability
                 for (ITurnOrdered rerollItem : rerollRequests) {
@@ -342,59 +392,29 @@ public abstract class TurnOrdered implements ITurnOrdered {
         // check for ties
         Vector<ITurnOrdered> ties = new Vector<ITurnOrdered>();
         for (ITurnOrdered item : v) {
+            // Observers don't have initiative, and were already set to -1
+            if ((item instanceof IPlayer && ((Player)item).isObserver()) || (item instanceof Team && ((Team)item).isObserverTeam())) {
+                continue;
+            }
             ties.removeAllElements();
             ties.addElement(item);
             for (ITurnOrdered other : v) {
-                if ((item != other)
-                    && item.getInitiative().equals(other.getInitiative())) {
+                if ((item != other) && item.getInitiative().equals(other.getInitiative())) {
                     ties.addElement(other);
                 }
             }
             if (ties.size() > 1) {
-                // We want to ignore init compensation here, because it will
+                // We want to ignore initiative compensation here, because it will
                 // get dealt with once we're done resolving ties
                 rollInitAndResolveTies(ties, null, false);
             }
-        }
-
-        // initiative compensation
-        if (bInitCompBonus && (v.size() > 0) && (v.get(0) instanceof Team)) {
-            final ITurnOrdered comparisonElement = v.get(0);
-            int difference = 0;
-            ITurnOrdered winningElement = comparisonElement;
-
-            // figure out who won init this round
-            for (ITurnOrdered currentElement : v) {
-                if (currentElement.getInitiative().compareTo(
-                        comparisonElement.getInitiative()) > difference) {
-                    difference = currentElement.getInitiative().compareTo(
-                            comparisonElement.getInitiative());
-                    winningElement = currentElement;
-                }
-            }
-
-            // set/reset the init comp counters
-            ((Team) winningElement).setInitCompensationBonus(0);
-            if (lastRoundInitWinner != null) {
-                for (ITurnOrdered item : v) {
-                    if (!(item.equals(winningElement) 
-                            || item.equals(lastRoundInitWinner))) {
-                        Team team = (Team)item;
-                        int newBonus = team
-                                .getInitCompensationBonus(bInitCompBonus) + 1;
-                        team.setInitCompensationBonus(newBonus);
-                    }
-                }
-            }
-            lastRoundInitWinner = winningElement;
         }
     }
 
     /**
      * This takes a Vector of TurnOrdered and generates a TurnVector.
      */
-    public static TurnVectors generateTurnOrder(
-            List<? extends ITurnOrdered> v, IGame game) {
+    public static TurnVectors generateTurnOrder(List<? extends ITurnOrdered> v, IGame game) {
         int[] num_even_turns = new int[v.size()];
         int[] num_normal_turns = new int[v.size()];
         int[] num_space_station_turns = new int[v.size()];
@@ -402,8 +422,8 @@ public abstract class TurnOrdered implements ITurnOrdered {
         int[] num_warship_turns = new int[v.size()];
         int[] num_dropship_turns = new int[v.size()];
         int[] num_small_craft_turns = new int[v.size()];
+        int[] num_telemissile_turns = new int[v.size()];
         int[] num_aero_turns = new int[v.size()];
-
 
         int total_even_turns = 0;
         int total_normal_turns = 0;
@@ -412,6 +432,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
         int total_warship_turns = 0;
         int total_dropship_turns = 0;
         int total_small_craft_turns = 0;
+        int total_telemissile_turns = 0;
         int total_aero_turns = 0;
         int index;
         ITurnOrdered[] order = new ITurnOrdered[v.size()];
@@ -439,6 +460,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
             num_warship_turns[orderedItems] = item.getWarshipTurns();
             num_dropship_turns[orderedItems] = item.getDropshipTurns();
             num_small_craft_turns[orderedItems] = item.getSmallCraftTurns();
+            num_telemissile_turns[orderedItems] = item.getTeleMissileTurns();
             num_aero_turns[orderedItems] = item.getAeroTurns();
 
             // Keep a running total.
@@ -449,6 +471,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
             total_warship_turns += num_warship_turns[orderedItems];
             total_dropship_turns += num_dropship_turns[orderedItems];
             total_small_craft_turns += num_small_craft_turns[orderedItems];
+            total_telemissile_turns += num_telemissile_turns[orderedItems];
             total_aero_turns += num_aero_turns[orderedItems];
         }
 
@@ -460,10 +483,11 @@ public abstract class TurnOrdered implements ITurnOrdered {
         int minWS;
         int minDS;
         int minSC;
+        int minTM;
         int minAero;
 
-        //ok first we have to add in the special Aero turns and then go to
-        //'normal' turns which are really just ground turns
+        // ok first we have to add in the special Aero turns and then go to
+        // 'normal' turns which are really just ground turns
 
         // We will do the 'normal' turns first, and then the 'even' turns.
         min = Integer.MAX_VALUE;
@@ -472,6 +496,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
         minWS = Integer.MAX_VALUE;
         minDS = Integer.MAX_VALUE;
         minSC = Integer.MAX_VALUE;
+        minTM = Integer.MAX_VALUE;
         minAero = Integer.MAX_VALUE;
         for (index = 0; index < orderedItems; index++) {
             if ((num_normal_turns[index] != 0) && (num_normal_turns[index] < min)) {
@@ -492,20 +517,20 @@ public abstract class TurnOrdered implements ITurnOrdered {
             if ((num_small_craft_turns[index] != 0) && (num_small_craft_turns[index] < minSC)) {
                 minSC = num_small_craft_turns[index];
             }
+            if ((num_telemissile_turns[index] != 0) && (num_telemissile_turns[index] < minTM)) {
+                minTM = num_telemissile_turns[index];
+            }
             if ((num_aero_turns[index] != 0) && (num_aero_turns[index] < minAero)) {
                 minAero = num_aero_turns[index];
             }
         }
 
-        int total_turns = total_normal_turns + total_space_station_turns + total_jumpship_turns
-                          + total_warship_turns + total_dropship_turns + total_small_craft_turns + total_aero_turns;
+        int total_turns = total_normal_turns + total_space_station_turns + total_jumpship_turns + total_warship_turns
+                + total_dropship_turns + total_small_craft_turns + total_telemissile_turns + total_aero_turns;
 
-        TurnVectors turns = new TurnVectors(total_normal_turns, total_turns,
-                                            total_space_station_turns,
-                                            total_jumpship_turns, total_warship_turns, total_dropship_turns,
-                                            total_small_craft_turns, total_aero_turns,
-                                            total_even_turns, min);
-
+        TurnVectors turns = new TurnVectors(total_normal_turns, total_turns, total_space_station_turns,
+                total_jumpship_turns, total_warship_turns, total_dropship_turns, total_small_craft_turns,
+                total_telemissile_turns, total_aero_turns, total_even_turns, min);
 
         // Allocate the normal turns.
         turns_left = total_normal_turns;
@@ -518,7 +543,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
                 // If you have less than twice the lowest,
                 // move 1. Otherwise, move more.
-                if (game.getOptions().booleanOption("front_load_initiative")) {
+                if (game.getOptions().booleanOption(OptionsConstants.INIT_FRONT_LOAD_INITIATIVE)) {
                     ntm = (int) Math.ceil(((double) num_normal_turns[index]) / (double) min);
                 } else {
                     ntm = num_normal_turns[index] / min;
@@ -555,7 +580,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
                     // If you have less than twice the lowest,
                     // move 1. Otherwise, move more.
-                    if (game.getOptions().booleanOption("front_load_initiative")) {
+                    if (game.getOptions().booleanOption(OptionsConstants.INIT_FRONT_LOAD_INITIATIVE)) {
                         ntm = (int) Math.ceil(((double) num_even_turns[index]) / (double) min);
                     } else {
                         ntm = num_even_turns[index] / min;
@@ -582,7 +607,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
                 // If you have less than twice the lowest,
                 // move 1. Otherwise, move more.
-                if (game.getOptions().booleanOption("front_load_initiative")) {
+                if (game.getOptions().booleanOption(OptionsConstants.INIT_FRONT_LOAD_INITIATIVE)) {
                     ntm = (int) Math.ceil(((double) num_space_station_turns[index]) / (double) minSS);
                 } else {
                     ntm = num_space_station_turns[index] / minSS;
@@ -610,7 +635,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
                 // If you have less than twice the lowest,
                 // move 1. Otherwise, move more.
-                if (game.getOptions().booleanOption("front_load_initiative")) {
+                if (game.getOptions().booleanOption(OptionsConstants.INIT_FRONT_LOAD_INITIATIVE)) {
                     ntm = (int) Math.ceil(((double) num_jumpship_turns[index]) / (double) minJS);
                 } else {
                     ntm = num_jumpship_turns[index] / minJS;
@@ -627,7 +652,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
         } // Handle the next 'jumpship' turn.
 
-        //Allocate the warship turns.
+        // Allocate the warship turns.
         turns_left = total_warship_turns;
         while (turns_left > 0) {
             for (index = 0; index < orderedItems; index++) {
@@ -638,7 +663,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
                 // If you have less than twice the lowest,
                 // move 1. Otherwise, move more.
-                if (game.getOptions().booleanOption("front_load_initiative")) {
+                if (game.getOptions().booleanOption(OptionsConstants.INIT_FRONT_LOAD_INITIATIVE)) {
                     ntm = (int) Math.ceil(((double) num_warship_turns[index]) / (double) minWS);
                 } else {
                     ntm = num_warship_turns[index] / minWS;
@@ -655,7 +680,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
         } // Handle the next 'warship' turn.
 
-        //Allocate the dropship turns.
+        // Allocate the dropship turns.
         turns_left = total_dropship_turns;
         while (turns_left > 0) {
             for (index = 0; index < orderedItems; index++) {
@@ -666,7 +691,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
                 // If you have less than twice the lowest,
                 // move 1. Otherwise, move more.
-                if (game.getOptions().booleanOption("front_load_initiative")) {
+                if (game.getOptions().booleanOption(OptionsConstants.INIT_FRONT_LOAD_INITIATIVE)) {
                     ntm = (int) Math.ceil(((double) num_dropship_turns[index]) / (double) minDS);
                 } else {
                     ntm = num_dropship_turns[index] / minDS;
@@ -683,7 +708,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
         } // Handle the next 'dropship' turn.
 
-        //Allocate the small craft turns.
+        // Allocate the small craft turns.
         turns_left = total_small_craft_turns;
         while (turns_left > 0) {
             for (index = 0; index < orderedItems; index++) {
@@ -694,7 +719,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
                 // If you have less than twice the lowest,
                 // move 1. Otherwise, move more.
-                if (game.getOptions().booleanOption("front_load_initiative")) {
+                if (game.getOptions().booleanOption(OptionsConstants.INIT_FRONT_LOAD_INITIATIVE)) {
                     ntm = (int) Math.ceil(((double) num_small_craft_turns[index]) / (double) minSC);
                 } else {
                     ntm = num_small_craft_turns[index] / minSC;
@@ -709,9 +734,37 @@ public abstract class TurnOrdered implements ITurnOrdered {
             // Since the smallest unit count had to place 1, reduce min)
             minSC--;
 
-        } // Handle the next 'smal craft' turn.
+        } // Handle the next 'small craft' turn.
+        
+        // Allocate the telemissile turns.
+        turns_left = total_telemissile_turns;
+        while (turns_left > 0) {
+            for (index = 0; index < orderedItems; index++) {
+                // If you have no turns here, skip
+                if (num_telemissile_turns[index] == 0) {
+                    continue;
+                }
 
-        //Allocate the aero turns.
+                // If you have less than twice the lowest,
+                // move 1. Otherwise, move more.
+                if (game.getOptions().booleanOption(OptionsConstants.INIT_FRONT_LOAD_INITIATIVE)) {
+                    ntm = (int) Math.ceil(((double) num_telemissile_turns[index]) / (double) minTM);
+                } else {
+                    ntm = num_telemissile_turns[index] / minTM;
+                }
+                for (int j = 0; j < ntm; j++) {
+                    turns.addTelemissile(order[index]);
+                    num_telemissile_turns[index]--;
+                    turns_left--;
+                }
+
+            }
+            // Since the smallest unit count had to place 1, reduce min)
+            minTM--;
+
+        } // Handle the next 'telemissile' turn.
+
+        // Allocate the aero turns.
         turns_left = total_aero_turns;
         while (turns_left > 0) {
             for (index = 0; index < orderedItems; index++) {
@@ -735,5 +788,12 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
         } // Handle the next 'aero' turn.
         return turns;
+    }
+
+    public int getInitCompensationBonus() {
+        return 0;
+    }
+
+    public void setInitCompensationBonus(int newBonus) {
     }
 }

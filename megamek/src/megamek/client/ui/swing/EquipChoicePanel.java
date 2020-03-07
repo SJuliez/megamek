@@ -18,15 +18,17 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -46,20 +48,21 @@ import megamek.common.CriticalSlot;
 import megamek.common.Dropship;
 import megamek.common.Entity;
 import megamek.common.EquipmentType;
+import megamek.common.IBomber;
 import megamek.common.IGame;
 import megamek.common.Infantry;
-import megamek.common.Jumpship;
 import megamek.common.LocationFullException;
 import megamek.common.Mech;
 import megamek.common.MiscType;
 import megamek.common.Mounted;
 import megamek.common.PlanetaryConditions;
 import megamek.common.Protomech;
-import megamek.common.SmallCraft;
+import megamek.common.SimpleTechLevel;
 import megamek.common.TechConstants;
 import megamek.common.WeaponType;
 import megamek.common.options.IOptions;
 import megamek.common.options.OptionsConstants;
+import megamek.common.util.MegaMekFile;
 import megamek.common.verifier.EntityVerifier;
 import megamek.common.verifier.TestBattleArmor;
 import megamek.common.weapons.infantry.InfantryWeapon;
@@ -78,23 +81,22 @@ public class EquipChoicePanel extends JPanel implements Serializable {
 
     private int[] entityCorrespondance;
 
-    private ArrayList<MunitionChoicePanel> m_vMunitions = new ArrayList<MunitionChoicePanel>();
+    private List<MunitionChoicePanel> m_vMunitions = new ArrayList<>();
+    private List<WeaponAmmoChoicePanel> m_vWeaponAmmoChoice = new ArrayList<>();
     
     /**
      * An <code>ArrayList</code> to keep track of all of the 
      * <code>APWeaponChoicePanels</code> that were added, so we can apply 
      * their choices when the dialog is closed.
      */
-    private ArrayList<APWeaponChoicePanel> m_vAPMounts = 
-            new ArrayList<APWeaponChoicePanel>();
+    private ArrayList<APWeaponChoicePanel> m_vAPMounts = new ArrayList<>();
     
     /**
      * An <code>ArrayList</code> to keep track of all of the 
      * <code>MEAChoicePanels</code> that were added, so we can apply 
      * their choices when the dialog is closed.
      */
-    private ArrayList<MEAChoicePanel> m_vMEAdaptors = 
-            new ArrayList<MEAChoicePanel>();
+    private ArrayList<MEAChoicePanel> m_vMEAdaptors = new ArrayList<>();
     
     /**
      * Panel for adding components related to selecting which anti-personnel
@@ -104,23 +106,18 @@ public class EquipChoicePanel extends JPanel implements Serializable {
     private JPanel panAPMounts = new JPanel();
     private JPanel panMEAdaptors = new JPanel();
     private JPanel panMunitions = new JPanel();
+    private JPanel panWeaponAmmoSelector = new JPanel();
 
-    private ArrayList<RapidfireMGPanel> m_vMGs = new ArrayList<RapidfireMGPanel>();
+    private ArrayList<RapidfireMGPanel> m_vMGs = new ArrayList<>();
     private JPanel panRapidfireMGs = new JPanel();
 
     private InfantryArmorPanel panInfArmor = new InfantryArmorPanel();
 
-    private ArrayList<MineChoicePanel> m_vMines = new ArrayList<MineChoicePanel>();
+    private ArrayList<MineChoicePanel> m_vMines = new ArrayList<>();
     private JPanel panMines = new JPanel();
-
-    private ArrayList<SantaAnnaChoicePanel> m_vSantaAnna = new ArrayList<SantaAnnaChoicePanel>();
-    private JPanel panSantaAnna = new JPanel();
 
     private BombChoicePanel m_bombs;
     private JPanel panBombs = new JPanel();
-
-//    private EquipChoicePanel m_equip;
-//    private JPanel panEquip = new JPanel(new GridBagLayout());
 
     private JLabel labAutoEject = new JLabel(
             Messages.getString("CustomMechDialog.labAutoEject"), SwingConstants.RIGHT); //$NON-NLS-1$
@@ -141,6 +138,14 @@ public class EquipChoicePanel extends JPanel implements Serializable {
     private JLabel labCondEjectHeadshot = new JLabel(
             Messages.getString("CustomMechDialog.labConditional_Ejection_Headshot"), SwingConstants.RIGHT); //$NON-NLS-1$
     private JCheckBox chCondEjectHeadshot = new JCheckBox();
+    
+    private JLabel labCondEjectFuel = new JLabel(
+            Messages.getString("CustomMechDialog.labConditional_Ejection_Fuel"), SwingConstants.RIGHT); //$NON-NLS-1$
+    private JCheckBox chCondEjectFuel = new JCheckBox();
+
+    private JLabel labCondEjectSIDest = new JLabel(
+            Messages.getString("CustomMechDialog.labConditional_Ejection_SI_Destroyed"), SwingConstants.RIGHT); //$NON-NLS-1$
+    private JCheckBox chCondEjectSIDest = new JCheckBox();
 
     private JLabel labSearchlight = new JLabel(
             Messages.getString("CustomMechDialog.labSearchlight"), SwingConstants.RIGHT); //$NON-NLS-1$
@@ -169,7 +174,8 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             // Ejection Seat
             boolean hasEjectSeat = true;
             // torso mounted cockpits don't have an ejection seat
-            if (mech.getCockpitType() == Mech.COCKPIT_TORSO_MOUNTED) {
+            if (mech.getCockpitType() == Mech.COCKPIT_TORSO_MOUNTED
+                    || mech.hasQuirk(OptionsConstants.QUIRK_NEG_NO_EJECT)) {
                 hasEjectSeat = false;
             }
             if (mech.isIndustrial()) {
@@ -188,9 +194,8 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             }
 
             // Conditional Ejections
-            if (clientgui.getClient().getGame().getOptions().booleanOption(
-                    "conditional_ejection")
-                    && hasEjectSeat) { //$NON-NLS-1$
+            if (clientgui.getClient().getGame().getOptions().booleanOption(OptionsConstants.RPG_CONDITIONAL_EJECTION)
+                    && hasEjectSeat) { // $NON-NLS-1$
                 add(labCondEjectAmmo, GBC.std());
                 add(chCondEjectAmmo, GBC.eol());
                 chCondEjectAmmo.setSelected(mech.isCondEjectAmmo());
@@ -204,9 +209,33 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                 add(chCondEjectHeadshot, GBC.eol());
                 chCondEjectHeadshot.setSelected(mech.isCondEjectHeadshot());
             }
+        } else if (entity.isFighter()) {
+            Aero aero = (Aero) entity;
+
+            // Ejection Seat
+            boolean hasEjectSeat = !(entity.hasQuirk(OptionsConstants.QUIRK_NEG_NO_EJECT));
+            if (hasEjectSeat) {
+                add(labAutoEject, GBC.std());
+                add(chAutoEject, GBC.eol());
+                chAutoEject.setSelected(!aero.isAutoEject());
+            }
+
+            // Conditional Ejections
+            if (clientgui.getClient().getGame().getOptions().booleanOption(OptionsConstants.RPG_CONDITIONAL_EJECTION)
+                    && hasEjectSeat) { // $NON-NLS-1$
+                add(labCondEjectAmmo, GBC.std());
+                add(chCondEjectAmmo, GBC.eol());
+                chCondEjectAmmo.setSelected(aero.isCondEjectAmmo());
+                add(labCondEjectFuel, GBC.std());
+                add(chCondEjectFuel, GBC.eol());
+                chCondEjectFuel.setSelected(aero.isCondEjectFuel());
+                add(labCondEjectSIDest, GBC.std());
+                add(chCondEjectSIDest, GBC.eol());
+                chCondEjectSIDest.setSelected(aero.isCondEjectSIDest());
+            }
         }
 
-        if (entity.hasC3() || entity.hasC3i()) {
+        if (entity.hasC3() || entity.hasC3i() || entity.hasNavalC3()) {
             add(labC3, GBC.std());
             add(choC3, GBC.eol());
             refreshC3();
@@ -234,13 +263,13 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             //  pick legal combinations of manipulators
             BattleArmor ba = (BattleArmor) entity;
             EntityVerifier verifier = EntityVerifier.getInstance(
-                    new File(Configuration.unitsDir(),
-                            EntityVerifier.CONFIG_FILENAME));
+                    new MegaMekFile(Configuration.unitsDir(),
+                            EntityVerifier.CONFIG_FILENAME).getFile());
             TestBattleArmor testBA = new TestBattleArmor(ba, 
                     verifier.baOption, null);
-            float maxTrooperWeight = 0;
+            double maxTrooperWeight = 0;
             for (int i = 1; i < ba.getTroopers(); i++){
-                float trooperWeight = testBA.calculateWeight(i);
+                double trooperWeight = testBA.calculateWeight(i);
                 if (trooperWeight > maxTrooperWeight){
                     maxTrooperWeight = trooperWeight;
                 }
@@ -264,27 +293,23 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                     TitledBorder.TOP, TitledBorder.DEFAULT_POSITION));
             add(panMunitions,
                     GBC.eop().anchor(GridBagConstraints.CENTER));
+            
+            setupWeaponAmmoChoice();
+            panWeaponAmmoSelector.setBorder(BorderFactory.createTitledBorder(
+                    BorderFactory.createEmptyBorder(), Messages
+                    .getString("CustomMechDialog.WeaponSelectionTitle"),
+                    TitledBorder.TOP, TitledBorder.DEFAULT_POSITION));
+            add(panWeaponAmmoSelector, GBC.eop().anchor(GridBagConstraints.CENTER));
         }
 
-        // set up Santa Annas if using nukes
-        if (((entity instanceof Dropship) || (entity instanceof Jumpship))
-                && clientgui.getClient().getGame().getOptions().booleanOption(
-                        "at2_nukes")) { //$NON-NLS-1$
-            setupSantaAnna();
-            add(panSantaAnna,
-                    GBC.eop().anchor(GridBagConstraints.CENTER));
-        }
-
-        if ((entity instanceof Aero)
-                && !((entity instanceof SmallCraft) ||
-                        (entity instanceof Jumpship))) {
+        if (entity.isBomber()) {
             setupBombs();
             add(panBombs, GBC.eop().anchor(GridBagConstraints.CENTER));
         }
 
         // Set up rapidfire mg
         if (clientgui.getClient().getGame().getOptions().booleanOption(
-                "tacops_burst")) { //$NON-NLS-1$
+                OptionsConstants.ADVCOMBAT_TACOPS_BURST)) { //$NON-NLS-1$
             setupRapidfireMGs();
             add(panRapidfireMGs,
                     GBC.eop().anchor(GridBagConstraints.CENTER));
@@ -303,6 +328,8 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             add(chSearchlight, GBC.eol());
             chSearchlight.setSelected(entity.hasSpotlight()
                     || entity.hasQuirk(OptionsConstants.QUIRK_POS_SEARCHLIGHT));
+            chSearchlight.setEnabled(!entity
+                    .hasQuirk(OptionsConstants.QUIRK_POS_SEARCHLIGHT));
         }
 
         // Set up mines
@@ -326,11 +353,16 @@ public class EquipChoicePanel extends JPanel implements Serializable {
     }
 
     public void applyChoices() {
+        //Autoejection Options
         boolean autoEject = chAutoEject.isSelected();
         boolean condEjectAmmo = chCondEjectAmmo.isSelected();
+        //Mechs and LAMs Only
         boolean condEjectEngine = chCondEjectEngine.isSelected();
         boolean condEjectCTDest = chCondEjectCTDest.isSelected();
         boolean condEjectHeadshot = chCondEjectHeadshot.isSelected();
+        //Aeros Only
+        boolean condEjectFuel = chCondEjectFuel.isSelected();
+        boolean condEjectSIDest = chCondEjectSIDest.isSelected();
 
         if (entity instanceof Mech) {
             Mech mech = (Mech) entity;
@@ -339,22 +371,37 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             mech.setCondEjectEngine(condEjectEngine);
             mech.setCondEjectCTDest(condEjectCTDest);
             mech.setCondEjectHeadshot(condEjectHeadshot);
+        } else if (entity.isFighter()) {
+            Aero aero = (Aero) entity;
+            aero.setAutoEject(!autoEject);
+            aero.setCondEjectAmmo(condEjectAmmo);
+            aero.setCondEjectFuel(condEjectFuel);
+            aero.setCondEjectSIDest(condEjectSIDest);
         }
 
         // update AP weapon selections
         for (APWeaponChoicePanel apChoicePanel : m_vAPMounts) {
             apChoicePanel.applyChoice();
         }
-        
+
         // update modular equipment adaptor selections
         for (MEAChoicePanel meaChoicePanel : m_vMEAdaptors) {
             meaChoicePanel.applyChoice();
         }
-        
+
         // update munitions selections
         for (final Object newVar2 : m_vMunitions) {
             ((MunitionChoicePanel) newVar2).applyChoice();
         }
+        if (panMunitions instanceof BayMunitionsChoicePanel) {
+            ((BayMunitionsChoicePanel)panMunitions).apply();
+        } else {
+            // update ammo names for weapon ammo choice selectors
+            for(WeaponAmmoChoicePanel wacPanel : m_vWeaponAmmoChoice) {
+                wacPanel.applyChoice();
+            }
+        }
+
         // update MG rapid fire settings
         for (final Object newVar1 : m_vMGs) {
             ((RapidfireMGPanel) newVar1).applyChoice();
@@ -362,10 +409,6 @@ public class EquipChoicePanel extends JPanel implements Serializable {
         // update mines setting
         for (final Object newVar : m_vMines) {
             ((MineChoicePanel) newVar).applyChoice();
-        }
-        // update Santa Anna setting
-        for (final Object newVar : m_vSantaAnna) {
-            ((SantaAnnaChoicePanel) newVar).applyChoice();
         }
         // update bomb setting
         if (null != m_bombs) {
@@ -382,12 +425,12 @@ public class EquipChoicePanel extends JPanel implements Serializable {
 
         if (entity.hasC3() && (choC3.getSelectedIndex() > -1)) {
             Entity chosen = client.getEntity(entityCorrespondance[choC3
-                    .getSelectedIndex()]);
+                                                                  .getSelectedIndex()]);
             int entC3nodeCount = client.getGame().getC3SubNetworkMembers(entity)
                     .size();
             int choC3nodeCount = client.getGame().getC3NetworkMembers(chosen)
                     .size();
-            
+
             if ((entC3nodeCount + choC3nodeCount) <= Entity.MAX_C3_NODES
                     && ((chosen == null) 
                             || entity.getC3MasterId() != chosen.getId())) {
@@ -396,11 +439,11 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                 String message = Messages
                         .getString(
                                 "CustomMechDialog.NetworkTooBig.message", new Object[] {//$NON-NLS-1$
-                                entity.getShortName(),
+                                        entity.getShortName(),
                                         chosen.getShortName(),
-                                        new Integer(entC3nodeCount),
-                                        new Integer(choC3nodeCount),
-                                        new Integer(Entity.MAX_C3_NODES) });
+                                        Integer.valueOf(entC3nodeCount),
+                                        Integer.valueOf(choC3nodeCount),
+                                        Integer.valueOf(Entity.MAX_C3_NODES) });
                 clientgui.doAlertDialog(Messages
                         .getString("CustomMechDialog.NetworkTooBig.title"), //$NON-NLS-1$
                         message);
@@ -408,7 +451,10 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             }
         } else if (entity.hasC3i() && (choC3.getSelectedIndex() > -1)) {
             entity.setC3NetId(client.getEntity(entityCorrespondance[choC3
-                    .getSelectedIndex()]));
+                                                                    .getSelectedIndex()]));
+        } else if (entity.hasNavalC3() && (choC3.getSelectedIndex() > -1)) {
+            entity.setC3NetId(client.getEntity(entityCorrespondance[choC3
+                                                                    .getSelectedIndex()]));
         }
     }
 
@@ -417,10 +463,10 @@ public class EquipChoicePanel extends JPanel implements Serializable {
         panBombs.setLayout(gbl);
 
         int techlvl = Arrays.binarySearch(TechConstants.T_SIMPLE_NAMES, client
-                .getGame().getOptions().stringOption("techlevel")); //$NON-NLS-1$
+                .getGame().getOptions().stringOption(OptionsConstants.ALLOWED_TECHLEVEL)); //$NON-NLS-1$
         boolean allowNukes = client.getGame().getOptions()
-                .booleanOption("at2_nukes"); //$NON-NLS-1$
-        m_bombs = new BombChoicePanel((Aero) entity, allowNukes,
+                .booleanOption(OptionsConstants.ADVAERORULES_AT2_NUKES); //$NON-NLS-1$
+        m_bombs = new BombChoicePanel((IBomber) entity, allowNukes,
                 techlvl >= TechConstants.T_SIMPLE_ADVANCED);
         panBombs.add(m_bombs, GBC.std());
     }
@@ -459,24 +505,6 @@ public class EquipChoicePanel extends JPanel implements Serializable {
         }
     }
 
-    private void setupSantaAnna() {
-        GridBagLayout gbl = new GridBagLayout();
-        panSantaAnna.setLayout(gbl);
-        for (Mounted m : entity.getAmmo()) {
-            AmmoType at = (AmmoType) m.getType();
-            // Santa Annas?
-            if (clientgui.getClient().getGame().getOptions().booleanOption(
-                    "at2_nukes")
-                    && ((at.getAmmoType() == AmmoType.T_KILLER_WHALE) || ((at
-                            .getAmmoType() == AmmoType.T_AR10) && at
-                            .hasFlag(AmmoType.F_AR10_KILLER_WHALE)))) {
-                SantaAnnaChoicePanel sacp = new SantaAnnaChoicePanel(m);
-                panSantaAnna.add(sacp, GBC.eol());
-                m_vSantaAnna.add(sacp);
-            }
-        }
-    }
-    
     /**
      * Setup the layout of <code>panMEAdaptors</code>, which contains components
      * for selecting which manipulators are mounted in a modular equipment 
@@ -536,6 +564,8 @@ public class EquipChoicePanel extends JPanel implements Serializable {
         // Weapons that can be used in an Armored Glove
         ArrayList<WeaponType> agWeapTypes = new ArrayList<WeaponType>(100);
         Enumeration<EquipmentType> allTypes = EquipmentType.getAllTypes();
+        int gameYear = clientgui.getClient().getGame().getOptions().intOption(OptionsConstants.ALLOWED_YEAR);
+        SimpleTechLevel legalLevel = SimpleTechLevel.getGameTechLevel(clientgui.getClient().getGame());
         while (allTypes.hasMoreElements()){
             EquipmentType eq = allTypes.nextElement();
             
@@ -545,9 +575,7 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             }
             
             // Check to see if the tech level of the equipment is legal
-            if (!TechConstants.isLegal(entity.getTechLevel(), 
-                    eq.getTechLevel(entity.getTechLevelYear()), false,
-                    entity.isMixedTech())){
+            if (!eq.isLegal(gameYear, legalLevel, entity.isClan(), entity.isMixedTech())) {
                 continue;
             }
             
@@ -566,6 +594,8 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                 agWeapTypes.add(infWeap);
             }
         }
+        Collections.sort(apWeapTypes, (w1, w2) -> w1.getName().compareTo(w2.getName()));
+        Collections.sort(agWeapTypes, (w1, w2) -> w1.getName().compareTo(w2.getName()));
 
         ArrayList<Mounted> armoredGloves = new ArrayList<Mounted>(2);
         for (Mounted m : entity.getMisc()){
@@ -611,8 +641,14 @@ public class EquipChoicePanel extends JPanel implements Serializable {
         panMunitions.setLayout(gbl);
         IGame game = clientgui.getClient().getGame();
         IOptions gameOpts = game.getOptions();
-        int gameYear = gameOpts.intOption("year");
-        boolean isClan = entity.isClan();
+        int gameYear = gameOpts.intOption(OptionsConstants.ALLOWED_YEAR);
+
+        if (entity.usesWeaponBays() || entity instanceof Dropship) {
+            //Grounded dropships don't *use* weapon bays as such, but should load ammo as if they did
+            panMunitions = new BayMunitionsChoicePanel(entity, game);
+            return;
+        }
+        panMunitions.setLayout(gbl);
 
         for (Mounted m : entity.getAmmo()) {
             AmmoType at = (AmmoType) m.getType();
@@ -624,24 +660,31 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             }
 
             // don't allow ammo switching of most things for Aeros
-            // allow only MML, ATM, and NARC
-            // TODO: need a better way to customize munitions on Aeros
-            // currently this doesn't allow AR10 and tele-missile launchers
-            // to switch back and forth between tele and regular missiles
-            // also would be better to not have to add Santa Anna's in such
-            // an idiosyncratic fashion
+            // allow only MML, ATM, and NARC. LRM/SRM can switch between Artemis and standard,
+            // but not other munitions. Same with MRM.
             if ((entity instanceof Aero)
                     && !((at.getAmmoType() == AmmoType.T_MML)
+                            || (at.getAmmoType() == AmmoType.T_SRM)
+                            || (at.getAmmoType() == AmmoType.T_LRM)
+                            || (at.getAmmoType() == AmmoType.T_MRM)
                             || (at.getAmmoType() == AmmoType.T_ATM)
-                            || (at.getAmmoType() == AmmoType.T_NARC))) {
+                            || (at.getAmmoType() == AmmoType.T_IATM))) {
                 continue;
             }
 
             for (AmmoType atCheck : vAllTypes) {
-                int atTechLvl = atCheck.getTechLevel(gameYear);
-                int legalLevel = TechConstants.getGameTechLevel(game, isClan);
-                boolean bTechMatch = TechConstants.isLegal(legalLevel,
-                        atTechLvl, true, entity.isMixedTech());
+                if (entity.hasETypeFlag(Entity.ETYPE_AERO)
+                        && !atCheck.canAeroUse(game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_AERO_ARTILLERY_MUNITIONS))) {
+                    continue;
+                }
+                SimpleTechLevel legalLevel = SimpleTechLevel.getGameTechLevel(game);
+                boolean bTechMatch = false;
+                if (game.getOptions().booleanOption(OptionsConstants.ALLOWED_ERA_BASED)) {
+                    bTechMatch = atCheck.isLegal(gameYear, legalLevel, entity.isClan(),
+                            entity.isMixedTech());
+                } else {
+                    bTechMatch = atCheck.getStaticTechLevel().ordinal() <= legalLevel.ordinal();
+                }
 
                 // If clan_ignore_eq_limits is unchecked,
                 // do NOT allow Clans to use IS-only ammo.
@@ -649,12 +692,10 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                 // to be combined to other munition types.
                 long muniType = atCheck.getMunitionType();
                 muniType &= ~AmmoType.M_INCENDIARY_LRM;
-                if (!gameOpts.booleanOption("clan_ignore_eq_limits") //$NON-NLS-1$
+                if (!gameOpts.booleanOption(OptionsConstants.ALLOWED_CLAN_IGNORE_EQ_LIMITS) //$NON-NLS-1$
                         && entity.isClan()
                         && ((muniType == AmmoType.M_SEMIGUIDED)
                                 || (muniType == AmmoType.M_SWARM_I)
-                                || (muniType == AmmoType.M_FLARE)
-                                || (muniType == AmmoType.M_FRAGMENTATION)
                                 || (muniType == AmmoType.M_THUNDER_AUGMENTED)
                                 || (muniType == AmmoType.M_THUNDER_INFERNO)
                                 || (muniType == AmmoType.M_THUNDER_VIBRABOMB)
@@ -662,12 +703,24 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                                 || (muniType == AmmoType.M_INFERNO_IV)
                                 || (muniType == AmmoType.M_VIBRABOMB_IV)
                                 || (muniType == AmmoType.M_LISTEN_KILL)
-                                || (muniType == AmmoType.M_ANTI_TSM) 
-                                || (muniType == AmmoType.M_SMOKE_WARHEAD))) {
+                                || (muniType == AmmoType.M_ANTI_TSM)
+                                || (muniType == AmmoType.M_DEAD_FIRE) 
+                                || (muniType == AmmoType.M_MINE_CLEARANCE))) {
                     bTechMatch = false;
                 }
+                
+                if ((muniType == AmmoType.M_ARTEMIS_CAPABLE)
+                        && !entity.hasWorkingMisc(MiscType.F_ARTEMIS)
+                        && !entity.hasWorkingMisc(MiscType.F_ARTEMIS_PROTO)) {
+                    continue;
+                }
+                if ((muniType == AmmoType.M_ARTEMIS_V_CAPABLE)
+                        && !entity.hasWorkingMisc(MiscType.F_ARTEMIS_V)
+                        && !entity.hasWorkingMisc(MiscType.F_ARTEMIS_PROTO)) {
+                    continue;
+                }
 
-                if (!gameOpts.booleanOption("minefields") && //$NON-NLS-1$
+                if (!gameOpts.booleanOption(OptionsConstants.ADVANCED_MINEFIELDS) && //$NON-NLS-1$
                         AmmoType.canDeliverMinefield(atCheck)) {
                     continue;
                 }
@@ -700,18 +753,40 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             }
             if ((vTypes.size() < 1)
                     && !client.getGame().getOptions()
-                            .booleanOption("lobby_ammo_dump")
+                            .booleanOption(OptionsConstants.BASE_LOBBY_AMMO_DUMP)
                     && !client.getGame().getOptions()
-                            .booleanOption("tacops_hotload")) { //$NON-NLS-1$
+                            .booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_HOTLOAD)) { //$NON-NLS-1$
                 continue;
             }
             MunitionChoicePanel mcp;
-            mcp = new MunitionChoicePanel(m, vTypes);
+            mcp = new MunitionChoicePanel(m, vTypes, m_vWeaponAmmoChoice);
             panMunitions.add(mcp, GBC.eol());
             m_vMunitions.add(mcp);
         }
-        }
+    }
 
+    /**
+     * Worker function that creates a series of weapon ammo choice panels that allow the user to pick a particular ammo bin for an 
+     * ammo-using weapon with matching ammo.
+     */
+    private void setupWeaponAmmoChoice() {
+        GridBagLayout gbl = new GridBagLayout();
+        panWeaponAmmoSelector.setLayout(gbl);
+        
+        for(Mounted weapon : entity.getWeaponList()) {
+            WeaponType weaponType = weapon.getType() instanceof WeaponType ? (WeaponType) weapon.getType() : null;
+            
+            // don't deal with bay or grouped weapons for now 
+            if(weaponType == null || weaponType.getAmmoType() == AmmoType.T_NA) {
+                continue;
+            }
+            
+            WeaponAmmoChoicePanel ammoChoicePanel = new WeaponAmmoChoicePanel(weapon);
+            panWeaponAmmoSelector.add(ammoChoicePanel, GBC.eol());
+            m_vWeaponAmmoChoice.add(ammoChoicePanel);
+        }
+    }
+    
         class MineChoicePanel extends JPanel {
             /**
              *
@@ -993,12 +1068,15 @@ public class EquipChoicePanel extends JPanel implements Serializable {
              */
             private static final long serialVersionUID = 3401106035583965326L;
 
-            private ArrayList<AmmoType> m_vTypes;
+            private List<AmmoType> m_vTypes;
 
             private JComboBox<String> m_choice;
-
+            
             @SuppressWarnings("rawtypes")
             private JComboBox m_num_shots;
+            private ItemListener numShotsListener;
+           
+            boolean numShotsChanged = false;
 
             private Mounted m_mounted;
 
@@ -1013,9 +1091,10 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             JCheckBox chHotLoad = new JCheckBox();
             
             @SuppressWarnings("unchecked")
-            MunitionChoicePanel(Mounted m, ArrayList<AmmoType> vTypes) {
+            MunitionChoicePanel(Mounted m, ArrayList<AmmoType> vTypes, List<WeaponAmmoChoicePanel> weaponAmmoChoicePanels) {
                 m_vTypes = vTypes;
                 m_mounted = m;
+                
                 AmmoType curType = (AmmoType) m.getType();
                 m_choice = new JComboBox<String>();
                 Iterator<AmmoType> e = m_vTypes.iterator();
@@ -1027,6 +1106,12 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                     }
                 }
 
+                numShotsListener = new ItemListener() {
+                    @Override
+                    public void itemStateChanged(ItemEvent evt) {
+                        numShotsChanged = true;
+                    }
+                };
                 m_num_shots = new JComboBox<String>();
                 int shotsPerTon = curType.getShots();
                 // BattleArmor always have a certain number of shots per slot
@@ -1038,40 +1123,59 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                     } else {
                         shotsPerTon = TestBattleArmor.NUM_SHOTS_PER_CRIT;
                     }
+                    // Protomechs are limited to the number of shots allocated in construction
+                } else if (entity.hasETypeFlag(Entity.ETYPE_PROTOMECH)) {
+                    shotsPerTon = m.getBaseShotsLeft();
                 }
                 for (int i = 0; i <= shotsPerTon; i += stepSize){
                     m_num_shots.addItem(i);
                 }
                 m_num_shots.setSelectedItem(m_mounted.getBaseShotsLeft());
+                m_num_shots.addItemListener(numShotsListener);
 
                 m_choice.addItemListener(new ItemListener(){
                     @Override
                     public void itemStateChanged(ItemEvent evt) {
+                        m_num_shots.removeItemListener(numShotsListener);
                         int currShots = (Integer)m_num_shots.getSelectedItem();
                         m_num_shots.removeAllItems();
-                        int shotsPerTon = m_vTypes.get(
-                                m_choice.getSelectedIndex()).getShots();
+                        int shotsPerTon = m_vTypes.get(m_choice.getSelectedIndex()).getShots();
+                        
                         // BA always have a certain number of shots per slot
                         if (entity instanceof BattleArmor){
                             shotsPerTon = TestBattleArmor.NUM_SHOTS_PER_CRIT;
+                            // Protomechs are limited to number of shots added during construction
+                        } else if (entity.hasETypeFlag(Entity.ETYPE_PROTOMECH)) {
+                            shotsPerTon = m.getBaseShotsLeft();
                         }
                         for (int i = 0; i <= shotsPerTon; i++){
                             m_num_shots.addItem(i);
                         }
-                        if (currShots <= shotsPerTon){
+                        // If the shots selection was changed, try to set that value, unless it's too large
+                        if (numShotsChanged && currShots <= shotsPerTon){
                             m_num_shots.setSelectedItem(currShots);
                         } else {
                             m_num_shots.setSelectedItem(shotsPerTon);
                         }
-
+                        
+                        for(WeaponAmmoChoicePanel weaponAmmoChoicePanel : weaponAmmoChoicePanels) {
+                            weaponAmmoChoicePanel.refreshAmmoBinName(m_mounted, m_vTypes.get(m_choice.getSelectedIndex()));
+                        }
+                        
+                        m_num_shots.addItemListener(numShotsListener);
                     }});
 
 
-                int loc;
+                int loc = m.getLocation();
                 boolean isOneShot = false;
-                if (m.getLocation() == Entity.LOC_NONE) {
+                if (loc == Entity.LOC_NONE) {
                     // oneshot weapons don't have a location of their own
+                    // some weapons (e.g. fusillade) use the one-shot mechanic but have an extra reload
+                    // which is chained to the first
                     Mounted linkedBy = m.getLinkedBy();
+                    while (linkedBy.getLinkedBy() != null) {
+                        linkedBy = linkedBy.getLinkedBy();
+                    }
                     loc = linkedBy.getLocation();
                     isOneShot = linkedBy.isOneShot();
                 } else {
@@ -1087,17 +1191,17 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                 add(m_num_shots, GBC.eol());
                 chHotLoad.setSelected(m_mounted.isHotLoaded());
                 if (clientgui.getClient().getGame().getOptions().booleanOption(
-                        "lobby_ammo_dump")) { //$NON-NLS-1$
+                        OptionsConstants.BASE_LOBBY_AMMO_DUMP)) { //$NON-NLS-1$
                     add(labDump, GBC.std());
                     add(chDump, GBC.eol());
                     if (clientgui.getClient().getGame().getOptions().booleanOption(
-                            "tacops_hotload")
+                            OptionsConstants.ADVCOMBAT_TACOPS_HOTLOAD)
                             && curType.hasFlag(AmmoType.F_HOTLOAD)) {
                         add(labHotLoad, GBC.std());
                         add(chHotLoad, GBC.eol());
                     }
                 } else if (clientgui.getClient().getGame().getOptions().booleanOption(
-                        "tacops_hotload")
+                        OptionsConstants.ADVCOMBAT_TACOPS_HOTLOAD)
                         && curType.hasFlag(AmmoType.F_HOTLOAD)) {
                     add(labHotLoad, GBC.std());
                     add(chHotLoad, GBC.eol());
@@ -1117,9 +1221,17 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                     m_mounted.setShotsLeft(0);
                 }
                 if (clientgui.getClient().getGame().getOptions().booleanOption(
-                        "tacops_hotload")) {
+                        OptionsConstants.ADVCOMBAT_TACOPS_HOTLOAD)) {
                     if (chHotLoad.isSelected() != m_mounted.isHotLoaded()) {
                         m_mounted.setHotLoad(chHotLoad.isSelected());
+                        // Set the mode too, so vehicles can switch back
+                        int numModes = m_mounted.getType().getModesCount();
+                        for (int m = 0; m < numModes; m++) {
+                            if (m_mounted.getType().getMode(m).getName()
+                                    .equals("HotLoad")) {
+                                m_mounted.setMode(m);
+                            }
+                        }
                     }
                 }
             }
@@ -1149,49 +1261,6 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             }
         }
 
-        // a choice panel for determining number of santa anna warheads
-        class SantaAnnaChoicePanel extends JPanel {
-            /**
-             *
-             */
-            private static final long serialVersionUID = -1645895479085898410L;
-
-            private JComboBox<String> m_choice;
-
-            private Mounted m_mounted;
-
-            public SantaAnnaChoicePanel(Mounted m) {
-                m_mounted = m;
-                m_choice = new JComboBox<String>();
-                for (int i = 0; i <= m_mounted.getBaseShotsLeft(); i++) {
-                    m_choice.addItem(Integer.toString(i));
-                }
-                int loc;
-                loc = m.getLocation();
-                String sDesc = "Nuclear warheads for " + m_mounted.getName() + " (" + entity.getLocationAbbr(loc) + "):"; //$NON-NLS-1$ //$NON-NLS-2$
-                JLabel lLoc = new JLabel(sDesc);
-                GridBagLayout g = new GridBagLayout();
-                setLayout(g);
-                add(lLoc, GBC.std());
-                m_choice.setSelectedIndex(m.getNSantaAnna());
-                add(m_choice, GBC.eol());
-            }
-
-            public void applyChoice() {
-                // this is a hack. I can't immediately apply the choice, because
-                // that would split this ammo bin in two and then the player could
-                // never
-                // get back to it. So I keep track of the Santa Anna allocation
-                // on the mounted and then apply it before deployment
-                m_mounted.setNSantaAnna(m_choice.getSelectedIndex());
-            }
-
-            @Override
-            public void setEnabled(boolean enabled) {
-                m_choice.setEnabled(enabled);
-            }
-        }
-
         /**
      * When a Protomech selects ammo, you need to adjust the shots on the unit
      * for the weight of the selected munition.
@@ -1216,7 +1285,7 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             private final AmmoType m_origAmmo;
 
             ProtomechMunitionChoicePanel(Mounted m, ArrayList<AmmoType> vTypes) {
-                super(m, vTypes);
+                super(m, vTypes, null);
                 m_origAmmo = (AmmoType) m.getType();
                 m_origShotsLeft = m.getBaseShotsLeft();
             }
@@ -1236,6 +1305,122 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                 if (chDump.isSelected()) {
                     setShotsLeft(0);
                 }
+            }
+        }
+        
+        /**
+         * A panel representing the option to choose a particular ammo bin for an individual weapon.
+         * @author NickAragua
+         *
+         */
+        class WeaponAmmoChoicePanel extends JPanel {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 604670659251519188L;
+            // the weapon being displayed in this row
+            private Mounted m_mounted;
+            private ArrayList<Mounted> matchingAmmoBins;
+            
+            private JComboBox<String> ammoBins;
+            
+            /**
+             * Constructor
+             * @param weapon The mounted weapon. Assumes that the weapon uses ammo.
+             */
+            public WeaponAmmoChoicePanel(Mounted weapon) {
+                // for safety purposes, if the given mounted isn't a weapon, don't do anything.
+                if(!(weapon.getType() instanceof WeaponType)) {
+                    return;
+                }
+                
+                m_mounted = weapon;
+                
+                this.setLayout(new GridBagLayout());
+                
+                JLabel weaponName = new JLabel();
+                weaponName.setText("(" + weapon.getEntity().getLocationAbbr(weapon.getLocation()) + ") " + weapon.getName());
+                add(weaponName, GBC.std());
+                
+                ammoBins = new JComboBox<>();
+                matchingAmmoBins = new ArrayList<>();
+                
+                if (m_mounted.isOneShot()) {
+                    // One-shot weapons can only access their own bin
+                    matchingAmmoBins.add(m_mounted.getLinked());
+                } else {
+                    for(Mounted ammoBin : weapon.getEntity().getAmmo()) {
+                        if((ammoBin.getLocation() != Entity.LOC_NONE)
+                            && ((WeaponType) weapon.getType()).getAmmoType() == ((AmmoType) ammoBin.getType()).getAmmoType()) {
+                            matchingAmmoBins.add(ammoBin);
+                        }
+                    }
+                }
+                
+                add(ammoBins, GBC.eol());
+                refreshAmmoBinNames();
+            }
+
+            /**
+             * Worker function that refreshes the combo box with "up-to-date" ammo names.
+             */
+            public void refreshAmmoBinNames() {
+                int selectedIndex = ammoBins.getSelectedIndex();
+                ammoBins.removeAllItems();
+                
+                int currentIndex = 0;
+                for(Mounted ammoBin : matchingAmmoBins) {
+                    ammoBins.addItem("(" + ammoBin.getEntity().getLocationAbbr(ammoBin.getLocation()) + ") " + ammoBin.getName());
+                    if(m_mounted.getLinked() == ammoBin) {
+                        selectedIndex = currentIndex;
+                    }
+                    
+                    currentIndex++;
+                }
+                
+                if(selectedIndex >= 0) {
+                    ammoBins.setSelectedIndex(selectedIndex);
+                }
+                
+                validate();
+            }
+            
+            /**
+             * Refreshes a single item in the ammo type combo box to display the correct ammo type name.
+             * Because the underlying ammo bin hasn't been updated yet, we carry out the name swap "in-place".
+             * @param ammoBin The ammo bin whose ammo type has probably changed.
+             * @param selectedAmmoType The new ammo type.
+             */
+            public void refreshAmmoBinName(Mounted ammoBin, AmmoType selectedAmmoType) {
+                int index = 0;
+                boolean matchFound = false;
+                
+                for(index = 0; index < matchingAmmoBins.size(); index++) {
+                    if(matchingAmmoBins.get(index) == ammoBin) {
+                        matchFound = true;
+                        break;
+                    }
+                }
+                
+                if(matchFound) {
+                    int currentBinIndex = ammoBins.getSelectedIndex();
+                    
+                    ammoBins.removeItemAt(index);
+                    ammoBins.insertItemAt("(" + ammoBin.getEntity().getLocationAbbr(ammoBin.getLocation()) + ") " + selectedAmmoType.getName(), index);
+                    
+                    if(currentBinIndex == index) {                    
+                        ammoBins.setSelectedIndex(index);
+                    }
+                    
+                    validate();
+                }
+            }
+            
+            /**
+             * Common functionality that applies the panel's current ammo bin choice to the panel's weapon.
+             */
+            public void applyChoice() {
+                entity.loadWeapon(m_mounted, matchingAmmoBins.get(ammoBins.getSelectedIndex()));
             }
         }
 
@@ -1291,27 +1476,40 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                     Messages.getString("CustomMechDialog.labSpaceSuit"));
             JLabel labDEST = new JLabel(
                     Messages.getString("CustomMechDialog.labDEST"));
-            JLabel labMountain = new JLabel(
-                    Messages.getString("CustomMechDialog.labMountain"));
             JLabel labSneakCamo = new JLabel(
                     Messages.getString("CustomMechDialog.labSneakCamo"));
             JLabel labSneakIR = new JLabel(
                     Messages.getString("CustomMechDialog.labSneakIR"));
             JLabel labSneakECM = new JLabel(
                     Messages.getString("CustomMechDialog.labSneakECM"));
+            JLabel labSpec = new JLabel(
+                    Messages.getString("CustomMechDialog.labInfSpec"));
+            private JComboBox<String> cbArmorKit = new JComboBox<>();
             private JTextField fldDivisor = new JTextField(3);
             JCheckBox chEncumber = new JCheckBox();
             JCheckBox chSpaceSuit = new JCheckBox();
             JCheckBox chDEST = new JCheckBox();
-            JCheckBox chMountain = new JCheckBox();
             JCheckBox chSneakCamo = new JCheckBox();
             JCheckBox chSneakIR = new JCheckBox();
             JCheckBox chSneakECM = new JCheckBox();
+            List<JCheckBox> chSpecs = new ArrayList<>(
+                    Infantry.NUM_SPECIALIZATIONS);
+            
+            List<EquipmentType> armorKits = new ArrayList<>();
 
             InfantryArmorPanel() {
+                for (int i = 0; i < Infantry.NUM_SPECIALIZATIONS; i++) {
+                    int spec = 1 << i;
+                    JCheckBox newSpec = new JCheckBox();
+                    newSpec.setText(Infantry.getSpecializationName(spec));
+                    newSpec.setToolTipText(Infantry.getSpecializationTooltip(spec));
+                    chSpecs.add(newSpec);
+                }
+                
                 GridBagLayout g = new GridBagLayout();
                 setLayout(g);
-                add(labArmor, GBC.eol());
+                add(labArmor, GBC.std());
+                add(cbArmorKit, GBC.eol());
                 add(labDivisor, GBC.std());
                 add(fldDivisor, GBC.eol());
                 add(labEncumber, GBC.std());
@@ -1320,71 +1518,128 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                 add(chSpaceSuit, GBC.eol());
                 add(labDEST, GBC.std());
                 add(chDEST, GBC.eol());
-                add(labMountain, GBC.std());
-                add(chMountain, GBC.eol());
                 add(labSneakCamo, GBC.std());
                 add(chSneakCamo, GBC.eol());
                 add(labSneakIR, GBC.std());
                 add(chSneakIR, GBC.eol());
                 add(labSneakECM, GBC.std());
                 add(chSneakECM, GBC.eol());
+                add(Box.createVerticalStrut(10), GBC.eol());
+                add(labSpec, GBC.eol());
+                for (JCheckBox spec : chSpecs) {
+                    add(spec, GBC.eol());
+                }
             }
 
             public void initialize() {
                 inf = (Infantry) entity;
+                
+                SimpleTechLevel gameTechLevel = SimpleTechLevel.getGameTechLevel(client.getGame());
+                int year = client.getGame().getOptions().intOption("year");
+                for (Enumeration<EquipmentType> e = MiscType.getAllTypes(); e.hasMoreElements();) {
+                	final EquipmentType et = e.nextElement();
+                	if (et.hasFlag(MiscType.F_ARMOR_KIT)
+                	        && et.isLegal(year, gameTechLevel, entity.isClan(), entity.isMixedTech())) {
+                		armorKits.add(et);
+                	}
+                }
+                Collections.sort(armorKits, (et1, et2) -> et1.getName().compareTo(et2.getName()));
+
+                cbArmorKit.addItem(Messages.getString("CustomMechDialog.Custom"));
+                armorKits.forEach(k -> cbArmorKit.addItem(k.getName()));
+                EquipmentType kit = inf.getArmorKit();
+                if (kit == null) {
+                	cbArmorKit.setSelectedIndex(0);
+                } else {
+                	cbArmorKit.setSelectedIndex(armorKits.indexOf(kit) + 1);
+                }
                 fldDivisor.setText(Double.toString(inf.getDamageDivisor()));
                 chEncumber.setSelected(inf.isArmorEncumbering());
                 chSpaceSuit.setSelected(inf.hasSpaceSuit());
                 chDEST.setSelected(inf.hasDEST());
-                chMountain.setSelected(inf.hasMountain());
                 chSneakCamo.setSelected(inf.hasSneakCamo());
                 chSneakIR.setSelected(inf.hasSneakIR());
                 chSneakECM.setSelected(inf.hasSneakECM());
-                if (chDEST.isSelected()) {
-                    chSneakCamo.setEnabled(false);
-                    chSneakIR.setEnabled(false);
-                    chSneakECM.setEnabled(false);
-                }
-                chDEST.addItemListener(new ItemListener() {
-                    public void itemStateChanged(ItemEvent event) {
-                        if (event.getStateChange() == ItemEvent.SELECTED) {
-                            chSneakCamo.setSelected(false);
-                            chSneakCamo.setEnabled(false);
-                            chSneakIR.setSelected(false);
-                            chSneakIR.setEnabled(false);
-                            chSneakECM.setSelected(false);
-                            chSneakECM.setEnabled(false);
-                        } else if (event.getStateChange() == ItemEvent.DESELECTED) {
-                            chSneakCamo.setEnabled(true);
-                            chSneakIR.setEnabled(true);
-                            chSneakECM.setEnabled(true);
-                        }
-                    }
+                armorStateChanged();
+                cbArmorKit.addActionListener(e -> {
+	                armorStateChanged();
+                	updateArmorValues();
                 });
+                chDEST.addItemListener(e -> armorStateChanged());
+
+                for (int i = 0; i < Infantry.NUM_SPECIALIZATIONS; i++) {
+                    int spec = 1 << i;
+                    chSpecs.get(i).setSelected(inf.hasSpecialization(spec));
+                }
+            }
+            
+            public void armorStateChanged() {
+            	fldDivisor.setEnabled(cbArmorKit.getSelectedIndex() == 0);
+            	chEncumber.setEnabled(cbArmorKit.getSelectedIndex() == 0);
+            	chSpaceSuit.setEnabled(cbArmorKit.getSelectedIndex() == 0);
+            	chDEST.setEnabled(cbArmorKit.getSelectedIndex() == 0);
+            	chSneakCamo.setEnabled(cbArmorKit.getSelectedIndex() == 0
+            			&& !chDEST.isSelected());
+            	chSneakIR.setEnabled(cbArmorKit.getSelectedIndex() == 0
+            			&& !chDEST.isSelected());
+            	chSneakECM.setEnabled(cbArmorKit.getSelectedIndex() == 0
+            			&& !chDEST.isSelected());
+            }
+
+            public void updateArmorValues() {
+            	if (cbArmorKit.getSelectedIndex() > 0) {
+            		EquipmentType kit = armorKits.get(cbArmorKit.getSelectedIndex() - 1);
+            		fldDivisor.setText(Double.toString(((MiscType)kit).getDamageDivisor()));
+            		chEncumber.setSelected((kit.getSubType() & MiscType.S_ENCUMBERING) != 0);
+            		chSpaceSuit.setSelected((kit.getSubType() & MiscType.S_SPACE_SUIT) != 0);
+            		chDEST.setSelected((kit.getSubType() & MiscType.S_DEST) != 0);
+            		chSneakCamo.setSelected((kit.getSubType() & MiscType.S_SNEAK_CAMO) != 0);
+            		chSneakIR.setSelected((kit.getSubType() & MiscType.S_SNEAK_IR) != 0);
+            		chSneakECM.setSelected((kit.getSubType() & MiscType.S_SNEAK_ECM) != 0);
+            	}
             }
 
             public void applyChoice() {
-                inf.setDamageDivisor(Double.valueOf(fldDivisor.getText()));
-                inf.setArmorEncumbering(chEncumber.isSelected());
-                inf.setSpaceSuit(chSpaceSuit.isSelected());
-                inf.setDEST(chDEST.isSelected());
-                inf.setMountain(chMountain.isSelected());
-                inf.setSneakCamo(chSneakCamo.isSelected());
-                inf.setSneakIR(chSneakIR.isSelected());
-                inf.setSneakECM(chSneakECM.isSelected());
-
+            	if (cbArmorKit.getSelectedIndex() > 0) {
+            		inf.setArmorKit(armorKits.get(cbArmorKit.getSelectedIndex() - 1));
+            	} else {
+            		inf.setArmorKit(null);
+	                inf.setDamageDivisor(Double.valueOf(fldDivisor.getText()));
+	                inf.setArmorEncumbering(chEncumber.isSelected());
+	                inf.setSpaceSuit(chSpaceSuit.isSelected());
+	                inf.setDEST(chDEST.isSelected());
+	                if (!chDEST.isSelected()) {
+		                inf.setSneakCamo(chSneakCamo.isSelected());
+		                inf.setSneakIR(chSneakIR.isSelected());
+		                inf.setSneakECM(chSneakECM.isSelected());
+	                }
+            	}
+                int spec = 0;
+                for (int i = 0; i < Infantry.NUM_SPECIALIZATIONS; i++) {
+                    if (chSpecs.get(i).isSelected()) {
+                        spec |= 1 << i;
+                    }
+                }
+                inf.setSpecializations(spec);
             }
 
             @Override
             public void setEnabled(boolean enabled) {
-                fldDivisor.setEnabled(enabled);
-                chEncumber.setEnabled(enabled);
-                chSpaceSuit.setEnabled(enabled);
-                chDEST.setEnabled(enabled);
-                chMountain.setEnabled(enabled);
-                chSneakCamo.setEnabled(enabled);
-                chSneakIR.setEnabled(enabled);
-                chSneakECM.setEnabled(enabled);
+            	cbArmorKit.setEnabled(enabled);
+            	if (enabled) {
+            		armorStateChanged();
+            	} else {
+	                fldDivisor.setEnabled(enabled);
+	                chEncumber.setEnabled(enabled);
+	                chSpaceSuit.setEnabled(enabled);
+	                chDEST.setEnabled(enabled);
+	                chSneakCamo.setEnabled(enabled);
+	                chSneakIR.setEnabled(enabled);
+	                chSneakECM.setEnabled(enabled);
+            	}
+                for (JCheckBox spec : chSpecs) {
+                    spec.setEnabled(enabled);
+                }
             }
         }
 
@@ -1423,7 +1678,7 @@ public class EquipChoicePanel extends JPanel implements Serializable {
             int listIndex = 0;
             entityCorrespondance = new int[client.getGame().getNoOfEntities() + 2];
 
-            if (entity.hasC3i()) {
+            if (entity.hasC3i() || entity.hasNavalC3()) {
                 choC3.addItem(Messages
                         .getString("CustomMechDialog.CreateNewNetwork")); //$NON-NLS-1$
                 if (entity.getC3Master() == null) {
@@ -1436,7 +1691,7 @@ public class EquipChoicePanel extends JPanel implements Serializable {
 
                 choC3.addItem(Messages
                         .getString(
-                                "CustomMechDialog.setCompanyMaster", new Object[] { new Integer(mNodes), new Integer(sNodes) })); //$NON-NLS-1$
+                                "CustomMechDialog.setCompanyMaster", new Object[] { Integer.valueOf(mNodes), Integer.valueOf(sNodes) })); //$NON-NLS-1$
 
                 if (entity.C3MasterIs(entity)) {
                     choC3.setSelectedIndex(listIndex);
@@ -1445,7 +1700,7 @@ public class EquipChoicePanel extends JPanel implements Serializable {
 
                 choC3.addItem(Messages
                         .getString(
-                                "CustomMechDialog.setIndependentMaster", new Object[] { new Integer(sNodes) })); //$NON-NLS-1$
+                                "CustomMechDialog.setIndependentMaster", new Object[] { Integer.valueOf(sNodes) })); //$NON-NLS-1$
                 if (entity.getC3Master() == null) {
                     choC3.setSelectedIndex(listIndex);
                 }
@@ -1456,7 +1711,7 @@ public class EquipChoicePanel extends JPanel implements Serializable {
 
                 choC3.addItem(Messages
                         .getString(
-                                "CustomMechDialog.setCompanyMaster1", new Object[] { new Integer(nodes) })); //$NON-NLS-1$
+                                "CustomMechDialog.setCompanyMaster1", new Object[] { Integer.valueOf(nodes) })); //$NON-NLS-1$
                 if (entity.C3MasterIs(entity)) {
                     choC3.setSelectedIndex(listIndex);
                 }
@@ -1464,7 +1719,7 @@ public class EquipChoicePanel extends JPanel implements Serializable {
 
                 choC3.addItem(Messages
                         .getString(
-                                "CustomMechDialog.setIndependentMaster", new Object[] { new Integer(nodes) })); //$NON-NLS-1$
+                                "CustomMechDialog.setIndependentMaster", new Object[] { Integer.valueOf(nodes) })); //$NON-NLS-1$
                 if (entity.getC3Master() == null) {
                     choC3.setSelectedIndex(listIndex);
                 }
@@ -1478,6 +1733,10 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                 }
                 // c3i only links with c3i
                 if (entity.hasC3i() != e.hasC3i()) {
+                    continue;
+                }
+                // NC3 only links with NC3
+                if (entity.hasNavalC3() != e.hasNavalC3()) {
                     continue;
                 }
                 // likewise can't connect c3 to nova
@@ -1497,23 +1756,23 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                 if (entity.C3MasterIs(e) && !entity.equals(e)) {
                     nodes++;
                 }
-                if (entity.hasC3i()
+                if ((entity.hasC3i() || entity.hasNavalC3())
                         && (entity.onSameC3NetworkAs(e) || entity.equals(e))) {
                     nodes++;
                 }
                 if (nodes == 0) {
                     continue;
                 }
-                if (e.hasC3i()) {
+                if (e.hasC3i() || e.hasNavalC3()) {
                     if (entity.onSameC3NetworkAs(e)) {
                         choC3.addItem(Messages
                                 .getString(
-                                        "CustomMechDialog.join1", new Object[] { e.getDisplayName(), e.getC3NetId(), new Integer(nodes - 1) })); //$NON-NLS-1$
+                                        "CustomMechDialog.join1", new Object[] { e.getDisplayName(), e.getC3NetId(), Integer.valueOf(nodes - 1) })); //$NON-NLS-1$
                         choC3.setSelectedIndex(listIndex);
                     } else {
                         choC3.addItem(Messages
                                 .getString(
-                                        "CustomMechDialog.join2", new Object[] { e.getDisplayName(), e.getC3NetId(), new Integer(nodes) })); //$NON-NLS-1$
+                                        "CustomMechDialog.join2", new Object[] { e.getDisplayName(), e.getC3NetId(), Integer.valueOf(nodes) })); //$NON-NLS-1$
                     }
                     entityCorrespondance[listIndex++] = e.getId();
                 } else if (e.C3MasterIs(e) && e.hasC3MM()) {
@@ -1521,7 +1780,7 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                     // *both* sub-masters AND slave units.
                     choC3.addItem(Messages
                             .getString(
-                                    "CustomMechDialog.connect2", new Object[] { e.getDisplayName(), e.getC3NetId(), new Integer(nodes) })); //$NON-NLS-1$
+                                    "CustomMechDialog.connect2", new Object[] { e.getDisplayName(), e.getC3NetId(), Integer.valueOf(nodes) })); //$NON-NLS-1$
                     entityCorrespondance[listIndex] = e.getId();
                     if (entity.C3MasterIs(e)) {
                         choC3.setSelectedIndex(listIndex);
@@ -1534,13 +1793,13 @@ public class EquipChoicePanel extends JPanel implements Serializable {
                 } else if (entity.C3MasterIs(e)) {
                     choC3.addItem(Messages
                             .getString(
-                                    "CustomMechDialog.connect1", new Object[] { e.getDisplayName(), e.getC3NetId(), new Integer(nodes - 1) })); //$NON-NLS-1$
+                                    "CustomMechDialog.connect1", new Object[] { e.getDisplayName(), e.getC3NetId(), Integer.valueOf(nodes - 1) })); //$NON-NLS-1$
                     choC3.setSelectedIndex(listIndex);
                     entityCorrespondance[listIndex++] = e.getId();
                 } else {
                     choC3.addItem(Messages
                             .getString(
-                                    "CustomMechDialog.connect2", new Object[] { e.getDisplayName(), e.getC3NetId(), new Integer(nodes) })); //$NON-NLS-1$
+                                    "CustomMechDialog.connect2", new Object[] { e.getDisplayName(), e.getC3NetId(), Integer.valueOf(nodes) })); //$NON-NLS-1$
                     entityCorrespondance[listIndex++] = e.getId();
                 }
             }
