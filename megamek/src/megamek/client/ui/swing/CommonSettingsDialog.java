@@ -71,7 +71,9 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputAdapter;
 
+import megamek.client.ui.IBoardView;
 import megamek.client.ui.Messages;
+import megamek.client.ui.swing.boardview.BoardView1;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.widget.SkinXMLHandler;
 import megamek.common.Configuration;
@@ -289,6 +291,7 @@ public class CommonSettingsDialog extends ClientDialog implements
     private Map<String, JCheckBox> cmdRepeatableMap;
     
     private ClientGUI clientgui = null;
+    private IBoardView boardView;
 
     private static final String CANCEL = "CANCEL"; //$NON-NLS-1$
     private static final String UPDATE = "UPDATE"; //$NON-NLS-1$
@@ -306,6 +309,16 @@ public class CommonSettingsDialog extends ClientDialog implements
     public CommonSettingsDialog(JFrame owner, ClientGUI cg) {
         this(owner);
         clientgui = cg;
+    }
+    
+    /**
+     * Standard constructor. There is no default constructor for this class.
+     *
+     * @param owner - the <code>Frame</code> that owns this dialog.
+     */
+    public CommonSettingsDialog(JFrame owner, BoardView1 bv) {
+        this(owner);
+        boardView = bv;
     }
     
     /**
@@ -1368,12 +1381,12 @@ public class CommonSettingsDialog extends ClientDialog implements
         comps.add(row);
         
         // Open the Texts config dialog
-        CommonSettingsBoardTextsDialog textsDialog = new CommonSettingsBoardTextsDialog(owner, clientgui);
+        CommonSettingsHexTextsDialog textsDialog = new CommonSettingsHexTextsDialog(owner, clientgui, boardView);
         JButton openTextsDialog = new JButton("Configure Hex Texts");
         openTextsDialog.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                textsDialog.updateClient(clientgui);
+                textsDialog.updateClient(clientgui, boardView);
                 textsDialog.setVisible(true);
             }
         });

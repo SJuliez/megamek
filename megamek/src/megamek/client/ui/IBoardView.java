@@ -190,4 +190,9 @@ public interface IBoardView extends MechDisplayListener {
      */
     public List<Entity> getEntitiesFlyingOver(Coords c);
 
+    /** Redraw the board, updating all graphics. */
+    public void redrawBoard();
+    
+    
+    
 }

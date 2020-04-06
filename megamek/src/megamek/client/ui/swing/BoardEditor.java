@@ -1661,7 +1661,7 @@ public class BoardEditor extends JComponent
     private void showSettings() {
         // Do we need to create the "settings" dialog?
         if (setdlg == null) {
-            setdlg = new CommonSettingsDialog(frame);
+            setdlg = new CommonSettingsDialog(frame, bv);
         }
 
         // Show the settings dialog.
