@@ -253,7 +253,6 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
 
     private Font font_note = FONT_10;
     private Font font_hexnum = FONT_10;
-    private Font font_elev = FONT_9;
     private Font font_minefield = FONT_12;
 
     IGame game;
@@ -2949,13 +2948,6 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         g2D.fill(shape);
     }
     
-//    public static void DrawHexText(Graphics2D g, int x, int y, int fontsize, Color c, String text) {
-//        if (text == null) return;
-//        Point pos = new Point(x,y);
-//        drawOutlineText(g, text, pos, fontsize, TRANSPARENTCOLOR, true, Color.LIGHT_GRAY);
-//        drawOutlineText(g, text, pos, fontsize, c, false, TRANSPARENTCOLOR);
-//    }
-    
     /** Happy little class to hold the hex texts info. */
     class hexText {
         String text;
@@ -2971,13 +2963,13 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             bold = b;
         }
     }
-    
+
     private void assembleHexTexts(IHex hex, int level, int depth) {
         hexTexts.clear();
         if (hexTextSet == null) {
             loadHexTextSettings();
         }
-        
+
         HexTextConfig htc = hexTextSet.getConfig(HexTextSettings.HT_LEVEL);
         if (level != 0) {
             String t = htc.getText();
@@ -2986,154 +2978,81 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
             boolean b = htc.isBold();
             AddtoHexText(t+level, c, sc, b);
         }
-        
+
         for (int terrain: hex.getTerrainTypes()) {
             htc = hexTextSet.getConfig(terrain);
             if (htc == null || !htc.isDisplayed()) continue;
             switch (terrain) {
-//            ROUGH = 3; // 1: normal 2: ultra
-//            RUBBLE = 4; // 1: light bldg 2: medium bldg 3: heavy
-//            SAND = 6;
-//            TUNDRA = 7;
-//            MAGMA = 8; // 1: crust 2: liquid
-//            FIELDS = 9;
-//            INDUSTRIAL = 10; // level indicates height
-//            SPACE = 11;
-//            PAVEMENT = 12;
-//            ROAD = 13;
-//            SWAMP = 14; // 1: normal 2: just became quicksand 3:
-//                        // quicksand
-//            MUD = 15;
-//            RAPIDS = 16; // 1: rapids 2: torrent
-//            ICE = 17;
-//            SNOW = 18; // 1: thin 2: deep
-//            FIRE = 19; // 1: normal, fire 2: inferno fire, 3:
-//                       // inferno bombs, 4: inferno IV
-//            SMOKE = 20; // 1: light smoke 2: heavy smoke 3:light
-//                        // LI smoke 4: Heavy LI smoke
-//            GEYSER = 21; // 1: dormant 2: active 3: magma vent
-//            BUILDING = 22; // 1: light 2: medium 3: heavy 4:
-//            BLDG_CF = 23;
-//            BLDG_ELEV = 24;
-//            BLDG_BASEMENT_TYPE = 25; // level equals
-//            BLDG_CLASS = 26; // 1: hangars 2: fortresses 3: gun
-//            BRIDGE = 28;
-//            BRIDGE_CF = 29;
-//            BRIDGE_ELEV = 30;
-//            FUEL_TANK = 31;
-//            FUEL_TANK_CF = 32;
-//            FUEL_TANK_ELEV = 33;
-//            FUEL_TANK_MAGN = 34;
-//            IMPASSABLE = 35;
-//            ELEVATOR = 36; // level=elevation it moves
-//            FORTIFIED = 37;
-//            SCREEN = 38;
-//            FLUFF = 39;
-//            ARMS = 40; // blown off arms for use as clubs, level
-//            LEGS = 41; // blown off legs for use as clubs, level
-//            METAL_CONTENT = 42; // Is there metal content that
-//            BLDG_BASE_COLLAPSED = 43; // 1 means collapsed
 
             case Terrains.WATER:
                 if (depth != 0) {
-                    String t = htc.getText();
-                    Color c = htc.getColor();
-                    Color sc = htc.getShadowColor();
-                    boolean b = htc.isBold();
-                    AddtoHexText(t+depth, c, sc, b);
+                    AddtoHexText(htc.getText()+depth, htc.getColor(), htc.getShadowColor(), htc.isBold());
                 }
                 break;
-                
+
             case Terrains.BLDG_ARMOR:
             case Terrains.BLDG_CF:
             case Terrains.BLDG_BASEMENT_TYPE:
             case Terrains.BLDG_ELEV:
             case Terrains.BRIDGE_ELEV:
-                if (hex.containsTerrain(terrain)) {
-                    String t = htc.getText();
-                    Color c = htc.getColor();
-                    Color sc = htc.getShadowColor();
-                    boolean b = htc.isBold();
-                    AddtoHexText(t+hex.getTerrain(terrain).getLevel(), c, sc, b);
+            case Terrains.BRIDGE_CF:
+            case Terrains.FUEL_TANK_CF:
+            case Terrains.FUEL_TANK_ELEV:
+            case Terrains.FUEL_TANK_MAGN:
+            case Terrains.FLUFF:
+                AddtoHexText(
+                        htc.getText()+hex.getTerrain(terrain).getLevel(), 
+                        htc.getColor(), htc.getShadowColor(), htc.isBold());
+                break;
+                
+            case Terrains.BUILDING:
+            case Terrains.BLDG_CLASS:
+            case Terrains.SWAMP:
+            case Terrains.GEYSER:
+            case Terrains.SNOW:
+            case Terrains.MAGMA:
+            case Terrains.RAPIDS:
+            case Terrains.METAL_CONTENT:
+            case Terrains.SMOKE:
+                String terrName = Terrains.getDisplayName(terrain, hex.getTerrain(terrain).getLevel());
+                AddtoHexText(
+                        htc.getText()+terrName, 
+                        htc.getColor(), htc.getShadowColor(), htc.isBold());
+                break;
+            
+            case Terrains.WOODS:
+            case Terrains.JUNGLE:
+                HexTextConfig htcLHU;
+                switch (hex.getTerrain(terrain).getLevel()) {
+                case 1:
+                    htcLHU = hexTextSet.getConfig(HexTextSettings.HT_LIGHT);
+                    break;
+                case 2:
+                    htcLHU = hexTextSet.getConfig(HexTextSettings.HT_HEAVY);
+                    break;
+                default:
+                    htcLHU = hexTextSet.getConfig(HexTextSettings.HT_ULTRA);
+                    break;
+                }
+                if (htcLHU.isDisplayed()) {
+                    AddtoHexText(htcLHU.getText() + htc.getText(), htc.getColor(), htc.getShadowColor(), htc.isBold());
                 }
                 break;
 
-            case Terrains.WOODS:
-            case Terrains.JUNGLE:
-                boolean isWoods = hex.containsTerrain(Terrains.WOODS);
-                String t = htc.getText();
-                Color c = htc.getColor();
-                Color sc = htc.getShadowColor();
-                boolean b = htc.isBold();
-                AddtoHexText(t, c, sc, b);
-                switch (hex.getTerrain(isWoods ? Terrains.WOODS : Terrains.JUNGLE).getLevel()) {
-                case 1:
-                    htc = hexTextSet.getConfig(HexTextSettings.HT_LIGHT);
-                    break;
-                case 2:
-                    htc = hexTextSet.getConfig(HexTextSettings.HT_HEAVY);
-                    break;
-                default:
-                    htc = hexTextSet.getConfig(HexTextSettings.HT_ULTRA);
-                    break;
-                }
-                t = htc.getText();
-                c = htc.getColor();
-                sc = htc.getShadowColor();
-                b = htc.isBold();
-                AddtoHexText(t, c, sc, b);
-                break;
-                
-                //            if (depth != 0) {
-                //                String t = guip.getString("HexTextDthText");
-//                Color o = guip.getColor("HexTextDthColor");
-//                AddtoHexText(t+depth, o);
-//            }
-//            if (height > 0) {
-//                String t = guip.getString("HexTextBdgText");
-//                Color o = guip.getColor("HexTextBdgColor");
-//                AddtoHexText(t+height, o);
-//            }
-//            if (hex.containsTerrain(Terrains.WOODS) ||
-//                    hex.containsTerrain(Terrains.JUNGLE)) {
-//
-//                int lvl = hex.containsTerrain(Terrains.WOODS) ? 
-//                        hex.getTerrain(Terrains.WOODS).getLevel() : 
-//                    hex.getTerrain(Terrains.JUNGLE).getLevel();
-//                String ts = "";
-//                Color cs = Color.BLACK;
-//                switch (lvl) {
-//                case 1: 
-//                    ts = guip.getString("HexTextLgtText");
-//                    cs = guip.getColor("HexTextLgtColor"); 
-//                    break;
-//                case 2: 
-//                    ts = guip.getString("HexTextHvyText");
-//                    cs = guip.getColor("HexTextHvyColor"); 
-//                    break;
-//                case 3:  
-//                    ts = guip.getString("HexTextUltText");
-//                    cs = guip.getColor("HexTextUltColor"); 
-//                    break;
-//                }
-//                AddtoHexText(ts, cs);
-//                if (hex.containsTerrain(Terrains.WOODS)) {
-//                    String t = guip.getString("HexTextWdsText");
-//                    Color o = guip.getColor("HexTextWdsColor");
-//                    AddtoHexText(t, o);
-//                }
-//                if (hex.containsTerrain(Terrains.JUNGLE)) {
-//                    String t = guip.getString("HexTextJngText");
-//                    Color o = guip.getColor("HexTextJngColor");
-//                    AddtoHexText(t, o);
-//                }
-//            }
-        }
+            default:
+                AddtoHexText(htc.getText(), htc.getColor(), htc.getShadowColor(), htc.isBold());
+
+            }
         }
     }
 
     private void loadHexTextSettings() {
-        hexTextSet = HexTextSettings.getInGameSettings();
+        // In Map Editor?
+        if (game.getPhase() == IGame.Phase.PHASE_UNKNOWN) {
+            hexTextSet = HexTextSettings.getMapEdSettings();
+        } else {
+            hexTextSet = HexTextSettings.getInGameSettings();
+        }
     }
     
     private void AddtoHexText(String s, Color c, Color sc, boolean b) {
@@ -3211,7 +3130,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                     break;
                 }
             }
-            
+            // TODO: break up a line if it has " " in it?
             // write the line
             boolean subsequent = false;
             int xpos = (hex_size.width - lineLength)/2;
@@ -3225,7 +3144,6 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                 int wid = lT.bold ? fmBold.stringWidth(lT.text) : fmNorm.stringWidth(lT.text);
                 g.setFont(lT.bold ? boldHTFont : normHTFont);
                 DrawHexText(g, xpos+wid/2, ypos-lineheight*line, lT.color, lT.text, lT.scolor);
-//                xpos += fm.stringWidth(lT.text);
                 xpos += wid;
             }
             
@@ -6598,17 +6516,14 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
 
     private void updateFontSizes() {
         if (zoomIndex <= 4) {
-            font_elev = FONT_7;
             font_hexnum = FONT_7;
             font_minefield = FONT_7;
         }
         if ((zoomIndex <= 5) & (zoomIndex > 4)) {
-            font_elev = FONT_8;
             font_hexnum = FONT_8;
             font_minefield = FONT_8;
         }
         if (zoomIndex > 5) {
-            font_elev = FONT_9;
             font_hexnum = FONT_9;
             font_minefield = FONT_9;
         }
@@ -6770,7 +6685,6 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
 
     public void clearHexImageCache() {
         hexImageCache.clear();
-        loadHexTextSettings();
     }
 
     /**
@@ -7082,7 +6996,9 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
     }
     
     public void redrawBoard() {
+        loadHexTextSettings();
         clearHexImageCache();
+        repaint();
     }
     
 }

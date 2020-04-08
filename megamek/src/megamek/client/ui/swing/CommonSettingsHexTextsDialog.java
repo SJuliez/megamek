@@ -20,8 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -53,7 +51,9 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
     
     ClientGUI clientgui;
     IBoardView boardView;
+    boolean inMapEditor;
     GUIPreferences guip = GUIPreferences.getInstance();
+    private HexTextSettings currentSetting;
     
     private static final String[] FONTS = GraphicsEnvironment
             .getLocalGraphicsEnvironment()
@@ -72,6 +72,7 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
     private JComboBox<String> fontSelector = new JComboBox<>();
     private JButton butBigger = new JButton("+"); //$NON-NLS-1$
     private JButton butSmaller = new JButton("-"); //$NON-NLS-1$
+    private JLabel settingsLabel = new JLabel("--- In-game Settings ---"); //$NON-NLS-1$
 
     /** The font size for all texts. */
     private int fontSize = 12;
@@ -90,6 +91,12 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
             Terrains.RAPIDS, Terrains.ICE, Terrains.SNOW, Terrains.FIRE, Terrains.SMOKE, Terrains.GEYSER, Terrains.METAL_CONTENT
              ));
     
+    private final ArrayList<Integer> terrainAutoName = new ArrayList<Integer>(Arrays.asList( 
+            Terrains.SWAMP, Terrains.ROUGH, Terrains.RUBBLE, Terrains.MAGMA, 
+            Terrains.BUILDING, Terrains.BLDG_CLASS, Terrains.SCREEN, 
+            Terrains.RAPIDS, Terrains.SNOW, Terrains.SMOKE, Terrains.GEYSER, Terrains.METAL_CONTENT
+             ));
+    
     private List<JPanel> exampleBoxes = new ArrayList<>();
     private HashMap<Integer, JButton> colorButtons = new HashMap<>();
     private HashMap<Integer, JButton> shadowButtons = new HashMap<>();
@@ -97,7 +104,6 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
     private HashMap<Integer, JCheckBox> terrainChecks = new HashMap<>();
     private HashMap<Integer, JToggleButton> boldToggles = new HashMap<>();
     
-    private HexTextSettings currentIngameSetting;
     
     // --------------------------------------------------------------------------
     
@@ -107,12 +113,8 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
     public CommonSettingsHexTextsDialog(JFrame owner, ClientGUI cg, IBoardView bv) {
 
         super(owner, "Configure Hex Texts ... ", true); //$NON-NLS-1$
-        clientgui = cg; 
-        boardView = bv;
-        if ((bv == null) && (cg != null) && (cg.bv != null)) {
-            boardView = cg.bv;
-        }
-        
+        updateClient(cg, bv);
+
         Container content = getContentPane();
         content.setLayout(new BorderLayout());
 
@@ -133,6 +135,7 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
         butSmaller.addActionListener(this);
         butPreview.addActionListener(this);
         panStandard.setLayout(new FlowLayout(FlowLayout.LEFT));
+        panStandard.add(settingsLabel);
         panStandard.add(defaultLabel);
         panStandard.add(fontSelector);
         panStandard.add(butBigger);
@@ -190,6 +193,10 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
             // Hex Terrain Text
             gridBagCon.gridx++;
             JTextField textF = new JTextField();
+//            if (terrainAutoName.contains(t)) {
+//                textF.setText("Determined by Game");
+//                textF.setEnabled(false);
+//            }
             textF.addKeyListener(this);
             textF.setPreferredSize(new Dimension(80,25));
             panCenter.add(textF, gridBagCon);
@@ -206,13 +213,6 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
             gridBagCon.gridx++;
             JButton cSButton = new JButton();
             cSButton.addActionListener(this);
-            cSButton.addMouseListener(new MouseAdapter(){
-                public void mouseClicked(MouseEvent e){
-                    if (e.getButton() == MouseEvent.BUTTON2) {
-                        setBackground(new Color(0,0,0,255));
-                    }
-                }
-            });
             panCenter.add(cSButton, gridBagCon);
             shadowButtons.put(t, cSButton);
             
@@ -271,6 +271,7 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
         }
         
         JScrollPane scp = new JScrollPane(panCenter);
+        scp.getVerticalScrollBar().setUnitIncrement(20);
         setPreferredSize(new Dimension(500, 800));
         content.add(scp, BorderLayout.CENTER);
         
@@ -290,21 +291,23 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
     }
 
     private void LoadSettings() {
-        currentIngameSetting = HexTextSettings.getInGameSettings();
+        currentSetting = inMapEditor ? HexTextSettings.getMapEdSettings() : HexTextSettings.getInGameSettings();
         ApplySettingsToUI();
     }
     
     private void ApplySettingsToUI() {
-        if (currentIngameSetting == null) return;
+        if (currentSetting == null) return;
         
-        fontSelector.setSelectedItem(currentIngameSetting.getFont());
-        fontSize = currentIngameSetting.getFontSize();
-        ArrayList<HexTextConfig> allHTC = currentIngameSetting.getAllConfigs();
+        fontSelector.setSelectedItem(currentSetting.getFont());
+        fontSize = currentSetting.getFontSize();
+        ArrayList<HexTextConfig> allHTC = currentSetting.getAllConfigs();
         
         for (HexTextConfig htc: allHTC) {
             int terrain = htc.getTerrain();
             colorButtons.get(terrain).setBackground(htc.getColor());
             shadowButtons.get(terrain).setBackground(htc.getShadowColor());
+//            if (!terrainAutoName.contains(terrain)) {
+//            }
             textFields.get(terrain).setText(htc.getText());
             terrainChecks.get(terrain).setSelected(htc.isDisplayed());
             boldToggles.get(terrain).setSelected(htc.isBold());
@@ -313,7 +316,11 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
     
     private void SaveSettings() {
         HexTextSettings newHTS = createSettingsFromUI();
-        HexTextSettings.saveInGameSettings(newHTS);
+        if (inMapEditor) {
+            HexTextSettings.saveMapEdSettings(newHTS);            
+        } else {
+            HexTextSettings.saveInGameSettings(newHTS);
+        }
     }
 
     private HexTextSettings createSettingsFromUI() {
@@ -361,11 +368,15 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
         }
     }
     
-    /** Restores the old settings to the GUIP. Used for the Cancel button. 
-     *  Necessary because the GUIP settings get updated when
-     *  the Preview button is used. */
+    /** Restores the old settings. Used for the Cancel button. 
+     *  Necessary because the settings need to be saved to file for  
+     *  the preview. */
     private void restoreOldValues() {
-        HexTextSettings.saveInGameSettings(currentIngameSetting);
+        if (inMapEditor) {
+            HexTextSettings.saveMapEdSettings(currentSetting);            
+        } else {
+            HexTextSettings.saveInGameSettings(currentSetting);
+        }
     }
     
     private void cancelActions() {
@@ -399,9 +410,14 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
         } else if (e.getSource().getClass().equals(JButton.class)) {
             if (colorButtons.containsValue(e.getSource()))
                 chooseColor((JButton)e.getSource(), "Choose Text Color...");
-            
-            if (shadowButtons.containsValue(e.getSource()))
-                chooseColor((JButton)e.getSource(), "Choose Shadow Color...");
+
+            if (shadowButtons.containsValue(e.getSource())) {
+                if ((e.getModifiers() & ActionEvent.SHIFT_MASK) > 0) {
+                    ((JButton)e.getSource()).setBackground(new Color (1,1,1,0));
+                } else {
+                    chooseColor((JButton)e.getSource(), "Choose Shadow Color...");
+                }
+            }
         }
         
         refreshExamples();
@@ -441,15 +457,19 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
             boardView = cg.bv;
         }
         clientgui = cg;
+        inMapEditor = ((cg == null) && (bv != null));
+        if (inMapEditor) {
+            settingsLabel.setText("--- Map-Editor Settings ---"); //$NON-NLS-1$
+            settingsLabel.setForeground(Color.BLUE);
+        } else {
+            settingsLabel.setText("--- In-game Settings ---"); //$NON-NLS-1$
+            settingsLabel.setForeground(Color.GREEN);
+        }
     }
 
     /** Enables/Disables the preview button depending on whether a boardview is present. */
     private void adjustButtons() {
-        if (boardView != null) {
-            butPreview.setEnabled(true);
-        } else {
-            butPreview.setEnabled(false);
-        }
+        butPreview.setEnabled(boardView != null);
     }
 
     /** Makes the boardview redraw the hex graphics */

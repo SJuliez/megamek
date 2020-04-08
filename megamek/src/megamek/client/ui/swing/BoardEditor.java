@@ -110,11 +110,9 @@ import megamek.common.util.MegaMekFile;
 
 // TODO: center map
 // TODO: background on the whole screen
-// TODO: vertical size of editor pane?
 // TODO: restrict terrains to those with images?
 // TODO: Allow drawing of invalid terrain as an override?
 // TODO: Allow adding/changing board background images
-// TODO: board load time???
 // TODO: sluggish hex drawing?
 
 public class BoardEditor extends JComponent

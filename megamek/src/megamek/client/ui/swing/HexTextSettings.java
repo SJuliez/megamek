@@ -123,6 +123,14 @@ public class HexTextSettings implements Serializable {
         }
     }
 
+    public static void saveMapEdSettings(HexTextSettings hts) {
+        try(OutputStream os = new FileOutputStream(FILE_MAPED)) {
+            hts.save(os);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+    }
+    
     /**
      * Returns an empty HexTextSettings.
      */
