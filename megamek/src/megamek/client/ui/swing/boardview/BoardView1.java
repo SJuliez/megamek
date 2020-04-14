@@ -2980,8 +2980,8 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         }
 
         for (int terrain: hex.getTerrainTypes()) {
-            htc = hexTextSet.getConfig(terrain);
-            if (htc == null || !htc.isDisplayed()) continue;
+            htc = hexTextSet.getConfig(terrain, hex.getTerrain(terrain).getLevel());
+            if (htc == null || !htc.isDisplay()) continue;
             switch (terrain) {
 
             case Terrains.WATER:
@@ -3005,40 +3005,6 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
                         htc.getColor(), htc.getShadowColor(), htc.isBold());
                 break;
                 
-            case Terrains.BUILDING:
-            case Terrains.BLDG_CLASS:
-            case Terrains.SWAMP:
-            case Terrains.GEYSER:
-            case Terrains.SNOW:
-            case Terrains.MAGMA:
-            case Terrains.RAPIDS:
-            case Terrains.METAL_CONTENT:
-            case Terrains.SMOKE:
-                String terrName = Terrains.getDisplayName(terrain, hex.getTerrain(terrain).getLevel());
-                AddtoHexText(
-                        htc.getText()+terrName, 
-                        htc.getColor(), htc.getShadowColor(), htc.isBold());
-                break;
-            
-            case Terrains.WOODS:
-            case Terrains.JUNGLE:
-                HexTextConfig htcLHU;
-                switch (hex.getTerrain(terrain).getLevel()) {
-                case 1:
-                    htcLHU = hexTextSet.getConfig(HexTextSettings.HT_LIGHT);
-                    break;
-                case 2:
-                    htcLHU = hexTextSet.getConfig(HexTextSettings.HT_HEAVY);
-                    break;
-                default:
-                    htcLHU = hexTextSet.getConfig(HexTextSettings.HT_ULTRA);
-                    break;
-                }
-                if (htcLHU.isDisplayed()) {
-                    AddtoHexText(htcLHU.getText() + htc.getText(), htc.getColor(), htc.getShadowColor(), htc.isBold());
-                }
-                break;
-
             default:
                 AddtoHexText(htc.getText(), htc.getColor(), htc.getShadowColor(), htc.isBold());
 
@@ -3088,7 +3054,7 @@ public class BoardView1 extends JPanel implements IBoardView, Scrollable,
         Color sepColor = htcSep.getColor();
         Color sepSColor = htcSep.getShadowColor();
         boolean sepBold = htcSep.isBold();
-        boolean sepDisp = htcSep.isDisplayed();
+        boolean sepDisp = htcSep.isDisplay();
         int wSep = sepBold ? fmBold.stringWidth(sep) : fmNorm.stringWidth(sep);
         if (!sepDisp) wSep = 0;
 

@@ -2,6 +2,7 @@
 <HexTextSettings>
     <Configs>
         <TerrainID>1001</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>true</IsDisplayed>
         <TextinHex>	</TextinHex>
         <TextColor>#000000ff</TextColor>
@@ -10,6 +11,7 @@
     </Configs>
     <Configs>
         <TerrainID>1002</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>true</IsDisplayed>
         <TextinHex>LEVEL </TextinHex>
         <TextColor>#000000ff</TextColor>
@@ -18,6 +20,7 @@
     </Configs>
     <Configs>
         <TerrainID>2</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>true</IsDisplayed>
         <TextinHex>DEPTH </TextinHex>
         <TextColor>#000000ff</TextColor>
@@ -26,110 +29,169 @@
     </Configs>
     <Configs>
         <TerrainID>1</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>1</TerrainID>
+        <TerrainLevel>2</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>1</TerrainID>
+        <TerrainLevel>3</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#d6d9dfff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>5</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
-        <TerrainID>1003</TerrainID>
+        <TerrainID>5</TerrainID>
+        <TerrainLevel>2</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
-        <TerrainID>1004</TerrainID>
+        <TerrainID>5</TerrainID>
+        <TerrainLevel>3</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
-        <BoldFace>false</BoldFace>
-    </Configs>
-    <Configs>
-        <TerrainID>1005</TerrainID>
-        <IsDisplayed>false</IsDisplayed>
-        <TextinHex></TextinHex>
-        <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>14</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
-        <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>14</TerrainID>
+        <TerrainLevel>3</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>3</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#ccccccff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>3</TerrainID>
+        <TerrainLevel>2</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>4</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>4</TerrainID>
+        <TerrainLevel>6</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#d6d9dfff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>15</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>6</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>7</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>8</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>8</TerrainID>
+        <TerrainLevel>2</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#d6d9dfff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>9</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>24</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>true</IsDisplayed>
         <TextinHex>HEIGHT </TextinHex>
         <TextColor>#0000ffff</TextColor>
@@ -138,22 +200,79 @@
     </Configs>
     <Configs>
         <TerrainID>23</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>22</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
-        <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>22</TerrainID>
+        <TerrainLevel>2</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>22</TerrainID>
+        <TerrainLevel>3</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>22</TerrainID>
+        <TerrainLevel>4</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>22</TerrainID>
+        <TerrainLevel>5</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>26</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>26</TerrainID>
+        <TerrainLevel>2</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>26</TerrainID>
+        <TerrainLevel>3</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -162,6 +281,7 @@
     </Configs>
     <Configs>
         <TerrainID>27</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -170,6 +290,7 @@
     </Configs>
     <Configs>
         <TerrainID>25</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -178,6 +299,7 @@
     </Configs>
     <Configs>
         <TerrainID>43</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -186,6 +308,7 @@
     </Configs>
     <Configs>
         <TerrainID>30</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -194,6 +317,7 @@
     </Configs>
     <Configs>
         <TerrainID>29</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -202,6 +326,7 @@
     </Configs>
     <Configs>
         <TerrainID>28</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -210,6 +335,7 @@
     </Configs>
     <Configs>
         <TerrainID>33</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -218,6 +344,7 @@
     </Configs>
     <Configs>
         <TerrainID>32</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -226,6 +353,7 @@
     </Configs>
     <Configs>
         <TerrainID>31</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -234,6 +362,7 @@
     </Configs>
     <Configs>
         <TerrainID>34</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -242,6 +371,7 @@
     </Configs>
     <Configs>
         <TerrainID>12</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -250,6 +380,7 @@
     </Configs>
     <Configs>
         <TerrainID>13</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -258,6 +389,7 @@
     </Configs>
     <Configs>
         <TerrainID>10</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -266,6 +398,7 @@
     </Configs>
     <Configs>
         <TerrainID>35</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -274,6 +407,7 @@
     </Configs>
     <Configs>
         <TerrainID>36</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -282,6 +416,7 @@
     </Configs>
     <Configs>
         <TerrainID>37</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -290,6 +425,7 @@
     </Configs>
     <Configs>
         <TerrainID>38</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -298,6 +434,7 @@
     </Configs>
     <Configs>
         <TerrainID>39</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -306,6 +443,7 @@
     </Configs>
     <Configs>
         <TerrainID>40</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -314,6 +452,7 @@
     </Configs>
     <Configs>
         <TerrainID>41</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -322,30 +461,52 @@
     </Configs>
     <Configs>
         <TerrainID>16</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
-        <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <TextColor>#0000ffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>16</TerrainID>
+        <TerrainLevel>2</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#000066ff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>17</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>18</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#ffffffff</TextColor>
+        <ShadowColor>#0101010</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>18</TerrainID>
+        <TerrainLevel>2</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
-        <ShadowColor>#d6d9dfff</ShadowColor>
+        <ShadowColor>#0101010</ShadowColor>
         <BoldFace>false</BoldFace>
     </Configs>
     <Configs>
         <TerrainID>19</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -354,6 +515,16 @@
     </Configs>
     <Configs>
         <TerrainID>20</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#d6d9dfff</TextColor>
+        <ShadowColor>#d6d9dfff</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>20</TerrainID>
+        <TerrainLevel>2</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -362,6 +533,25 @@
     </Configs>
     <Configs>
         <TerrainID>21</TerrainID>
+        <TerrainLevel>1</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#d6d9dfff</TextColor>
+        <ShadowColor>#d6d9dfff</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>21</TerrainID>
+        <TerrainLevel>2</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#d6d9dfff</TextColor>
+        <ShadowColor>#d6d9dfff</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>21</TerrainID>
+        <TerrainLevel>3</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -370,6 +560,16 @@
     </Configs>
     <Configs>
         <TerrainID>42</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
+        <IsDisplayed>false</IsDisplayed>
+        <TextinHex></TextinHex>
+        <TextColor>#d6d9dfff</TextColor>
+        <ShadowColor>#d6d9dfff</ShadowColor>
+        <BoldFace>false</BoldFace>
+    </Configs>
+    <Configs>
+        <TerrainID>1006</TerrainID>
+        <TerrainLevel>-1</TerrainLevel>
         <IsDisplayed>false</IsDisplayed>
         <TextinHex></TextinHex>
         <TextColor>#d6d9dfff</TextColor>
@@ -377,6 +577,6 @@
         <BoldFace>false</BoldFace>
     </Configs>
     <Font>SansSerif</Font>
-    <FontSize>11</FontSize>
+    <FontSize>10</FontSize>
     <ShowSingle>false</ShowSingle>
 </HexTextSettings>

@@ -1,8 +1,16 @@
-/*
- * Configuration dialog for the boardview hex texts
- *
- * Created on 8 April 2016
- */
+/*  
+* MegaMek - Copyright (C) 2020 - The MegaMek Team  
+*  
+* This program is free software; you can redistribute it and/or modify it under  
+* the terms of the GNU General Public License as published by the Free Software  
+* Foundation; either version 2 of the License, or (at your option) any later  
+* version.  
+*  
+* This program is distributed in the hope that it will be useful, but WITHOUT  
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS  
+* FOR A PARTICULAR PURPOSE. See the GNU General Public License for more  
+* details.  
+*/
 
 package megamek.client.ui.swing;
 
@@ -22,6 +30,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,6 +41,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -39,15 +49,64 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+import javax.swing.filechooser.FileFilter;
 
 import megamek.common.Terrains;
 import megamek.client.ui.IBoardView;
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.boardview.BoardView1;
 
+/**
+ * CommonSettingsHexTextsDialog.java Created on April 8, 2016. Configuration
+ * dialog for settings concerning the display of terrain info texts such as 
+ * "Light Woods" in the board hexes. 
+ *
+ * @author Simon
+ */
 public class CommonSettingsHexTextsDialog extends ClientDialog implements ActionListener, KeyListener {
     
     private static final long serialVersionUID = -4227870501769580587L;
+    
+    private class TerrainLevelPair {
+        public TerrainLevelPair(int i, int j) {
+            terrain = i;
+            level = j;
+        }
+        private int terrain;
+        private int level;
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            TerrainLevelPair other = (TerrainLevelPair) obj;
+            if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+                return false;
+            if (level != other.level)
+                return false;
+            if (terrain != other.terrain)
+                return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 117;
+            int result = 1;
+            result = prime * result + getEnclosingInstance().hashCode();
+            result = prime * result + level;
+            result = prime * result + terrain;
+            return result;
+        }
+
+        private CommonSettingsHexTextsDialog getEnclosingInstance() {
+            return CommonSettingsHexTextsDialog.this;
+        }
+    }
     
     ClientGUI clientgui;
     IBoardView boardView;
@@ -80,29 +139,95 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
     // Other Text Features
     private JPanel panCenter;
     
-    private final ArrayList<Integer> terrainList = new ArrayList<Integer>(Arrays.asList( HexTextSettings.HT_SEPARATOR, HexTextSettings.HT_LEVEL,  Terrains.WATER, 0,
-            Terrains.WOODS, Terrains.JUNGLE, HexTextSettings.HT_LIGHT, HexTextSettings.HT_HEAVY, HexTextSettings.HT_ULTRA, 0,
-            Terrains.SWAMP, Terrains.ROUGH, Terrains.RUBBLE, Terrains.MUD, Terrains.SAND, Terrains.TUNDRA, Terrains.MAGMA, Terrains.FIELDS, 0,
-            Terrains.BLDG_ELEV, Terrains.BLDG_CF, Terrains.BUILDING, Terrains.BLDG_CLASS, Terrains.BLDG_ARMOR, Terrains.BLDG_BASEMENT_TYPE, Terrains.BLDG_BASE_COLLAPSED, 0,
-            Terrains.BRIDGE_ELEV, Terrains.BRIDGE_CF, Terrains.BRIDGE, 0,
-            Terrains.FUEL_TANK_ELEV, Terrains.FUEL_TANK_CF, Terrains.FUEL_TANK, Terrains.FUEL_TANK_MAGN, 0,
-            Terrains.PAVEMENT, Terrains.ROAD, Terrains.INDUSTRIAL, 0,
-            Terrains.IMPASSABLE, Terrains.ELEVATOR, Terrains.FORTIFIED, Terrains.SCREEN, Terrains.FLUFF, Terrains.ARMS, Terrains.LEGS, 0,
-            Terrains.RAPIDS, Terrains.ICE, Terrains.SNOW, Terrains.FIRE, Terrains.SMOKE, Terrains.GEYSER, Terrains.METAL_CONTENT
+    private final ArrayList<TerrainLevelPair> settingsList = new ArrayList<TerrainLevelPair>(Arrays.asList( 
+            new TerrainLevelPair(HexTextSettings.HT_SEPARATOR, -1), 
+            new TerrainLevelPair(HexTextSettings.HT_LEVEL, -1),
+            new TerrainLevelPair(Terrains.WATER, -1), 
+            new TerrainLevelPair(0, -1),
+            new TerrainLevelPair(Terrains.WOODS, 1), 
+            new TerrainLevelPair(Terrains.WOODS, 2), 
+            new TerrainLevelPair(Terrains.WOODS, 3), 
+            new TerrainLevelPair(Terrains.JUNGLE, 1), 
+            new TerrainLevelPair(Terrains.JUNGLE, 2), 
+            new TerrainLevelPair(Terrains.JUNGLE, 3), 
+            new TerrainLevelPair(0, -1),
+            new TerrainLevelPair(Terrains.SWAMP, 1),
+            new TerrainLevelPair(Terrains.SWAMP, 3),
+            new TerrainLevelPair(Terrains.ROUGH, 1),
+            new TerrainLevelPair(Terrains.ROUGH, 2), 
+            new TerrainLevelPair(Terrains.RUBBLE, -1),
+            new TerrainLevelPair(Terrains.RUBBLE, 6), 
+            new TerrainLevelPair(Terrains.MUD, -1), 
+            new TerrainLevelPair(Terrains.SAND, -1), 
+            new TerrainLevelPair(Terrains.TUNDRA, -1), 
+            new TerrainLevelPair(Terrains.MAGMA, 1), 
+            new TerrainLevelPair(Terrains.MAGMA, 2),
+            new TerrainLevelPair(Terrains.FIELDS, -1), 
+            new TerrainLevelPair(0, -1),
+            new TerrainLevelPair(Terrains.BLDG_ELEV, -1), 
+            new TerrainLevelPair(Terrains.BLDG_CF, -1), 
+            new TerrainLevelPair(Terrains.BUILDING, 1),
+            new TerrainLevelPair(Terrains.BUILDING, 2),
+            new TerrainLevelPair(Terrains.BUILDING, 3),
+            new TerrainLevelPair(Terrains.BUILDING, 4),
+            new TerrainLevelPair(Terrains.BUILDING, 5),
+            new TerrainLevelPair(Terrains.BLDG_CLASS, 1),
+            new TerrainLevelPair(Terrains.BLDG_CLASS, 2),
+            new TerrainLevelPair(Terrains.BLDG_CLASS, 3),
+            new TerrainLevelPair(Terrains.BLDG_ARMOR, -1),
+            new TerrainLevelPair(Terrains.BLDG_BASEMENT_TYPE, -1),
+            new TerrainLevelPair(Terrains.BLDG_BASE_COLLAPSED, 1),
+            new TerrainLevelPair(0, -1),
+            new TerrainLevelPair(Terrains.BRIDGE_ELEV, -1),
+            new TerrainLevelPair(Terrains.BRIDGE_CF, -1),
+            new TerrainLevelPair(Terrains.BRIDGE, -1),
+            new TerrainLevelPair(0, -1),
+            new TerrainLevelPair(Terrains.FUEL_TANK_ELEV, -1),
+            new TerrainLevelPair(Terrains.FUEL_TANK_CF, -1),
+            new TerrainLevelPair(Terrains.FUEL_TANK, -1),
+            new TerrainLevelPair(Terrains.FUEL_TANK_MAGN, -1),
+            new TerrainLevelPair(0, -1),
+            new TerrainLevelPair(Terrains.PAVEMENT, -1),
+            new TerrainLevelPair(Terrains.ROAD, -1),
+            new TerrainLevelPair(Terrains.INDUSTRIAL, -1),
+            new TerrainLevelPair(0, -1),
+            new TerrainLevelPair(Terrains.IMPASSABLE, -1),
+            new TerrainLevelPair(Terrains.ELEVATOR, -1),
+            new TerrainLevelPair(Terrains.FORTIFIED, -1),
+            new TerrainLevelPair(Terrains.SCREEN, -1),
+            new TerrainLevelPair(Terrains.FLUFF, -1),
+            new TerrainLevelPair(Terrains.ARMS, -1),
+            new TerrainLevelPair(Terrains.LEGS, -1),
+            new TerrainLevelPair(0, -1),
+            new TerrainLevelPair(Terrains.RAPIDS, 1),
+            new TerrainLevelPair(Terrains.RAPIDS, 2),
+            new TerrainLevelPair(Terrains.ICE, -1),
+            new TerrainLevelPair(Terrains.SNOW, 1),
+            new TerrainLevelPair(Terrains.SNOW, 2),
+            new TerrainLevelPair(Terrains.FIRE, -1),
+            new TerrainLevelPair(Terrains.SMOKE, 1),
+            new TerrainLevelPair(Terrains.SMOKE, 2), 
+            new TerrainLevelPair(Terrains.GEYSER, 1),
+            new TerrainLevelPair(Terrains.GEYSER, 2),
+            new TerrainLevelPair(Terrains.GEYSER, 3),
+            new TerrainLevelPair(Terrains.METAL_CONTENT, -1),
+            new TerrainLevelPair(0, -1),
+            new TerrainLevelPair(HexTextSettings.HT_OTHERS, -1)
              ));
     
-    private final ArrayList<Integer> terrainAutoName = new ArrayList<Integer>(Arrays.asList( 
-            Terrains.SWAMP, Terrains.ROUGH, Terrains.RUBBLE, Terrains.MAGMA, 
-            Terrains.BUILDING, Terrains.BLDG_CLASS, Terrains.SCREEN, 
-            Terrains.RAPIDS, Terrains.SNOW, Terrains.SMOKE, Terrains.GEYSER, Terrains.METAL_CONTENT
-             ));
-    
+    private final ArrayList<Integer> terrainWithLevel = new ArrayList<Integer>(Arrays.asList( 
+            HexTextSettings.HT_LEVEL,  Terrains.WATER, Terrains.BLDG_ELEV, Terrains.BLDG_CF, 
+            Terrains.BLDG_ARMOR, Terrains.BLDG_BASEMENT_TYPE, Terrains.BLDG_BASE_COLLAPSED,
+            Terrains.BRIDGE_ELEV, Terrains.BRIDGE_CF, Terrains.FUEL_TANK_ELEV, 
+            Terrains.FUEL_TANK_CF, Terrains.FUEL_TANK_MAGN, Terrains.ELEVATOR 
+            ));
+
     private List<JPanel> exampleBoxes = new ArrayList<>();
-    private HashMap<Integer, JButton> colorButtons = new HashMap<>();
-    private HashMap<Integer, JButton> shadowButtons = new HashMap<>();
-    private HashMap<Integer, JTextField> textFields = new HashMap<>();
-    private HashMap<Integer, JCheckBox> terrainChecks = new HashMap<>();
-    private HashMap<Integer, JToggleButton> boldToggles = new HashMap<>();
+    private HashMap<TerrainLevelPair, JButton> colorButtons = new HashMap<>();
+    private HashMap<TerrainLevelPair, JButton> shadowButtons = new HashMap<>();
+    private HashMap<TerrainLevelPair, JTextField> textFields = new HashMap<>();
+    private HashMap<TerrainLevelPair, JCheckBox> terrainChecks = new HashMap<>();
+    private HashMap<TerrainLevelPair, JToggleButton> boldToggles = new HashMap<>();
     
     
     // --------------------------------------------------------------------------
@@ -134,6 +259,7 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
         butBigger.addActionListener(this);
         butSmaller.addActionListener(this);
         butPreview.addActionListener(this);
+        butPreset.addActionListener(this);
         panStandard.setLayout(new FlowLayout(FlowLayout.LEFT));
         panStandard.add(settingsLabel);
         panStandard.add(defaultLabel);
@@ -148,11 +274,11 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
         panCenter.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         gridBagCon.gridy = 0;
         gridBagCon.fill = GridBagConstraints.VERTICAL;
-        for (int t: terrainList) {
+        for (TerrainLevelPair t: settingsList) {
             // for each terrain, add...
             
             // Spacer between groups of terrains
-            if (t == 0) {
+            if (t.terrain == 0) {
                 gridBagCon.gridwidth = GridBagConstraints.REMAINDER;
                 gridBagCon.gridx = 0;
                 gridBagCon.ipady = 3;
@@ -175,16 +301,29 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
             
             // A label with the terrain type 
             gridBagCon.gridx++;
+            gridBagCon.anchor = GridBagConstraints.LINE_START;
             String tLabel;
-            if (t < 1000) {
-                tLabel = Terrains.getEditorName(t);
-            } else {
-                tLabel = getSpecialLabel(t);
+            switch (t.terrain) {
+            case HexTextSettings.HT_SEPARATOR:
+            case HexTextSettings.HT_LEVEL:
+            case HexTextSettings.HT_OTHERS:
+            case HexTextSettings.HT_LIGHT:
+            case HexTextSettings.HT_HEAVY:
+            case HexTextSettings.HT_ULTRA:
+                tLabel = getSpecialLabel(t.terrain);
+                break;
+            default:
+                if (t.level == -1) {
+                    tLabel = Terrains.getEditorName(t.terrain);
+                } else {
+                    tLabel = Terrains.getDisplayName(t.terrain, t.level);
+                }
             }
             panCenter.add(new JLabel(tLabel), gridBagCon);
-            
+
             // Text Color
             gridBagCon.gridx++;
+            gridBagCon.anchor = GridBagConstraints.CENTER;
             JButton cButton = new JButton();
             cButton.addActionListener(this);
             panCenter.add(cButton, gridBagCon);
@@ -193,10 +332,6 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
             // Hex Terrain Text
             gridBagCon.gridx++;
             JTextField textF = new JTextField();
-//            if (terrainAutoName.contains(t)) {
-//                textF.setText("Determined by Game");
-//                textF.setEnabled(false);
-//            }
             textF.addKeyListener(this);
             textF.setPreferredSize(new Dimension(80,25));
             panCenter.add(textF, gridBagCon);
@@ -220,44 +355,37 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
             JPanel exampleBox = new JPanel() {
                 private static final long serialVersionUID = 3549083892447215237L;
 
-                String myterrain = tLabel;
-                JTextField myText = textF;
-                JCheckBox myCheck = cbTerrain;
-                JToggleButton myBold = texBold;
-                JButton myColor = cButton;
-                JButton mySColor = cSButton;
+                final JTextField myText = textF;
+                final JCheckBox myCheck = cbTerrain;
+                final JToggleButton myBold = texBold;
+                final JButton myColor = cButton;
+                final JButton mySColor = cSButton;
+                final int myterrainID = t.terrain;
+                final String terrainN = terrainWithLevel.contains(myterrainID) ? "5" : "";
                 
                 @Override
                 public void paintComponent(Graphics g) {
-                    super.paintComponent(g); 
+                    super.paintComponent(g);
 
                     // Paint the hex text if the checkbox is selected, otherwise just a gray box
                     if (myCheck.isSelected()) {
-                        // arbitrary brownish background
-                        g.setColor(new Color(180,150,40));
-                        g.fillRect(0,2,80,25);
-
-                        GUIPreferences.AntiAliasifSet(g);
-                        // set the font
-                        Font font = new Font(
-                                (String)fontSelector.getSelectedItem(),
-                                myBold.isSelected() ? Font.BOLD : Font.PLAIN,
-                                        fontSize);
-                        g.setFont(font);
-
                         // set the text and add a level to some
-                        String txt = myText.getText();
-                        if (myterrain.equals("Level") ||
-                                myterrain.equals("Depth") ||
-                                myterrain.equals("Building Height")) {
-                            txt += "5";
-                        }
+                        String txt = myText.getText() + terrainN;
+                        
+                        // arbitrary brownish background
+                        g.setColor(new Color(180, 150, 40));
+                        g.fillRect(0, 2, 80, 25);
 
+                        // and draw the text
+                        GUIPreferences.AntiAliasifSet(g);
+                        Font font = new Font((String) fontSelector.getSelectedItem(),
+                                myBold.isSelected() ? Font.BOLD : Font.PLAIN, fontSize);
+                        g.setFont(font);
                         BoardView1.DrawHexText(g, 40, 15, myColor.getBackground(), txt, mySColor.getBackground());
                     } else {
                         // Inactive hex text
-                        g.setColor(new Color(150,150,150));
-                        g.fillRect(0,2,80,25);
+                        g.setColor(new Color(150, 150, 150));
+                        g.fillRect(0, 2, 80, 25);
                     }
                 }
                 
@@ -303,14 +431,17 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
         ArrayList<HexTextConfig> allHTC = currentSetting.getAllConfigs();
         
         for (HexTextConfig htc: allHTC) {
-            int terrain = htc.getTerrain();
-            colorButtons.get(terrain).setBackground(htc.getColor());
-            shadowButtons.get(terrain).setBackground(htc.getShadowColor());
-//            if (!terrainAutoName.contains(terrain)) {
-//            }
-            textFields.get(terrain).setText(htc.getText());
-            terrainChecks.get(terrain).setSelected(htc.isDisplayed());
-            boldToggles.get(terrain).setSelected(htc.isBold());
+            TerrainLevelPair tlp = new TerrainLevelPair(htc.getTerrain(), htc.getLevel());
+            if (!colorButtons.containsKey(tlp)) {
+                tlp = new TerrainLevelPair(htc.getTerrain(), -1);
+            }
+            if (colorButtons.containsKey(tlp)) {
+                colorButtons.get(tlp).setBackground(htc.getColor());
+                shadowButtons.get(tlp).setBackground(htc.getShadowColor());
+                textFields.get(tlp).setText(htc.getText());
+                terrainChecks.get(tlp).setSelected(htc.isDisplay());
+                boldToggles.get(tlp).setSelected(htc.isBold());
+            }
         }
     }
     
@@ -327,10 +458,11 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
         HexTextSettings newHTS = HexTextSettings.getInstance();
         newHTS.setFont((String)fontSelector.getSelectedItem());
         newHTS.setFontSize(fontSize);
-        for (int t: terrainList) {
-            if (t == 0) continue;
+        for (TerrainLevelPair t: settingsList) {
+            if (t.terrain == 0) continue;
             HexTextConfig htc = new HexTextConfig(
-                    t, 
+                    t.terrain, 
+                    t.level,
                     terrainChecks.get(t).isSelected(),
                     textFields.get(t).getText(),
                     colorButtons.get(t).getBackground(),
@@ -348,6 +480,7 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
         case HexTextSettings.HT_LIGHT: return "Light";
         case HexTextSettings.HT_HEAVY: return "Heavy";
         case HexTextSettings.HT_ULTRA: return "Ultra";
+        case HexTextSettings.HT_OTHERS: return "All Others";
         default: return "--";
         }
     }
@@ -401,7 +534,10 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
             cancelActions();
             setVisible(false);
             
-        } else if (e.getSource().equals(butBigger)) {
+        } else if (e.getSource().equals(butPreset)) {
+            loadPreset();
+            
+        }else if (e.getSource().equals(butBigger)) {
             if (fontSize < 40) fontSize++;
             
         } else if (e.getSource().equals(butSmaller)) {
@@ -477,6 +613,34 @@ public class CommonSettingsHexTextsDialog extends ClientDialog implements Action
         if (boardView != null) {
             boardView.redrawBoard();
         }
+    }
+    
+    /** Loads a preset from the mmconf/hextextpresets directory. */
+    private void loadPreset() {
+        JFileChooser fc = new JFileChooser("mmconf/hextextpresets");
+        fc.setLocation(getLocation().x + 150, getLocation().y + 100);
+        fc.setDialogTitle("Load HexText Preset");
+        fc.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File dir) {
+                return (dir.getName().endsWith(".xml") || dir.isDirectory()); //$NON-NLS-1$
+            }
+
+            @Override
+            public String getDescription() {
+                return "*.xml";
+            }
+        });
+        int returnVal = fc.showOpenDialog(this);
+
+        // canceled some way
+        if ((returnVal != JFileChooser.APPROVE_OPTION) || (fc.getSelectedFile() == null)) {
+            return;
+        }
+
+        // load and apply the settings
+        currentSetting = HexTextSettings.loadSettings(fc.getSelectedFile());
+        ApplySettingsToUI();
     }
 
 }

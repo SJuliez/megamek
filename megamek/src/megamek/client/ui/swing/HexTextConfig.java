@@ -1,3 +1,17 @@
+/*  
+* MegaMek - Copyright (C) 2020 - The MegaMek Team  
+*  
+* This program is free software; you can redistribute it and/or modify it under  
+* the terms of the GNU General Public License as published by the Free Software  
+* Foundation; either version 2 of the License, or (at your option) any later  
+* version.  
+*  
+* This program is distributed in the hope that it will be useful, but WITHOUT  
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS  
+* FOR A PARTICULAR PURPOSE. See the GNU General Public License for more  
+* details.  
+*/
+
 package megamek.client.ui.swing;
 
 import java.awt.Color;
@@ -7,12 +21,21 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+/**
+ * HexTextConfig.java Created on April 1, 2020. Used as a subclass of {@link HexTextSettings}
+ * to store info for a single terrain.
+ *
+ * @author Simon
+ */
 @XmlRootElement(name = "HexTextConfig")
 @XmlAccessorType(XmlAccessType.NONE)
 public class HexTextConfig {
 
     @XmlElement(name = "TerrainID")
     private int terrain;
+    
+    @XmlElement(name = "TerrainLevel")
+    private int level;
     
     @XmlElement(name = "IsDisplayed")
     private boolean display;
@@ -29,27 +52,66 @@ public class HexTextConfig {
     @XmlElement(name = "BoldFace")
     private boolean bold;
 
-    public int getTerrain() { return terrain; }
-    public void setTerrain(int t) { terrain = t; } 
-    
-    public Color getShadowColor() { return colorFromHex(hexShadowColor); }
-    public void setShadowColor(Color c) { hexShadowColor = hexFromColor(c); }
+    public int getLevel() {
+        return level;
+    }
 
-    public Color getColor() { return colorFromHex(hexColor); }
-    public void setColor(Color c) { hexColor = hexFromColor(c); }
-    
-    public boolean isDisplayed() { return display; }
-    public void setDisplayed(boolean d) { display = d; }
+    public void setLevel(int level) {
+        this.level = level;
+    }
 
-    public String getText() { return text; }
-    public void setText(String t) { text = t; }
+    public Color getShadowColor() { 
+        return colorFromHex(hexShadowColor); 
+    }
 
-    public boolean isBold() { return bold; }
-    public void setBold(boolean b) { bold = b; }
+    public void setShadowColor(Color c) { 
+        hexShadowColor = hexFromColor(c); 
+    }
 
-    public HexTextConfig(int terrain, boolean display, String text, String color,
+    public Color getColor() { 
+        return colorFromHex(hexColor); 
+    }
+
+    public void setColor(Color c) { 
+        hexColor = hexFromColor(c); 
+    }
+
+    public int getTerrain() {
+        return terrain;
+    }
+
+    public void setTerrain(int terrain) {
+        this.terrain = terrain;
+    }
+
+    public boolean isDisplay() {
+        return display;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public boolean isBold() {
+        return bold;
+    }
+
+    public void setBold(boolean bold) {
+        this.bold = bold;
+    }
+
+    public HexTextConfig(int terrain, int level, boolean display, String text, String color,
             String shadowColor, boolean bold) {
         this.terrain = terrain;
+        this.level = level;
         this.display = display;
         this.text = text;
         this.hexColor = color;
@@ -57,9 +119,10 @@ public class HexTextConfig {
         this.bold = bold;
     }
     
-    public HexTextConfig(int terrain, boolean display, String text, Color color,
+    public HexTextConfig(int terrain, int level, boolean display, String text, Color color,
             Color shadowColor, boolean bold) {
         this.terrain = terrain;
+        this.level = level;
         this.display = display;
         this.text = text;
         this.hexColor = hexFromColor(color);
@@ -90,7 +153,7 @@ public class HexTextConfig {
     /** Converts Color colS to a #FFFFFFFF RGBA String. */
     private static String hexFromColor(Color colS) {
         String hex = Integer.toHexString(colS.getRGB() & 0xffffff);
-        while(hex.length() < 6){
+        while (hex.length() < 6) {
             hex = "0" + hex;
         }
         return "#" + hex + Integer.toHexString(colS.getAlpha() & 0xFF);

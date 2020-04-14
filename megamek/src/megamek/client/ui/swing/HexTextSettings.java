@@ -1,19 +1,20 @@
-/*
- * MegaMek - Copyright (C) 2000-2002 Ben Mazur (bmazur@sev.org)
- *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2 of the License, or (at your option) any later
- * version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- */
+/*  
+* MegaMek - Copyright (C) 2020 - The MegaMek Team  
+*  
+* This program is free software; you can redistribute it and/or modify it under  
+* the terms of the GNU General Public License as published by the Free Software  
+* Foundation; either version 2 of the License, or (at your option) any later  
+* version.  
+*  
+* This program is distributed in the hope that it will be useful, but WITHOUT  
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS  
+* FOR A PARTICULAR PURPOSE. See the GNU General Public License for more  
+* details.  
+*/
 
 package megamek.client.ui.swing;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -41,7 +42,9 @@ import megamek.common.Terrains;
 import megamek.utils.MegaMekXmlUtil;
 
 /**
- * HexTextSettings.java Created on April 1, 2020. Not a joke.
+ * HexTextSettings.java Created on April 1, 2020. A storage class for settings 
+ * concerning the display of terrain info texts such as "Light Woods" in the 
+ * board hexes. Used by the boardview.
  *
  * @author Simon
  */
@@ -58,6 +61,7 @@ public class HexTextSettings implements Serializable {
     public final static int HT_LIGHT = 1003;
     public final static int HT_HEAVY = 1004;
     public final static int HT_ULTRA = 1005;
+    public final static int HT_OTHERS = 1006;
     
     /** The configurations for the individual terrains, containing whether to display 
      * the terrain, the color and shadow color and the text to display*/
@@ -82,10 +86,10 @@ public class HexTextSettings implements Serializable {
      */
     public static HexTextSettings getMinimalSettings() {
         HexTextSettings hts = new HexTextSettings();
-        hts.addConfig(new HexTextConfig(HT_LEVEL, true, "LEVEL ", "#000000", "#00000000", false));
-        hts.addConfig(new HexTextConfig(Terrains.WATER, true, "DEPTH ", "#000000",  "#00000000", false));
-        hts.addConfig(new HexTextConfig(Terrains.BLDG_ELEV, true, "HEIGHT ", "#0000FF",  "#00000000", false));
-        hts.addConfig(new HexTextConfig(HT_SEPARATOR, true, "\t", "#000000",  "#00000000", false));
+        hts.addConfig(new HexTextConfig(HT_LEVEL, -1, true, "LEVEL ", "#000000", "#00000000", false));
+        hts.addConfig(new HexTextConfig(Terrains.WATER, -1, true, "DEPTH ", "#000000",  "#00000000", false));
+        hts.addConfig(new HexTextConfig(Terrains.BLDG_ELEV, -1, true, "HEIGHT ", "#0000FF",  "#00000000", false));
+        hts.addConfig(new HexTextConfig(HT_SEPARATOR, -1, true, "\t", "#000000",  "#00000000", false));
         hts.font = "SansSerif";
         hts.fontSize = 16;
         hts.showSingle = false;
@@ -97,7 +101,9 @@ public class HexTextSettings implements Serializable {
         HexTextSettings hts = getMinimalSettings();
         try(InputStream is = new FileInputStream(FILE_INGAME)) {
             HexTextSettings htsr = getInstance(is);
-            if (htsr != null) hts = htsr;
+            if (htsr != null) {
+                hts = htsr;
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -128,6 +134,16 @@ public class HexTextSettings implements Serializable {
             hts.save(os);
         } catch (IOException e1) {
             e1.printStackTrace();
+        }
+    }
+    
+    /** Loads the current map editor settings from the XML file. */
+    public static HexTextSettings loadSettings(File file) {
+        try(InputStream is = new FileInputStream(file)) {
+            return getInstance(is);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
         }
     }
     
@@ -204,6 +220,15 @@ public class HexTextSettings implements Serializable {
     public HexTextConfig getConfig(int terrain) {
         for (HexTextConfig htc: allConfigs) {
             if (htc.getTerrain() == terrain)
+                return htc;
+        }
+        return null;
+    }
+
+    public HexTextConfig getConfig(int terrain, int level) {
+        for (HexTextConfig htc : allConfigs) {
+            if ((htc.getTerrain() == terrain) && 
+                    ((htc.getLevel() == -1) || htc.getLevel() == level))
                 return htc;
         }
         return null;
