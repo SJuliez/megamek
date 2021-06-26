@@ -265,6 +265,8 @@ super * "water:1" "volcano" "saxarba/theme_volcano/water_volcano_1.png"
 include "Structured_Water/Structured_Water - Saxarba.tileinc"
 
 #ROADS
+include "SMVRoads/TwoLane.tileinc"
+include "SMVRoads/ThreeLane.tileinc"
 include "saxarba/Includes/BasicRoads.tileinc"
 #For maps with roads!=1
 super * "road:*" "" "saxarba/misc/legacy_road0.png"

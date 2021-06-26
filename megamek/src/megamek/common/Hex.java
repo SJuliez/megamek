@@ -206,6 +206,15 @@ public class Hex implements IHex, Serializable {
                     && (terrainLevel(Terrains.BLDG_CLASS) == Building.GUN_EMPLACEMENT)) {
                 cTerr.setExit(direction, false);
             }
+            
+            // road fluff gets exits and special treatment to enable automatic road type interchanges
+            // road fluff exits only to the same level of road fluff (e.g. road_fluff:5 to road_fluff:5)
+            // and only when the road here also has an exit there
+            if ((other != null) && (cTerr.getType() == Terrains.ROAD_FLUFF)
+                    && other.containsTerrain(Terrains.ROAD_FLUFF, cTerr.getLevel())
+                    && containsTerrainExit(Terrains.ROAD, direction)) {
+                cTerr.setExit(direction, true);  
+            }
 
         }
     }
