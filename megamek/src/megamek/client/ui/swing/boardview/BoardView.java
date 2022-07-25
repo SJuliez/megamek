@@ -2764,6 +2764,18 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             }
         }
 
+        // Add a marker overlay to marked hexes
+        if (game.getBoard().isMarked(c)) {
+            g.setColor(new Color(20, 20, 20, 80));
+            g.setStroke(new BasicStroke(7 * scale));
+            int r = 55;
+            g.drawOval((int) (scale / 2 * (HEX_W - r)), (int) (scale / 2 * (HEX_H - r)), (int) (r * scale), (int) (r * scale));
+            g.setColor(new Color(200, 200, 0, 120));
+            Stroke dashed = new BasicStroke(5 * scale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9 * scale}, 0);
+            g.setStroke(dashed);
+            g.drawOval((int) (scale / 2 * (HEX_W - r)), (int) (scale / 2 * (HEX_H - r)), (int) (r * scale), (int) (r * scale));
+        }
+
         cacheEntry = new HexImageCacheEntry(hexImage);
         if (!dontCache) {
             hexImageCache.put(c, cacheEntry);

@@ -55,6 +55,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.List;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static megamek.common.Terrains.*;
 
@@ -235,6 +236,9 @@ public class BoardEditor extends JPanel
     private List<ScalingIconToggleButton> brushButtons = new ArrayList<>();
     private ScalingIconToggleButton buttonBrush1, buttonBrush2, buttonBrush3;
     private ScalingIconToggleButton buttonUpDn, buttonOOC;
+    private JToggleButton buttonMark = new JToggleButton(Messages.getString("BoardEditor.markMode"));
+    private JButton butRemoveMarks = new JButton(Messages.getString("BoardEditor.removeMarks"));
+    private JButton butEdit = new JButton(Messages.getString("BoardEditor.edit"));
 
     // The brush size: 1 = 1 hex, 2 = radius 1, 3 = radius 2  
     private int brushSize = 1;
@@ -414,15 +418,22 @@ public class BoardEditor extends JPanel
 
                     // CORRECTION, click outside the board then drag inside???
                     if (hexLeveltoDraw != -1000) {
-                        LinkedList<Coords> allBrushHexes = getBrushCoords(c) ;
-                        for (Coords h: allBrushHexes) {
+                        for (Coords h : filterMarkedHexes(getBrushCoords(c))) {
                             if (!buttonOOC.isSelected() || board.getHex(h).isClearHex()) {
                                 saveToUndo(h);
                                 relevelHex(h);
-                            }   
+                            }
                         }
                     }
                     // ------- End Raise/Lower Terrain
+                } else if (buttonMark.isSelected() && (isLMB || (b.getModifiers() & InputEvent.BUTTON1_DOWN_MASK) != 0)) {
+                    if (isCTRL) {
+                        getBrushCoords(c).forEach(board::unmarkHex);
+                    } else {
+                        getBrushCoords(c).forEach(board::markHex);
+                    }
+                    bv.clearHexImageCache(new HashSet<>(getBrushCoords(c)));
+                    bv.repaint();
                 } else if (isLMB || (b.getModifiers() & InputEvent.BUTTON1_DOWN_MASK) != 0) {
                     // 'isLMB' is true if a button 1 is associated to a click or release but not while dragging.
                     // The left button down mask is checked because we could be dragging.
@@ -431,8 +442,7 @@ public class BoardEditor extends JPanel
                     if (isALT) { // ALT-Click
                         setCurrentHex(board.getHex(b.getCoords()));
                     } else {
-                        LinkedList<Coords> allBrushHexes = getBrushCoords(c);
-                        for (Coords h: allBrushHexes) {
+                        for (Coords h: filterMarkedHexes(getBrushCoords(c))) {
                             // test if texture overwriting is active
                             if ((!buttonOOC.isSelected() || board.getHex(h).isClearHex())
                                     && curHex.isValid(null)) {
@@ -470,6 +480,18 @@ public class BoardEditor extends JPanel
         
         adaptToGUIScale();
         GUIPreferences.getInstance().addPreferenceChangeListener(this);
+    }
+
+    /**
+     * @return If any board hex is marked, filters the given list of coords to only include
+     * marked hexes. If no hex is marked, returns all given coords in a new list.
+     */
+    private List<Coords> filterMarkedHexes(final Collection<Coords> coords) {
+        if (board.isAnyHexMarked()) {
+            return coords.stream().filter(board::isMarked).collect(Collectors.toList());
+        } else {
+            return new ArrayList<>(coords);
+        }
     }
 
     /**
@@ -837,6 +859,16 @@ public class BoardEditor extends JPanel
         addManyButtons(brushButtonPanel, brushButtons);
         buttonBrush1.setSelected(true);
 
+        buttonMark.addActionListener(e -> markButtonPressed());
+        butRemoveMarks.addActionListener(e -> removeMarksButtonPressed());
+
+        FixedYPanel markPanel = new FixedYPanel(new GridLayout(0, 3, 2, 2));
+        markPanel.add(buttonMark);
+        markPanel.add(butRemoveMarks);
+        markPanel.add(butEdit);
+
+        buttonBrush1.setSelected(true);
+
         FixedYPanel undoButtonPanel = new FixedYPanel(new GridLayout(1, 2, 2, 2));
         addManyButtons(undoButtonPanel, List.of(buttonUndo, buttonRedo));
 
@@ -1009,6 +1041,7 @@ public class BoardEditor extends JPanel
         centerPanel.add(labHelp2);
         centerPanel.add(terrainButtonPanel);
         centerPanel.add(brushButtonPanel);
+        centerPanel.add(markPanel);
         centerPanel.add(Box.createVerticalGlue());
         centerPanel.add(undoButtonPanel);
         centerPanel.add(Box.createVerticalGlue());
@@ -1757,6 +1790,9 @@ public class BoardEditor extends JPanel
     //
     @Override
     public void actionPerformed(ActionEvent ae) {
+        if ((ae.getSource() instanceof ScalingIconButton) && terrainButtons.contains((ScalingIconButton)ae.getSource())) {
+            buttonMark.setSelected(false);
+        }
         if (ae.getActionCommand().equals(ClientGUI.BOARD_NEW)) {
             ignoreHotKeys = true;
             boardNew(true);
@@ -1952,6 +1988,7 @@ public class BoardEditor extends JPanel
         } else if (ae.getSource().equals(buttonUpDn)) {
             // Not so useful to only do on clear terrain
             buttonOOC.setSelected(false);
+            buttonMark.setSelected(false);
         } else if (ae.getActionCommand().equals(ClientGUI.BOARD_UNDO)) {
             // The button should not be active when the stack is empty, but
             // let's check nevertheless
@@ -2264,6 +2301,10 @@ public class BoardEditor extends JPanel
         butExitUp.rescale();
         butTerrExits.rescale();
         butDelTerrain.rescale();
+
+        buttonMark.setFont(scaledFont);
+        butRemoveMarks.setFont(scaledFont);
+        butEdit.setFont(scaledFont);
     }
 
     /**
@@ -2373,6 +2414,19 @@ public class BoardEditor extends JPanel
         String title = (curBoardFile == null) ? Messages.getString("BoardEditor.title")
                 : Messages.getString("BoardEditor.title0", curBoardFile);
         frame.setTitle(title + (hasChanges ? "*" : ""));
+    }
+
+    private void markButtonPressed() {
+        if (buttonMark.isSelected()) {
+            buttonOOC.setSelected(false);
+            buttonUpDn.setSelected(false);
+        }
+    }
+
+    private void removeMarksButtonPressed() {
+        board.unmarkAllHexes();
+        bv.clearHexImageCache();
+        bv.repaint();
     }
     
     

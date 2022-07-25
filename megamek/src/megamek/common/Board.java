@@ -133,6 +133,10 @@ public class Board implements Serializable {
 
     /** Tags associated with this board to facilitate searching for it. */
     private Set<String> tags = new HashSet<>();
+
+    /** Hexes that are marked, primarily for use with the Board Editor. */
+    private final Set<Coords> markedHexes = new HashSet<>();
+
     //endregion Variable Declarations
 
     //region Constructors
@@ -1885,5 +1889,35 @@ public class Board implements Serializable {
      */
     public Set<String> getTags() {
         return Collections.unmodifiableSet(tags);
+    }
+
+    /** Mark the hex at the given coords. Marked hexes get an overlay in the board graphics. */
+    public void markHex(Coords newMark) {
+        markedHexes.add(newMark);
+    }
+
+    /** Remove the mark from the hex at the given coords if it is marked. */
+    public void unmarkHex(Coords newMark) {
+        markedHexes.remove(newMark);
+    }
+
+    /** Remove all marks from hexes of the board. */
+    public void unmarkAllHexes() {
+        markedHexes.clear();
+    }
+
+    /** @return The currently marked hexes. The returned set is unmodifiable. */
+    public Set<Coords> getMarkedHexes() {
+        return Collections.unmodifiableSet(markedHexes);
+    }
+
+    /** @return True when the hex at the given coords is marked. */
+    public boolean isMarked(Coords c) {
+        return markedHexes.contains(c);
+    }
+
+    /** @return True when there is at least one marked hex. */
+    public boolean isAnyHexMarked() {
+        return !markedHexes.isEmpty();
     }
 }
