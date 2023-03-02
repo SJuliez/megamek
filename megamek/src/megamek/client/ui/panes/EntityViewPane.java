@@ -22,6 +22,7 @@ import megamek.client.ui.baseComponents.AbstractTabbedPane;
 import megamek.client.ui.swing.MechViewPanel;
 import megamek.client.ui.swing.alphaStrike.ConfigurableASCardPanel;
 import megamek.client.ui.swing.calculationReport.FlexibleCalculationReport;
+import megamek.client.ui.swing.dialog.AvailabilityPanel;
 import megamek.common.Entity;
 import megamek.common.alphaStrike.conversion.ASConverter;
 import megamek.common.annotations.Nullable;
@@ -37,6 +38,7 @@ public class EntityViewPane extends AbstractTabbedPane {
     private MechViewPanel entityPanel;
     private MechViewPanel troPanel;
     private final ConfigurableASCardPanel cardPanel = new ConfigurableASCardPanel(getFrame());
+    private AvailabilityPanel factionPanel;
     //endregion Variable Declarations
 
     //region Constructors
@@ -82,6 +84,9 @@ public class EntityViewPane extends AbstractTabbedPane {
         addTab(resources.getString("TRO.title"), getTROPanel());
 
         addTab("AS Card", cardPanel);
+
+        factionPanel = new AvailabilityPanel(getFrame());
+        addTab("Faction Availability", factionPanel.getPanel());
     }
     //endregion Initialization
 
@@ -94,9 +99,11 @@ public class EntityViewPane extends AbstractTabbedPane {
         if (entity == null) {
             getEntityPanel().reset();
             getTROPanel().reset();
+            factionPanel.reset();
         } else {
             getEntityPanel().setMech(entity, false);
             getTROPanel().setMech(entity, TROView.createView(entity, true));
+            factionPanel.setUnit(entity.getModel(), entity.getChassis());
         }
         if (ASConverter.canConvert(entity)) {
             cardPanel.setASElement(ASConverter.convert(entity, new FlexibleCalculationReport()));
