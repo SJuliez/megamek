@@ -519,6 +519,10 @@ Battle Cobra BTL-C-2OC:SCOUT
 Battle Cobra BTL-C-2OD:SNIPER
 Battle Cobra BTL-C-2OE:MISSILE_BOAT
 Battle Cobra BTL-C-2OF:BRAWLER
+Battle Cobra BTL-C-2OG:BRAWLER
+Battle Cobra BTL-C-2OH:MISSILE_BOAT
+Battle Cobra BTL-C-2OI:SKIRMISHER
+Battle Cobra BTL-C-2OJ:SKIRMISHER
 Battle Cobra C:STRIKER
 Battle Cobra F:STRIKER
 Battle Cobra G:STRIKER
@@ -546,7 +550,7 @@ BattleMaster BLR-1Gbc:BRAWLER
 BattleMaster BLR-1Gc:BRAWLER
 BattleMaster BLR-1Gd:BRAWLER
 BattleMaster BLR-1G-DC:BRAWLER
-BattleMaster BLR-1GHE 'HellSinger':BRAWLER
+BattleMaster BLR-1GHE 'HellSlinger':BRAWLER
 BattleMaster BLR-1S:BRAWLER
 BattleMaster BLR-2C:BRAWLER
 BattleMaster BLR-3M (Rogers):BRAWLER
@@ -736,14 +740,14 @@ Blitzkrieg BTZ-4F:SKIRMISHER
 Blizzard Hover Transport (SRM):SCOUT
 Blizzard Hover Transport (Standard):SCOUT
 Blizzard Hover Transport 'Black Blizzard':STRIKER
-Blood Asp A:BRAWLER
-Blood Asp B:MISSILE_BOAT
-Blood Asp C:BRAWLER
-Blood Asp D:BRAWLER
-Blood Asp E:SKIRMISHER
-Blood Asp F:BRAWLER
-Blood Asp G:BRAWLER
-Blood Asp Prime:BRAWLER
+Star Adder (Blood Asp) A:BRAWLER
+Star Adder (Blood Asp) B:MISSILE_BOAT
+Star Adder (Blood Asp) C:BRAWLER
+Star Adder (Blood Asp) D:BRAWLER
+Star Adder (Blood Asp) E:SKIRMISHER
+Star Adder (Blood Asp) F:BRAWLER
+Star Adder (Blood Asp) G:BRAWLER
+Star Adder (Blood Asp) Prime:BRAWLER
 Blood Kite (Standard):SNIPER
 Blood Kite 2:SNIPER
 Blood Reaper (Standard):SKIRMISHER
@@ -3943,8 +3947,8 @@ Lynx LNX-9R:SKIRMISHER
 Lyonesse Escort (Standard):NONE
 Lyonesse Escort M1:NONE
 Lyonesse Escort W1:NONE
-M.A.S.H. Truck (ICE):NONE
-M.A.S.H. Truck (Standard):NONE
+MASH Truck (ICE):NONE
+MASH Truck (Standard):NONE
 M-9 SDS Battle Station 'Pavise':NONE
 Machina Domini Interface Armor (Standard):NONE
 Mackie MSK-5S:SNIPER
@@ -6999,6 +7003,7 @@ Victor VTR-9Ka:SKIRMISHER
 Victor VTR-9S:SKIRMISHER
 Victor VTR-C:SKIRMISHER
 Victor VTR-Cr:SKIRMISHER
+Victor VTR-9B (Kataga):BRAWLER
 Vidar Heavy Defense Tank (Standard):MISSILE_BOAT
 Vigilant Corvette (2320):NONE
 Viking IIC (Standard):MISSILE_BOAT
@@ -7684,19 +7689,43 @@ Callisto A [ER Laser]:AMBUSHER
 Callisto A [HMG]:AMBUSHER
 Callisto B [MRR]:AMBUSHER
 Callisto B [SRM]:AMBUSHER
-Clint CLNT-3-4T::STRIKER
-Harrier Hover Tank (Original):STRIKER
+Clint CLNT-3-4T:STRIKER
+Harrier Hover Tank:STRIKER
 Harrier Hover Tank (PPC):STRIKER
 Harrier Hover Tank (Re-Laser):STRIKER
-J. Edgar Light Hover Tank (Chemical):STRIKER
-J. Edgar Light Hover Tank (Kurita):STRIKER
-J. Edgar Light Hover Tank (LAC):STRIKER
-J. Edgar Light Hover Tank (Light PPC):SNIPER
-J. Edgar Light Hover Tank (TAG):SCOUT
 Javelin JVN-12N:SCOUT
-Manticore Heavy Tank (XL): Brawler
+Manticore Heavy Tank (XL):Brawler
 Pillager PLG-6Z:JUGGERNAUT
 Savannah Master Hovercraft (Reflective):SCOUT
 Shogun C 3:SNIPER
 Skimmer:SCOUT
-
+IS Standard Battle Armor [Magnetic]:AMBUSHER
+J. Edgar Light Hover Tank (Chemical):SCOUT
+J. Edgar Light Hover Tank (Kurita):SCOUT
+J. Edgar Light Hover Tank (LAC):SCOUT
+J. Edgar Light Hover Tank (Light PPC):SCOUT
+J. Edgar Light Hover Tank (TAG):SCOUT
+J. Edgar Light Hover Tank (X-Pulse):SCOUT
+Drillson Heavy Hover Tank (ERLL):STRIKER
+Drillson Heavy Hover Tank (Streak):STRIKER
+Drillson Heavy Hover Tank (Upgrade):STRIKER
+Drillson Heavy Hover Tank C:STRIKER
+Drillson Heavy Hover Tank C 2:STRIKER
+Vedette Medium Tank (Armor):BRAWLER
+Von Luckner Heavy Tank VNL-K65W:JUGGERNAUT
+Von Luckner Heavy Tank VNL-K75N:JUGGERNAUT
+Von Luckner Heavy Tank VNL-K85N:JUGGERNAUT
+Von Luckner Heavy Tank VNL-K90:JUGGERNAUT
+Von Luckner Heavy Tank VNL-K105:JUGGERNAUT
+Schrek AC Carrier (Lothian):SNIPER
+Schrek PPC Carrier (LB-X):SNIPER
+Schrek PPC Carrier (XL):SNIPER
+Schrek Gauss Carrier:SNIPER
+Viper VP-1:BRAWLER
+Viper VP-5:BRAWLER
+Viper VP-7:BRAWLER
+Viper VP-8:BRAWLER
+Viper VP-9:BRAWLER
+JagerMech JM7-DD:SNIPER
+Star Adder (Blood Asp) I:BRAWLER
+Star Adder (Blood Asp) T:BRAWLER

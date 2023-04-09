@@ -20,6 +20,7 @@ package megamek.common.alphaStrike;
 
 import megamek.common.BTObject;
 import megamek.common.UnitRole;
+import megamek.common.strategicBattleSystems.BattleForceSUAFormatter;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -38,7 +39,7 @@ import static megamek.common.alphaStrike.BattleForceSUA.*;
  * These return an undamaged state by default and thus require overriding in AlphaStrikeElement
  * (e.g. {@link #getCurrentArmor()}.
  */
-public interface ASCardDisplayable extends BTObject {
+public interface ASCardDisplayable extends BattleForceSUAFormatter, BTObject {
 
     // TODO : Must also be able to return more "current" values for MV, Dmg, crits etc.
 
@@ -100,16 +101,16 @@ public interface ASCardDisplayable extends BTObject {
     }
 
     /** @return The AS element's front arc. Returns an empty arc for elements that don't use arcs. */
-    ASSpecialAbilityCollection getFrontArc();
+    ASArcSummary getFrontArc();
 
     /** @return The AS element's left arc. Returns an empty arc for elements that don't use arcs. */
-    ASSpecialAbilityCollection getLeftArc();
+    ASArcSummary getLeftArc();
 
     /** @return The AS element's right arc. Returns an empty arc for elements that don't use arcs. */
-    ASSpecialAbilityCollection getRightArc();
+    ASArcSummary getRightArc();
 
     /** @return The AS element's rear arc. Returns an empty arc for elements that don't use arcs. */
-    ASSpecialAbilityCollection getRearArc();
+    ASArcSummary getRearArc();
 
     /** @return The AS element's armor threshold (TH), if it uses threshold. */
     int getThreshold();
@@ -148,7 +149,7 @@ public interface ASCardDisplayable extends BTObject {
 
     /** @return True if this AS element is a fighter (AF, CF) or an Aero SV (Fixed Wing Support). */
     default boolean isFighter() {
-        return getASUnitType().isAnyOf(AF, CF) || isAerospaceSV();
+        return getASUnitType().isAnyOf(AF, CF) || isFixedWingSupport();
     }
 
     /** @return True if this AS element is a BattleMek or Industrial Mek (BM, IM). */
@@ -210,6 +211,21 @@ public interface ASCardDisplayable extends BTObject {
         return getASUnitType().isSupportVehicle();
     }
 
+    @Override
+    default boolean isConventionalFighter() {
+        return getASUnitType().isAnyOf(CF);
+    }
+
+    @Override
+    default boolean isAerospaceFighter() {
+        return getASUnitType().isAnyOf(AF);
+    }
+
+    @Override
+    default boolean isFixedWingSupport() {
+        return isSupportVehicle() && hasMovementMode("a");
+    }
+
     /** @return True if this AS element is a combat vehicle (CV, not support vehicle). */
     @Override
     default boolean isCombatVehicle() {
@@ -224,6 +240,31 @@ public interface ASCardDisplayable extends BTObject {
     /** @return True if this AS element uses four range bands S, M, L and E (equivalent to {@link #isAerospace()}). */
     default boolean usesSMLE() {
         return isAerospace();
+    }
+
+    @Override
+    default boolean isTripodMek() {
+        return getSpecialAbilities().hasSUA(BattleForceSUA.TRI);
+    }
+
+    @Override
+    default boolean isQuadMek() {
+        return getSpecialAbilities().hasSUA(BattleForceSUA.QUAD);
+    }
+
+    @Override
+    default boolean isSmallCraft() {
+        return isType(SC);
+    }
+
+    @Override
+    default boolean isDropShip() {
+        return isType(DS, DA);
+    }
+
+    @Override
+    default boolean isSpheroid() {
+        return isType(ASUnitType.DS) || (isType(ASUnitType.SC) && !getSpecialAbilities().hasSUA(BattleForceSUA.AERODYNESC));
     }
 
     /**
@@ -270,5 +311,46 @@ public interface ASCardDisplayable extends BTObject {
     /** @return True when this element uses TMM; equivalent to !{@link #isAerospace()}. */
     default boolean usesTMM() {
         return !isAerospace();
+    }
+
+    /**
+     * Returns true when this element has any water movement of any kind.
+     *
+     * movement type of (n, s, h, g)
+     * Mek
+     * ProtoMek
+     */
+    default boolean hasWaterMovement() {
+        return hasMovementMode("n") || hasMovementMode("s") || hasMovementMode("h") || hasMovementMode("g")
+                || isMek()
+                || isProtoMek();
+    }
+
+    /**
+     * Returns true when this element has ground movement of any kind.
+     *
+     * movement type of (w, t, h, g, f, m, j)
+     * Mek
+     * ProtoMek
+     */
+    default boolean hasGroundMovement() {
+        return hasMovementMode("w") || hasMovementMode("t") || hasMovementMode("h") || hasMovementMode("g")
+                || hasMovementMode("f") || hasMovementMode("m") || hasMovementMode("j")
+                || isMek()
+                || isProtoMek();
+    }
+
+    /**
+     * Returns true when this element has air movement of any kind.
+     *
+     * movement type of (v, g, a, p)
+     */
+    default boolean hasAirMovement() {
+        return hasMovementMode("v") || hasMovementMode("g") || hasMovementMode("a") || hasMovementMode("p");
+    }
+
+    @Override
+    default boolean isIndustrialMek() {
+        return isType(IM);
     }
 }

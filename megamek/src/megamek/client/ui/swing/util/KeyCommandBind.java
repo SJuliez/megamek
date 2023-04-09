@@ -98,7 +98,7 @@ public enum KeyCommandBind {
     DRAW_LABELS(true, "toggleDrawLabels", VK_B, CTRL_DOWN_MASK),
     HEX_COORDS(true, "toggleHexCoords", VK_G, CTRL_DOWN_MASK),
     MINIMAP(true, "toggleMinimap", VK_M, CTRL_DOWN_MASK),
-    LOS_SETTING(true, "viewLosSetting", VK_L, CTRL_DOWN_MASK | SHIFT_DOWN_MASK),
+    LOS_SETTING(true, "viewLosSetting", VK_L, CTRL_DOWN_MASK | ALT_DOWN_MASK),
     UNIT_DISPLAY(true, "toggleUnitDisplay", VK_D, CTRL_DOWN_MASK),
     UNIT_OVERVIEW(true, "toggleUnitOverview", VK_U, CTRL_DOWN_MASK),
     KEY_BINDS(true, "toggleKeybinds", VK_K, CTRL_DOWN_MASK),
@@ -122,9 +122,11 @@ public enum KeyCommandBind {
     
     /** Defines the keycode for the command, e.g. KeyEvent.VK_X. */
     public int key;
+    public int keyDefault;
     
     /** Modifiers to the key code, such as InputEvent.CTRL_DOWN_MASK. */ 
     public int modifiers;
+    public int modifiersDefault;
     
     /**
      * Defines if an action is exclusive, which means that only one
@@ -176,7 +178,9 @@ public enum KeyCommandBind {
     private KeyCommandBind(String c, boolean r, int k, int m, boolean e) {
         cmd = c;
         key = k;
+        keyDefault = k;
         modifiers = m;
+        modifiersDefault = m;
         isRepeatable = r;
         isExclusive = e;
     }
@@ -201,5 +205,12 @@ public enum KeyCommandBind {
     /** Returns a KeyStroke for a given KeyCommandBind. */
     public static KeyStroke keyStroke(KeyCommandBind bind) {
         return KeyStroke.getKeyStroke(bind.key, bind.modifiers);
+    }
+
+    /** returns formatted mod + key for display*/
+    public static String getDesc(KeyCommandBind k) {
+        String mod = getModifiersExText(k.modifiers);
+        String key = getKeyText(k.key);
+        return (mod.isEmpty() ? "" : mod + "+") + key;
     }
 }

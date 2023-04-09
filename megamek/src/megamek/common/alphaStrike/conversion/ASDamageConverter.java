@@ -470,7 +470,8 @@ public class ASDamageConverter {
     }
 
     protected void processArtillery(Mounted weapon, WeaponType weaponType) {
-        if (weaponType.getDamage() == WeaponType.DAMAGE_ARTILLERY) {
+        if ((weaponType.getDamage() == WeaponType.DAMAGE_ARTILLERY)
+                || weaponType.is(EquipmentTypeLookup.IS_BA_TUBE_ARTY)) {
             assignToLocations(weapon, getArtilleryType(weaponType), 1);
         }
     }
@@ -980,7 +981,9 @@ public class ASDamageConverter {
     }
 
     private static int getJumpHeat(Entity entity, AlphaStrikeElement element) {
-        if ((entity.getJumpType() == Mech.JUMP_IMPROVED)
+        if (entity.getJumpType() == Mech.JUMP_PROTOTYPE_IMPROVED) {
+            return Math.max(3, element.getJumpMove());
+        } else if ((entity.getJumpType() == Mech.JUMP_IMPROVED)
                 && (entity.getEngine().getEngineType() == Engine.XXL_ENGINE)) {
             return Math.max(3, element.getJumpMove() / 2);
         } else if (entity.getJumpType() == Mech.JUMP_IMPROVED) {

@@ -44,8 +44,6 @@ public class MiniReportDisplayDialog extends JDialog {
 
         UIUtil.updateWindowBounds(this);
         this.setResizable(true);
-        this.setFocusable(false);
-        this.setFocusableWindowState(false);
 
         addWindowListener(new WindowAdapter() {
             @Override
@@ -58,14 +56,18 @@ public class MiniReportDisplayDialog extends JDialog {
     }
     //endregion Constructors
 
+    public void saveSettings() {
+        GUIP.setMiniReportSizeWidth(getSize().width);
+        GUIP.setMiniReportSizeHeight(getSize().height);
+        GUIP.setMiniReportPosX(getLocation().x);
+        GUIP.setMiniReportPosY(getLocation().y);
+    }
+
     @Override
     protected void processWindowEvent(WindowEvent e) {
         super.processWindowEvent(e);
         if ((e.getID() == WindowEvent.WINDOW_DEACTIVATED) || (e.getID() == WindowEvent.WINDOW_CLOSING)) {
-            GUIP.setMiniReportSizeWidth(getSize().width);
-            GUIP.setMiniReportSizeHeight(getSize().height);
-            GUIP.setMiniReportPosX(getLocation().x);
-            GUIP.setMiniReportPosY(getLocation().y);
+            saveSettings();
         }
     }
 

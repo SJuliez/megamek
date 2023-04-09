@@ -18,6 +18,7 @@ import megamek.client.ui.Messages;
 import megamek.client.ui.swing.ClientGUI;
 import megamek.client.ui.swing.GUIPreferences;
 import megamek.client.ui.swing.util.KeyCommandBind;
+import megamek.client.ui.swing.util.UIUtil;
 import megamek.common.Game;
 import megamek.common.KeyBindParser;
 import megamek.common.PlanetaryConditions;
@@ -31,7 +32,6 @@ import megamek.common.preference.PreferenceChangeEvent;
 import megamek.common.util.ImageUtil;
 import org.apache.logging.log4j.LogManager;
 
-import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import java.text.AttributedString;
 import java.text.MessageFormat;
@@ -135,7 +135,7 @@ public class PlanetaryConditionsOverlay implements IDisplayable, IPreferenceChan
 
             displayImage = ImageUtil.createAcceleratedImage(r.width, r.height);
             Graphics intGraph = displayImage.getGraphics();
-            GUIPreferences.AntiAliasifSet(intGraph);
+            UIUtil.setHighQualityRendering(intGraph);
 
             // draw a semi-transparent background rectangle
             Color colorBG = GUIP.getPlanetaryConditionsColorBackground();
@@ -193,10 +193,7 @@ public class PlanetaryConditionsOverlay implements IDisplayable, IPreferenceChan
         Color colorHot = GUIP.getPlanetaryConditionsColorHot();
         Color colorCold = GUIP.getPlanetaryConditionsColorCold();
 
-        KeyCommandBind kcb = KeyCommandBind.PLANETARY_CONDITIONS;
-        String mod = KeyEvent.getModifiersExText(kcb.modifiers);
-        String key = KeyEvent.getKeyText(kcb.key);
-        String toggleKey = (mod.isEmpty() ? "" : mod + "+") + key;
+        String toggleKey = KeyCommandBind.getDesc(KeyCommandBind.PLANETARY_CONDITIONS);
 
         String tmpStr = "";
         Boolean showHeading = GUIP.getAdvancedPlanetaryConditionsShowHeader();

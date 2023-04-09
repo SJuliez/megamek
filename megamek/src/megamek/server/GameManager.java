@@ -158,7 +158,6 @@ public class GameManager implements IGameManager {
 
         // register terrain processors
         terrainProcessors.add(new FireProcessor(this));
-        terrainProcessors.add(new SmokeProcessor(this));
         terrainProcessors.add(new GeyserProcessor(this));
         terrainProcessors.add(new ElevatorProcessor(this));
         terrainProcessors.add(new ScreenProcessor(this));
@@ -582,7 +581,7 @@ public class GameManager implements IGameManager {
         // send full update
         send(createFullEntitiesPacket());
     }
-    
+
     private void resetEntityRound() {
         for (Iterator<Entity> e = game.getEntities(); e.hasNext(); ) {
             Entity entity = e.next();
@@ -593,11 +592,11 @@ public class GameManager implements IGameManager {
     public void send(Packet p) {
         Server.getServerInstance().send(p);
     }
-    
+
     public void send(int connId, Packet p) {
         Server.getServerInstance().send(connId, p);
     }
-    
+
     public void transmitPlayerUpdate(Player p) {
         Server.getServerInstance().transmitPlayerUpdate(p);
     }
@@ -945,7 +944,7 @@ public class GameManager implements IGameManager {
                 break;
         }
     }
-    
+
     /**
      * Check a list of entity Ids for doomed entities and destroy those.
      */
@@ -2762,6 +2761,16 @@ public class GameManager implements IGameManager {
         } else {
             entities = game.getEntitiesVector();
         }
+
+        String noInitiative = entities.stream()
+                .filter(e -> e.getInitiative().size() == 0)
+                .map(Object::toString)
+                .collect(Collectors.joining(";"));
+
+        if (!noInitiative.isEmpty()) {
+            LogManager.getLogger().error("No Initiative rolled for: " + noInitiative);
+        }
+
         // Now, generate the global order of all teams' turns.
         TurnVectors team_order = TurnOrdered.generateTurnOrder(entities, game);
 
@@ -6934,8 +6943,7 @@ public class GameManager implements IGameManager {
                     inf.setDugIn(Infantry.DUG_IN_WORKING);
                     continue;
                 } else if (step.getType() == MovePath.MoveStepType.FORTIFY) {
-                    if (!entity.hasWorkingMisc(MiscType.F_TOOLS,
-                            MiscType.S_VIBROSHOVEL)) {
+                    if (!inf.hasWorkingMisc(MiscType.F_TRENCH_CAPABLE)) {
                         sendServerChat(entity.getDisplayName()
                                 + " failed to fortify because it is missing suitable equipment");
                     }
@@ -6957,6 +6965,18 @@ public class GameManager implements IGameManager {
                                 + "no valid unit found in "
                                 + step.getPosition());
                     }
+                }
+            }
+
+            // check for tank fortify
+            if (entity instanceof Tank) {
+                Tank tnk = (Tank) entity;
+                if (step.getType() == MovePath.MoveStepType.FORTIFY) {
+                    if (!tnk.hasWorkingMisc(MiscType.F_TRENCH_CAPABLE)) {
+                        sendServerChat(entity.getDisplayName()
+                                + " failed to fortify because it is missing suitable equipment");
+                    }
+                    tnk.setDugIn(Tank.DUG_IN_FORTIFYING1);
                 }
             }
 
@@ -7411,7 +7431,7 @@ public class GameManager implements IGameManager {
             }
 
             // check for revealed minefields;
-            // unless we get errata about it, we assume that the check is done 
+            // unless we get errata about it, we assume that the check is done
             // every time we enter a new hex
             if (game.getOptions().booleanOption(OptionsConstants.ADVANCED_TACOPS_BAP)
                     && !lastPos.equals(curPos)) {
@@ -7824,8 +7844,8 @@ public class GameManager implements IGameManager {
                     : 0))))) {
 
                 // per TacOps, if the mech is walking backwards over an elevation change and falls
-                // it falls into the lower hex. The caveat is if it already fell from some other PSR in this 
-                // invocation of processMovement, then it can't fall again. 
+                // it falls into the lower hex. The caveat is if it already fell from some other PSR in this
+                // invocation of processMovement, then it can't fall again.
                 if ((entity instanceof Mech)
                         && (curHex.getLevel() < game.getBoard().getHex(lastPos).getLevel())
                         && !entity.hasFallen()) {
@@ -8083,7 +8103,7 @@ public class GameManager implements IGameManager {
 
             firstStep = false;
 
-            // if we moved at all, we are no longer bracing "for free", except for when 
+            // if we moved at all, we are no longer bracing "for free", except for when
             // the current step IS bracing
             if ((mpUsed > 0) && (step.getType() != MovePath.MoveStepType.BRACE)) {
                 entity.setBraceLocation(Entity.LOC_NONE);
@@ -26786,7 +26806,7 @@ public class GameManager implements IGameManager {
      */
     public Vector<Report> destroyEntity(Entity entity, String reason, boolean survivable,
                                         boolean canSalvage) {
-        // can't destroy an entity if it's already been destroyed        
+        // can't destroy an entity if it's already been destroyed
         if (entity.isDestroyed()) {
             return new Vector<>();
         }
@@ -28575,11 +28595,15 @@ public class GameManager implements IGameManager {
                 addVisibleEntity(vCanSee, e);
                 continue;
             } else if (e.isHidden()) {
-                // If it's NOT friendly and is hidden, they can't see it,
-                // period.
+                // If it's NOT friendly and is hidden, they can't see it, period.
                 // LOS doesn't matter.
                 continue;
+            } else if (e.isOffBoardObserved(pViewer.getTeam())) {
+                // if it's hostile and has been observed for counter-battery fire, we can "see" it
+                addVisibleEntity(vCanSee, e);
+                continue;
             }
+
             for (Entity spotter : vMyEntities) {
 
                 // If they're off-board, skip it; they can't see anything.
@@ -28852,7 +28876,7 @@ public class GameManager implements IGameManager {
         @SuppressWarnings("unchecked")
         final List<Entity> entities = (List<Entity>) c.getObject(0);
         List<Integer> entityIds = new ArrayList<>(entities.size());
-        // Map client-received to server-given IDs: 
+        // Map client-received to server-given IDs:
         Map<Integer, Integer> idMap = new HashMap<>();
         // Map MUL force ids to real Server-given force ids;
         Map<Integer, Integer> forceMapping = new HashMap<>();
@@ -29074,7 +29098,7 @@ public class GameManager implements IGameManager {
         }
 
         // Now restore the transport settings from the entities' transporter IDs
-        // With anything other than bays, MULs only show the carrier, not the carried units 
+        // With anything other than bays, MULs only show the carrier, not the carried units
         for (final Entity entity : entities) {
             // Don't correct those that are already corrected
             if (transportCorrected.contains(entity)) {
@@ -29084,7 +29108,7 @@ public class GameManager implements IGameManager {
             int origTrsp = entity.getTransportId();
             // Only act if the unit thinks it is transported
             if (origTrsp != Entity.NONE) {
-                // If the transporter is among the new units, go on with loading 
+                // If the transporter is among the new units, go on with loading
                 if (idMap.containsKey(origTrsp)) {
                     // The wrong transporter doesn't know of anything and does not need an update
                     Entity carrier = game.getEntity(idMap.get(origTrsp));
@@ -29106,7 +29130,7 @@ public class GameManager implements IGameManager {
 
         // Set the "loaded keepers" which is apparently used for deployment unloading to
         // differentiate between units loaded in the lobby and other carried units
-        // When entering a game from the lobby, this list is generated again, but not when 
+        // When entering a game from the lobby, this list is generated again, but not when
         // the added entities are loaded during a game. When getting loaded units from a MUL,
         // act as if they were loaded in the lobby.
         for (final Entity entity : entities) {
@@ -29836,8 +29860,9 @@ public class GameManager implements IGameManager {
      * Creates a packet containing a Vector of Reports that represent a Tactical
      * Genius re-roll request which needs to update a current phase's report.
      */
-    private Packet createTacticalGeniusReportPacket() {
-        return new Packet(PacketCommand.SENDING_REPORTS_TACTICAL_GENIUS, vPhaseReport.clone());
+    private Packet createTacticalGeniusReportPacket(Player p) {
+        return new Packet(PacketCommand.SENDING_REPORTS_TACTICAL_GENIUS,
+                (p == null) || !doBlind() ? vPhaseReport.clone() : filterReportVector(vPhaseReport, p));
     }
 
     /**
@@ -30125,7 +30150,7 @@ public class GameManager implements IGameManager {
         }
 
         for (Player p : game.getPlayersVector()) {
-            send(p.getId(), tacticalGeniusReport ? createTacticalGeniusReportPacket() : createReportPacket(p));
+            send(p.getId(), tacticalGeniusReport ? createTacticalGeniusReportPacket(p) : createReportPacket(p));
         }
     }
 
@@ -31929,7 +31954,7 @@ public class GameManager implements IGameManager {
         }
         // Not all targets are Entities.
         Targetable target = game.getTarget(aaa.getTargetType(), aaa.getTargetId());
-        
+
         if ((target != null) && (target instanceof Entity)) {
             Entity targetEntity = (Entity) target;
             targetEntity.setStruck(true);
@@ -33890,7 +33915,7 @@ public class GameManager implements IGameManager {
                     r.addDesc(inf);
                     r.subject = inf.getId();
                     addReport(r);
-                } else if (dig == Infantry.DUG_IN_FORTIFYING2) {
+                } else if (dig == Infantry.DUG_IN_FORTIFYING3) {
                     Coords c = inf.getPosition();
                     r = new Report(5305);
                     r.addDesc(inf);
@@ -33905,7 +33930,33 @@ public class GameManager implements IGameManager {
                     // get it for free by fort
                     for (Entity ent2 : game.getEntitiesVector(c)) {
                         if (ent2 instanceof Infantry) {
-                            Infantry inf2 = (Infantry) ent;
+                            Infantry inf2 = (Infantry) ent2;
+                            inf2.setDugIn(Infantry.DUG_IN_NONE);
+                        }
+                    }
+                }
+            }
+
+            if (ent instanceof Tank) {
+                Tank tnk = (Tank) ent;
+                int dig = tnk.getDugIn();
+                if (dig == Tank.DUG_IN_FORTIFYING3) {
+                    Coords c = tnk.getPosition();
+                    r = new Report(5305);
+                    r.addDesc(tnk);
+                    r.add(c.getBoardNum());
+                    r.subject = tnk.getId();
+                    addReport(r);
+                    // Fort complete, now add it to the map
+                    Hex hex = game.getBoard().getHex(c);
+                    hex.addTerrain(new Terrain(Terrains.FORTIFIED, 1));
+                    sendChangedHex(c);
+                    tnk.setDugIn(Tank.DUG_IN_NONE);
+                    // Clear the dig in for any units in same hex, since they
+                    // get it for free by fort
+                    for (Entity ent2 : game.getEntitiesVector(c)) {
+                        if (ent2 instanceof Infantry) {
+                            Infantry inf2 = (Infantry) ent2;
                             inf2.setDugIn(Infantry.DUG_IN_NONE);
                         }
                     }
@@ -34040,7 +34091,7 @@ public class GameManager implements IGameManager {
      * @param duration How long the smoke will last.
      */
     public void createSmoke(Coords coords, int level, int duration) {
-        SmokeCloud cloud = new SmokeCloud(coords, level, duration);
+        SmokeCloud cloud = new SmokeCloud(coords, level, duration, game.getRoundCount());
         game.addSmokeCloud(cloud);
         sendSmokeCloudAdded(cloud);
     }
@@ -34053,20 +34104,9 @@ public class GameManager implements IGameManager {
      * @param duration duration How long the smoke will last.
      */
     public void createSmoke(ArrayList<Coords> coords, int level, int duration) {
-        SmokeCloud cloud = new SmokeCloud(coords, level, duration);
+        SmokeCloud cloud = new SmokeCloud(coords, level, duration, game.getRoundCount());
         game.addSmokeCloud(cloud);
         sendSmokeCloudAdded(cloud);
-    }
-
-    /**
-     * Update the map with a new set of coords.
-     *
-     * @param newCoords the location to move the smoke to
-     */
-    public void updateSmoke(SmokeCloud cloud, ArrayList<Coords> newCoords) {
-        removeSmokeTerrain(cloud);
-        cloud.getCoordsList().clear();
-        cloud.getCoordsList().addAll(newCoords);
     }
 
     /**
@@ -34076,9 +34116,9 @@ public class GameManager implements IGameManager {
      */
     public void removeSmokeTerrain(SmokeCloud cloud) {
         for (Coords coords : cloud.getCoordsList()) {
-            Hex nextHex = game.getBoard().getHex(coords);
-            if ((nextHex != null) && nextHex.containsTerrain(Terrains.SMOKE)) {
-                nextHex.removeTerrain(Terrains.SMOKE);
+            Hex hex = game.getBoard().getHex(coords);
+            if ((hex != null) && hex.containsTerrain(Terrains.SMOKE)) {
+                hex.removeTerrain(Terrains.SMOKE);
                 sendChangedHex(coords);
             }
         }
@@ -34184,6 +34224,6 @@ public class GameManager implements IGameManager {
 
     public Set<Coords> getHexUpdateSet() {
         return hexUpdateSet;
-    
+
     }
 }

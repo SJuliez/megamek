@@ -162,6 +162,11 @@ public class BuildingTarget implements Targetable {
     }
 
     @Override
+    public int getStrength() {
+        return 0;
+    }
+
+    @Override
     public Coords getPosition() {
         return position;
     }
@@ -231,11 +236,6 @@ public class BuildingTarget implements Targetable {
      */
     @Override
     public boolean isOffBoard() {
-        return false;
-    }
-
-    @Override
-    public boolean isAero() {
         return false;
     }
 
