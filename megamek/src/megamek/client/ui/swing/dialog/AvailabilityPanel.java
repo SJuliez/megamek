@@ -62,7 +62,7 @@ public class AvailabilityPanel {
     }
 
     public void setUnit(String model, String chassis) {
-        record = new ModelRecord(chassis, model);
+        record = RG.getModelRecord(chassis + " " + model);
         initializePanel();
     }
 
@@ -88,17 +88,8 @@ public class AvailabilityPanel {
         }
 
         if (record != null) {
-            final Set<String> currentChassisFactions = new HashSet<>();
-
-            for (Integer era : RG.getEraSet()) {
-                Collection<AvailabilityRating> chassisRecs = RG.getChassisFactionRatings(era, record.getChassisKey());
-                if (chassisRecs != null) {
-                    chassisRecs.forEach(rec -> currentChassisFactions.add(rec.getFactionCode()));
-                }
-            }
-
             int row = 1;
-            for (String faction : currentChassisFactions) {
+            for (String faction : record.getIncludedFactions()) {
                 addGridElementLeftAlign(faction, row % 2 == 1);
                 for (ERAS era : ERAS.values()) {
                     String text = "--";
@@ -106,11 +97,10 @@ public class AvailabilityPanel {
                         if (ERAS.getEra(year) != era) {
                             continue;
                         }
-                        Collection<AvailabilityRating> chassisRecs = RG.getChassisFactionRatings(year, record.getChassisKey());
-                        if (chassisRecs != null) {
-                            if (chassisRecs.stream().anyMatch(rec -> faction.equals(rec.getFactionCode()))) {
-                                text = "Yes";
-                            }
+                        AvailabilityRating ar = RG.findModelAvailabilityRecord(year, record.getKey(), faction);
+                        if (ar != null) {
+                            text = ar.getAvailabilityCode();
+                            break;
                         }
                     }
                     addGridElement(text, row % 2 == 1);
