@@ -365,7 +365,7 @@ public class RATGenerator {
      * @param list A list of ARs for the various parent factions
      * @return A new AR with the average availability code from the various factions.
      */
-    private AvailabilityRating mergeFactionAvailability(String faction, List<AvailabilityRating> list) {
+    public AvailabilityRating mergeFactionAvailability(String faction, List<AvailabilityRating> list) {
         if (list.isEmpty()) {
             return null;
         }

@@ -29,7 +29,7 @@ public enum ERAS {
     EREP("Early Republic", 3081, 15),
     LREP("Late Republic", 3101, 254),
     DARK("Dark Age", 3131, 16),
-    ILC("Star League", 3151, 257);
+    ILC("IlClan", 3151, 257);
 
     private final String name;
     private final int startYear;

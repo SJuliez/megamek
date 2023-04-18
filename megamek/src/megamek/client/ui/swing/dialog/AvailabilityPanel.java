@@ -19,6 +19,7 @@
 package megamek.client.ui.swing.dialog;
 
 import megamek.client.ratgenerator.AvailabilityRating;
+import megamek.client.ratgenerator.FactionRecord;
 import megamek.client.ratgenerator.ModelRecord;
 import megamek.client.ratgenerator.RATGenerator;
 import megamek.client.ui.swing.util.SpringUtilities;
@@ -29,10 +30,9 @@ import org.apache.logging.log4j.LogManager;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
+import java.util.*;
 import java.awt.*;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 public class AvailabilityPanel {
 
@@ -89,20 +89,30 @@ public class AvailabilityPanel {
 
         if (record != null) {
             int row = 1;
-            for (String faction : record.getIncludedFactions()) {
-                addGridElementLeftAlign(faction, row % 2 == 1);
+            List<AvailabilityRating> ratings = new ArrayList<>();
+            for (String factionName : record.getIncludedFactions()) {
+                addGridElementLeftAlign(factionName, row % 2 == 1);
                 for (ERAS era : ERAS.values()) {
                     String text = "--";
+                    ratings.clear();
+
+                    // Cycle the years and check if the year is in the current ERA and the faction is active
                     for (Integer year : RG.getEraSet()) {
-                        if (ERAS.getEra(year) != era) {
+                        FactionRecord faction = RG.getFaction(factionName);
+                        if ((ERAS.getEra(year) != era)
+                                || ((faction != null) && !faction.isActiveInYear(year))) {
                             continue;
                         }
-                        AvailabilityRating ar = RG.findModelAvailabilityRecord(year, record.getKey(), faction);
-                        if (ar != null) {
-                            text = ar.getAvailabilityCode();
-                            break;
-                        }
+                        ratings.add(RG.findModelAvailabilityRecord(year, record.getKey(), factionName));
                     }
+
+                    ratings.removeIf(Objects::isNull);
+                    // Merge all ratings from years that fell into the current era
+                    AvailabilityRating eraAvailability = RG.mergeFactionAvailability(factionName, ratings);
+                    if (eraAvailability != null) {
+                        text = eraAvailability.getAvailabilityCode();
+                    }
+
                     addGridElement(text, row % 2 == 1);
                 }
                 row++;
