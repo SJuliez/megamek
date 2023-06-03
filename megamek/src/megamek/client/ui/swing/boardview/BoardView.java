@@ -186,6 +186,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
     private CursorSprite firstLOSSprite;
     private CursorSprite secondLOSSprite;
 
+    private DeploymentSprite deploymentSprite;
+
     // sprite for current movement
     ArrayList<StepSprite> pathSprites = new ArrayList<>();
 
@@ -195,6 +197,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
     private ArrayList<MovementEnvelopeSprite> moveEnvSprites = new ArrayList<>();
     private ArrayList<MovementModifierEnvelopeSprite> moveModEnvSprites = new ArrayList<>();
+
+//    private ArrayList<DeploymentSprite> deploymentSprites = new ArrayList<>();
 
     // vector of sprites for all firing lines
     ArrayList<AttackSprite> attackSprites = new ArrayList<>();
@@ -624,6 +628,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         selectedSprite = new CursorSprite(this, Color.blue);
         firstLOSSprite = new CursorSprite(this, Color.red);
         secondLOSSprite = new CursorSprite(this, Color.red);
+        deploymentSprite = new DeploymentSprite(this);
+        deploymentSprite.prepare();
 
         PreferenceManager.getClientPreferences().addPreferenceChangeListener(this);
         GUIP.addPreferenceChangeListener(this);
@@ -1812,25 +1818,25 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
      * Draw an outline around legal deployment hexes
      */
     private void drawDeployment(Graphics g) {
-        Rectangle view = g.getClipBounds();
-        // only update visible hexes
-        int drawX = (view.x / (int) (HEX_WC * scale)) - 1;
-        int drawY = (view.y / (int) (HEX_H * scale)) - 1;
-
-        int drawWidth = (view.width / (int) (HEX_WC * scale)) + 3;
-        int drawHeight = (view.height / (int) (HEX_H * scale)) + 3;
-
-        Board board = game.getBoard();
-        // loop through the hexes
-        for (int i = 0; i < drawHeight; i++) {
-            for (int j = 0; j < drawWidth; j++) {
-                Coords c = new Coords(j + drawX, i + drawY);
-                if (board.isLegalDeployment(c, en_Deployer) &&
-                        !en_Deployer.isLocationProhibited(c)) {
-                    drawHexBorder(g, getHexLocation(c), Color.yellow);
-                }
-            }
-        }
+//        Rectangle view = g.getClipBounds();
+//        // only update visible hexes
+//        int drawX = (view.x / (int) (HEX_WC * scale)) - 1;
+//        int drawY = (view.y / (int) (HEX_H * scale)) - 1;
+//
+//        int drawWidth = (view.width / (int) (HEX_WC * scale)) + 3;
+//        int drawHeight = (view.height / (int) (HEX_H * scale)) + 3;
+//
+//        Board board = game.getBoard();
+//        // loop through the hexes
+//        for (int i = 0; i < drawHeight; i++) {
+//            for (int j = 0; j < drawWidth; j++) {
+//                Coords c = new Coords(j + drawX, i + drawY);
+//                if (board.isLegalDeployment(c, en_Deployer) &&
+//                        !en_Deployer.isLocationProhibited(c)) {
+//                    deploymentSprite.drawOnto(g, getHexLocation(c).x, getHexLocation(c).y, this);
+//                }
+//            }
+//        }
     }
 
     /**
@@ -2794,6 +2800,11 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                     hexImage.setRGB(x, y, gray);
                 }
             }
+        }
+
+        if ((en_Deployer != null) && (!game.getBoard().isLegalDeployment(c, en_Deployer)
+                || en_Deployer.isLocationProhibited(c))) {
+            deploymentSprite.drawOnto(g, 0, 0, null);
         }
 
         cacheEntry = new HexImageCacheEntry(hexImage);
@@ -5168,12 +5179,13 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
      */
     public synchronized void selectEntity(Entity e) {
         selectedEntity = e;
+        selectedWeapon = null; // If we don't do this, the selectedWeapon might not correspond to this entity
         checkFoVHexImageCacheClear();
-        // If we don't do this, the selectedWeapon might not correspond to this
-        // entity
-        selectedWeapon = null;
         updateEcmList();
         highlightSelectedEntity();
+        if (en_Deployer != null) {
+            clearHexImageCache(); // redraw deployment position markers
+        }
     }
 
     @Override
@@ -6010,6 +6022,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         selectedSprite.prepare();
         firstLOSSprite.prepare();
         secondLOSSprite.prepare();
+        deploymentSprite.prepare();
         for (Sprite spr : moveEnvSprites) {
             spr.prepare();
         }
