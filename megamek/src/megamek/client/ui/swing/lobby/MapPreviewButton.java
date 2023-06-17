@@ -159,11 +159,11 @@ public class MapPreviewButton extends JButton {
             if (lobby.isMultipleBoards()) {
                 drawIndex(g, w, h);
             }
-            if (isExample && lobby.mapSettings.getMedium() != MapSettings.MEDIUM_SPACE) {
+            if (isExample && lobby.mapSettings().getMedium() != MapSettings.MEDIUM_SPACE) {
                 drawExample(g, w, h);
             }
-            if (lobby.mapSettings.getMedium() != MapSettings.MEDIUM_SPACE) {
-                String text = cleanBoardName(getText(), lobby.mapSettings);
+            if (lobby.mapSettings().getMedium() != MapSettings.MEDIUM_SPACE) {
+                String text = cleanBoardName(getText(), lobby.mapSettings());
                 drawMinimapLabel(text, w, h, g, lobby.hasInvalidBoard(getText()));
             }
             g.dispose();

@@ -659,7 +659,11 @@ public class Precognition implements Runnable {
      */
     private void receiveBoard(Packet c) {
         Board newBoard = (Board) c.getObject(0);
-        getGame().setBoard(newBoard);
+        game.setBoard(newBoard);
+        Board lowAtmoMap = (Board) c.getObject(1);
+        game.setLowAtmoMap(lowAtmoMap);
+        Board spaceMap = (Board) c.getObject(2);
+        game.setSpaceMap(spaceMap);
     }
 
     /**

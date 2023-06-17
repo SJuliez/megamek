@@ -231,15 +231,19 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     private ChatterBox cb;
     public ChatterBox2 cb2;
     private BoardView bv;
-    private Component bvc;
+    private BoardView bvLowAtmo;
+    private BoardView bvSpace;
+    private JTabbedPane bvc = new JTabbedPane();
     private JPanel panTop;
     private JSplitPane splitPaneA;
-    private JPanel panA1;
+    private JComponent panA1;
     private JPanel panA2;
 
     public UnitDisplay unitDisplay;
     private UnitDisplayDialog unitDisplayDialog;
     public JDialog minimapW;
+    public JDialog minimapLowAtmo;
+    public JDialog minimapSpace;
     private MapMenu popup;
     private UnitOverview uo;
     private Ruler ruler;
@@ -517,10 +521,26 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             // Create the board viewer.
             bv = new BoardView(client.getGame(), controller, this);
             bv.setPreferredSize(getSize());
-            bvc = bv.getComponent();
-            bvc.setName(CG_BOARDVIEW);
+            bvc.add("Ground Map", bv.getComponent());
+
+            if (client.getGame().getMapSettings(MapType.LOW_ATMOSPHERE).isUsed()) {
+                bvLowAtmo = new BoardView(client.getGame(), controller, this,
+                        () -> client.getGame().getLowAtmoMap());
+                bvc.add("Low Atmo Map", bvLowAtmo.getComponent());
+                minimapLowAtmo = Minimap.createMinimap(frame, bvLowAtmo, getClient().getGame(), this);
+                minimapLowAtmo.setVisible(true);
+            }
+
+            if (client.getGame().getMapSettings(MapType.SPACE).isUsed()) {
+                bvSpace = new BoardView(client.getGame(), controller, this,
+                        () -> client.getGame().getSpaceMap());
+                bvc.add("Space Map", bvSpace.getComponent());
+                minimapSpace = Minimap.createMinimap(frame, bvSpace, getClient().getGame(), this);
+                minimapSpace.setVisible(true);
+            }
 
             panTop = new JPanel(new BorderLayout());
+
             panA1 = new JPanel();
             panA1.setVisible(false);
             panA2 = new JPanel();
@@ -611,6 +631,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         UIUtil.updateWindowBounds(ruler);
 
         setMiniMapDialog(Minimap.createMinimap(frame, getBoardView(), getClient().getGame(), this));
+
         cb = new ChatterBox(this);
         cb.setChatterBox2(cb2);
         cb2.setChatterBox(cb);
@@ -1621,7 +1642,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         splitPaneA.setDividerLocation(GUIP.getSplitPaneADividerLocaton());
     }
 
-    private void hideEmptyPanel(JPanel p, JSplitPane sp, Double d) {
+    private void hideEmptyPanel(JComponent p, JSplitPane sp, Double d) {
         boolean b = false;
 
         for (Component comp : p.getComponents()) {

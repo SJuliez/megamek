@@ -113,7 +113,7 @@ class LobbyMekCellFormatter {
         boolean isCarried = entity.getTransportId() != Entity.NONE; 
         boolean hasWarning = false;
         boolean hasCritical = false;
-        int mapType = lobby.mapSettings.getMedium();
+        int mapType = lobby.mapSettings().getMedium();
         
         // First line
         if (LobbyUtility.hasYellowWarning(entity)) {
@@ -513,7 +513,7 @@ class LobbyMekCellFormatter {
 
         StringBuilder result = new StringBuilder("<HTML><NOBR>&nbsp;&nbsp;" + guiScaledFontHTML());
         boolean isCarried = entity.getTransportId() != Entity.NONE;
-        int mapType = lobby.mapSettings.getMedium();
+        int mapType = lobby.mapSettings().getMedium();
         
         Color color = GUIP.getEnemyUnitColor();
         if (owner.getId() == localPlayer.getId()) {

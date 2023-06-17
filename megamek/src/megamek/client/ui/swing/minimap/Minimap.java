@@ -30,6 +30,7 @@ import megamek.client.ui.swing.ClientGUI;
 import megamek.client.ui.swing.GUIPreferences;
 import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.util.ScalingPopup;
+import megamek.client.ui.swing.util.StringDrawer;
 import megamek.client.ui.swing.util.UIUtil;
 import megamek.common.*;
 import megamek.common.actions.AttackAction;
@@ -56,6 +57,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.io.StreamTokenizer;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.*;
 
@@ -510,8 +512,12 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
                     Hex h = board.getHex(j, k);
                     if (dirtyMap || dirty[j / 10][k / 10]) {
                         gg.setColor(terrainColor(h));
-                        if (h.containsTerrain(SPACE)) {
+                        if (board.getMapType() == MapType.SPACE) {
                             paintSpaceCoord(gg, j, k);
+                        } else if (board.getMapType() == MapType.HIGH_ATMOSPHERE) {
+                            paintHighAtmoCoord(gg, j, k);
+                        } else if (board.getMapType().isLowAtmo() && h.containsTerrain(SKY)) {
+                            paintLowAtmoCoord(gg, j, k);
                         } else {
                             paintCoord(gg, j, k, zoom > 1);
                         }
@@ -542,6 +548,32 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
                         Hex h = board.getHex(j, k);
                         paintHeight(g, h, j, k);
                     }
+                }
+            }
+
+            if (board.getMapType() == MapType.HIGH_ATMOSPHERE) {
+                // draw texts
+                int baseX = HEX_SIDE[zoom] + leftMargin;
+                int baseY = (board.getHeight() + 1) * HEX_SIDE_BY_COS30[zoom] + topMargin;
+                new StringDrawer("Ground Hexes").at(baseX, baseY).fontSize(HEX_SIDE[zoom])
+                        .rotate(Math.toRadians(90)).center().color(Color.LIGHT_GRAY).draw(g);
+
+                baseX = HEX_SIDE[zoom] + HEX_SIDE_BY_SIN30[zoom] + HEX_SIDE[zoom] + leftMargin;
+                new StringDrawer("Atmospheric Row 1").at(baseX, baseY).fontSize(HEX_SIDE[zoom])
+                        .rotate(Math.toRadians(90)).center().color(Color.LIGHT_GRAY).draw(g);
+
+                baseX = (4 * (HEX_SIDE[zoom] + HEX_SIDE_BY_SIN30[zoom]) + HEX_SIDE[zoom]) + leftMargin;
+                new StringDrawer("Atmospheric Row 4").at(baseX, baseY).fontSize(HEX_SIDE[zoom])
+                        .rotate(Math.toRadians(90)).center().color(Color.GRAY).draw(g);
+
+                baseX = (5 * (HEX_SIDE[zoom] + HEX_SIDE_BY_SIN30[zoom]) + HEX_SIDE[zoom]) + leftMargin;
+                new StringDrawer("Space/Atmosphere Interface").at(baseX, baseY).fontSize(HEX_SIDE[zoom])
+                        .rotate(Math.toRadians(90)).center().color(Color.GRAY).draw(g);
+
+                if (board.getWidth() > 15) {
+                    baseX = (15 * (HEX_SIDE[zoom] + HEX_SIDE_BY_SIN30[zoom]) + HEX_SIDE[zoom]) + leftMargin;
+                    new StringDrawer("End of Gravity").at(baseX, baseY).fontSize(HEX_SIDE[zoom])
+                            .rotate(Math.toRadians(90)).center().color(Color.GRAY).draw(g);
                 }
             }
 
@@ -844,6 +876,44 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
             g.setColor(new Color(c / factor, c / factor, c)); // blue star
         }
         g.fillRect(baseX + dx, baseY + dy, 1, 1);
+    }
+
+    private void paintHighAtmoCoord(Graphics g, int x, int y) {
+        int baseX = (x * (HEX_SIDE[zoom] + HEX_SIDE_BY_SIN30[zoom])) + leftMargin;
+        int baseY = (((2 * y) + 1 + (x % 2)) * HEX_SIDE_BY_COS30[zoom]) + topMargin;
+        int[] xPoints = xPoints(x);
+        int[] yPoints = yPoints(x, y);
+        if (x <= 5) {
+            g.setColor(new Color(75 - 15 * x, 150 - 30 * x, 150 - 30 * x));
+        }
+        g.fillPolygon(xPoints, yPoints, 6);
+        g.setColor(new Color(20, 20, 60));
+        g.drawPolygon(xPoints, yPoints, 6);
+
+        if (x > 5) {
+            // Drop in a star
+            int dx = (int) (Math.random() * HEX_SIDE[zoom]);
+            int dy = (int) ((Math.random() - 0.5) * HEX_SIDE_BY_COS30[zoom]);
+            int c = (int) (Math.random() * 180);
+            g.setColor(new Color(c, c, c));
+            if (Math.random() < 0.1) {
+                g.setColor(new Color(c, c / 10, c / 10)); // red star
+            } else if (Math.random() < 0.1) {
+                int factor = (int) (Math.random() * 10) + 1;
+                g.setColor(new Color(c / factor, c / factor, c)); // blue star
+            }
+            g.fillRect(baseX + dx, baseY + dy, 1, 1);
+        }
+    }
+
+    private void paintLowAtmoCoord(Graphics g, int x, int y) {
+        int[] xPoints = xPoints(x);
+        int[] yPoints = yPoints(x, y);
+        int c = 160 + (int) (Math.random() * 80);
+        g.setColor(new Color(c / 2, c, c));
+        g.fillPolygon(xPoints, yPoints, 6);
+        g.setColor(Color.LIGHT_GRAY);
+        g.drawPolygon(xPoints, yPoints, 6);
     }
 
     /**

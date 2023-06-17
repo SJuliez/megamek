@@ -116,7 +116,7 @@ public class MekForceTreeRenderer extends DefaultTreeCellRenderer {
         }
         Rectangle r = tree.getRowBounds(row);
         if (r != null && event.getPoint().x > r.getWidth() - UIUtil.scaleForGUI(50)) {
-            return "<HTML>" + UnitToolTip.getEntityTipLobby(entity, localPlayer, lobby.mapSettings);
+            return "<HTML>" + UnitToolTip.getEntityTipLobby(entity, localPlayer, lobby.mapSettings());
         }
         return null;
     }

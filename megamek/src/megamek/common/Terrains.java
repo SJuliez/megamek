@@ -141,6 +141,9 @@ public class Terrains implements Serializable {
     // hex that has either woods or jungle. It is added by the board loader
     // when it's not present in the board file.
     public static final int FOLIAGE_ELEV = 54;
+
+    // This is for low atmosphere maps to indicate that an empty hex is to be drawn as sky, not grassland
+    public static final int SKY = 56;
     
     /**
      * Keeps track of the different type of terrains that can have exits.
@@ -153,11 +156,11 @@ public class Terrains implements Serializable {
             "bldg_armor", "bridge", "bridge_cf", "bridge_elev", "fuel_tank", "fuel_tank_cf", "fuel_tank_elev",
             "fuel_tank_magn", "impassable", "elevator", "fortified", "screen", "fluff", "arms", "legs", "metal_deposit",
             "bldg_base_collapsed", "bldg_fluff", "road_fluff", "ground_fluff", "water_fluff", "cliff_top", "cliff_bottom", 
-            "incline_top", "incline_bottom", "incline_high_top", "incline_high_bottom", "foliage_elev" };
+            "incline_top", "incline_bottom", "incline_high_top", "incline_high_bottom", "foliage_elev", "", "sky" };
     
     /** Terrains in this set are hidden in the Editor, not saved to board files and handled internally. */
     public static final HashSet<Integer> AUTOMATIC = new HashSet<>(Arrays.asList(
-            INCLINE_TOP, INCLINE_BOTTOM, INCLINE_HIGH_TOP, INCLINE_HIGH_BOTTOM, CLIFF_BOTTOM));
+            INCLINE_TOP, INCLINE_BOTTOM, INCLINE_HIGH_TOP, INCLINE_HIGH_BOTTOM, CLIFF_BOTTOM, SKY));
 
     public static final int SIZE = names.length;
 

@@ -460,4 +460,16 @@ public final class ImageUtil {
         String img = "<img src='data:image/png;base64," + base64Text + "'>";
         imgCache.put(Report.HIDDEN_ENTITY_NUM, img);
     }
+
+
+    public static Image rotate270(Image src) {
+        int width = src.getWidth(null);
+        int height = src.getHeight(null);
+        BufferedImage rotatedImage = ImageUtil.createAcceleratedImage(height, width);
+        Graphics2D graphics2D = rotatedImage.createGraphics();
+        graphics2D.translate((width - height) / 2, (width - height) / 2);
+        graphics2D.rotate(Math.toRadians(270), height / 2, width / 2);
+        graphics2D.drawImage(src, 0, 0, null);
+        return rotatedImage;
+    }
 }

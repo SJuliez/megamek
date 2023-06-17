@@ -59,8 +59,10 @@ public class MapSettings implements Serializable {
     public static final int MEDIUM_GROUND = 0;
     public static final int MEDIUM_ATMOSPHERE = 1;
     public static final int MEDIUM_SPACE = 2;
+    public static final int MEDIUM_HIGHATMO = 3;
+    public static final int MEDIUM_NOTERRAIN_LOWATMO = 4;
 
-    private static final String[] mediumNames = { "Ground", "Atmosphere", "Space" };
+    private static final String[] mediumNames = { "Ground", "Low-Atmosphere", "Space", "High-Atmosphere", "Unused" };
 
     @XmlElement(name = "WIDTH")
     private int boardWidth = 16;
@@ -69,6 +71,9 @@ public class MapSettings implements Serializable {
     private int mapWidth = 1;
     private int mapHeight = 1;
     private int medium = MEDIUM_GROUND;
+    private MapType mapType = MapType.NONE;
+    private boolean isUsed = true;
+    private boolean usesTerrain = true;
 
     private List<String> boardsSelected = new ArrayList<>();
     private List<String> boardsAvailable = new ArrayList<>();
@@ -356,7 +361,27 @@ public class MapSettings implements Serializable {
      * @return a MapSettings with default settings values
      */
     public static MapSettings getInstance() {
-        return new MapSettings();
+        MapSettings mapSettings = new MapSettings();
+        mapSettings.mapType = MapType.GROUND;
+        mapSettings.medium = MEDIUM_GROUND;
+        mapSettings.usesTerrain = true;
+        return mapSettings;
+    }
+
+    public static MapSettings newSpaceMap() {
+        MapSettings mapSettings = getInstance();
+        mapSettings.mapType = MapType.SPACE;
+        mapSettings.medium = MEDIUM_SPACE;
+        mapSettings.usesTerrain = false;
+        return mapSettings;
+    }
+
+    public static MapSettings newLowAtmoMap() {
+        MapSettings mapSettings = getInstance();
+        mapSettings.mapType = MapType.LOW_ATMOSPHERE;
+        mapSettings.medium = MEDIUM_ATMOSPHERE;
+        mapSettings.usesTerrain = false;
+        return mapSettings;
     }
 
     /**
@@ -1597,6 +1622,30 @@ public class MapSettings implements Serializable {
 
     public int getMedium() {
         return medium;
+    }
+
+    public void setMapType(MapType newMapType) {
+        mapType = newMapType;
+    }
+
+    public MapType getMapType() {
+        return mapType;
+    }
+
+    public boolean isUsed() {
+        return isUsed;
+    }
+
+    public void setUsed(boolean used) {
+        isUsed = used;
+    }
+
+    public boolean usesTerrain() {
+        return usesTerrain;
+    }
+
+    public void setUsesTerrain(boolean usesTerrain) {
+        this.usesTerrain = usesTerrain;
     }
 
     public static String getMediumName(int m) {

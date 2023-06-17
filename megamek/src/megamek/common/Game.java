@@ -22,7 +22,9 @@ import megamek.common.GameTurn.SpecificEntityTurn;
 import megamek.common.actions.ArtilleryAttackAction;
 import megamek.common.actions.AttackAction;
 import megamek.common.actions.EntityAction;
+import megamek.common.annotations.ClientUse;
 import megamek.common.annotations.Nullable;
+import megamek.common.annotations.ServerUse;
 import megamek.common.enums.GamePhase;
 import megamek.common.event.*;
 import megamek.common.force.Forces;
@@ -61,8 +63,17 @@ public class Game extends AbstractGame implements Serializable {
     private GameOptions options = new GameOptions();
 
     private Board board = new Board();
+    private Board lowAtmoMap = new Board();
+    private Board spaceMap = new Board();
+
+    private boolean usesGroundMap = true;
+    private boolean usesLowAtmoMap = false;
+    private boolean usesSpaceMap = false;
+    private boolean spaceMapUsesGravity = false;
 
     private MapSettings mapSettings = MapSettings.getInstance();
+    private MapSettings lowAtmoMapSettings = MapSettings.newLowAtmoMap();
+    private MapSettings spaceMapSettings = MapSettings.newSpaceMap();
 
     /**
      * Track entities removed from the game (probably by death)
@@ -177,12 +188,14 @@ public class Game extends AbstractGame implements Serializable {
         return board;
     }
 
+    @ClientUse
     public void setBoard(Board board) {
         Board oldBoard = this.board;
         setBoardDirect(board);
         processGameEvent(new GameBoardNewEvent(this, oldBoard, board));
     }
 
+    @ServerUse
     public void setBoardDirect(final Board board) {
         this.board = board;
     }
@@ -3438,11 +3451,91 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public void setMapSettings(MapSettings mapSettings) {
-        this.mapSettings = mapSettings;
+        if (mapSettings.getMapType().isSpaceOrHighAtmo()) {
+            spaceMapSettings = mapSettings;
+        } else if (mapSettings.getMapType().isLowAtmo()) {
+            lowAtmoMapSettings = mapSettings;
+        } else {
+            this.mapSettings = mapSettings;
+        }
+    }
+
+    public MapSettings getMapSettings(MapType mapType) {
+        if (mapType.isSpaceOrHighAtmo()) {
+            return spaceMapSettings;
+        } else if (mapType.isLowAtmo()) {
+            return lowAtmoMapSettings;
+        } else {
+            return mapSettings;
+        }
     }
 
     /** @return The TW Units (Entity) currently in the game. */
     public List<Entity> inGameTWEntities() {
         return inGameObjects.values().stream().filter(o -> o instanceof Entity).map(o -> (Entity) o).collect(toList());
+    }
+
+    public boolean usesGroundMap() {
+        return usesGroundMap;
+    }
+
+    public boolean usesLowAtmoMap() {
+        return usesLowAtmoMap;
+    }
+
+    public boolean usesSpaceMap() {
+        return usesSpaceMap;
+    }
+
+    public boolean spaceMapUsesGravity() {
+        return spaceMapUsesGravity;
+    }
+
+    public void setUsesGroundMap(boolean usesGroundMap) {
+        this.usesGroundMap = usesGroundMap;
+    }
+
+    public void setUsesSpaceMap(boolean usesSpaceMap) {
+        this.usesSpaceMap = usesSpaceMap;
+    }
+
+    public void setUsesLowAtmoMap(boolean usesLowAtmoMap) {
+        this.usesLowAtmoMap = usesLowAtmoMap;
+    }
+
+    public void setSpaceMapUsesGravity(boolean spaceMapUsesGravity) {
+        this.spaceMapUsesGravity = spaceMapUsesGravity;
+    }
+
+    public Board getLowAtmoMap() {
+        return lowAtmoMap;
+    }
+
+    @ClientUse
+    public void setLowAtmoMap(Board board) {
+        Board oldBoard = lowAtmoMap;
+        setLowAtmoMapDirect(board);
+        processGameEvent(new GameBoardNewEvent(this, oldBoard, board));
+    }
+
+    @ServerUse
+    public void setLowAtmoMapDirect(final Board board) {
+        lowAtmoMap = board;
+    }
+
+    public Board getSpaceMap() {
+        return spaceMap;
+    }
+
+    @ClientUse
+    public void setSpaceMap(Board board) {
+        Board oldBoard = spaceMap;
+        setSpaceMapDirect(board);
+        processGameEvent(new GameBoardNewEvent(this, oldBoard, board));
+    }
+
+    @ServerUse
+    public void setSpaceMapDirect(final Board board) {
+        spaceMap = board;
     }
 }

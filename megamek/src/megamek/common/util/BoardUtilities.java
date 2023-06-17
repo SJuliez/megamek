@@ -131,6 +131,8 @@ public class BoardUtilities {
             for (int w = 0; w < mapSettings.getBoardWidth(); w++) {
                 if (mapSettings.getMedium() == MapSettings.MEDIUM_SPACE) {
                     nb[index++] = new Hex(0, "space:1", mapSettings.getTheme(), new Coords(w, h));
+                } else if (mapSettings.getMapType().isLowAtmo() && !mapSettings.usesTerrain()) {
+                    nb[index++] = new Hex(0, "sky:1", mapSettings.getTheme(), new Coords(w, h));
                 } else {
                     nb[index++] = new Hex(elevationMap[w][h], "", mapSettings.getTheme(), new Coords(w, h));
                 }
@@ -141,7 +143,15 @@ public class BoardUtilities {
 
         if (mapSettings.getMedium() == MapSettings.MEDIUM_SPACE) {
             result.setType(Board.T_SPACE);
+            result.setMapType(mapSettings.getMapType());
             return result;
+        } else if (mapSettings.getMapType().isLowAtmo() && !mapSettings.usesTerrain()) {
+            result.setType(Board.T_ATMOSPHERE);
+            result.setMapType(MapType.LOW_ATMOSPHERE);
+            return result;
+        } else if (mapSettings.getMapType().isGround()) {
+            result.setType(Board.T_GROUND);
+            result.setMapType(MapType.GROUND);
         }
 
         // initialize reverseHex

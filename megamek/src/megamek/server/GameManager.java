@@ -642,6 +642,8 @@ public class GameManager implements IGameManager {
             if (getGame().getPhase().isLounge()) {
                 send(connId, createMapSettingsPacket());
                 send(createMapSizesPacket());
+                send(connId, createMapSettingsPacket(MapType.SPACE));
+                send(connId, createMapSettingsPacket(MapType.LOW_ATMOSPHERE));
                 // Send Entities *after* the Lounge Phase Change
                 send(connId, new Packet(PacketCommand.PHASE_CHANGE, getGame().getPhase()));
                 if (doBlind()) {
@@ -871,17 +873,18 @@ public class GameManager implements IGameManager {
             case SENDING_MAP_SETTINGS:
                 if (game.getPhase().isBefore(GamePhase.DEPLOYMENT)) {
                     MapSettings newSettings = (MapSettings) packet.getObject(0);
-                    if (!game.getMapSettings().equalMapGenParameters(newSettings)) {
-                        sendServerChat(player + " changed map settings");
+                    if (newSettings.getMapType() == MapType.GROUND) {
+                        if (!game.getMapSettings().equalMapGenParameters(newSettings)) {
+                            sendServerChat(player + " changed map settings");
+                        }
+                        newSettings.setBoardsAvailableVector(ServerBoardHelper.scanForBoards(newSettings));
+                        newSettings.removeUnavailable();
+                        newSettings.setNullBoards(DEFAULT_BOARD);
                     }
-                    MapSettings mapSettings = newSettings;
-                    mapSettings.setBoardsAvailableVector(ServerBoardHelper.scanForBoards(mapSettings));
-                    mapSettings.removeUnavailable();
-                    mapSettings.setNullBoards(DEFAULT_BOARD);
-                    game.setMapSettings(mapSettings);
+                    game.setMapSettings(newSettings);
                     resetPlayersDone();
                     transmitAllPlayerDones();
-                    send(createMapSettingsPacket());
+                    send(createMapSettingsPacket(newSettings.getMapType()));
                 }
                 break;
             case SENDING_MAP_DIMENSIONS:
@@ -890,11 +893,10 @@ public class GameManager implements IGameManager {
                     if (!game.getMapSettings().equalMapGenParameters(newSettings)) {
                         sendServerChat(player + " changed map dimensions");
                     }
-                    MapSettings mapSettings = newSettings;
-                    mapSettings.setBoardsAvailableVector(ServerBoardHelper.scanForBoards(mapSettings));
-                    mapSettings.removeUnavailable();
-                    mapSettings.setNullBoards(DEFAULT_BOARD);
-                    game.setMapSettings(mapSettings);
+                    newSettings.setBoardsAvailableVector(ServerBoardHelper.scanForBoards(newSettings));
+                    newSettings.removeUnavailable();
+                    newSettings.setNullBoards(DEFAULT_BOARD);
+                    game.setMapSettings(newSettings);
                     resetPlayersDone();
                     transmitAllPlayerDones();
                     send(createMapSettingsPacket());
@@ -2865,6 +2867,18 @@ public class GameManager implements IGameManager {
                     game.getPlanetaryConditions().getWindStrength());
         }
         game.setBoard(newBoard);
+
+        mapSettings = game.getMapSettings(MapType.LOW_ATMOSPHERE);
+        if (mapSettings.isUsed()) {
+            Board lowAtmoMap = BoardUtilities.generateRandom(mapSettings);
+            game.setLowAtmoMapDirect(lowAtmoMap);
+        }
+
+        mapSettings = game.getMapSettings(MapType.SPACE);
+        if (mapSettings.isUsed()) {
+            Board spaceMap = BoardUtilities.generateRandom(mapSettings);
+            game.setSpaceMapDirect(spaceMap);
+        }
     }
 
     /**
@@ -30018,6 +30032,10 @@ public class GameManager implements IGameManager {
         return new Packet(PacketCommand.SENDING_MAP_SETTINGS, mapSettings);
     }
 
+    private Packet createMapSettingsPacket(MapType mapType) {
+        return new Packet(PacketCommand.SENDING_MAP_SETTINGS, game.getMapSettings(mapType));
+    }
+
     private Packet createMapSizesPacket() {
         return new Packet(PacketCommand.SENDING_AVAILABLE_MAP_SIZES, getBoardSizes());
     }
@@ -30040,7 +30058,7 @@ public class GameManager implements IGameManager {
      * Creates a packet containing the game board
      */
     private Packet createBoardPacket() {
-        return new Packet(PacketCommand.SENDING_BOARD, getGame().getBoard());
+        return new Packet(PacketCommand.SENDING_BOARD, getGame().getBoard(), game.getLowAtmoMap(), game.getSpaceMap());
     }
 
     /**

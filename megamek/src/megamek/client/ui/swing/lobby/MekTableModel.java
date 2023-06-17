@@ -182,7 +182,7 @@ public class MekTableModel extends AbstractTableModel {
             unitTooltips.add(null);
             pilotTooltips.add(null);
         } else {
-            MapSettings mset = chatLounge.mapSettings;
+            MapSettings mset = clientGui.getClient().getGame().getMapSettings();
             Player lPlayer = clientGui.getClient().getLocalPlayer();
             String s = UnitToolTip.lobbyTip(entity, lPlayer, mset).toString();
             unitTooltips.add( HTML_BEGIN + s + HTML_END);

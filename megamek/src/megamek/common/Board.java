@@ -73,6 +73,7 @@ public class Board implements Serializable {
     private int maxElevation = UNDEFINED_MAX_ELEV;
 
     private int mapType = T_GROUND;
+    private MapType mapType2 = MapType.GROUND;
 
     private Hex[] data;
 
@@ -1908,5 +1909,13 @@ public class Board implements Serializable {
      */
     public Set<String> getTags() {
         return Collections.unmodifiableSet(tags);
+    }
+
+    public void setMapType(MapType newMapType) {
+        mapType2 = newMapType;
+    }
+
+    public MapType getMapType() {
+        return mapType2;
     }
 }
