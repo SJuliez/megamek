@@ -2161,12 +2161,18 @@ public class GameManager implements IGameManager {
     public void checkEntityExchange() {
         for (Iterator<Entity> entities = game.getEntities(); entities.hasNext(); ) {
             Entity entity = entities.next();
+            entity.setCurrentMap(MapType.GROUND);
+
             // apply bombs
             if (entity.isBomber()) {
                 ((IBomber) entity).applyBombs();
             }
 
             if (entity.isAero()) {
+                if (game.usesLowAtmoMap()) {
+                    entity.setCurrentMap(MapType.LOW_ATMOSPHERE);
+                }
+
                 IAero a = (IAero) entity;
                 if (a.isSpaceborne()) {
                     // altitude and elevation don't matter in space
@@ -2867,14 +2873,17 @@ public class GameManager implements IGameManager {
                     game.getPlanetaryConditions().getWindStrength());
         }
         game.setBoard(newBoard);
+        game.setUsesGroundMap(mapSettings.isUsed());
 
         mapSettings = game.getMapSettings(MapType.LOW_ATMOSPHERE);
+        game.setUsesLowAtmoMap(mapSettings.isUsed());
         if (mapSettings.isUsed()) {
             Board lowAtmoMap = BoardUtilities.generateRandom(mapSettings);
             game.setLowAtmoMapDirect(lowAtmoMap);
         }
 
         mapSettings = game.getMapSettings(MapType.SPACE);
+        game.setUsesSpaceMap(mapSettings.isUsed());
         if (mapSettings.isUsed()) {
             Board spaceMap = BoardUtilities.generateRandom(mapSettings);
             game.setSpaceMapDirect(spaceMap);

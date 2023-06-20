@@ -1152,7 +1152,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
         // draw deployment indicators.
         // For Isometric rendering, this is done during drawHexes
-        if ((en_Deployer != null) && !useIsometric()) {
+        if ((en_Deployer != null) && !useIsometric() && isOnThisBoard(en_Deployer)) {
             drawDeployment(g);
         }
 
@@ -1256,6 +1256,10 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         //renderMovementBoundingBox((Graphics2D) g);
         //renderDonut(g, new Coords(10, 10), 2);
         //renderApproxHexDirection((Graphics2D) g);
+    }
+
+    private boolean isOnThisBoard(Entity entity) {
+        return game.getBoard().getMapType() == entity.getCurrentMap();
     }
 
     /**
@@ -3507,7 +3511,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         clearC3Networks();
         clearFlyOverPaths();
         for (Entity entity : game.getEntitiesVector()) {
-            if (entity.getPosition() == null) {
+            if ((entity.getPosition() == null) || (entity.getCurrentMap() != game.getBoard().getMapType())) {
                 continue;
             }
             if ((localPlayer != null)

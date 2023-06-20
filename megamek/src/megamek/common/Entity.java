@@ -244,6 +244,8 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     protected int facing = 0;
     protected int sec_facing = 0;
 
+    protected MapType currentMap;
+
     protected int walkMP = 0;
     protected int jumpMP = 0;
 
@@ -15538,5 +15540,13 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             bvCalculator = BVCalculator.getBVCalculator(this);
         }
         return bvCalculator;
+    }
+
+    public MapType getCurrentMap() {
+        return currentMap;
+    }
+
+    public void setCurrentMap(MapType mapType) {
+        currentMap = mapType;
     }
 }
