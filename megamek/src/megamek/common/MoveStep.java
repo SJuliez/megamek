@@ -938,6 +938,7 @@ public class MoveStep implements Serializable {
                                 mpUsed += 1;
                             }
                         }
+                        setHasJustStood(true);
                     } else {
                         for (int location = Mech.LOC_RARM; location <= Mech.LOC_LLEG; location++) {
                             if (entity.isLocationBad(location)) {
@@ -1113,7 +1114,7 @@ public class MoveStep implements Serializable {
 
         // Check for a stacking violation.
         final Entity violation = Compute.stackingViolation(game,
-                entity, getElevation(), getPosition(), null);
+                entity, getElevation(), getPosition(), null, climbMode);
         if ((violation != null) && (getType() != MoveStepType.CHARGE)
                 && (getType() != MoveStepType.DFA)) {
             setStackingViolation(true);
@@ -2619,7 +2620,7 @@ public class MoveStep implements Serializable {
                     }
                     Entity other = (Entity) target;
                     if ((null != Compute.stackingViolation(game, other, curPos,
-                            entity)) || other.isLocationProhibited(curPos, getElevation())) {
+                            entity, climbMode)) || other.isLocationProhibited(curPos, getElevation())) {
                         movementType = EntityMovementType.MOVE_ILLEGAL;
                     }
                 } else {
@@ -2645,7 +2646,7 @@ public class MoveStep implements Serializable {
             if (target instanceof Entity) {
                 Entity other = (Entity) target;
                 if ((null != Compute.stackingViolation(game, other, curPos,
-                        entity)) || other.isLocationProhibited(curPos, getElevation())) {
+                        entity, climbMode)) || other.isLocationProhibited(curPos, getElevation())) {
                     movementType = EntityMovementType.MOVE_ILLEGAL;
                 }
             } else {
@@ -2876,7 +2877,9 @@ public class MoveStep implements Serializable {
      */
     private void UseEitherMASCOrSupercharger(boolean hasMASCBeenUsed, boolean hasSuperchargerBeenUsed) {
         MPBoosters mpBoosters = entity.getArmedMPBoosters();
-        if (!hasMASCBeenUsed && !hasSuperchargerBeenUsed) {
+        if (mpBoosters.isJetBooster() && !hasMASCBeenUsed) {
+            setUsingMASC(true);
+        } else if (!hasMASCBeenUsed && !hasSuperchargerBeenUsed) {
             int scTarget = mpBoosters.hasSupercharger() ? entity.getSuperchargerTarget() : 2000;
             int mascTarget = mpBoosters.hasMASC() ? entity.getMASCTarget() : 2000;
             if (mascTarget < scTarget) {
@@ -3895,9 +3898,10 @@ public class MoveStep implements Serializable {
         }
 
         // if its part of a maneuver then you can turn
-        if (isManeuver()) {
+        if (isFacingChangeManeuver()) {
             return true;
         }
+
 
         if (en instanceof ConvFighter) {
             // conventional fighters can only turn on free turns or maneuvers
@@ -4008,6 +4012,16 @@ public class MoveStep implements Serializable {
 
     public boolean isManeuver() {
         return maneuver;
+    }
+
+    /**
+     * @return Whether this step is a maneuver that allows a free facing change.
+     */
+    public boolean isFacingChangeManeuver() {
+        return maneuver && (
+                maneuverType == ManeuverType.MAN_IMMELMAN
+                || maneuverType == ManeuverType.MAN_SPLIT_S
+            );
     }
 
     public Minefield getMinefield() {

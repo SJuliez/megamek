@@ -126,8 +126,6 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
         clientgui.getBoardView().addBoardViewListener(this);
         setupStatusBar(Messages.getString("PhysicalDisplay.waitingForPhysicalAttackPhase"));
 
-        attacks = new Vector<>();
-
         setButtons();
         setButtonsTooltips();
 
@@ -347,7 +345,7 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
             }
         }
         disableButtons();
-        clientgui.getClient().sendAttackData(cen, attacks);
+        clientgui.getClient().sendAttackData(cen, attacks.toVector());
         removeAllAttacks();
         // close aimed shot display, if any
         ash.closeDialog();
@@ -1404,7 +1402,7 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
         } else if (targets.size() > 1) {
             // If we have multiple choices, display a selection dialog.
             choice = TargetChoiceDialog.showSingleChoiceDialog(clientgui.getFrame(),
-                    Messages.getString("PhysicalDisplay.ChooseTargetDialog.title"),
+                    "PhysicalDisplay.ChooseTargetDialog.title",
                     Messages.getString("PhysicalDisplay.ChooseTargetDialog.message", pos.getBoardNum()),
                     targets, clientgui, ce());
         }

@@ -73,7 +73,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ClientGUI extends JPanel implements BoardViewListener,
         ActionListener, ComponentListener, IPreferenceChangeListener {
@@ -113,7 +112,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     public static final String FILE_GAME_SCENARIO = "fileGameScenario";
     public static final String FILE_GAME_CONNECT_BOT = "fileGameConnectBot";
     public static final String FILE_GAME_CONNECT = "fileGameConnect";
-    public static final String FILE_GAME_REPLACE_PLAYER = "replacePlayer";
+    public static final String FILE_GAME_EDIT_BOTS = "editBots";
     // board submenu
     public static final String BOARD_NEW = "fileBoardNew";
     public static final String BOARD_OPEN = "fileBoardOpen";
@@ -166,6 +165,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     public static final String VIEW_TOGGLE_FOV_HIGHLIGHT = "viewToggleFovHighlight";
     public static final String VIEW_TOGGLE_FIRING_SOLUTIONS = "viewToggleFiringSolutions";
     public static final String VIEW_MOVE_ENV = "viewMovementEnvelope";
+    public static final String VIEW_TURN_DETAILS_OVERLAY = "viewTurnDetailsOverlay";
     public static final String VIEW_MOVE_MOD_ENV = "viewMovModEnvelope";
     public static final String VIEW_CHANGE_THEME = "viewChangeTheme";
     public static final String VIEW_ROUND_REPORT = "viewRoundReport";
@@ -906,9 +906,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             case VIEW_MINI_MAP:
                 GUIP.toggleMinimapEnabled();
                 break;
-            case VIEW_KEYBINDS_OVERLAY:
-                GUIP.toggleKeybindsOverlay();
-                break;
             case VIEW_TOGGLE_HEXCOORDS:
                 GUIP.toggleCoords();
                 break;
@@ -932,8 +929,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 boardSaveAsImage(false);
                 ignoreHotKeys = false;
                 break;
-            case FILE_GAME_REPLACE_PLAYER:
-                replacePlayer();
+            case FILE_GAME_EDIT_BOTS:
+                editBots();
                 break;
             case VIEW_ACCESSIBILITY_WINDOW:
                 toggleAccessibilityWindow();
@@ -966,7 +963,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 break;
             case VIEW_TOGGLE_SENSOR_RANGE:
                 GUIP.setShowSensorRange(!GUIP.getShowSensorRange());
-                bv.repaint();
                 break;
             case VIEW_TOGGLE_FOV_DARKEN:
                 GUIP.setFovDarken(!GUIP.getFovDarken());
@@ -1972,11 +1968,15 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                     // Read the units from the file.
                     final Vector<Entity> loadedUnits = new MULParser(unitFile, getClient().getGame().getOptions()).getEntities();
 
+                    // in the Lounge, set default deployment to "Before Game Start", round 0
+                    // but in a game in-progress, deploy at the start of next round
+                    final int deployRound = client.getGame().getRoundCount() + ((client.getGame().getPhase() == GamePhase.LOUNGE) ? 0 : 1);
+
                     // Add the units from the file.
                     for (Entity entity : loadedUnits) {
                         entity.setOwner(player);
                         if (reinforce) {
-                            entity.setDeployRound(client.getGame().getRoundCount() + 1);
+                            entity.setDeployRound(deployRound);
                             entity.setGame(client.getGame());
                             // Set these to true, otherwise units reinforced in
                             // the movement turn are considered selectable
@@ -2281,6 +2281,16 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         }
 
         @Override
+        public void gameEntityChange(GameEntityChangeEvent e) {
+            if ((unitDisplay != null) && (unitDisplay.getCurrentEntity() != null)
+                && (e.getEntity() != null)
+                    && (unitDisplay.getCurrentEntity().getId() == e.getEntity().getId())) {
+                // underlying object may have changed, so reset
+                unitDisplay.displayEntity(e.getEntity());
+            }
+        }
+
+        @Override
         public void gameReport(GameReportEvent e) {
             // Normally the Report Display is updated when the panel is
             // switched during a phase change.
@@ -2311,10 +2321,10 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             bv.clearMovementData();
             bv.clearFieldOfFire();
             bv.clearSensorsRanges();
-            for (Client client2 : getBots().values()) {
+            for (Client client2 : getLocalBots().values()) {
                 client2.die();
             }
-            getBots().clear();
+            getLocalBots().clear();
 
             // Make a list of the player's living units.
             ArrayList<Entity> living = getClient().getGame().getPlayerEntities(getClient().getLocalPlayer(), false);
@@ -2617,8 +2627,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         return client;
     }
 
-    public Map<String, Client> getBots() {
-        return client.bots;
+    public Map<String, Client> getLocalBots() {
+        return client.localBots;
     }
 
     /**
@@ -2835,16 +2845,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
     }
 
-    void replacePlayer() {
-        Set<Player> ghostPlayers = client.getGame().getPlayersVector().stream()
-                .filter(Player::isGhost).collect(Collectors.toSet());
-        if (ghostPlayers.isEmpty()) {
-            doAlertDialog(Messages.getString("ClientGUI.noGhostPlayersToReplace"),
-                    Messages.getString("ClientGUI.noGhosts"), JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        var rpd = new ReplacePlayersDialog(frame, this);
+    void editBots() {
+        var rpd = new EditBotsDialog(frame, this);
         rpd.setVisible(true);
         if (rpd.getResult() == DialogResult.CANCELLED) {
             return;
@@ -2852,16 +2854,31 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
         AddBotUtil util = new AddBotUtil();
         Map<String, BehaviorSettings> newBotSettings = rpd.getNewBots();
-        for (String player : newBotSettings.keySet()) {
+        for (String ghostName : newBotSettings.keySet()) {
             StringBuilder message = new StringBuilder();
-            Princess princess = util.addBot(newBotSettings.get(player), player,
-                    client.getGame(), client.getHost(), client.getPort(), message);
+            Princess princess = util.replaceGhostWithBot(newBotSettings.get(ghostName), ghostName,
+                    client, message);
             systemMessage(message.toString());
             // Make this princess a locally owned bot if in the lobby. This way it
             // can be configured, and it will faithfully press Done when the local player does.
             if ((princess != null) && client.getGame().getPhase().isLounge()) {
-                getBots().put(player, princess);
+                getLocalBots().put(ghostName, princess);
             }
+        }
+
+        Map<String, BehaviorSettings> changedBots = rpd.getChangedBots();
+        for (String botName : changedBots.keySet()) {
+            StringBuilder message = new StringBuilder();
+            util.changeBotSettings(changedBots.get(botName), botName,
+                    client, message);
+            systemMessage(message.toString());
+        }
+
+        Set<String> kickBotNames = rpd.getKickBots();
+        for (String botName : kickBotNames) {
+            StringBuilder message = new StringBuilder();
+            util.kickBot( botName, client, message);
+            systemMessage(message.toString());
         }
     }
 

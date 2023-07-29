@@ -21,7 +21,6 @@ import megamek.common.annotations.Nullable;
 import megamek.common.enums.AimingMode;
 import megamek.common.enums.BasementType;
 import megamek.common.enums.IlluminationLevel;
-import megamek.common.options.Option;
 import megamek.common.options.OptionsConstants;
 import megamek.common.weapons.InfantryAttack;
 import megamek.common.weapons.Weapon;
@@ -301,14 +300,19 @@ public class Compute {
      *
      * The position, and elevation for the stacking violation are derived from
      * the Entity represented by the passed Entity ID.
+     *
+     * @param game       The Game instance
+     * @param enteringId The gameId of the moving Neity
+     * @param coords     The hex being entered
+     * @param climbMode  The moving Entity's climb mode at the point it enters the destination hex
      */
     public static Entity stackingViolation(Game game, int enteringId,
-            Coords coords) {
+            Coords coords, boolean climbMode) {
         Entity entering = game.getEntity(enteringId);
         if (entering == null) {
             return null;
         }
-        return Compute.stackingViolation(game, entering, coords, null);
+        return Compute.stackingViolation(game, entering, coords, null, climbMode);
     }
 
     /**
@@ -318,14 +322,17 @@ public class Compute {
      * The position, and elevation for the stacking violation are derived from
      * the passed Entity.
      *
-     * @param transport
-     *            Represents the unit transporing entering, which may affect
-     *            stacking, can be null
+     * @param game       The Game instance
+     * @param entering   The Entity entering the hex
+     * @param dest       The hex being entered
+     * @param transport  Represents the unit transporting entering, which may affect
+     *                   stacking, can be null
+     * @param climbMode  The moving Entity's climb mode at the point it enters the destination hex
      */
     public static Entity stackingViolation(Game game, Entity entering,
-            Coords dest, Entity transport) {
+            Coords dest, Entity transport, boolean climbMode) {
         return stackingViolation(game, entering, entering.getElevation(), dest,
-                transport);
+                transport, climbMode);
     }
 
     /**
@@ -336,14 +343,18 @@ public class Compute {
      * The position is derived from the passed Entity, while the elevation is
      * derived from the passed Entity parameter.
      *
-     * @param transport
-     *            Represents the unit transporing entering, which may affect
-     *            stacking, can be null
+     * @param game       The Game instance
+     * @param entering   The Entity entering the hex
+     * @param elevation  The elevation of the moving Entity
+     * @param dest       The hex being entered
+     * @param transport  Represents the unit transporting entering, which may affect
+     *                   stacking, can be null
+     * @param climbMode  The moving Entity's climb mode at the point it enters the destination hex
      */
     public static Entity stackingViolation(Game game, Entity entering,
-            int elevation, Coords dest, Entity transport) {
+            int elevation, Coords dest, Entity transport, boolean climbMode) {
         return stackingViolation(game, entering, entering.getPosition(),
-                elevation, dest, transport);
+                elevation, dest, transport, climbMode);
     }
 
     /**
@@ -353,12 +364,17 @@ public class Compute {
      *
      * The position and elevation is derived from the passed Entity parameter.
      *
-     * @param transport
-     *            Represents the unit transporing entering, which may affect
-     *            stacking, can be null
+     * @param game         The Game instance
+     * @param entering     The Entity entering the hex
+     * @param origPosition The coords of the hex the moving Entity is leaving
+     * @param elevation    The elevation of the moving Entity
+     * @param dest         The hex being entered
+     * @param transport    Represents the unit transporting entering, which may affect
+     *                     stacking, can be null
+     * @param climbMode    The moving Entity's climb mode at the point it enters the destination hex
      */
     public static Entity stackingViolation(Game game, Entity entering,
-            Coords origPosition, int elevation, Coords dest, Entity transport) {
+            Coords origPosition, int elevation, Coords dest, Entity transport, boolean climbMode) {
         // no stacking violations on the low-atmosphere and space maps
         if (!game.getBoard().onGround()) {
             return null;
@@ -393,8 +409,7 @@ public class Compute {
             if ((coords != null) && (origPosition != null)) {
                 thisLowStackingLevel = entering.calcElevation(game.getBoard()
                         .getHex(origPosition), game.getBoard()
-                        .getHex(coords), elevation, entering
-                        .climbMode(), false);
+                        .getHex(coords), elevation, climbMode, false);
             }
             int thisHighStackingLevel = thisLowStackingLevel;
             // mechs only occupy one level of a building
@@ -768,7 +783,7 @@ public class Compute {
 
         // if there's an entity in the way, can they be displaced in that
         // direction?
-        Entity inTheWay = Compute.stackingViolation(game, entityId, dest);
+        Entity inTheWay = Compute.stackingViolation(game, entityId, dest, false);
         if (inTheWay != null) {
             return Compute.isValidDisplacement(game, inTheWay.getId(),
                     inTheWay.getPosition(), direction);
@@ -1338,15 +1353,10 @@ public class Compute {
         if (isIndirect) {
             c3spotter = ae; // no c3 when using indirect fire
         }
-        if (isIndirect
-            && game.getOptions().booleanOption(OptionsConstants.BASE_INDIRECT_FIRE)
-            && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_INDIRECT_ALWAYS_POSSIBLE)
-            && LosEffects.calculateLOS(game, ae, target).canSee()
-            && (!game.getOptions().booleanOption(OptionsConstants.ADVANCED_DOUBLE_BLIND) || Compute
-                .canSee(game, ae, target))
-            && !(wtype instanceof MekMortarWeapon)) {
+        
+        if (isIndirect && indirectAttackImpossible(game, ae, target, wtype, weapon)) {
             return new ToHitData(TargetRoll.IMPOSSIBLE,
-                    "Indirect fire impossible with direct LOS");
+                    Messages.getString("WeaponAttackAction.NoIndirectWithLOS"));
         }
 
         int c3dist = Compute.effectiveDistance(game, c3spotter, target, false);
@@ -4969,7 +4979,13 @@ public class Compute {
         if (null == e.getActiveSensor()) {
             return null;
         }
-        int bracket = Compute.getSensorBracket(e.getSensorCheck());
+
+        int check = e.getSensorCheck();
+        if ((null != e.getCrew()) && e.hasAbility(OptionsConstants.UNOFF_SENSOR_GEEK)) {
+            check -= 2;
+        }
+
+        int bracket = Compute.getSensorBracket(check);
         if (e.isSpaceborne()) {
             bracket = Compute.getSensorBracket(7);
         }
@@ -6779,7 +6795,7 @@ public class Compute {
             // elevations
 
             if (!unit.isLocationProhibited(pos)
-                && (null == stackingViolation(game, unit.getId(), pos))
+                && (null == stackingViolation(game, unit.getId(), pos, unit.climbMode()))
                 && (Math.abs(hex.getLevel() - elev) < 3)) {
                 acceptable.add(pos);
             }
@@ -7180,6 +7196,24 @@ public class Compute {
         }
         // are we in atmosphere?
         return en.isAirborne();
+    }
+    
+    /**
+     * Worker function that checks if an indirect attack is impossible for the given passed-in arguments
+     */
+    public static boolean indirectAttackImpossible(Game game, Entity ae, Targetable target, WeaponType wtype, Mounted weapon) {        
+        boolean isLandedSpheroid = ae.isAero() && ((IAero) ae).isSpheroid() && (ae.getAltitude() == 0) && game.getBoard().onGround();
+        int altDif = target.getAltitude() - ae.getAltitude();
+        boolean noseWeaponAimedAtGroundTarget = (weapon != null) && (weapon.getLocation() == Aero.LOC_NOSE) && (altDif < 1);
+        
+        return game.getOptions().booleanOption(OptionsConstants.BASE_INDIRECT_FIRE)
+                    && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_INDIRECT_ALWAYS_POSSIBLE)
+                    && LosEffects.calculateLOS(game, ae, target).canSee()
+                    && (!game.getOptions().booleanOption(OptionsConstants.ADVANCED_DOUBLE_BLIND)
+                            || Compute.canSee(game, ae, target))
+                    && !(wtype instanceof ArtilleryCannonWeapon)
+                    && !wtype.hasFlag(WeaponType.F_MORTARTYPE_INDIRECT)
+                    && !(isLandedSpheroid && noseWeaponAimedAtGroundTarget);
     }
 
 } // End public class Compute

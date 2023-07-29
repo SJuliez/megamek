@@ -1358,6 +1358,10 @@ public abstract class TestEntity implements TestEntityOption {
             if (m.getType().hasFlag(MiscType.F_C3I) || m.getType().hasFlag(MiscType.F_NOVA)) {
                 networks++;
             }
+            if (m.is(Sensor.NOVA) && (!getEntity().hasEngine() || !getEntity().getEngine().isFusion())) {
+                buff.append("Nova CEWS may only be used on units with a fusion engine\n");
+                illegal = true;
+            }
             if (m.getType().hasFlag(MiscType.F_SRCS) || m.getType().hasFlag(MiscType.F_SASRCS)
                     || m.getType().hasFlag(MiscType.F_CASPAR) || m.getType().hasFlag(MiscType.F_CASPARII)) {
                 robotics++;
@@ -1494,6 +1498,19 @@ public abstract class TestEntity implements TestEntityOption {
         for (Mounted mounted : getEntity().getEquipment()) {
             if (mounted.getLocation() > Entity.LOC_NONE) {
                 illegal |= !isValidLocation(getEntity(), mounted.getType(), mounted.getLocation(), buff);
+            }
+        }
+
+        // Find all locations with modular armor and map the number in that location to the location index.
+        Map<Integer, Long> modArmorByLocation = getEntity().getMisc().stream()
+                .filter(m -> m.getType().hasFlag(MiscType.F_MODULAR_ARMOR))
+                .filter(m -> m.getLocation() != Entity.LOC_NONE)
+                .collect(Collectors.groupingBy(Mounted::getLocation, Collectors.counting()));
+        for (Integer loc : modArmorByLocation.keySet()) {
+            if (modArmorByLocation.get(loc) > 1) {
+                buff.append("Only one modular armor slot may be mounted in a single location (")
+                        .append(getEntity().getLocationName(loc)).append(")\n");
+                illegal = true;
             }
         }
 

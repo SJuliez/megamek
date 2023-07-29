@@ -17,7 +17,7 @@ Model 96C
 </Name>
 
 <Model>
-“Howdah” SDS Command Ship
+'Howdah' SDS Command Ship
 </Model>
 
 <mul id:>
@@ -219,7 +219,7 @@ Tug/ SDS Controller
 </height>
 
 <source>
-Historical:Liberation of Terra I - Star League
+Historical: Liberation of Terra I
 </source>
 
 <tonnage>

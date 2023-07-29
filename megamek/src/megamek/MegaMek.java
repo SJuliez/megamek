@@ -178,6 +178,11 @@ public class MegaMek {
             filename = "MegaMek.app/Contents/Resources/Java/" + filename;
         }
 
+        if (!new File(filename).exists()) {
+            LogManager.getLogger().warn("MegaMek.jar not found. Returning null checksum.");
+            return null;
+        }
+
         MessageDigest md;
         // Calculate the digest for the given file.
         try {
@@ -249,14 +254,7 @@ public class MegaMek {
             MegaMekGUI mmg = new MegaMekGUI();
             mmg.start(false);
 
-            File gameFile = null;
-            if (resolver.saveGameFileName != null ) {
-                gameFile = new File(resolver.saveGameFileName);
-                if (!gameFile.isAbsolute()) {
-                    gameFile = new File("./savegames", resolver.saveGameFileName);
-                }
-            }
-
+            File gameFile = resolver.getSaveGameFile();
             mmg.startHost(resolver.password, resolver.port, resolver.registerServer,
                     resolver.announceUrl, resolver.mailPropertiesFile, gameFile,
                     resolver.playerName );

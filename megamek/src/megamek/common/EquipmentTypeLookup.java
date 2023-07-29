@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
 public class EquipmentTypeLookup {
 
     /**
-     * Static fields in this class annotated with {code }@EquipmentName} will be checked by the unit tests
+     * Static fields in this class annotated with {code @EquipmentName} will be checked by the unit tests
      * to verify they are valid {@link EquipmentType} lookup keys.
      */
     @Retention(RetentionPolicy.RUNTIME)
@@ -61,6 +61,11 @@ public class EquipmentTypeLookup {
     @EquipmentName public static final String BA_PARTIAL_WING = "BAPartialWing";
     @EquipmentName public static final String BA_JUMP_BOOSTER = "BAJumpBooster";
     @EquipmentName public static final String BA_MECHANICAL_JUMP_BOOSTER = "BAMechanicalJumpBooster";
+    @EquipmentName public static final String BA_MANIPULATOR_CARGO_LIFTER = "BACargoLifter";
+    @EquipmentName public static final String BA_MAGNETIC_CLAMP = "BA-Magnetic Clamp";
+    @EquipmentName public static final String BA_PARAFOIL = "BAParafoil";
+    @EquipmentName public static final String BA_MISSION_EQUIPMENT = "Mission Equipment Storage";
+    @EquipmentName public static final String BA_DWP = "ISDetachableWeaponPack";
 
     @EquipmentName public static final String SINGLE_HS = "Heat Sink";
     @EquipmentName public static final String IS_DOUBLE_HS = "ISDoubleHeatSink";
@@ -179,6 +184,7 @@ public class EquipmentTypeLookup {
     @EquipmentName public static final String WRECKING_BALL = "IS Wrecking Ball";
     @EquipmentName public static final String LAM_FUEL_TANK = "LAM Fuel Tank";
     @EquipmentName public static final String LAM_BOMB_BAY = "Bomb Bay";
+    @EquipmentName public static final String CARGO = "Cargo";
 
     @EquipmentName public static final String CL_BA_MORTAR_HEAVY = "CLBAHeavyMortar";
     @EquipmentName public static final String CL_BA_MORTAR_LIGHT = "CLBALightMortar";
