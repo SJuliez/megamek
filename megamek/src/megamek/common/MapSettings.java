@@ -71,9 +71,10 @@ public class MapSettings implements Serializable {
     private int mapWidth = 1;
     private int mapHeight = 1;
     private int medium = MEDIUM_GROUND;
-    private MapType mapType = MapType.NONE;
+    private MapType mapType = MapType.GROUND;
     private boolean isUsed = true;
     private boolean usesTerrain = true;
+    private boolean spaceUsesGravity = false;
 
     private List<String> boardsSelected = new ArrayList<>();
     private List<String> boardsAvailable = new ArrayList<>();
@@ -1646,6 +1647,14 @@ public class MapSettings implements Serializable {
 
     public void setUsesTerrain(boolean usesTerrain) {
         this.usesTerrain = usesTerrain;
+    }
+
+    public boolean isSpaceUsesGravity() {
+        return spaceUsesGravity;
+    }
+
+    public void setSpaceUsesGravity(boolean usesGravity) {
+        spaceUsesGravity = usesGravity;
     }
 
     public static String getMediumName(int m) {

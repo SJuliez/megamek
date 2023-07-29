@@ -92,7 +92,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -2051,11 +2050,8 @@ public class ChatLounge extends AbstractPhaseDisplay implements
         refreshBoardsAvailable();
         updateSearch(fldSearch.getText());
         refreshLabels();
-        if (newSettings.getMapType().isSpaceOrHighAtmo()) {
-            spaceMapLobbyTab.setSpaceMapSettings(newSettings);
-        } else if (newSettings.getMapType().isLowAtmo()) {
-            lowAtmoMapLobbyTab.setLowAtmoMapSettings(newSettings);
-        }
+        spaceMapLobbyTab.setSpaceMapSettings(game().getMapSettings(MapType.SPACE));
+        lowAtmoMapLobbyTab.setLowAtmoMapSettings(game().getMapSettings(MapType.LOW_ATMOSPHERE));
     }
 
 

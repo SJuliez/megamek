@@ -22,6 +22,7 @@ package megamek.client.ui.swing;
 import megamek.client.Client;
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.widget.MegamekButton;
 import megamek.common.*;
@@ -117,7 +118,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
     public DeploymentDisplay(ClientGUI clientgui) {
         super(clientgui);
         clientgui.getClient().getGame().addGameListener(this);
-        clientgui.getBoardView().addBoardViewListener(this);
+        clientgui.boardViews().forEach(b -> b.addBoardViewListener(this));
         setupStatusBar(Messages.getString("DeploymentDisplay.waitingForDeploymentPhase"));
 
         setButtons();
@@ -173,18 +174,16 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         // FIXME: Hack alert: remove C3 sprites from earlier here, or we might crash when
         // trying to draw a c3 sprite belonging to the previously selected,
         // but not deployed entity. BoardView1 should take care of that itself.
-        if (clientgui.getBoardView() != null) {
-            clientgui.getBoardView().clearC3Networks();
-        }
+        clientgui.boardViews().forEach(BoardView::clearC3Networks);
         cen = en;
         clientgui.setSelectedEntityNum(en);
-        clientgui.getBoardView().select(null);
-        clientgui.getBoardView().cursor(null);
+        clientgui.boardViews().forEach(b -> b.select(null));
+        clientgui.boardViews().forEach(b -> b.cursor(null));
         // RACE : if player clicks fast enough, ce() is null.
         if (null != ce()) {
             setTurnEnabled(true);
             butDone.setEnabled(false);
-            clientgui.getBoardView().markDeploymentHexesFor(ce());
+            clientgui.boardViews().forEach(b -> b.markDeploymentHexesFor(ce()));
             // set facing according to starting position
             switch (ce().getStartingPos()) {
                 case Board.START_W:
@@ -229,13 +228,14 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
 
             clientgui.getUnitDisplay().displayEntity(ce());
             clientgui.getUnitDisplay().showPanel("movement");
-            clientgui.getBoardView().setWeaponFieldOfFire(ce().getFacing(), ce().getPosition());
-            clientgui.getBoardView().setSensorRange(ce(), ce().getPosition());
+            clientgui.boardViews().forEach(b -> b.setWeaponFieldOfFire(ce().getFacing(), ce().getPosition()));
+            clientgui.boardViews().forEach(b -> b.setSensorRange(ce(), ce().getPosition()));
+
         } else {
             disableButtons();
             setNextEnabled(true);
-            clientgui.getBoardView().clearFieldOfFire();
-            clientgui.getBoardView().clearSensorsRanges();
+            clientgui.boardViews().forEach(BoardView::clearFieldOfFire);
+            clientgui.boardViews().forEach(BoardView::clearSensorsRanges);
         }
     }
 
@@ -245,7 +245,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         selectEntity(clientgui.getClient().getFirstDeployableEntityNum());
         setNextEnabled(true);
         setRemoveEnabled(true);
-        clientgui.getBoardView().markDeploymentHexesFor(ce());
+        clientgui.boardViews().forEach(boardView -> boardView.markDeploymentHexesFor(ce()));
     }
 
     /** Clears out old deployment data and disables relevant buttons. */
@@ -257,10 +257,10 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             clientgui.maybeShowUnitDisplay();
         }
         cen = Entity.NONE;
-        clientgui.getBoardView().select(null);
-        clientgui.getBoardView().highlight(null);
-        clientgui.getBoardView().cursor(null);
-        clientgui.getBoardView().markDeploymentHexesFor(null);
+        clientgui.boardViews().forEach(b -> b.select(null));
+        clientgui.boardViews().forEach(b -> b.highlight(null));
+        clientgui.boardViews().forEach(b -> b.cursor(null));
+        clientgui.boardViews().forEach(b -> b.markDeploymentHexesFor(null));
         clientgui.setSelectedEntityNum(Entity.NONE);
         disableButtons();
     }
@@ -373,9 +373,9 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         if (clientgui.getClient().isMyTurn()) {
             endMyTurn();
         }
-        clientgui.getBoardView().markDeploymentHexesFor(null);
+        clientgui.boardViews().forEach(b -> b.markDeploymentHexesFor(null));
+        clientgui.boardViews().forEach(b -> b.removeBoardViewListener(this));
         clientgui.getClient().getGame().removeGameListener(this);
-        clientgui.getBoardView().removeBoardViewListener(this);
         removeAll();
     }
 
@@ -427,7 +427,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
 
     @Override
     public void gamePhaseChange(GamePhaseChangeEvent e) {
-        clientgui.getBoardView().markDeploymentHexesFor(null);
+        clientgui.boardViews().forEach(b -> b.markDeploymentHexesFor(null));
 
        // In case of a /reset command, ensure the state gets reset
         if (clientgui.getClient().getGame().getPhase().isLounge()) {
@@ -471,9 +471,16 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         // check for shifty goodness
         boolean shiftheld = (b.getModifiers() & InputEvent.SHIFT_DOWN_MASK) != 0;
 
+        if (!((BoardView) b.getSource()).isOnThisBoard(ce())) {
+            return;
+        }
+
         // check for a deployment
         Coords moveto = b.getCoords();
-        final Board board = clientgui.getClient().getGame().getBoard();
+        final Board board = ((BoardView) b.getSource()).getBoard();
+        if (board == null) {
+            return;
+        }
         final Game game = clientgui.getClient().getGame();
         final Hex deployhex = board.getHex(moveto);
         final Building bldg = board.getBuildingAt(moveto);
@@ -488,9 +495,9 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         if ((ce().getPosition() != null) && (shiftheld || turnMode)) { // turn
             ce().setFacing(ce().getPosition().direction(moveto));
             ce().setSecondaryFacing(ce().getFacing());
-            clientgui.getBoardView().redrawEntity(ce());
-            clientgui.getBoardView().setWeaponFieldOfFire(ce().getFacing(), ce().getPosition());
-            clientgui.getBoardView().setSensorRange(ce(), ce().getPosition());
+            clientgui.boardViews().forEach(boardView -> boardView.redrawEntity(ce()));
+            clientgui.boardViews().forEach(boardView -> boardView.setWeaponFieldOfFire(ce().getFacing(), ce().getPosition()));
+            clientgui.boardViews().forEach(boardView -> boardView.setSensorRange(ce(), ce().getPosition()));
             turnMode = false;
         } else if (ce().isBoardProhibited(board.getType())) {
             // check if this type of unit can be on the given type of map
@@ -552,14 +559,14 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             }
             ce().setPosition(moveto);
 
-            clientgui.getBoardView().redrawEntity(ce());
-            clientgui.getBoardView().setWeaponFieldOfFire(ce().getFacing(), moveto);
-            clientgui.getBoardView().setSensorRange(ce(), ce().getPosition());
-            clientgui.getBoardView().repaint();
+            clientgui.boardViews().forEach(boardView -> boardView.redrawEntity(ce()));
+            clientgui.boardViews().forEach(boardView -> boardView.setWeaponFieldOfFire(ce().getFacing(), moveto));
+            clientgui.boardViews().forEach(boardView -> boardView.setSensorRange(ce(), ce().getPosition()));
+//            clientgui.getBoardView().repaint();
             butDone.setEnabled(true);
         }
         if (!shiftheld) {
-            clientgui.getBoardView().select(moveto);
+            clientgui.boardViews().forEach(boardView -> boardView.select(moveto));
         }
     }
 
@@ -666,7 +673,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         } else if (actionCmd.equals(DeployCommand.DEPLOY_NEXT.getCmd())) {
             if (ce() != null) {
                 ce().setPosition(null);
-                clientgui.getBoardView().redrawEntity(ce());
+                clientgui.boardViews().forEach(boardView -> boardView.redrawEntity(ce()));
                 // Unload any loaded units during this turn
                 List<Integer> lobbyLoadedUnits = ce().getLoadedKeepers();
                 for (Entity other : ce().getLoadedUnits()) {
@@ -843,13 +850,13 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         if (null == e) {
             return;
         }
-        clientgui.getBoardView().clearFieldOfFire();
-        clientgui.getBoardView().clearSensorsRanges();
+        clientgui.boardViews().forEach(BoardView::clearFieldOfFire);
+        clientgui.boardViews().forEach(BoardView::clearSensorsRanges);
         if (client.isMyTurn()) {
             if (client.getGame().getTurn().isValidEntity(e, client.getGame())) {
                 if (ce() != null) {
                     ce().setPosition(null);
-                    clientgui.getBoardView().redrawEntity(ce());
+                    clientgui.boardViews().forEach(boardView -> boardView.redrawEntity(ce()));
                     // Unload any loaded units during this turn
                     List<Integer> lobbyLoadedUnits = ce().getLoadedKeepers();
                     for (Entity other : ce().getLoadedUnits()) {
@@ -862,15 +869,13 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
                     }
                 }
                 selectEntity(e.getId());
-                if (null != e.getPosition()) {
-                    clientgui.getBoardView().centerOnHex(e.getPosition());
-                }
+                clientgui.boardViews().forEach(boardView -> boardView.centerOnUnit(e));
             }
         } else {
             clientgui.maybeShowUnitDisplay();
             clientgui.getUnitDisplay().displayEntity(e);
             if (e.isDeployed()) {
-                clientgui.getBoardView().centerOnHex(e.getPosition());
+                clientgui.boardViews().forEach(boardView -> boardView.centerOnUnit(e));
             }
         }
     }

@@ -120,6 +120,7 @@ public class SpaceMapLobbyTab {
     private void refreshGUI() {
         removeListeners();
         butSpaceMap.setSelected(spaceMapSettings.isUsed());
+        splitPanel.setVisible(spaceMapSettings.isUsed());
         butHighAtmo.setEnabled(butSpaceMap.isSelected());
         previewPanel.setEnabled(butSpaceMap.isSelected());
         lblSpaceBoardWidth.setEnabled(butSpaceMap.isSelected());
@@ -155,7 +156,8 @@ public class SpaceMapLobbyTab {
     final ActionListener toggleHighAtmoMapListener = e -> toggleHighAtmoMap();
 
     private void toggleHighAtmoMap() {
-        spaceMapSettings.setMapType(butHighAtmo.isSelected() ? MapType.HIGH_ATMOSPHERE : MapType.SPACE);
+        spaceMapSettings.setMapType(MapType.SPACE);
+        spaceMapSettings.setSpaceUsesGravity(butHighAtmo.isSelected());
         sendAndUpdate();
     }
 

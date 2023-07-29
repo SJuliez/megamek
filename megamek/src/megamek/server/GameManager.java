@@ -2873,20 +2873,21 @@ public class GameManager implements IGameManager {
                     game.getPlanetaryConditions().getWindStrength());
         }
         game.setBoard(newBoard);
-        game.setUsesGroundMap(mapSettings.isUsed());
 
         mapSettings = game.getMapSettings(MapType.LOW_ATMOSPHERE);
-        game.setUsesLowAtmoMap(mapSettings.isUsed());
         if (mapSettings.isUsed()) {
             Board lowAtmoMap = BoardUtilities.generateRandom(mapSettings);
             game.setLowAtmoMapDirect(lowAtmoMap);
+        } else {
+            game.setLowAtmoMapDirect(null);
         }
 
         mapSettings = game.getMapSettings(MapType.SPACE);
-        game.setUsesSpaceMap(mapSettings.isUsed());
         if (mapSettings.isUsed()) {
             Board spaceMap = BoardUtilities.generateRandom(mapSettings);
             game.setSpaceMapDirect(spaceMap);
+        } else {
+            game.setSpaceMapDirect(null);
         }
     }
 

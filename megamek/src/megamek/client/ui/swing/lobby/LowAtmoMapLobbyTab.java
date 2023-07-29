@@ -155,7 +155,6 @@ public class LowAtmoMapLobbyTab {
         sendAndUpdate();
     }
 
-
     private void renewMapPreview() {
         Board spaceBoard = BoardUtilities.generateRandom(lowAtmoMapSettings);
         spaceBoard.setMapType(lowAtmoMapSettings.getMapType());

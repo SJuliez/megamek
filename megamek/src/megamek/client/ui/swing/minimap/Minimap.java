@@ -512,10 +512,10 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
                     Hex h = board.getHex(j, k);
                     if (dirtyMap || dirty[j / 10][k / 10]) {
                         gg.setColor(terrainColor(h));
-                        if (board.getMapType() == MapType.SPACE) {
-                            paintSpaceCoord(gg, j, k);
-                        } else if (board.getMapType() == MapType.HIGH_ATMOSPHERE) {
+                        if ((board.getMapType().isSpace()) && (game != null) && game.spaceMapUsesGravity()) {
                             paintHighAtmoCoord(gg, j, k);
+                        } else if (board.getMapType().isSpace()) {
+                            paintSpaceCoord(gg, j, k);
                         } else if (board.getMapType().isLowAtmo() && h.containsTerrain(SKY)) {
                             paintLowAtmoCoord(gg, j, k);
                         } else {
@@ -551,7 +551,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
                 }
             }
 
-            if (board.getMapType() == MapType.HIGH_ATMOSPHERE) {
+            if ((board.getMapType() == MapType.SPACE) && (game != null) && game.spaceMapUsesGravity()) {
                 // draw texts
                 int baseX = HEX_SIDE[zoom] + leftMargin;
                 int baseY = (board.getHeight() + 1) * HEX_SIDE_BY_COS30[zoom] + topMargin;

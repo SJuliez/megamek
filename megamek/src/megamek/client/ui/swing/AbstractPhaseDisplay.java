@@ -15,12 +15,14 @@ package megamek.client.ui.swing;
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.event.BoardViewListener;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.util.CommandAction;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.UIUtil;
 import megamek.client.ui.swing.widget.*;
 import megamek.common.Configuration;
 import megamek.common.Coords;
+import megamek.common.Entity;
 import megamek.common.event.*;
 import megamek.common.util.Distractable;
 import megamek.common.util.DistractableAdapter;
@@ -298,5 +300,9 @@ public abstract class AbstractPhaseDisplay extends SkinnedJPanel implements
     // needed for turn timer to add timer display to GUI
     public ClientGUI getClientgui() {
         return clientgui;
+    }
+
+    protected BoardView boardViewFor(Entity entity) {
+        return clientgui.boardViewFor(entity);
     }
 }

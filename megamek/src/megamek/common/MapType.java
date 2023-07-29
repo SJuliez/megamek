@@ -20,17 +20,14 @@ package megamek.common;
 
 public enum MapType {
 
-    NONE,
     GROUND,
     LOW_ATMOSPHERE,
-    HIGH_ATMOSPHERE,
     SPACE,
     RADAR,
-    CAPITAL_RADAR,
-    ENGAGEMENT;
+    CAPITAL_RADAR;
 
-    public boolean isSpaceOrHighAtmo() {
-        return this == SPACE || this == HIGH_ATMOSPHERE;
+    public boolean isSpace() {
+        return this == SPACE;
     }
 
     public boolean isLowAtmo() {
@@ -39,5 +36,13 @@ public enum MapType {
 
     public boolean isGround() {
         return this == GROUND;
+    }
+
+    public boolean isRadarMap() {
+        return this == RADAR;
+    }
+
+    public boolean isCapitalRadarMap() {
+        return this == CAPITAL_RADAR;
     }
 }

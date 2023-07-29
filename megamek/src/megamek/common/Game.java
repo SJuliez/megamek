@@ -62,13 +62,10 @@ public class Game extends AbstractGame implements Serializable {
 
     private GameOptions options = new GameOptions();
 
+    private final Map<MapType, Board> gameBoards = new HashMap<>();
     private Board board = new Board();
-    private Board lowAtmoMap = new Board();
-    private Board spaceMap = new Board();
 
-    private boolean usesGroundMap = true;
-    private boolean usesLowAtmoMap = false;
-    private boolean usesSpaceMap = false;
+    /** When true, the space map is a high atmosphere map */
     private boolean spaceMapUsesGravity = false;
 
     private MapSettings mapSettings = MapSettings.getInstance();
@@ -169,6 +166,9 @@ public class Game extends AbstractGame implements Serializable {
      */
     public Game() {
         // empty
+        gameBoards.put(MapType.GROUND, new Board());
+        gameBoards.put(MapType.LOW_ATMOSPHERE, new Board());
+        gameBoards.put(MapType.SPACE, new Board());
     }
 
     // Added public accessors for external game id
@@ -186,6 +186,10 @@ public class Game extends AbstractGame implements Serializable {
 
     public Board getBoard() {
         return board;
+    }
+
+    public Board getBoard(MapType mapType) {
+        return gameBoards.get(mapType);
     }
 
     @ClientUse
@@ -3451,7 +3455,7 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public void setMapSettings(MapSettings mapSettings) {
-        if (mapSettings.getMapType().isSpaceOrHighAtmo()) {
+        if (mapSettings.getMapType().isSpace()) {
             spaceMapSettings = mapSettings;
         } else if (mapSettings.getMapType().isLowAtmo()) {
             lowAtmoMapSettings = mapSettings;
@@ -3461,7 +3465,7 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public MapSettings getMapSettings(MapType mapType) {
-        if (mapType.isSpaceOrHighAtmo()) {
+        if (mapType.isSpace()) {
             return spaceMapSettings;
         } else if (mapType.isLowAtmo()) {
             return lowAtmoMapSettings;
@@ -3476,66 +3480,66 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public boolean usesGroundMap() {
-        return usesGroundMap;
+        return usesMap(MapType.GROUND);
     }
 
     public boolean usesLowAtmoMap() {
-        return usesLowAtmoMap;
+        return usesMap(MapType.LOW_ATMOSPHERE);
     }
 
     public boolean usesSpaceMap() {
-        return usesSpaceMap;
+        return usesMap(MapType.SPACE);
+    }
+
+    private boolean usesMap(MapType mapType) {
+        return getPhase().isLounge() ? getMapSettings(mapType).isUsed() : gameBoards.containsKey(mapType);
     }
 
     public boolean spaceMapUsesGravity() {
         return spaceMapUsesGravity;
     }
 
-    public void setUsesGroundMap(boolean usesGroundMap) {
-        this.usesGroundMap = usesGroundMap;
-    }
-
-    public void setUsesSpaceMap(boolean usesSpaceMap) {
-        this.usesSpaceMap = usesSpaceMap;
-    }
-
-    public void setUsesLowAtmoMap(boolean usesLowAtmoMap) {
-        this.usesLowAtmoMap = usesLowAtmoMap;
-    }
-
     public void setSpaceMapUsesGravity(boolean spaceMapUsesGravity) {
         this.spaceMapUsesGravity = spaceMapUsesGravity;
     }
 
-    public Board getLowAtmoMap() {
-        return lowAtmoMap;
+    public @Nullable Board getLowAtmoMap() {
+        return gameBoards.get(MapType.LOW_ATMOSPHERE);
     }
 
     @ClientUse
     public void setLowAtmoMap(Board board) {
-        Board oldBoard = lowAtmoMap;
+        Board oldBoard = getLowAtmoMap();
         setLowAtmoMapDirect(board);
         processGameEvent(new GameBoardNewEvent(this, oldBoard, board));
     }
 
     @ServerUse
     public void setLowAtmoMapDirect(final Board board) {
-        lowAtmoMap = board;
+        if (board == null) {
+            gameBoards.remove(MapType.LOW_ATMOSPHERE);
+        } else {
+            gameBoards.put(MapType.LOW_ATMOSPHERE, board);
+        }
     }
 
-    public Board getSpaceMap() {
-        return spaceMap;
+    public @Nullable Board getSpaceMap() {
+        return gameBoards.get(MapType.SPACE);
     }
 
     @ClientUse
     public void setSpaceMap(Board board) {
-        Board oldBoard = spaceMap;
+        Board oldBoard = getSpaceMap();
         setSpaceMapDirect(board);
         processGameEvent(new GameBoardNewEvent(this, oldBoard, board));
     }
 
     @ServerUse
     public void setSpaceMapDirect(final Board board) {
-        spaceMap = board;
+        if (board == null) {
+            gameBoards.remove(MapType.LOW_ATMOSPHERE);
+        } else {
+            gameBoards.put(MapType.SPACE, board);
+        }
     }
 }

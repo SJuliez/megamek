@@ -54,13 +54,17 @@ public class SpaceMapPreviewPanel extends JPanel {
                 if ((lastScaleFactor != factor) || (scaledImage == null)) {
                     lastPanelWidth = (int) (factor * baseImage.getWidth(null));
                     lastPanelHeight = (int) (factor * baseImage.getHeight(null));
-                    scaledImage = baseImage.getScaledInstance(lastPanelWidth, lastPanelHeight, Image.SCALE_SMOOTH);
-                    lastScaleFactor = factor;
+//                    if (lastPanelWidth != 0 && lastPanelHeight != 0) {
+                        scaledImage = baseImage.getScaledInstance(lastPanelWidth, lastPanelHeight, Image.SCALE_SMOOTH);
+                        lastScaleFactor = factor;
+//                    }
                 }
             }
-            int x = getWidth() / 2 - scaledImage.getWidth(null) / 2;
-            int y = getHeight() / 2 - scaledImage.getHeight(null) / 2;
-            g.drawImage(scaledImage, x, y, null);
+            if (scaledImage != null) {
+                int x = getWidth() / 2 - scaledImage.getWidth(null) / 2;
+                int y = getHeight() / 2 - scaledImage.getHeight(null) / 2;
+                g.drawImage(scaledImage, x, y, null);
+            }
         }
     }
 }

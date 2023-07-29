@@ -1258,8 +1258,10 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         //renderApproxHexDirection((Graphics2D) g);
     }
 
-    private boolean isOnThisBoard(Entity entity) {
-        return game.getBoard().getMapType() == entity.getCurrentMap();
+    /** @return True when the given Entity is currently on the board of this BoardView and has a non-null position. */
+    public boolean isOnThisBoard(@Nullable Entity entity) {
+        return (boardSupplier.get() != null) && (entity != null) && (entity.getPosition() != null)
+                && boardSupplier.get().getMapType() == entity.getCurrentMap();
     }
 
     /**
@@ -3220,6 +3222,9 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
     }
 
     public void redrawMovingEntity(Entity entity, Coords position, int facing, int elevation) {
+        if (!isOnThisBoard(entity)) {
+            return;
+        }
         Integer entityId = entity.getId();
         List<Integer> spriteKey = getIdAndLoc(entityId, -1);
         EntitySprite sprite = entitySpriteIds.get(spriteKey);
@@ -3311,6 +3316,9 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
      * to prevent annoying ConcurrentModificationExceptions
      */
     public void redrawEntity(Entity entity, Entity oldEntity) {
+        if (!isOnThisBoard(entity)) {
+            return;
+        }
         Integer entityId = entity.getId();
         if (oldEntity == null) {
             oldEntity = entity;
@@ -3511,7 +3519,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         clearC3Networks();
         clearFlyOverPaths();
         for (Entity entity : game.getEntitiesVector()) {
-            if ((entity.getPosition() == null) || (entity.getCurrentMap() != game.getBoard().getMapType())) {
+            if ((entity.getPosition() == null) || !isOnThisBoard(entity)) {
                 continue;
             }
             if ((localPlayer != null)
@@ -3599,9 +3607,14 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         repaint(cursor.getBounds());
     }
 
-    /**
-     * Centers the board on hex c. Uses smooth centering if activated in the client settings.
-     */
+    /** Centers the board on the given Entity, if it is on this board. */
+    public void centerOnUnit(@Nullable Entity entity) {
+        if (isOnThisBoard(entity)) {
+            centerOnHex(entity.getPosition());
+        }
+    }
+
+    /** Centers the board on the given hex coord. */
     public void centerOnHex(@Nullable Coords c) {
         if (c == null) {
             return;
@@ -4190,7 +4203,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         // Don't make sprites for unknown entities and sensor returns
         Entity ae = game.getEntity(aa.getEntityId());
         Targetable t = game.getTarget(aa.getTargetType(), aa.getTargetId());
-        if ((ae == null) || (t == null)
+        if ((ae == null) || (t == null) || !isOnThisBoard(ae)
                 || (t.getTargetType() == Targetable.TYPE_INARC_POD)
                 || (t.getPosition() == null) || (ae.getPosition() == null)) {
             return;
@@ -6711,6 +6724,10 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         return GUIP.getShowSensorRange() &&
                 (game.getPhase().isDeployment() || game.getPhase().isMovement()
                         || game.getPhase().isTargeting() || game.getPhase().isFiring());
+    }
+
+    public Board getBoard() {
+        return boardSupplier.get();
     }
 
 }

@@ -76,7 +76,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ClientGUI extends JPanel implements BoardViewListener,
-                    ActionListener, ComponentListener, IPreferenceChangeListener {
+        ActionListener, ComponentListener, IPreferenceChangeListener {
     //region Variable Declarations
     private static final long serialVersionUID = 3913466735610109147L;
 
@@ -88,9 +88,13 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     private static final String FILENAME_ICON_48X48 = "megamek-icon-48x48.png";
     private static final String FILENAME_ICON_256X256 = "megamek-icon-256x256.png";
 
-    /** The smallest GUI scaling value; smaller will make text unreadable */
+    /**
+     * The smallest GUI scaling value; smaller will make text unreadable
+     */
     public static final float MIN_GUISCALE = 0.7f;
-    /** The highest GUI scaling value; increase this for 16K monitors */
+    /**
+     * The highest GUI scaling value; increase this for 16K monitors
+     */
     public static final float MAX_GUISCALE = 2.4f;
 
     //region action commands
@@ -209,13 +213,13 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     public static final String CG_FILEURLSTART = "file:///";
     public static final String CG_FILEPAHTUSERDIR = "user.dir";
     public static final String CG_FILEPATHBOARDS = "boards";
-    public static final String CG_FILEPATHDATA= "data";
+    public static final String CG_FILEPATHDATA = "data";
     public static final String CG_FILENAMESALVAGE = "salvage";
     public static final String CG_FILEPATHMUL = "mul";
     public static final String CG_FILEEXTENTIONBOARD = ".board";
     public static final String CG_FILEEXTENTIONMUL = ".mul";
     public static final String CG_FILEEXTENTIONXML = ".xml";
-    public static final String CG_FILEEXTENTIONPNG =  ".png";
+    public static final String CG_FILEEXTENTIONPNG = ".png";
     public static final String CG_FILEFORMATNAMEPNG = "png";
 
     // a frame, to show stuff in
@@ -233,6 +237,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     private BoardView bv;
     private BoardView bvLowAtmo;
     private BoardView bvSpace;
+    private Map<MapType, BoardView> boardViews = new HashMap<>();
     private JTabbedPane bvc = new JTabbedPane();
     private JPanel panTop;
     private JSplitPane splitPaneA;
@@ -521,6 +526,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             // Create the board viewer.
             bv = new BoardView(client.getGame(), controller, this);
             bv.setPreferredSize(getSize());
+            boardViews.put(MapType.GROUND, bv);
             bvc.add("Ground Map", bv.getComponent());
 
             if (client.getGame().getMapSettings(MapType.LOW_ATMOSPHERE).isUsed()) {
@@ -529,6 +535,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 bvc.add("Low Atmo Map", bvLowAtmo.getComponent());
                 minimapLowAtmo = Minimap.createMinimap(frame, bvLowAtmo, getClient().getGame(), this);
                 minimapLowAtmo.setVisible(true);
+                boardViews.put(MapType.LOW_ATMOSPHERE, bvLowAtmo);
             }
 
             if (client.getGame().getMapSettings(MapType.SPACE).isUsed()) {
@@ -537,6 +544,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 bvc.add("Space Map", bvSpace.getComponent());
                 minimapSpace = Minimap.createMinimap(frame, bvSpace, getClient().getGame(), this);
                 minimapSpace.setVisible(true);
+                boardViews.put(MapType.SPACE, bvSpace);
             }
 
             panTop = new JPanel(new BorderLayout());
@@ -744,13 +752,13 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     }
 
     public void reportDisplayResetDone() {
-        if ((reportDisply != null ) && (!getClient().getLocalPlayer().isDone())) {
+        if ((reportDisply != null) && (!getClient().getLocalPlayer().isDone())) {
             reportDisply.setDoneEnabled(true);
         }
     }
 
     public void reportDisplayResetRerollInitiative() {
-        if ((reportDisply != null )
+        if ((reportDisply != null)
                 && (!getClient().getLocalPlayer().isDone())
                 && (getClient().getGame().hasTacticalGenius(getClient().getLocalPlayer()))) {
             reportDisply.resetRerollInitiativeEnabled();
@@ -786,7 +794,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         if (getPlayerListDialog() != null) {
             getPlayerListDialog().setBounds(0, 0, getPlayerListDialog().getWidth(), getPlayerListDialog().getHeight());
         }
-        if (gameOptionsDialog!= null) {
+        if (gameOptionsDialog != null) {
             gameOptionsDialog.setBounds(0, 0, gameOptionsDialog.getWidth(), gameOptionsDialog.getHeight());
         }
         if (setdlg != null) {
@@ -1292,6 +1300,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 main = CG_EXCHANGE;
                 component.setName(main);
                 panMain.add(component, main);
+                bvc.setEnabledAt(0, client.getGame().usesGroundMap());
+                bvc.setEnabledAt(1, client.getGame().usesLowAtmoMap());
+                bvc.setEnabledAt(2, client.getGame().usesSpaceMap());
                 break;
             case SET_ARTILLERY_AUTOHIT_HEXES:
                 component = new SelectArtyAutoHitHexDisplay(this);
@@ -1490,7 +1501,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         bv.refreshDisplayables();
     }
 
-    /** Shows or hides the minimap based on the current menu setting. */
+    /**
+     * Shows or hides the minimap based on the current menu setting.
+     */
     private void maybeShowMinimap() {
         GamePhase phase = getClient().getGame().getPhase();
 
@@ -1586,7 +1599,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         }
     }
 
-    /** Shows or hides the Unit Display based on the current menu setting. */
+    /**
+     * Shows or hides the Unit Display based on the current menu setting.
+     */
     public void maybeShowUnitDisplay() {
         GamePhase phase = getClient().getGame().getPhase();
 
@@ -1709,7 +1724,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                     hideEmptyPanel(panA1, splitPaneA, 0.0);
                     break;
             }
-        } else  {
+        } else {
             switch (GUIP.getUnitDisplayLocaton()) {
                 case 0:
                     panA1.add(bvc);
@@ -1857,9 +1872,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      *                 answer. The question will be split across multiple line on the
      *                 '\n' characters.
      * @return the <code>ConfirmDialog</code> containing the player's responses.
-     *         The dialog will already have been shown to the player, and is
-     *         only being returned so the calling function can see the answer to
-     *         the question and the state of the "Show again?" question.
+     * The dialog will already have been shown to the player, and is
+     * only being returned so the calling function can see the answer to
+     * the question and the state of the "Show again?" question.
      */
     public ConfirmDialog doYesNoBotherDialog(String title, String question) {
         ConfirmDialog confirm = new ConfirmDialog(frame, title, question, true);
@@ -1990,8 +2005,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 client.getGame().setupRoundDeployment();
                 client.sendResetRoundDeployment();
             }
-        }
-        else {
+        } else {
             doAlertDialog(Messages.getString("ClientGUI.errorLoadingFile"),
                     Messages.getString("ClientGUI.errorSelectingPlayer"));
         }
@@ -2021,7 +2035,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         return false;
     }
 
-    /** Developer Utility: Save game to quicksave.sav.gz without any prompts. */
+    /**
+     * Developer Utility: Save game to quicksave.sav.gz without any prompts.
+     */
     private boolean quickSaveGame() {
         client.sendChat(CG_CHATCOMMANDLOCALSAVE + " " + MMConstants.QUICKSAVE_FILE + " " + MMConstants.QUICKSAVE_PATH);
         return true;
@@ -2196,7 +2212,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     }
 
     private void setWeaponOrderPrefs(boolean prefChange) {
-        for (Iterator<Entity> ents = client.getGame().getEntities(); ents.hasNext();) {
+        for (Iterator<Entity> ents = client.getGame().getEntities(); ents.hasNext(); ) {
             Entity entity = ents.next();
             if ((entity.getOwner().equals(client.getLocalPlayer()))
                     && (!entity.getWeaponSortOrder().isCustom())
@@ -2210,13 +2226,13 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     private GameListener gameListener = new GameListenerAdapter() {
         @Override
         public void gamePlayerChange(GamePlayerChangeEvent evt) {
-             if (playerListDialog != null) {
-                 playerListDialog.refreshPlayerList();
+            if (playerListDialog != null) {
+                playerListDialog.refreshPlayerList();
 
-                 if (currPhaseDisplay != null) {
-                     currPhaseDisplay.setStatusBarWithNotDonePlayers();
-                 }
-             }
+                if (currPhaseDisplay != null) {
+                    currPhaseDisplay.setStatusBarWithNotDonePlayers();
+                }
+            }
         }
 
         @Override
@@ -2250,7 +2266,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             GamePhase phase = getClient().getGame().getPhase();
             switchPanel(phase);
 
-            if (phase.isDeployment())  {
+            if (phase.isDeployment()) {
                 setWeaponOrderPrefs(false);
             }
 
@@ -2315,7 +2331,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             // Don't bother asking if none survived.
             if (!living.isEmpty()
                     && doYesNoDialog(Messages.getString("ClientGUI.SaveUnitsDialog.title"),
-                            Messages.getString("ClientGUI.SaveUnitsDialog.message"))) {
+                    Messages.getString("ClientGUI.SaveUnitsDialog.message"))) {
                 // Allow the player to save the units to a file.
                 saveVictoryList();
             }
@@ -2660,8 +2676,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         // move to middle of screen
         waitD.setLocation(
                 (frame.getSize().width / 2) - (waitD.getSize().width / 2), (frame
-                .getSize().height
-                / 2) - (waitD.getSize().height / 2));
+                        .getSize().height
+                        / 2) - (waitD.getSize().height / 2));
         waitD.setVisible(true);
         frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         waitD.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -2694,7 +2710,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         // make sure the file ends in board
         if (!curfileBoard.getName().toLowerCase(Locale.ENGLISH).endsWith(CG_FILEEXTENTIONBOARD)) {
             try {
-                curfileBoard = new File(curfileBoard.getCanonicalPath() +CG_FILEEXTENTIONBOARD);
+                curfileBoard = new File(curfileBoard.getCanonicalPath() + CG_FILEEXTENTIONBOARD);
             } catch (IOException ie) {
                 // failure!
                 return;
@@ -2787,6 +2803,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      * Returns true if a dialog is visible on top of the <code>ClientGUI</code>.
      * For example, the <code>MegaMekController</code> should ignore hotkeys
      * if there is a dialog, like the <code>CommonSettingsDialog</code>, open.
+     *
      * @return
      */
     public boolean shouldIgnoreHotKeys() {
@@ -2822,7 +2839,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         Set<Player> ghostPlayers = client.getGame().getPlayersVector().stream()
                 .filter(Player::isGhost).collect(Collectors.toSet());
         if (ghostPlayers.isEmpty()) {
-            doAlertDialog( Messages.getString("ClientGUI.noGhostPlayersToReplace"),
+            doAlertDialog(Messages.getString("ClientGUI.noGhostPlayersToReplace"),
                     Messages.getString("ClientGUI.noGhosts"), JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -2870,7 +2887,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         return pointblankEID;
     }
 
-    /** Adapts the menu (the font size) to the current GUI scale. */
+    /**
+     * Adapts the menu (the font size) to the current GUI scale.
+     */
     private void adaptToGUIScale() {
 
     }
@@ -2905,5 +2924,13 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 || (e.getName().equals(GUIPreferences.SOUND_BING_FILENAME_OTHERS_TURN))) {
             loadSoundFiles();
         }
+    }
+
+    protected BoardView boardViewFor(Entity entity) {
+        return boardViews.get(entity.getCurrentMap());
+    }
+
+    public List<BoardView> boardViews() {
+        return new ArrayList<>(boardViews.values());
     }
 }
