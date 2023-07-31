@@ -1099,7 +1099,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         g.translate(HEX_W, HEX_H);
 
         // Initialize the shadow map when it's not yet present
-        if (shadowMap == null) {
+        // TODO: when without terrain, the low atmo map also doesnt need a shadow map
+        if ((shadowMap == null) && !boardSupplier.get().getMapType().isSpace()) {
             updateShadowMap();
         }
 
@@ -1248,9 +1249,9 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         //renderApproxHexDirection((Graphics2D) g);
     }
 
-    /** @return True when the given Entity is currently on the board of this BoardView and has a non-null position. */
+    /** @return True when the given Entity is currently on the board of this BoardView (it may have a null position). */
     public boolean isOnThisBoard(@Nullable Entity entity) {
-        return (boardSupplier.get() != null) && (entity != null) && (entity.getPosition() != null)
+        return (boardSupplier.get() != null) && (entity != null)
                 && boardSupplier.get().getMapType() == entity.getCurrentMap();
     }
 
@@ -5196,7 +5197,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         // First, mark the sources of E(C)CM
         // Used for highlighting hexes and tooltips
         for (Entity e : game.getEntitiesVector()) {
-            if (e.getPosition() == null) {
+            if (e.getPosition() == null || !isOnThisBoard(e)) {
                 continue;
             }
 
@@ -5610,6 +5611,9 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
         Set<Entity> coordEnts = new HashSet<>(game.getEntitiesVector(mcoords, true));
         for (Entity entity: coordEnts) {
+            if (!isOnThisBoard(entity)) {
+                continue;
+            }
             entityCount++;
 
             // List only the first four units
@@ -5907,8 +5911,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         hbar = scrollpane.getHorizontalScrollBar();
 
         if (!scrollBars && !bvSkinSpec.showScrollBars) {
-            vbar.setPreferredSize(new Dimension(0, vbar.getHeight()));
-            hbar.setPreferredSize(new Dimension(hbar.getWidth(), 0));
+//            vbar.setPreferredSize(new Dimension(0, vbar.getHeight()));
+//            hbar.setPreferredSize(new Dimension(hbar.getWidth(), 0));
         }
 
         return scrollpane;
@@ -5931,7 +5935,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
     private void pingMinimap() {
         // send the minimap a hex moused event to make it
         // update the visible area rectangle
-        BoardViewEvent bve = new BoardViewEvent(this,BoardViewEvent.BOARD_HEX_DRAGGED);
+        BoardViewEvent bve = new BoardViewEvent(this, BoardViewEvent.BOARD_HEX_DRAGGED);
         if (boardListeners != null) {
             for (BoardViewListener l : boardListeners) {
                 l.hexMoused(bve);
@@ -5939,8 +5943,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         }
     }
 
-    public void showPopup(Object popup, Coords c) {
-        Point p = getHexLocation(c);
+    public void showPopup(Object popup, MapLocation mapLocation) {
+        Point p = getHexLocation(mapLocation.getCoords());
         p.x += ((int) (HEX_WC * scale) - scrollpane.getX()) + HEX_W;
         p.y += ((int) ((HEX_H * scale) / 2) - scrollpane.getY()) + HEX_H;
         if (((JPopupMenu) popup).getParent() == null) {
@@ -6320,7 +6324,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
     // prepares the sprites for a field of fire
     public void setWeaponFieldOfFire(int fac, Coords c) {
-        if (fieldOfFireUnit == null || c == null) {
+        if (fieldOfFireUnit == null || c == null || !isOnThisBoard(fieldOfFireUnit)) {
             clearFieldOfFire();
             return;
         }
@@ -6444,7 +6448,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         }
 
         // Do not display anything for offboard units
-        if (entity.isOffBoard()) {
+        if (!isOnThisBoard(entity) || entity.isOffBoard()) {
             clearSensorsRanges();
             return;
         }

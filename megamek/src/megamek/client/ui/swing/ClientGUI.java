@@ -35,6 +35,8 @@ import megamek.client.ui.swing.dialog.MegaMekUnitSelectorDialog;
 import megamek.client.ui.swing.lobby.ChatLounge;
 import megamek.client.ui.swing.lobby.PlayerSettingsDialog;
 import megamek.client.ui.swing.minimap.Minimap;
+import megamek.client.ui.swing.tileset.EntityImage;
+import megamek.client.ui.swing.tileset.MMStaticDirectoryManager;
 import megamek.client.ui.swing.unitDisplay.UnitDisplay;
 import megamek.client.ui.swing.util.BASE64ToolKit;
 import megamek.client.ui.swing.util.MegaMekController;
@@ -238,7 +240,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     private BoardView bvLowAtmo;
     private BoardView bvSpace;
     private Map<MapType, BoardView> boardViews = new HashMap<>();
-    private JTabbedPane bvc = new JTabbedPane();
+    private final JPanel bvc = new JPanel();
+    private final JTabbedPane mapTabPane = new JTabbedPane();
     private JPanel panTop;
     private JSplitPane splitPaneA;
     private JComponent panA1;
@@ -347,7 +350,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      */
     public ClientGUI(Client client, MegaMekController c) {
         super(new BorderLayout());
-        this.addComponentListener(this);
+        addComponentListener(this);
         this.client = client;
         controller = c;
         loadSoundFiles();
@@ -402,7 +405,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     }
 
     public void setMiniMapDialog(final JDialog miniMapDialog) {
-        this.minimapW = miniMapDialog;
+        minimapW = miniMapDialog;
     }
 
     public MiniReportDisplay getMiniReportDisplay() {
@@ -524,29 +527,11 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         try {
             client.getGame().addGameListener(gameListener);
             // Create the board viewer.
-            bv = new BoardView(client.getGame(), controller, this);
-            bv.setPreferredSize(getSize());
-            boardViews.put(MapType.GROUND, bv);
-            bvc.add("Ground Map", bv.getComponent());
-
-            if (client.getGame().getMapSettings(MapType.LOW_ATMOSPHERE).isUsed()) {
-                bvLowAtmo = new BoardView(client.getGame(), controller, this,
-                        () -> client.getGame().getLowAtmoMap());
-                bvc.add("Low Atmo Map", bvLowAtmo.getComponent());
-                minimapLowAtmo = Minimap.createMinimap(frame, bvLowAtmo, getClient().getGame(), this);
-                minimapLowAtmo.setVisible(true);
-                boardViews.put(MapType.LOW_ATMOSPHERE, bvLowAtmo);
-            }
-
-            if (client.getGame().getMapSettings(MapType.SPACE).isUsed()) {
-                bvSpace = new BoardView(client.getGame(), controller, this,
-                        () -> client.getGame().getSpaceMap());
-                bvc.add("Space Map", bvSpace.getComponent());
-                minimapSpace = Minimap.createMinimap(frame, bvSpace, getClient().getGame(), this);
-                minimapSpace.setVisible(true);
-                boardViews.put(MapType.SPACE, bvSpace);
-            }
-
+//            bv = new BoardView(client.getGame(), controller, this);
+//            bv.setPreferredSize(getSize());
+//            boardViews.put(MapType.GROUND, bv);
+//            bvc.add(bv.getComponent());
+//
             panTop = new JPanel(new BorderLayout());
 
             panA1 = new JPanel();
@@ -554,17 +539,16 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             panA2 = new JPanel();
             panA2.setVisible(false);
 
-            splitPaneA = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+            splitPaneA = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, panA1, panA2);
 
             splitPaneA.setDividerSize(10);
             splitPaneA.setResizeWeight(0.5);
 
-            splitPaneA.setLeftComponent(panA1);
-            splitPaneA.setRightComponent(panA2);
+//            splitPaneA.setLeftComponent(panA1);
+//            splitPaneA.setRightComponent(panA2);
 
             panTop.add(splitPaneA, BorderLayout.CENTER);
 
-            bv.addBoardViewListener(this);
             client.setBoardView(bv);
         } catch (Exception ex) {
             LogManager.getLogger().fatal("", ex);
@@ -607,9 +591,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 }
             }
         });
-        cb2 = new ChatterBox2(this, bv, controller);
-        bv.addDisplayable(cb2);
-        bv.addKeyListener(cb2);
+//        cb2 = new ChatterBox2(this, bv, controller);
+//        bv.addDisplayable(cb2);
+//        bv.addKeyListener(cb2);
         uo = new UnitOverview(this);
         offBoardOverlay = new OffBoardTargetOverlay(this);
 
@@ -617,8 +601,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         aw.setLocation(0, 0);
         aw.setSize(300, 300);
 
-        bv.addDisplayable(uo);
-        bv.addDisplayable(offBoardOverlay);
+//        bv.addDisplayable(uo);
+//        bv.addDisplayable(offBoardOverlay);
 
         setUnitDisplay(new UnitDisplay(this, controller));
         getUnitDisplay().addMechDisplayListener(bv);
@@ -633,16 +617,16 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
         Ruler.color1 = GUIP.getRulerColor1();
         Ruler.color2 = GUIP.getRulerColor2();
-        ruler = new Ruler(frame, client, bv);
-        ruler.setLocation(GUIP.getRulerPosX(), GUIP.getRulerPosY());
-        ruler.setSize(GUIP.getRulerSizeHeight(), GUIP.getRulerSizeWidth());
-        UIUtil.updateWindowBounds(ruler);
+//        ruler = new Ruler(frame, client, bv);
+//        ruler.setLocation(GUIP.getRulerPosX(), GUIP.getRulerPosY());
+//        ruler.setSize(GUIP.getRulerSizeHeight(), GUIP.getRulerSizeWidth());
+//        UIUtil.updateWindowBounds(ruler);
 
-        setMiniMapDialog(Minimap.createMinimap(frame, getBoardView(), getClient().getGame(), this));
+        setMiniMapDialog(Minimap.createMinimap(frame, getBoardView(), getClient().getGame(), this, MapType.GROUND));
 
         cb = new ChatterBox(this);
-        cb.setChatterBox2(cb2);
-        cb2.setChatterBox(cb);
+//        cb.setChatterBox2(cb2);
+//        cb2.setChatterBox(cb);
         client.changePhase(GamePhase.UNKNOWN);
         UnitLoadingDialog unitLoadingDialog = new UnitLoadingDialog(frame);
         if (!MechSummaryCache.getInstance().isInitialized()) {
@@ -1177,7 +1161,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     void switchPanel(GamePhase phase) {
         // Clear the old panel's listeners.
         if (curPanel instanceof BoardViewListener) {
-            bv.removeBoardViewListener((BoardViewListener) curPanel);
+            boardViews().forEach(b -> b.removeBoardViewListener(this));
         }
 
         if (curPanel instanceof ActionListener) {
@@ -1202,7 +1186,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 ChatLounge cl = (ChatLounge) phaseComponents.get(String.valueOf(GamePhase.LOUNGE));
                 cb.setDoneButton(cl.butDone);
                 cl.setBottom(cb.getComponent());
-                getBoardView().getTilesetManager().reset();
+//                getBoardView().getTilesetManager().reset();
                 break;
             case POINTBLANK_SHOT:
             case SET_ARTILLERY_AUTOHIT_HEXES:
@@ -1245,7 +1229,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
         // Set the new panel's listeners
         if (curPanel instanceof BoardViewListener) {
-            bv.addBoardViewListener((BoardViewListener) curPanel);
+            addListenerToBoardViews((BoardViewListener) curPanel);
         }
 
         if (curPanel instanceof ActionListener) {
@@ -1296,9 +1280,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 main = CG_EXCHANGE;
                 component.setName(main);
                 panMain.add(component, main);
-                bvc.setEnabledAt(0, client.getGame().usesGroundMap());
-                bvc.setEnabledAt(1, client.getGame().usesLowAtmoMap());
-                bvc.setEnabledAt(2, client.getGame().usesSpaceMap());
                 break;
             case SET_ARTILLERY_AUTOHIT_HEXES:
                 component = new SelectArtyAutoHitHexDisplay(this);
@@ -1466,9 +1447,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         return component;
     }
 
-    protected void showBoardPopup(Coords c) {
-        if (fillPopup(c)) {
-            bv.showPopup(popup, c);
+    protected void showBoardPopup(MapLocation mapLocation) {
+        if (fillPopup(mapLocation)) {
+            boardViews.get(mapLocation.getMapType()).showPopup(popup, mapLocation);
         }
     }
 
@@ -1795,8 +1776,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         setsetDividerLocations();
     }
 
-    private boolean fillPopup(Coords coords) {
-        popup = new MapMenu(coords, client, curPanel, this);
+    private boolean fillPopup(MapLocation mapLocation) {
+        popup = new MapMenu(mapLocation, client, curPanel, this);
         return popup.getHasMenu();
     }
 
@@ -2177,13 +2158,12 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      * @param entity
      */
     public void loadPreviewImage(JLabel bp, Entity entity) {
-        Player player = client.getGame().getPlayer(entity.getOwnerId());
-        loadPreviewImage(bp, entity, player);
-    }
-
-    public void loadPreviewImage(JLabel bp, Entity entity, Player player) {
-        final Camouflage camouflage = entity.getCamouflageOrElse(player.getCamouflage());
-        Image icon = bv.getTilesetManager().loadPreviewImage(entity, camouflage, bp);
+        Camouflage camouflage = client.getLocalPlayer().getCamouflage();
+        if (entity.hasOwner()) {
+            camouflage = entity.getCamouflageOrElseOwners();
+        }
+        final Image base = MMStaticDirectoryManager.getMechTileset().imageFor(entity);
+        final Image icon = new EntityImage(base, camouflage, frame, entity).loadPreviewImage(true);
         bp.setIcon((icon == null) ? null : new ImageIcon(icon));
     }
 
@@ -2223,7 +2203,84 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         }
     }
 
-    private GameListener gameListener = new GameListenerAdapter() {
+    /**
+     * Updates the map display. When there's a single map type in the game, the map is displayed without
+     * anything special (not tabs). When there's more than one map type, all maps are added to the
+     * JTabbedPane mapTabPane and this pane is displayed.
+     */
+    private void updateMapTabs() {
+        bvc.removeAll();
+            bvc.setLayout(new GridLayout(1, 1));
+        if (boardViews.size() > 1) {
+            mapTabPane.removeAll();
+            if (boardViews.containsKey(MapType.GROUND)) {
+                mapTabPane.add("Ground Map", bv.getComponent(true));
+            }
+            if (boardViews.containsKey(MapType.LOW_ATMOSPHERE)) {
+                mapTabPane.add("Low Atmo Map", bvLowAtmo.getComponent(true));
+            }
+            if (boardViews.containsKey(MapType.SPACE)) {
+                mapTabPane.add("Space Map", bvSpace.getComponent(true));
+            }
+            bvc.add(mapTabPane);
+        } else {
+            if (boardViews.containsKey(MapType.GROUND)) {
+                bvc.add(bv.getComponent(true));
+            } else if (boardViews.containsKey(MapType.LOW_ATMOSPHERE)) {
+                bvc.add(bvLowAtmo.getComponent(true));
+            } else if (boardViews.containsKey(MapType.SPACE)) {
+                bvc.add(bvSpace.getComponent(true));
+            }
+
+        }
+        bvc.validate();
+    }
+
+    private final GameListener gameListener = new GameListenerAdapter() {
+
+        @Override
+        public void gameBoardNew(GameBoardNewEvent e) {
+            Board b = e.getNewBoard();
+
+            if (b != null) {
+                try {
+                    if (b.getMapType().isLowAtmo()) {
+                        bvLowAtmo = new BoardView(client.getGame(), controller, ClientGUI.this,
+                                () -> client.getGame().getLowAtmoMap());
+                        minimapLowAtmo = Minimap.createMinimap(frame, bvLowAtmo, getClient().getGame(),
+                                ClientGUI.this, MapType.LOW_ATMOSPHERE);
+                        minimapLowAtmo.setVisible(true);
+                        boardViews.put(MapType.LOW_ATMOSPHERE, bvLowAtmo);
+                        bvLowAtmo.addBoardViewListener(ClientGUI.this);
+                    } else if (b.getMapType().isSpace()) {
+                        bvSpace = new BoardView(client.getGame(), controller, ClientGUI.this,
+                                () -> client.getGame().getSpaceMap());
+                        minimapSpace = Minimap.createMinimap(frame, bvSpace, getClient().getGame(),
+                                ClientGUI.this, MapType.SPACE);
+                        minimapSpace.setVisible(true);
+                        boardViews.put(MapType.SPACE, bvSpace);
+                        bvSpace.addBoardViewListener(ClientGUI.this);
+                    } else {
+                        bv = new BoardView(client.getGame(), controller, ClientGUI.this);
+                        bv.setPreferredSize(getSize());
+                        boardViews.put(MapType.GROUND, bv);
+                        minimapW = Minimap.createMinimap(frame, bv, getClient().getGame(),
+                                ClientGUI.this, MapType.GROUND);
+                        bv.addBoardViewListener(ClientGUI.this);
+                    }
+                    updateMapTabs();
+                } catch (IOException ex) {
+                    // this is likely fatal anyway
+                    throw new RuntimeException(ex);
+                }
+            } else {
+                Board oldBoard = e.getOldBoard();
+                if (oldBoard != null) {
+                    boardViews.remove(oldBoard.getMapType());
+                }
+            }
+        }
+
         @Override
         public void gamePlayerChange(GamePlayerChangeEvent evt) {
             if (playerListDialog != null) {
@@ -2250,17 +2307,19 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
         @Override
         public void gamePhaseChange(GamePhaseChangeEvent e) {
-            // This is a really lame place for this, but I couldn't find a
-            // better one without making massive changes (which didn't seem
-            // worth it for one little feature).
-            if (bv.getLocalPlayer() != client.getLocalPlayer()) {
-                // The adress based comparison is somewhat important.
-                //  Use of the /reset command can cause the player to get reset,
-                //  and the equals function of Player isn't powerful enough.
-                bv.setLocalPlayer(client.getLocalPlayer());
+            for (BoardView bv : boardViews.values()) {
+                // This is a really lame place for this, but I couldn't find a
+                // better one without making massive changes (which didn't seem
+                // worth it for one little feature).
+                if (bv.getLocalPlayer() != client.getLocalPlayer()) {
+                    // The adress based comparison is somewhat important.
+                    //  Use of the /reset command can cause the player to get reset,
+                    //  and the equals function of Player isn't powerful enough.
+                    bv.setLocalPlayer(client.getLocalPlayer());
+                }
+                // Make sure the ChatterBox starts out deactived.
+                bv.setChatterBoxActive(false);
             }
-            // Make sure the ChatterBox starts out deactived.
-            bv.setChatterBoxActive(false);
 
             // Swap to this phase's panel.
             GamePhase phase = getClient().getGame().getPhase();
@@ -2272,7 +2331,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
             menuBar.setPhase(phase);
             validate();
-            cb.moveToEnd();
+//            cb.moveToEnd();
         }
 
         @Override
@@ -2643,7 +2702,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      */
     public void setSelectedEntityNum(int selectedEntityNum) {
         this.selectedEntityNum = selectedEntityNum;
-        bv.selectEntity(client.getGame().getEntity(selectedEntityNum));
+        boardViews().forEach(bv -> bv.selectEntity(client.getGame().getEntity(selectedEntityNum)));
     }
 
     public RandomArmyDialog getRandomArmyDialog() {
@@ -2770,7 +2829,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     @Override
     public void hexMoused(BoardViewEvent b) {
         if (b.getType() == BoardViewEvent.BOARD_HEX_POPUP) {
-            showBoardPopup(b.getCoords());
+            MapLocation mapLocation = new MapLocation(b.getCoords(), ((BoardView) b.getSource()).getBoard().getMapType());
+            showBoardPopup(mapLocation);
         }
     }
 
@@ -2837,7 +2897,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
     @Override
     public void componentResized(ComponentEvent evt) {
-        bv.setPreferredSize(getSize());
+        for (BoardView bv : boardViews()) {
+            bv.setPreferredSize(getSize());
+        }
     }
 
     @Override
@@ -2949,5 +3011,40 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
     public List<BoardView> boardViews() {
         return new ArrayList<>(boardViews.values());
+    }
+
+    public boolean isChatterBoxActive() {
+        return boardViews().stream().anyMatch(BoardView::getChatterBoxActive);
+    }
+
+    public void toggleShowAllDeployment() {
+        for (BoardView bv : boardViews()) {
+            bv.showAllDeployment = !bv.showAllDeployment;
+            bv.repaint();
+        }
+    }
+
+    public void removeAllCoordMarkings() {
+        for (BoardView bv : boardViews()) {
+            bv.select(null);
+            bv.highlight(null);
+            bv.cursor(null);
+        }
+    }
+
+    public void addListenerToBoardViews(BoardViewListener listener) {
+        boardViews().forEach(bv -> bv.addBoardViewListener(listener));
+    }
+
+    public void removeListenerFromBoardViews(BoardViewListener listener) {
+        boardViews().forEach(bv -> bv.removeBoardViewListener(listener));
+    }
+
+    public void addKeyListenerToBoardViews(KeyListener listener) {
+        boardViews().forEach(bv -> bv.addKeyListener(listener));
+    }
+
+    public void removeKeyListenerFromBoardViews(KeyListener listener) {
+        boardViews().forEach(bv -> bv.removeKeyListener(listener));
     }
 }

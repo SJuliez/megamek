@@ -49,8 +49,10 @@ import java.util.List;
  * Context menu for the board.
  */
 public class MapMenu extends JPopupMenu {
+    private final MapLocation mapLocation;
     private Coords coords;
-    Game game;
+    private final Game game;
+    private final Player localPlayer;
     Component currentPanel;
     private Board board;
     Client client;
@@ -60,11 +62,13 @@ public class MapMenu extends JPopupMenu {
     Targetable myTarget = null;
     private boolean hasMenu;
 
-    public MapMenu(Coords coords, Client client, Component panel, ClientGUI gui) {
-        this.coords = coords;
+    public MapMenu(MapLocation mapLocation, Client client, Component panel, ClientGUI gui) {
+        this.mapLocation = mapLocation;
+        coords = mapLocation.getCoords();
         game = client.getGame();
+        localPlayer = client.getLocalPlayer();
         currentPanel = panel;
-        board = client.getBoard();
+        board = game.getBoard(mapLocation.getMapType());
         this.client = client;
         this.gui = gui;
         selectedEntity = myEntity = game.getEntity(gui.getSelectedEntityNum());
@@ -458,13 +462,8 @@ public class MapMenu extends JPopupMenu {
 
     private JMenu createViewMenu() {
         JMenu menu = new JMenu("View");
-        Game game = client.getGame();
-
-        Player localPlayer = client.getLocalPlayer();
-
-        for (Entity entity : game.getEntitiesVector(coords, true)) {
-            // Only add the unit if it's actually visible
-            //  With double blind on, the game may unseen units
+        for (Entity entity : game.getEntitiesAt(mapLocation)) {
+            // With double blind on, the game may have unseen units: Only add the unit if it's actually visible
             if (!entity.isSensorReturn(localPlayer) && entity.hasSeenEntity(localPlayer)) {
                 menu.add(viewJMenuItem(entity));
             }

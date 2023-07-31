@@ -74,6 +74,7 @@ public class Board implements Serializable {
 
     private int mapType = T_GROUND;
     private MapType mapType2 = MapType.GROUND;
+    private MapTypeFlag mapTypeFlag = MapTypeFlag.NONE;
 
     private Hex[] data;
 
@@ -1915,7 +1916,15 @@ public class Board implements Serializable {
         mapType2 = newMapType;
     }
 
+    public void setMapTypeFlag(MapTypeFlag newMapTypeFlag) {
+        mapTypeFlag = newMapTypeFlag;
+    }
+
     public MapType getMapType() {
         return mapType2;
+    }
+
+    public MapTypeFlag getMapTypeFlag() {
+        return mapTypeFlag;
     }
 }

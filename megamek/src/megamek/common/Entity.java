@@ -244,7 +244,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     protected int facing = 0;
     protected int sec_facing = 0;
 
-    protected MapType currentMap;
+    protected MapType currentMap = MapType.GROUND;
 
     protected int walkMP = 0;
     protected int jumpMP = 0;
@@ -12869,30 +12869,22 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     }
 
     public boolean isSpaceborne() {
-        // for now if you are in space, you are spaceborne, but this will become
-        // more complicated when
-        // we start adding multiple maps to the same game and so I should try to
-        // replace most calls to
-        // game.getBoard().inSpace() with this one
-        return game != null && game.getBoard().inSpace();
+        return currentMap.isSpace();
     }
 
     /**
      * is the unit flying Nape of the Earth? (i.e. one elevation above ground)
      */
     public boolean isNOE() {
-
         if (!isAirborne()) {
             return false;
-        }
-        if (game.getBoard().inAtmosphere()) {
-            return (1 == (getAltitude() - game.getBoard().getHex(getPosition())
-                    .ceiling(true)));
-        }
-        if (game.getBoard().onGround()) {
+        } else if (currentMap.isLowAtmo()) {
+            return (1 == (getAltitude() - game.getBoard().getHex(getPosition()).ceiling(true)));
+        } else if (currentMap.isGround()) {
             return 1 == getAltitude();
+        } else {
+            return false;
         }
-        return false;
     }
 
     public int getStartingPos() {

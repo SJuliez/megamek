@@ -167,8 +167,14 @@ public class Game extends AbstractGame implements Serializable {
     public Game() {
         // empty
         gameBoards.put(MapType.GROUND, new Board());
-        gameBoards.put(MapType.LOW_ATMOSPHERE, new Board());
-        gameBoards.put(MapType.SPACE, new Board());
+
+        Board lowAtmoDefaultBoard = new Board();
+        lowAtmoDefaultBoard.setMapType(MapType.LOW_ATMOSPHERE);
+        gameBoards.put(MapType.LOW_ATMOSPHERE, lowAtmoDefaultBoard);
+
+        Board spaceDefaultBoard = new Board();
+        spaceDefaultBoard.setMapType(MapType.SPACE);
+        gameBoards.put(MapType.SPACE, spaceDefaultBoard);
     }
 
     // Added public accessors for external game id
@@ -1529,6 +1535,42 @@ public class Game extends AbstractGame implements Serializable {
             }
         }
         return Collections.unmodifiableList(vector);
+    }
+
+    /** @return A List of units at the given coords on the ground map. */
+    public List<Entity> getEntitiesAt(MapLocation mapLocation) {
+        return getEntitiesAt(mapLocation.getCoords(), mapLocation.getMapType());
+    }
+
+    /** @return A List of units at the given coords on the ground map. */
+    public List<Entity> getEntitiesAt(Coords c) {
+        return getEntitiesAt(c, MapType.GROUND);
+    }
+
+    /** @return A List of units at the given coords on the map corresponding to the given mapType. */
+    public List<Entity> getEntitiesAt(Coords c, MapType mapType) {
+        // Make sure the look-up is initialized
+        if (entityPosLookup.isEmpty() && !inGameTWEntities().isEmpty()) {
+            resetEntityPositionLookup();
+        }
+        List<Entity> result = new ArrayList<>();
+        Set<Integer> posEntities = entityPosLookup.getOrDefault(c, new HashSet<>());
+        for (Integer eId : posEntities) {
+            Entity entity = getEntity(eId);
+            // if the entity with the given ID doesn't exist, we will update the lookup table and move on
+            if (entity == null) {
+                posEntities.remove(eId);
+                continue;
+            }
+            if (entity.getCurrentMap() == mapType) {
+                result.add(entity);
+                // Sanity check
+                if (!entity.getOccupiedCoords().contains(c)) {
+                    LogManager.getLogger().error(entity.getDisplayName() + " found in the position lookup but is not in " + c + "!");
+                }
+            }
+        }
+        return result;
     }
 
     /**

@@ -127,7 +127,8 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
     private final JDialog dialog;
     private Client client;
     private final ClientGUI clientGui;
-    
+    private final MapType mapType;
+
     private int margin = MARGIN;
     private int topMargin;
     private int leftMargin;
@@ -167,7 +168,23 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
      * @param game A game containing at least the board, but not necessarily anything else
      * @param cg Optional: A ClientGUI object housing this minimap
      */
+    //TODO: check use in MHQ and delete
     public static JDialog createMinimap(JFrame parent, @Nullable BoardView bv, Game game, @Nullable ClientGUI cg) {
+        return createMinimap(parent, bv, game, cg, MapType.GROUND);
+    }
+
+    /**
+     * Returns a non-modal dialog with a minimap for the given game. The given mapType determines which of the
+     * game's boards is displayed. The game must have a map of this type.
+
+     * @param parent The frame to use as parent frame for the dialog
+     * @param bv Optional: A boardview showing the map
+     * @param game A game containing at least the board, but not necessarily anything else
+     * @param cg Optional: A ClientGUI object housing this minimap
+     * @param mapType The MapType of this minimap; determines which of the game's boards is displayed
+     */
+    public static JDialog createMinimap(JFrame parent, @Nullable BoardView bv, Game game, @Nullable ClientGUI cg,
+                                        MapType mapType) {
         var result = new JDialog(parent, Messages.getString("ClientGUI.Minimap"), false);
 
         result.setLocation(GUIP.getMinimapPosX(), GUIP.getMinimapPosY());
@@ -179,7 +196,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
             }
         });
 
-        result.add(new Minimap(result, game, bv, cg));
+        result.add(new Minimap(result, game, bv, cg, mapType));
         result.pack();
         return result;
     }
@@ -228,6 +245,26 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
     private Minimap(@Nullable JDialog dlg, Game g, @Nullable BoardView bview, @Nullable ClientGUI cg) {
         game = Objects.requireNonNull(g);
         board = Objects.requireNonNull(game.getBoard());
+        mapType = board.getMapType();
+        bv = bview;
+        dialog = dlg;
+        clientGui = cg;
+        if (clientGui != null) {
+            client = clientGui.getClient();
+        }
+        initializeColors();
+        if (dialog != null) {
+            initializeDialog();
+            initializeListeners();
+            buttonHeight = BUTTON_HEIGHT;
+            margin = DIALOG_MARGIN;
+        }
+    }
+
+    private Minimap(@Nullable JDialog dlg, Game g, @Nullable BoardView bview, @Nullable ClientGUI cg, MapType mapType) {
+        game = Objects.requireNonNull(g);
+        this.mapType = mapType;
+        board = Objects.requireNonNull(game.getBoard(mapType), "The game does not have a map of type " + mapType);
         bv = bview;
         dialog = dlg;
         clientGui = cg;
@@ -495,8 +532,8 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
             return;
         }
         lastDrawStarted = System.currentTimeMillis();
-        
-        if (!forceDraw && (dialog != null) && !dialog.isVisible()) {
+
+        if ((!forceDraw && (dialog != null) && !dialog.isVisible()) || (mapImage == null)) {
             return;
         }
         
@@ -583,14 +620,14 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
                 if (null != game) {
                     // draw declared fire
                     for (EntityAction action : game.getActionsVector()) {
-                        if (action instanceof AttackAction) {
+                        if (action instanceof AttackAction && (isOnThisBoard(game.getEntity(action.getEntityId())))) {
                             paintAttack(g, (AttackAction) action);
                         }
                     }
 
                     multiUnits.clear();
                     for (Entity e : game.getEntitiesVector()) {
-                        if (e.getPosition() != null) {
+                        if ((e.getPosition() != null) && isOnThisBoard(e)) {
                             paintUnit(g, e);
                         }
                     }
@@ -613,8 +650,8 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
     
     /** Indicates the deployment hexes. */
     private void drawDeploymentZone(Graphics g) {
-        if ((null != client) && (null != game) && game.getPhase().isDeployment() && (dialog != null)
-                && (bv.getDeployingEntity() != null)) {
+        if ((null != client) && (null != game) && game.getPhase().isDeployment() && (dialog != null) && (bv != null)
+                && (bv.getDeployingEntity() != null) && isOnThisBoard(bv.getDeployingEntity())) {
             GameTurn turn = game.getTurn();
             if ((turn != null) && (turn.getPlayerNum() == client.getLocalPlayer().getId())) {
                 Entity deployingUnit = bv.getDeployingEntity();
@@ -1507,6 +1544,9 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
 
         @Override
         public void gameBoardNew(GameBoardNewEvent e) {
+            if (mapType != e.getNewBoard().getMapType()) {
+                return;
+            }
             Board b = e.getOldBoard();
             if (b != null) {
                 b.removeBoardListener(boardListener);
@@ -1706,4 +1746,13 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
         }
     }
 
+    @Override
+    public String toString() {
+        return "Minimap: " + hashCode() + " " + board.toString() + " Map Type: " + mapType;
+    }
+
+    /** @return True when the given Entity is currently on the board of this Minimap (it may have a null position). */
+    public boolean isOnThisBoard(@Nullable Entity entity) {
+        return (entity != null) && mapType == entity.getCurrentMap();
+    }
 }

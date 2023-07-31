@@ -15,6 +15,7 @@ package megamek.client.ui.swing;
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.util.CommandAction;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.MegaMekController;
@@ -101,8 +102,7 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
     public SelectArtyAutoHitHexDisplay(ClientGUI clientgui) {
         super(clientgui);
         clientgui.getClient().getGame().addGameListener(this);
-
-        clientgui.getBoardView().addBoardViewListener(this);
+        clientgui.addListenerToBoardViews(this);
 
         setupStatusBar(Messages.getString("SelectArtyAutoHitHexDisplay.waitingArtillery"));
 
@@ -193,12 +193,8 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
      * Clears out old data and disables relevant buttons.
      */
     private void endMyTurn() {
-        // end my turn, then.
         disableButtons();
-        clientgui.getBoardView().select(null);
-        clientgui.getBoardView().highlight(null);
-        clientgui.getBoardView().cursor(null);
-
+        clientgui.removeAllCoordMarkings();
     }
 
     /**
@@ -206,7 +202,6 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
      */
     private void disableButtons() {
         setArtyEnabled(0);
-
         butDone.setEnabled(false);
     }
 
@@ -235,7 +230,7 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
                                     "Artilery autohit, for player "
                                             + p.getName(),
                                     SpecialHexDisplay.SHD_OBSCURED_TEAM));
-            clientgui.getBoardView().refreshDisplayables();
+            clientgui.boardViews().forEach(BoardView::refreshDisplayables);
         }
     }
 
@@ -244,6 +239,9 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
     //
     @Override
     public void hexMoused(BoardViewEvent b) {
+        if (!(b.getSource() instanceof BoardView)) {
+            return;
+        }
 
         // Are we ignoring events?
         if (isIgnoringEvents()) {
@@ -261,7 +259,7 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
         }
 
         // check for a deployment
-        clientgui.getBoardView().select(b.getCoords());
+        ((BoardView) b.getSource()).select(b.getCoords());
         addArtyAutoHitHex(b.getCoords());
     }
 
@@ -358,7 +356,7 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
     @Override
     public void removeAllListeners() {
         clientgui.getClient().getGame().removeGameListener(this);
-        clientgui.getBoardView().removeBoardViewListener(this);
+        clientgui.boardViews().forEach(b -> b.removeBoardViewListener(this));
     }
 
     /**
@@ -374,14 +372,10 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
 
             @Override
             public boolean shouldPerformAction() {
-                if (!clientgui.getClient().isMyTurn()
-                        || clientgui.getBoardView().getChatterBoxActive()
-                        || display.isIgnoringEvents()
-                        || !display.isVisible()) {
-                    return false;
-                } else {
-                    return true;
-                }
+                return clientgui.getClient().isMyTurn()
+                        && !clientgui.isChatterBoxActive()
+                        && !display.isIgnoringEvents()
+                        && display.isVisible();
             }
 
             private boolean thisKeyPressed = false;
@@ -389,8 +383,7 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
             @Override
             public void performAction() {
                 if (!thisKeyPressed) {
-                    clientgui.getBoardView().showAllDeployment = !clientgui.getBoardView().showAllDeployment;
-                    clientgui.getBoardView().repaint();
+                    clientgui.toggleShowAllDeployment();
                 }
                 thisKeyPressed = true;
             }

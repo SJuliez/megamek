@@ -118,7 +118,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
     public DeploymentDisplay(ClientGUI clientgui) {
         super(clientgui);
         clientgui.getClient().getGame().addGameListener(this);
-        clientgui.boardViews().forEach(b -> b.addBoardViewListener(this));
+        clientgui.addListenerToBoardViews(this);
         setupStatusBar(Messages.getString("DeploymentDisplay.waitingForDeploymentPhase"));
 
         setButtons();

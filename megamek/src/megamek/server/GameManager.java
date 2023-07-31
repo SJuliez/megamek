@@ -2194,6 +2194,9 @@ public class GameManager implements IGameManager {
                 if (game.usesLowAtmoMap()) {
                     entity.setCurrentMap(MapType.LOW_ATMOSPHERE);
                 }
+                if (game.usesSpaceMap() && entity.isCapitalScale()) {
+                    entity.setCurrentMap(MapType.SPACE);
+                }
 
                 IAero a = (IAero) entity;
                 if (a.isSpaceborne()) {
@@ -2201,7 +2204,7 @@ public class GameManager implements IGameManager {
                     a.liftOff(0);
                 } else {
                     // check for grounding
-                    if (game.getBoard().inAtmosphere() && !entity.isAirborne()) {
+                    if (entity.getCurrentMap().isLowAtmo() && !entity.isAirborne()) {
                         // you have to be airborne on the atmospheric map
                         a.liftOff(entity.getAltitude());
                     }

@@ -25,11 +25,14 @@ import megamek.client.ui.Messages;
 import megamek.client.ui.swing.ClientGUI;
 import megamek.client.ui.swing.UnitFailureDialog;
 import megamek.client.ui.swing.UnitLoadingDialog;
+import megamek.client.ui.swing.tileset.EntityImage;
+import megamek.client.ui.swing.tileset.MMStaticDirectoryManager;
 import megamek.common.Entity;
 import megamek.common.MechSummaryCache;
 import megamek.common.Player;
 import megamek.common.TechConstants;
 import megamek.common.enums.Gender;
+import megamek.common.icons.Camouflage;
 import megamek.common.options.OptionsConstants;
 import megamek.common.preference.ClientPreferences;
 import megamek.common.preference.PreferenceManager;
@@ -162,7 +165,10 @@ public class MegaMekUnitSelectorDialog extends AbstractUnitSelectorDialog {
     protected Entity refreshUnitView() {
         Entity selectedEntity = super.refreshUnitView(); //we first want it to run through the same code as its parent
         if (selectedEntity != null) {
-            clientGUI.loadPreviewImage(labelImage, selectedEntity, clientGUI.getClient().getLocalPlayer());
+            final Camouflage camouflage = clientGUI.getClient().getLocalPlayer().getCamouflage();
+            final Image base = MMStaticDirectoryManager.getMechTileset().imageFor(selectedEntity);
+            final Image sprite = new EntityImage(base, camouflage, frame, selectedEntity).loadPreviewImage(false);
+            labelImage.setIcon(new ImageIcon(sprite));
         }
         return selectedEntity;
     }

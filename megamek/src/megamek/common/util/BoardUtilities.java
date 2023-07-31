@@ -144,10 +144,16 @@ public class BoardUtilities {
         if (mapSettings.getMedium() == MapSettings.MEDIUM_SPACE) {
             result.setType(Board.T_SPACE);
             result.setMapType(mapSettings.getMapType());
+            if (mapSettings.isSpaceUsesGravity()) {
+                result.setMapTypeFlag(MapTypeFlag.HIGH_ATMOSPHERE);
+            }
             return result;
-        } else if (mapSettings.getMapType().isLowAtmo() && !mapSettings.usesTerrain()) {
+        } else if (mapSettings.getMapType().isLowAtmo()) {
             result.setType(Board.T_ATMOSPHERE);
             result.setMapType(MapType.LOW_ATMOSPHERE);
+            if (!mapSettings.usesTerrain()) {
+                result.setMapTypeFlag(MapTypeFlag.SKY);
+            }
             return result;
         } else if (mapSettings.getMapType().isGround()) {
             result.setType(Board.T_GROUND);

@@ -19,7 +19,6 @@
 package megamek.common;
 
 public enum MapType {
-
     GROUND,
     LOW_ATMOSPHERE,
     SPACE,

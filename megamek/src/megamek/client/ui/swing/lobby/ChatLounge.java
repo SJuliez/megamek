@@ -311,7 +311,6 @@ public class ChatLounge extends AbstractPhaseDisplay implements
         PreferenceManager.getClientPreferences().addPreferenceChangeListener(this);
         MechSummaryCache.getInstance().addListener(mechSummaryCacheListener);
         clientgui.getClient().getGame().addGameListener(this);
-        clientgui.getBoardView().addBoardViewListener(this);
 
         loader = new ImageLoader();
         loader.execute();
@@ -2158,7 +2157,6 @@ public class ChatLounge extends AbstractPhaseDisplay implements
     @Override
     public void removeAllListeners() {
         clientgui.getClient().getGame().removeGameListener(this);
-        clientgui.getBoardView().removeBoardViewListener(this);
         GUIP.removePreferenceChangeListener(this);
         PreferenceManager.getClientPreferences().removePreferenceChangeListener(this);
         MechSummaryCache.getInstance().removeListener(mechSummaryCacheListener);
@@ -2903,7 +2901,6 @@ public class ChatLounge extends AbstractPhaseDisplay implements
                 refreshTree();
                 break;
             case GUIPreferences.USE_CAMO_OVERLAY:
-                clientgui.getBoardView().getTilesetManager().reloadUnitIcons();
                 mekModel.refreshCells();
                 refreshTree();
                 break;

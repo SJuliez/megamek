@@ -546,8 +546,7 @@ public class ForceGeneratorViewUi implements ActionListener {
                 setText("<html>" + name + ", " + uname + "</html>");
                 if (fd.getEntity() != null) {
                     try {
-                        clientGui.loadPreviewImage(this, fd.getEntity(),
-                                clientGui.getClient().getLocalPlayer());
+                        clientGui.loadPreviewImage(this, fd.getEntity());
                     } catch (NullPointerException ex) {
                         LogManager.getLogger().warn("No image found for " + fd.getEntity().getShortNameRaw());
                     }
