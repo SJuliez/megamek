@@ -237,11 +237,6 @@ public class VTOL extends Tank implements IBomber {
     }
 
     @Override
-    public boolean doomedInAtmosphere() {
-        return true;
-    }
-    
-    @Override
     public boolean isBomber() {
         return (game != null)
                 && game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VTOL_ATTACKS);
@@ -302,11 +297,6 @@ public class VTOL extends Tank implements IBomber {
     @Override
     public boolean isNightwalker() {
         return false;
-    }
-
-    @Override
-    public boolean doomedInSpace() {
-        return true;
     }
 
     @Override

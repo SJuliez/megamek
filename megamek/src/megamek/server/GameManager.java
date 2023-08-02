@@ -2183,7 +2183,6 @@ public class GameManager implements IGameManager {
     public void checkEntityExchange() {
         for (Iterator<Entity> entities = game.getEntities(); entities.hasNext(); ) {
             Entity entity = entities.next();
-            entity.setCurrentMap(MapType.GROUND);
 
             // apply bombs
             if (entity.isBomber()) {
@@ -2191,13 +2190,6 @@ public class GameManager implements IGameManager {
             }
 
             if (entity.isAero()) {
-                if (game.usesLowAtmoMap()) {
-                    entity.setCurrentMap(MapType.LOW_ATMOSPHERE);
-                }
-                if (game.usesSpaceMap() && entity.isCapitalScale()) {
-                    entity.setCurrentMap(MapType.SPACE);
-                }
-
                 IAero a = (IAero) entity;
                 if (a.isSpaceborne()) {
                     // altitude and elevation don't matter in space
@@ -6596,7 +6588,12 @@ public class GameManager implements IGameManager {
                 if (step.getType() == MovePath.MoveStepType.OFF) {
                     a.setCurrentVelocity(md.getFinalVelocity());
                     entity.setAltitude(curAltitude);
-                    processLeaveMap(md, true, -1);
+                    if (entity.getCurrentMap().isGround() && game.usesLowAtmoMap()) {
+                        entity.setCurrentMap(MapType.LOW_ATMOSPHERE);
+                        entity.setPosition(game.getBoard(MapType.LOW_ATMOSPHERE).getCenter());
+                    } else {
+                        processLeaveMap(md, true, -1);
+                    }
                     return;
                 }
 

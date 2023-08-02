@@ -400,7 +400,7 @@ class StepSprite extends Sprite {
 
         int distTraveled = step.getDistance();
         int velocity = step.getVelocity();
-        if (bv.game.getBoard().onGround()) {
+        if (bv.getBoard().onGround()) {
             velocity *= 16;
         }
 
@@ -422,7 +422,7 @@ class StepSprite extends Sprite {
         graph.drawString(velString, costX - 1, 27);
 
         // if we are in atmosphere, then report the free turn status as well
-        if (!bv.game.getBoard().inSpace()) {
+        if (!bv.getBoard().inSpace()) {
             if (step.dueFreeTurn()) {
                 col = Color.GREEN;
             } else if (step.canAeroTurn(bv.game)) {

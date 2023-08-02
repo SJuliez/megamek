@@ -495,14 +495,14 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         if ((ce().getPosition() != null) && (shiftheld || turnMode)) { // turn
             ce().setFacing(ce().getPosition().direction(moveto));
             ce().setSecondaryFacing(ce().getFacing());
-            clientgui.boardViews().forEach(boardView -> boardView.redrawEntity(ce()));
-            clientgui.boardViews().forEach(boardView -> boardView.setWeaponFieldOfFire(ce().getFacing(), ce().getPosition()));
-            clientgui.boardViews().forEach(boardView -> boardView.setSensorRange(ce(), ce().getPosition()));
+            clientgui.boardViewFor(ce()).redrawEntity(ce());
+            clientgui.boardViewFor(ce()).setWeaponFieldOfFire(ce().getFacing(), ce().getPosition());
+            clientgui.boardViewFor(ce()).setSensorRange(ce(), ce().getPosition());
             turnMode = false;
-        } else if (ce().isBoardProhibited(board.getType())) {
+        } else if (!ce().isMapTypeAllowed(board.getMapType())) {
             // check if this type of unit can be on the given type of map
             title = Messages.getString("DeploymentDisplay.alertDialog.title");
-            msg = Messages.getString("DeploymentDisplay.wrongMapType", ce().getShortName(), Board.getTypeName(board.getType()));
+            msg = Messages.getString("DeploymentDisplay.wrongMapType", ce().getShortName(), board.getMapType().getdisplayName());
             JOptionPane.showMessageDialog(clientgui, msg, title, JOptionPane.WARNING_MESSAGE);
             return;
         } else if (!(board.isLegalDeployment(moveto, ce()) || assaultDropPreference)
@@ -562,11 +562,10 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             clientgui.boardViews().forEach(boardView -> boardView.redrawEntity(ce()));
             clientgui.boardViews().forEach(boardView -> boardView.setWeaponFieldOfFire(ce().getFacing(), moveto));
             clientgui.boardViews().forEach(boardView -> boardView.setSensorRange(ce(), ce().getPosition()));
-//            clientgui.getBoardView().repaint();
             butDone.setEnabled(true);
         }
         if (!shiftheld) {
-            clientgui.boardViews().forEach(boardView -> boardView.select(moveto));
+            clientgui.boardViewFor(ce()).select(moveto);
         }
     }
 

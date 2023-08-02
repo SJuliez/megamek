@@ -139,6 +139,26 @@ public class LobbyActions {
         sendUpdates(updateCandidates);
     }
 
+    /** Sets the deployment map. Sends an update to the server. */
+    void applyStartMap(Collection<Entity> entities, String info) {
+        if (!validateUpdate(entities)) {
+            return;
+        }
+        MapType targetMap = MapType.valueOf(info);
+        if (entities.stream().anyMatch(e -> !e.isMapTypeAllowed(targetMap))) {
+            LobbyErrors.showMapTypeNotAllowed(frame());
+            return;
+        }
+        Set<Entity> updateCandidates = new HashSet<>();
+        for (Entity entity: entities) {
+            if (entity.getCurrentMap() != targetMap) {
+                entity.setCurrentMap(targetMap);
+                updateCandidates.add(entity);
+            }
+        }
+        sendUpdates(updateCandidates);
+    }
+
     /**
      * Attaches the given force as a subforce to the given new parent.
      * Does NOT work for newParentId == NO_FORCE. Use promoteForce to do this.

@@ -1650,15 +1650,15 @@ public class Board implements Serializable {
 
     // some convenience functions
     public boolean onGround() {
-        return (mapType == T_GROUND);
+        return (mapType2.isGround());
     }
 
     public boolean inAtmosphere() {
-        return (mapType == T_ATMOSPHERE);
+        return (mapType2.isLowAtmo());
     }
 
     public boolean inSpace() {
-        return (mapType == T_SPACE);
+        return (mapType2.isSpace());
     }
 
     /**

@@ -244,7 +244,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     protected int facing = 0;
     protected int sec_facing = 0;
 
-    protected MapType currentMap = MapType.GROUND;
+    protected MapType currentMap = isMapTypeAllowed(MapType.GROUND) ? MapType.GROUND : MapType.LOW_ATMOSPHERE;
 
     protected int walkMP = 0;
     protected int jumpMP = 0;
@@ -2995,26 +2995,6 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             if (hex.containsTerrain(Terrains.WATER) && (currElevation == 0)) {
                 return true;
             }
-        }
-
-        return false;
-    }
-
-    /**
-     * Returns true if the given board is prohibited
-     */
-    public boolean isBoardProhibited(int mapType) {
-
-        if ((mapType == Board.T_GROUND) && doomedOnGround()) {
-            return true;
-        }
-
-        if ((mapType == Board.T_ATMOSPHERE) && doomedInAtmosphere()) {
-            return true;
-        }
-
-        if ((mapType == Board.T_SPACE) && doomedInSpace()) {
-            return true;
         }
 
         return false;
@@ -10715,12 +10695,6 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     public abstract boolean doomedInExtremeTemp();
 
     public abstract boolean doomedInVacuum();
-
-    public abstract boolean doomedOnGround();
-
-    public abstract boolean doomedInAtmosphere();
-
-    public abstract boolean doomedInSpace();
 
     /**
      * Prior to TacOps errata 3.3, armor was rounded up to the nearest half ton

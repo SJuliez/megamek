@@ -75,16 +75,18 @@ class FovHighlightingAndDarkening {
         Coords src;
         boolean hasLoS = true;
         // in movement phase, calc LOS based on selected hex, otherwise use selected Entity
-        if (this.boardView1.game.getPhase().isMovement() && this.boardView1.selected != null) {
-            src = this.boardView1.selected;
-        } else if (this.boardView1.selectedEntity != null) {
-            src = this.boardView1.selectedEntity.getPosition();
+        if (!boardView1.isOnThisBoard(boardView1.selectedEntity)) {
+            return true;
+        } else if (boardView1.game.getPhase().isMovement() && this.boardView1.selected != null) {
+            src = boardView1.selected;
+        } else if (boardView1.selectedEntity != null) {
+            src = boardView1.selectedEntity.getPosition();
         } else {
             src = null;
         }
 
         // if there is no source we have nothing to do.
-        if ((src == null) || !this.boardView1.game.getBoard().contains(src)) {
+        if ((src == null) || !boardView1.getBoard().contains(src)) {
             return true;
         }
         // don't spoil the image with fov drawings
@@ -314,7 +316,7 @@ class FovHighlightingAndDarkening {
          * change the getCachedLos method accordingly.
          */
         GUIPreferences guip = GUIPreferences.getInstance();
-        Board board = this.boardView1.game.getBoard();
+        Board board = this.boardView1.getBoard();
         Hex srcHex = board.getHex(src);
         if (srcHex == null) {
             LogManager.getLogger().error("Cannot process line of sight effects with a null source hex.");

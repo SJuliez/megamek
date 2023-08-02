@@ -1201,11 +1201,6 @@ public class Jumpship extends Aero {
         return true;
     }
 
-    @Override
-    public boolean doomedInSpace() {
-        return false;
-    }
-
     /**
      * need to check bay location before loading ammo
      */

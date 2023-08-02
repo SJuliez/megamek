@@ -342,4 +342,48 @@ public interface BTObject {
     default boolean isSingleUnit() {
         return !isUnitGroup();
     }
+
+    /**
+     * Returns true if the given type of map is allowed to this unit/object in its current state. When this
+     * returns false, the unit/object should e.g. not be allowed to deploy on a map of the given type.
+     * This forwards to {@link #doomedOnGround()}, {@link #doomedInAtmosphere()} and
+     * {@link #doomedInSpace()} and does not usually need to be overridden.
+     *
+     * @return True when this unit/object may enter/deploy on a map of the given type
+     */
+    default boolean isMapTypeAllowed(MapType mapType) {
+        return (mapType.isGround() && !doomedOnGround())
+                || (mapType.isLowAtmo() && !doomedInAtmosphere())
+                || (mapType.isSpace() && !doomedInSpace());
+    }
+
+    /**
+     * Returns true if this unit/object cannot enter or deploy on a ground map. By default, this returns false, so
+     * it needs an override e.g. for TW JumpShips.
+     *
+     * @return True when this unit/object may not enter or deploy on a ground map
+     */
+    default boolean doomedOnGround() {
+        return false;
+    };
+
+    /**
+     * Returns true if this unit/object cannot enter or deploy on a low atmosphere map. By default, this returns
+     * true, so it needs an override e.g. for aerospace units.
+     *
+     * @return True when this unit/object may not enter or deploy on a low atmosphere map
+     */
+    default boolean doomedInAtmosphere() {
+        return true;
+    }
+
+    /**
+     * Returns true if this unit/object cannot enter or deploy on a space map (or high atmosphere map). By
+     * default, this returns true, so it needs an override e.g. for space-capable aerospace units.
+     *
+     * @return True when this unit/object may not enter or deploy on a space map
+     */
+    default boolean doomedInSpace() {
+        return true;
+    }
 }

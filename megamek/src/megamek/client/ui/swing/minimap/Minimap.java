@@ -160,19 +160,6 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
     
     private boolean dragging = false;
 
-    /** 
-     * Returns a non-modal dialog with a minimap for the given game.
-
-     * @param parent The frame to use as parent frame for the dialog
-     * @param bv Optional: A boardview showing the map
-     * @param game A game containing at least the board, but not necessarily anything else
-     * @param cg Optional: A ClientGUI object housing this minimap
-     */
-    //TODO: check use in MHQ and delete
-    public static JDialog createMinimap(JFrame parent, @Nullable BoardView bv, Game game, @Nullable ClientGUI cg) {
-        return createMinimap(parent, bv, game, cg, MapType.GROUND);
-    }
-
     /**
      * Returns a non-modal dialog with a minimap for the given game. The given mapType determines which of the
      * game's boards is displayed. The game must have a map of this type.

@@ -373,6 +373,11 @@ class LobbyMekCellFormatter {
             result.append("</I></FONT>");
 
         } else { // Hide deployment info when a unit is carried
+            if (!entity.getCurrentMap().isGround()) {
+                firstEntry = dotSpacer(result, firstEntry);
+                result.append(entity.getCurrentMap().getdisplayName());
+            }
+
             if (entity.isHidden() && mapType == MapSettings.MEDIUM_GROUND) {
                 firstEntry = dotSpacer(result, firstEntry);
                 result.append(getString("ChatLounge.compact.hidden"));

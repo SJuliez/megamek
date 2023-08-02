@@ -51,7 +51,7 @@ import static megamek.common.util.CollectionUtil.anyOneElement;
 import static megamek.common.util.CollectionUtil.theElement;
 
 /** Creates the Lobby Mek right-click pop-up menu for both the sortable table and the force tree. */
-class LobbyMekPopup {
+final class LobbyMekPopup {
 
     static final String LMP_SKILLS = "SKILLS";
     static final String LMP_CALLSIGN = "CALLSIGN";
@@ -105,10 +105,14 @@ class LobbyMekPopup {
     static final String LMP_MOVE_UP = "MOVE_UP";
     static final String LMP_PRIO_TARGET = "PRIO_TARGET";
     static final String LMP_ALPHASTRIKE = "ALPHASTRIKE";
+    static final String LMP_MAP = "MAP";
 
     private static final String NOINFO = "|-1";
 
     static final String LMP_UNLOADALLFROMBAY = "UNLOADALLFROMBAY";
+
+    private LobbyMekPopup() {
+    }
 
     static ScalingPopup getPopup(List<Entity> entities, List<Force> forces, ActionListener listener,
                                  ChatLounge lobby) {
@@ -430,6 +434,11 @@ class LobbyMekPopup {
             if (clientGui.getClient().getGame().getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_HULL_DOWN)) {
                 menu.add(menuItem("Hull-Down", LMP_STAND + "|" + LMP_HULLDOWN + eIds, enabled, listener));
             }
+            menu.add(ScalingPopup.spacer());
+
+            menu.add(menuItem("On Ground Map", LMP_MAP + "|" + MapType.GROUND.name() + eIds, enabled, listener));
+            menu.add(menuItem("On Low Atmo Map", LMP_MAP + "|" + MapType.LOW_ATMOSPHERE.name() + eIds, enabled, listener));
+            menu.add(menuItem("On Space Map", LMP_MAP + "|" + MapType.SPACE.name() + eIds, enabled, listener));
             menu.add(ScalingPopup.spacer());
 
             // Heat

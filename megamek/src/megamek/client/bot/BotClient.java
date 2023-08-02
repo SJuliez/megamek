@@ -270,8 +270,8 @@ public abstract class BotClient extends Client {
             if (transport != null && transport.isPermanentlyImmobilized(true)) {
                 boolean stackingViolation = null != Compute.stackingViolation(game, currentEntity.getId(),
                         transport.getPosition(), currentEntity.climbMode());
-                boolean unloadFatal = currentEntity.isBoardProhibited(getGame().getBoard().getType()) ||
-                        currentEntity.isLocationProhibited(transport.getPosition());
+                boolean unloadFatal = !currentEntity.isMapTypeAllowed(transport.getCurrentMap())
+                        || currentEntity.isLocationProhibited(transport.getPosition());
 
                 if (!stackingViolation && !unloadFatal) {
                     entitiesToUnload.add(currentEntity.getId());

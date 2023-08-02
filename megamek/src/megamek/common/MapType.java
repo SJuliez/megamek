@@ -44,4 +44,8 @@ public enum MapType {
     public boolean isCapitalRadarMap() {
         return this == CAPITAL_RADAR;
     }
+
+    public String getdisplayName() {
+        return Messages.getString("MapType." + name());
+    }
 }

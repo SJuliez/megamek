@@ -526,12 +526,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         initializeFrame();
         try {
             client.getGame().addGameListener(gameListener);
-            // Create the board viewer.
-//            bv = new BoardView(client.getGame(), controller, this);
-//            bv.setPreferredSize(getSize());
-//            boardViews.put(MapType.GROUND, bv);
-//            bvc.add(bv.getComponent());
-//
             panTop = new JPanel(new BorderLayout());
 
             panA1 = new JPanel();
@@ -543,10 +537,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
             splitPaneA.setDividerSize(10);
             splitPaneA.setResizeWeight(0.5);
-
-//            splitPaneA.setLeftComponent(panA1);
-//            splitPaneA.setRightComponent(panA2);
-
             panTop.add(splitPaneA, BorderLayout.CENTER);
 
             client.setBoardView(bv);
@@ -605,7 +595,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 //        bv.addDisplayable(offBoardOverlay);
 
         setUnitDisplay(new UnitDisplay(this, controller));
-        getUnitDisplay().addMechDisplayListener(bv);
         setUnitDisplayDialog(new UnitDisplayDialog(getFrame(), this));
         getUnitDisplayDialog().setVisible(false);
 
@@ -2252,6 +2241,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                         minimapLowAtmo.setVisible(true);
                         boardViews.put(MapType.LOW_ATMOSPHERE, bvLowAtmo);
                         bvLowAtmo.addBoardViewListener(ClientGUI.this);
+                        getUnitDisplay().addMechDisplayListener(bvLowAtmo);
                     } else if (b.getMapType().isSpace()) {
                         bvSpace = new BoardView(client.getGame(), controller, ClientGUI.this,
                                 () -> client.getGame().getSpaceMap());
@@ -2260,6 +2250,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                         minimapSpace.setVisible(true);
                         boardViews.put(MapType.SPACE, bvSpace);
                         bvSpace.addBoardViewListener(ClientGUI.this);
+                        getUnitDisplay().addMechDisplayListener(bvSpace);
                     } else {
                         bv = new BoardView(client.getGame(), controller, ClientGUI.this);
                         bv.setPreferredSize(getSize());
@@ -2267,6 +2258,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                         minimapW = Minimap.createMinimap(frame, bv, getClient().getGame(),
                                 ClientGUI.this, MapType.GROUND);
                         bv.addBoardViewListener(ClientGUI.this);
+                        getUnitDisplay().addMechDisplayListener(bv);
                     }
                     updateMapTabs();
                 } catch (IOException ex) {

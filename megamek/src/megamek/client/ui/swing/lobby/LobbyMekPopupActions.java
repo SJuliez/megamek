@@ -88,6 +88,7 @@ public class LobbyMekPopupActions implements ActionListener {
             case LMP_HIDDEN:
             case LMP_STAND:
             case LMP_PRIO_TARGET:
+            case LMP_MAP:
                 if (!entities.isEmpty()) {
                     multiEntityAction(command, entities, info);
                 }
@@ -261,6 +262,10 @@ public class LobbyMekPopupActions implements ActionListener {
 
             case LMP_STAND:
                 lobby.lobbyActions.applyProne(entities, info);
+                break;
+
+            case LMP_MAP:
+                lobby.lobbyActions.applyStartMap(entities, info);
                 break;
 
             case LMP_VIEW:

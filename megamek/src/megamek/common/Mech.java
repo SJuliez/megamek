@@ -3826,21 +3826,6 @@ public abstract class Mech extends Entity {
     }
 
     @Override
-    public boolean doomedOnGround() {
-        return false;
-    }
-
-    @Override
-    public boolean doomedInAtmosphere() {
-        return true;
-    }
-
-    @Override
-    public boolean doomedInSpace() {
-        return true;
-    }
-
-    @Override
     public boolean hasEiCockpit() {
         return isClan() || super.hasEiCockpit();
     }

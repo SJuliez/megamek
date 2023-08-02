@@ -34,6 +34,7 @@ public final class LobbyErrors {
     private static final String TEN_UNITS = "Please select fewer than 10 units.";
     private static final String HEAT_TRACKING = "Cannot apply a heat setting to units that do not track heat.";
     private static final String ONLY_MEKS = "This setting can only be applied to Meks.";
+    private static final String NOT_THIS_MAPTYPE = "Some of the selected units cannot survive on that map type.";
     private static final String ONLY_C3M = "Only units with a C3M can be set to be Company Masters.";
     private static final String SAME_C3 = "The C3 systems of the selected units don't match. Select only the same type of C3 units.";
     private static final String EXCEED_C3_CAPACITY = "Connecting the selected units exceed this C3 system's capacity.";
@@ -127,7 +128,11 @@ public final class LobbyErrors {
     public static void showOnlyMeks(JFrame owner) {
         JOptionPane.showMessageDialog(owner, ONLY_MEKS);
     }
-    
+
+    public static void showMapTypeNotAllowed(JFrame owner) {
+        JOptionPane.showMessageDialog(owner, NOT_THIS_MAPTYPE);
+    }
+
     public static void showOnlyTeammate(JFrame owner) {
         JOptionPane.showMessageDialog(owner, FORCE_ASSIGN_ONLYTEAM);
     }

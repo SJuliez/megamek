@@ -5468,7 +5468,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             String sTrerain = sbTerrain.toString();
 
             // Distance from the selected unit and a planned movement end point
-            if ((selectedEntity != null) && (selectedEntity.getPosition() != null)) {
+            if ((selectedEntity != null) && (selectedEntity.getPosition() != null)
+                    && isOnThisBoard(selectedEntity)) {
                 int distance = selectedEntity.getPosition().distance(mcoords);
                 if (distance == 1) {
                     sTrerain += Messages.getString("BoardView1.Tooltip.Distance1");
@@ -5911,8 +5912,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         hbar = scrollpane.getHorizontalScrollBar();
 
         if (!scrollBars && !bvSkinSpec.showScrollBars) {
-//            vbar.setPreferredSize(new Dimension(0, vbar.getHeight()));
-//            hbar.setPreferredSize(new Dimension(hbar.getWidth(), 0));
+            vbar.setPreferredSize(new Dimension(0, vbar.getHeight()));
+            hbar.setPreferredSize(new Dimension(hbar.getWidth(), 0));
         }
 
         return scrollpane;

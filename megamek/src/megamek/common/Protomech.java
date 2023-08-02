@@ -1091,21 +1091,6 @@ public class Protomech extends Entity {
     }
 
     @Override
-    public boolean doomedOnGround() {
-        return false;
-    }
-
-    @Override
-    public boolean doomedInAtmosphere() {
-        return true;
-    }
-
-    @Override
-    public boolean doomedInSpace() {
-        return true;
-    }
-
-    @Override
     public boolean hasActiveEiCockpit() {
         return (super.hasActiveEiCockpit() && (getCritsHit(LOC_HEAD) == 0));
     }

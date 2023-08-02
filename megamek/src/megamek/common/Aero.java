@@ -218,6 +218,7 @@ public class Aero extends Entity implements IAero, IBomber {
         super();
         // need to set altitude to something different than entity
         altitude = 5;
+        currentMap = MapType.LOW_ATMOSPHERE;
     }
 
     @Override
@@ -1645,7 +1646,7 @@ public class Aero extends Entity implements IAero, IBomber {
 
     @Override
     public boolean doomedOnGround() {
-        return game != null ? !game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_AERO_GROUND_MOVE) : false;
+        return game != null && !game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_AERO_GROUND_MOVE);
     }
 
     @Override
@@ -1657,15 +1658,6 @@ public class Aero extends Entity implements IAero, IBomber {
     public boolean doomedInSpace() {
         return false;
     }
-
-    @Override
-    public boolean canGoHullDown() {
-        return false;
-    }
-
-    /*
-     * public void addMovementDamage(int level) { movementDamage += level; }
-     */
 
     @Override
     public void setEngine(Engine e) {
