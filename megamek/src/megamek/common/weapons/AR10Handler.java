@@ -70,7 +70,7 @@ public class AR10Handler extends AmmoWeaponHandler {
             ae.setLastTargetDisplayName(entityTarget.getDisplayName());
         }
         // Which building takes the damage?
-        Building bldg = game.getBoard().getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
         String number = nweapons > 1 ? " (" + nweapons + ")" : "";
         for (int i = numAttacks; i > 0; i--) {
             // Report weapon attack and its to-hit value.
@@ -216,7 +216,7 @@ public class AR10Handler extends AmmoWeaponHandler {
             int id = vPhaseReport.size();
             int hits = calcHits(vPhaseReport);
 
-            if (target.isAirborne() || game.getBoard().inSpace() || ae.usesWeaponBays()) {
+            if (target.isAirborne() || ae.isSpaceborne() || ae.usesWeaponBays()) {
                 // if we added a line to the phase report for calc hits, remove
                 // it now
                 while (vPhaseReport.size() > id) {

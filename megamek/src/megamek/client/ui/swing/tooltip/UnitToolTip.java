@@ -999,7 +999,7 @@ public final class UnitToolTip {
             return Messages.getString("NONE");
         }
 
-        if (e.isAirborne() && e.getGame().getBoard().onGround()) {
+        if (e.isAirborne() && e.getCurrentMap().isGround()) {
             return e.getActiveSensor().getDisplayName() + " (" + srh.minSensorRange + "-"
                     + srh.maxSensorRange + ")" + " {" + Messages.getString("BoardView1.Tooltip.sensor_range_vs_ground_target")
                     + " (" + srh.minGroundSensorRange + "-" + srh.maxGroundSensorRange + ")}";

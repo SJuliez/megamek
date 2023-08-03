@@ -70,7 +70,7 @@ public class MicroBombHandler extends AmmoWeaponHandler {
 
             // magic number - BA-launched micro bombs only scatter 1 hex per TW-2018 p 228
             coords = Compute.scatter(coords, 1);
-            if (game.getBoard().contains(coords)) {
+            if (game.getBoard(ae.getCurrentMap()).contains(coords)) {
                 Report r = new Report(3195);
                 r.subject = subjectId;
                 r.add(coords.getBoardNum());

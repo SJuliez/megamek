@@ -17,6 +17,7 @@ package megamek.common;
 import megamek.MMConstants;
 import megamek.client.bot.princess.FireControl;
 import megamek.client.ui.swing.GUIPreferences;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.client.ui.swing.calculationReport.DummyCalculationReport;
 import megamek.codeUtilities.StringUtility;
@@ -2130,10 +2131,10 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * water/treeline? assuming passed elevation.
      */
     public boolean canGoDown(int assumedElevation, Coords assumedPos) {
-        if (!getGame().getBoard().contains(assumedPos)) {
+        if (!getGame().getBoard(currentMap).contains(assumedPos)) {
             return false;
         }
-        Hex hex = getGame().getBoard().getHex(assumedPos);
+        Hex hex = getGame().getBoard(currentMap).getHex(assumedPos);
         int assumedAlt = assumedElevation + hex.getLevel();
         int minAlt = hex.getLevel();
         switch (getMovementMode()) {
@@ -2177,9 +2178,9 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             case AERODYNE:
             case SPHEROID:
                 assumedAlt = assumedElevation;
-                if (game.getBoard().inAtmosphere()) {
+                if (currentMap.isLowAtmo()) {
                     minAlt = Math.max(0, hex.ceiling(true)) + 1;
-                } else if (game.getBoard().onGround() && isAirborne()) {
+                } else if (currentMap.isGround() && isAirborne()) {
                     minAlt = 1;
                 }
                 // if sensors are damaged then, one higher
@@ -2221,10 +2222,10 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     public boolean canGoUp(int assumedElevation, Coords assumedPos) {
         // Could have a hex off the board
-        if (!getGame().getBoard().contains(assumedPos)) {
+        if (!getGame().getBoard(currentMap).contains(assumedPos)) {
             return false;
         }
-        Hex hex = getGame().getBoard().getHex(assumedPos);
+        Hex hex = getGame().getBoard(currentMap).getHex(assumedPos);
         int assumedAlt = assumedElevation + hex.getLevel();
         int maxAlt = hex.getLevel();
         switch (getMovementMode()) {
@@ -2244,7 +2245,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                 break;
             case AERODYNE:
             case SPHEROID:
-                if (!game.getBoard().inSpace()) {
+                if (!isSpaceborne()) {
                     assumedAlt = assumedElevation;
                     maxAlt = 10;
                 }
@@ -2405,13 +2406,9 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * Convenience method to determine whether this entity is on a ground map with an atmosphere
      */
     public boolean isOnAtmosphericGroundMap() {
-        return  ((getGame().getPlanetaryConditions().getAtmosphere() != PlanetaryConditions.ATMO_VACUUM) ||
-                (getGame().getPlanetaryConditions().getAtmosphere() != PlanetaryConditions.ATMO_TRACE)) &&
-
-                (getGame().getBoard().onGround() ||
-                // doesn't make sense in english, but "atmospheric" map actually
-                // covers maps that are within a planet's gravity well
-                getGame().getBoard().inAtmosphere());
+        return (getGame().getPlanetaryConditions().getAtmosphere() != PlanetaryConditions.ATMO_VACUUM) &&
+                (getGame().getPlanetaryConditions().getAtmosphere() != PlanetaryConditions.ATMO_TRACE)
+                && (currentMap.isGround() || currentMap.isLowAtmo());
     }
 
     /**
@@ -2419,7 +2416,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * @return True if this is an airborne aircraft on a ground map.
      */
     public boolean isAirborneAeroOnGroundMap() {
-        return isAero() && isAirborne() && getGame().getBoard().onGround();
+        return isAero() && isAirborne() && currentMap.isGround();
     }
 
     /**
@@ -2970,7 +2967,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * @return
      */
     public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getBoard(getCurrentMap()).getHex(c);
         if (hex.containsTerrain(Terrains.IMPASSABLE)) {
             return !isAirborne();
         }
@@ -4162,7 +4159,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                     && game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_SPACE_BOMB)
                     && m.getType().hasFlag(AmmoType.F_SPACE_BOMB)
                     && isFighter()
-                    && game.getBoard().inSpace()) {
+                    && isSpaceborne()) {
                 try {
                     Mounted bomb = addEquipment(spaceBomb, m.getLocation(), false);
                     if (hasETypeFlag(ETYPE_FIGHTER_SQUADRON)) {
@@ -4175,7 +4172,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                 foundSpaceBomb = true;
             }
 
-            if (!game.getBoard().inSpace()
+            if (!isSpaceborne()
                     && m.getType().hasFlag(AmmoType.F_GROUND_BOMB)
                     && !((this instanceof LandAirMech)
                             && (getConversionMode() == LandAirMech.CONV_MODE_MECH))) {
@@ -5074,7 +5071,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     public boolean hasActiveECM(boolean stealth) {
         // no ECM in space unless strat op option enabled
-        if (game.getBoard().inSpace()
+        if (isSpaceborne()
             && !game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
             return false;
         }
@@ -5104,7 +5101,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     public boolean hasActiveAngelECM() {
         // no ECM in space unless strat op option enabled
-        if (game.getBoard().inSpace()
+        if (isSpaceborne()
             && !game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
             return false;
         }
@@ -5129,7 +5126,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     public boolean hasActiveNovaECM() {
         // no ECM in space unless strat op option enabled
-        if (game.getBoard().inSpace()
+        if (isSpaceborne()
             && !game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
             return false;
         }
@@ -5150,7 +5147,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     public boolean hasGhostTargets(boolean active) {
         // no Ghost Targets in space unless strat op option enabled
-        if (game.getBoard().inSpace()) {
+        if (isSpaceborne()) {
             return false;
         }
 
@@ -5192,7 +5189,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     public boolean hasActiveECCM() {
         // no ECM in space unless strat op option enabled
-        if (game.getBoard().inSpace()
+        if (isSpaceborne()
             && !game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
             return false;
         }
@@ -5251,7 +5248,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     public int getECMRange() {
         // no ECM in space unless strat op option enabled
-        if (game.getBoard().inSpace()
+        if (isSpaceborne()
             && !game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
             return Entity.NONE;
         }
@@ -5396,7 +5393,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                 }
 
                 // in space the range of all BAPs is given by the mode
-                if (game.getBoard().inSpace()) {
+                if (isSpaceborne()) {
                     return m.curMode().equals("Medium") ? 12 : 6;
                 }
 
@@ -6977,14 +6974,14 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         PlanetaryConditions conditions = game.getPlanetaryConditions();
         // check weather conditions for all entities
         int weatherMod = conditions.getWeatherPilotPenalty();
-        if ((weatherMod != 0) && !game.getBoard().inSpace()
+        if ((weatherMod != 0) && !isSpaceborne()
                 && ((null == crew) || !hasAbility(OptionsConstants.UNOFF_ALLWEATHER))) {
             roll.addModifier(weatherMod, conditions.getWeatherDisplayableName());
         }
 
         // check wind conditions for all entities
         int windMod = conditions.getWindPilotPenalty(this);
-        if ((windMod != 0) && !game.getBoard().inSpace()
+        if ((windMod != 0) && !isSpaceborne()
                 && ((null == crew) || !hasAbility(OptionsConstants.UNOFF_ALLWEATHER))) {
             roll.addModifier(windMod, conditions.getWindDisplayableName());
         }
@@ -7445,11 +7442,6 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             return roll;
         }
 
-        /*
-         * Hex curHex = null; if (null != curPos) { curHex =
-         * game.getBoard().getHex(curPos); }
-         */
-
         boolean prevStepPavement;
         if (prevStep != null) {
             prevStepPavement = prevStep.isPavementStep();
@@ -7660,8 +7652,8 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             || (prevPos.equals(curPos) && !(this instanceof Protomech))) {
             return 0;
         }
-        Hex curHex = game.getBoard().getHex(curPos);
-        Hex prevHex = game.getBoard().getHex(prevPos);
+        Hex curHex = game.getBoard(currentMap).getHex(curPos);
+        Hex prevHex = game.getBoard(currentMap).getHex(prevPos);
         // ineligible because of movement type or unit type
         if (isAirborne()) {
             return 0;
@@ -7678,7 +7670,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         }
 
         // check for movement inside a hangar
-        Building curBldg = game.getBoard().getBuildingAt(curPos);
+        Building curBldg = game.getBoard(currentMap).getBuildingAt(curPos);
         if ((null != curBldg)
             && curBldg.isIn(prevPos)
             && (curBldg.getBldgClass() == Building.HANGAR)
@@ -7714,7 +7706,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         // check to see if its a wall
         if (rv > 1) {
             Building bldgEntered = null;
-            bldgEntered = game.getBoard().getBuildingAt(curPos);
+            bldgEntered = game.getBoard(currentMap).getBuildingAt(curPos);
             if (bldgEntered.getType() == Building.WALL) {
                 return 4;
             }
@@ -7877,7 +7869,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             roll.addModifier(+1, "assault vehicle");
         }
 
-        Hex currHex = game.getBoard().getHex(currPos);
+        Hex currHex = game.getBoard(currentMap).getHex(currPos);
         if (movementMode != EntityMovementMode.HOVER
                 && movementMode != EntityMovementMode.VTOL
                 && movementMode != EntityMovementMode.WIGE) {
@@ -9397,8 +9389,8 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                 && !getCrew().isUnconscious()
                 && (getSwarmTargetId() == NONE)
                 && (isOffBoard() || ((pos != null)
-                        && ((pos.getX() == 0) || (pos.getX() == (getGame().getBoard().getWidth() - 1))
-                        || (pos.getY() == 0) || (pos.getY() == (getGame().getBoard().getHeight() - 1)))));
+                        && ((pos.getX() == 0) || (pos.getX() == (getGame().getBoard(currentMap).getWidth() - 1))
+                        || (pos.getY() == 0) || (pos.getY() == (getGame().getBoard(currentMap).getHeight() - 1)))));
     }
 
     public void setEverSeenByEnemy(boolean b) {
@@ -9834,7 +9826,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         if ((this instanceof Infantry)
                 && hasWorkingMisc(MiscType.F_TOOLS,
                         MiscType.S_DEMOLITION_CHARGE)) {
-            Hex hex = game.getBoard().getHex(getPosition());
+            Hex hex = game.getBoard(currentMap).getHex(getPosition());
             return hex.containsTerrain(Terrains.BUILDING);
         }
         // only mechs and protos have physical attacks (except tank charges)
@@ -9915,7 +9907,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         }
 
         // If there are no valid Entity targets, check for add valid buildings.
-        Enumeration<Building> bldgs = game.getBoard().getBuildings();
+        Enumeration<Building> bldgs = game.getBoard(currentMap).getBuildings();
         while (!canHit && bldgs.hasMoreElements()) {
             final Building bldg = bldgs.nextElement();
 
@@ -9931,7 +9923,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
 
                 // Can the entity target *this* hex of the building?
                 final BuildingTarget target = new BuildingTarget(coords,
-                                                                 game.getBoard(), false);
+                                                                 game.getBoard(currentMap), false);
                 canHit |= Compute.canPhysicalTarget(game, getId(), target);
 
             } // Check the next hex of the building
@@ -10127,27 +10119,27 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             case NONE:
                 return;
             case NORTH:
-                setPosition(new Coords((game.getBoard().getWidth() / 2)
-                        + (game.getBoard().getWidth() % 2),
+                setPosition(new Coords((game.getBoard(currentMap).getWidth() / 2)
+                        + (game.getBoard(currentMap).getWidth() % 2),
                         -getOffBoardDistance()));
                 setFacing(3);
                 break;
             case SOUTH:
-                setPosition(new Coords((game.getBoard().getWidth() / 2)
-                        + (game.getBoard().getWidth() % 2), game.getBoard()
+                setPosition(new Coords((game.getBoard(currentMap).getWidth() / 2)
+                        + (game.getBoard(currentMap).getWidth() % 2), game.getBoard(currentMap)
                         .getHeight() + getOffBoardDistance()));
                 setFacing(0);
                 break;
             case EAST:
-                setPosition(new Coords(game.getBoard().getWidth()
+                setPosition(new Coords(game.getBoard(currentMap).getWidth()
                         + getOffBoardDistance(),
-                        (game.getBoard().getHeight() / 2)
-                                + (game.getBoard().getHeight() % 2)));
+                        (game.getBoard(currentMap).getHeight() / 2)
+                                + (game.getBoard(currentMap).getHeight() % 2)));
                 setFacing(5);
                 break;
             case WEST:
-                setPosition(new Coords(-getOffBoardDistance(), (game.getBoard()
-                        .getHeight() / 2) + (game.getBoard().getHeight() % 2)));
+                setPosition(new Coords(-getOffBoardDistance(), (game.getBoard(currentMap)
+                        .getHeight() / 2) + (game.getBoard(currentMap).getHeight() % 2)));
                 setFacing(1);
                 break;
         }
@@ -10846,8 +10838,8 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         // defender would choose along which hex the LOS gets drawn, and that
         // side also determines the side we hit in
         if ((fa % 30) == 0) {
-            Hex srcHex = game.getBoard().getHex(src);
-            Hex curHex = game.getBoard().getHex(getPosition());
+            Hex srcHex = game.getBoard(currentMap).getHex(src);
+            Hex curHex = game.getBoard(currentMap).getHex(getPosition());
             if ((srcHex != null) && (curHex != null)) {
                 LosEffects.AttackInfo ai = LosEffects.buildAttackInfo(src,
                                                                       getPosition(), 1, getElevation(), srcHex.floor(),
@@ -10884,7 +10876,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         if (isAero()) {
             IAero a = (IAero) this;
             // Handle spheroids in atmosphere or on the ground differently
-            if (a.isSpheroid() && (game != null) && !game.getBoard().inSpace()) {
+            if (a.isSpheroid() && (game != null) && !isSpaceborne()) {
                 if ((fa >= 0) && (fa < 180)) {
                     return ToHitData.SIDE_RIGHT;
                 }
@@ -10990,7 +10982,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         if (isOffBoard() || !(isDeployed())) {
             return;
         }
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getBoard(currentMap).getHex(c);
         hex.terrainPilotingModifier(getMovementMode(), roll, enteringRubble);
 
         if (hex.containsTerrain(Terrains.JUNGLE) && hasAbility(OptionsConstants.PILOT_TM_FOREST_RANGER)) {
@@ -11029,14 +11021,14 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     public boolean fixElevation() {
         if (!isDeployed() || isOffBoard()
-            || !game.getBoard().contains(getPosition())) {
+            || !game.getBoard(currentMap).contains(getPosition())) {
             return false;
         }
 
-        if (!isElevationValid(getElevation(), game.getBoard().getHex(getPosition()))) {
+        if (!isElevationValid(getElevation(), game.getBoard(currentMap).getHex(getPosition()))) {
             LogManager.getLogger().error(String.format("%s in hex %s is at invalid elevation %s",
                     getDisplayName(), HexTarget.coordsToId(getPosition()), getElevation()));
-            setElevation(0 - game.getBoard().getHex(getPosition()).depth());
+            setElevation(0 - game.getBoard(currentMap).getHex(getPosition()).depth());
             LogManager.getLogger().error(" moved to elevation " + getElevation());
             return true;
         }
@@ -11362,12 +11354,12 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         if ((getMovementMode() == EntityMovementMode.VTOL)
                 || (getMovementMode() == EntityMovementMode.WIGE)) {
             if ((game != null)
-                    && (game.getBoard() != null)
+                    && (game.getBoard(currentMap) != null)
                     && (getPosition() != null)
-                    && (game.getBoard().getHex(getPosition()) != null)
-                    && ((game.getBoard().getHex(getPosition())
+                    && (game.getBoard(currentMap).getHex(getPosition()) != null)
+                    && ((game.getBoard(currentMap).getHex(getPosition())
                             .terrainLevel(Terrains.BLDG_ELEV) >= getElevation()) || (game
-                            .getBoard().getHex(getPosition())
+                            .getBoard(currentMap).getHex(getPosition())
                             .terrainLevel(Terrains.BRIDGE_ELEV) >= getElevation()))) {
                 return false;
             }
@@ -12161,7 +12153,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         }
 
         // E(C)CM operates differently in space (SO pg 110)
-        if (game.getBoard().inSpace()) {
+        if (isSpaceborne()) {
             // No ECM in space unless SO rule is on
             if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
                 return null;
@@ -12242,7 +12234,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             return null;
         }
         // E(C)CM operates differently in space (SO pg 110)
-        if (game.getBoard().inSpace()) {
+        if (isSpaceborne()) {
             // No ECCM in space unless SO rule is on
             if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
                 return null;
@@ -12842,6 +12834,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                || (getMovementMode() == EntityMovementMode.SPHEROID);
     }
 
+    /** @return True when this unit is currently on a space map. Equivalent to currentMap().isSpace(). */
     public boolean isSpaceborne() {
         return currentMap.isSpace();
     }
@@ -12853,7 +12846,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         if (!isAirborne()) {
             return false;
         } else if (currentMap.isLowAtmo()) {
-            return (1 == (getAltitude() - game.getBoard().getHex(getPosition()).ceiling(true)));
+            return (1 == (getAltitude() - game.getBoard(currentMap).getHex(getPosition()).ceiling(true)));
         } else if (currentMap.isGround()) {
             return 1 == getAltitude();
         } else {
@@ -14099,14 +14092,14 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         if (!hasOccupiedHex()) {
             return false;
         }
-        Hex occupiedHex = game.getBoard().getHex(getPosition());
+        Hex occupiedHex = game.getBoard(currentMap).getHex(getPosition());
         return occupiedHex.containsTerrain(Terrains.WATER) && (relHeight() < occupiedHex.getLevel());
     }
 
     /** @return True if this entity has a non-null occupied hex, i.e. it has a game, a position, a board etc. */
     public boolean hasOccupiedHex() {
-        return !isOffBoard() && (getPosition() != null) && (game != null) && (game.getBoard() != null)
-                && (game.getBoard().getHex(getPosition()) != null);
+        return !isOffBoard() && (getPosition() != null) && (game != null) && (game.getBoard(currentMap) != null)
+                && (game.getBoard(currentMap).getHex(getPosition()) != null);
     }
 
     public int getTechLevelYear() {

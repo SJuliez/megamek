@@ -2252,7 +2252,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                         bvSpace.addBoardViewListener(ClientGUI.this);
                         getUnitDisplay().addMechDisplayListener(bvSpace);
                     } else {
-                        bv = new BoardView(client.getGame(), controller, ClientGUI.this);
+                        bv = new BoardView(client.getGame(), controller, ClientGUI.this,
+                                () -> client.getGame().getBoard(MapType.GROUND));
                         bv.setPreferredSize(getSize());
                         boardViews.put(MapType.GROUND, bv);
                         minimapW = Minimap.createMinimap(frame, bv, getClient().getGame(),

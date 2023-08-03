@@ -161,7 +161,7 @@ public class MissileMineClearanceHandler extends AmmoWeaponHandler {
         Vector<Report> newReports;
         
         // Damage building directly
-        Building bldg = game.getBoard().getBuildingAt(targetPos);
+        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(targetPos);
         if (bldg != null) {
             newReports = gameManager.damageBuilding(bldg, damage, " receives ", targetPos);
             adjustReports(newReports);
@@ -169,7 +169,7 @@ public class MissileMineClearanceHandler extends AmmoWeaponHandler {
         }
 
         // Damage Terrain if applicable
-        Hex h = game.getBoard().getHex(targetPos);
+        Hex h = game.getBoard(ae.getCurrentMap()).getHex(targetPos);
         newReports = new Vector<>();
         if ((h != null) && h.hasTerrainFactor()) {
             r = new Report(3384);

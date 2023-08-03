@@ -780,7 +780,7 @@ public class WeaponHandler implements AttackHandler, Serializable {
             ae.setLastTargetDisplayName(entityTarget.getDisplayName());
         }
         // Which building takes the damage?
-        Building bldg = game.getBoard().getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
         String number = nweapons > 1 ? " (" + nweapons + ")" : "";
         for (int i = numAttacks; i > 0; i--) {
             // Report weapon attack and its to-hit value.
@@ -1015,7 +1015,7 @@ public class WeaponHandler implements AttackHandler, Serializable {
             int nCluster = calcnCluster();
             int id = vPhaseReport.size();
             int hits = calcHits(vPhaseReport);
-            if ((target.isAirborne() && !waa.isGroundToAir(game)) || game.getBoard().inSpace() || ae.usesWeaponBays()) {
+            if ((target.isAirborne() && !waa.isGroundToAir(game)) || ae.isSpaceborne() || ae.usesWeaponBays()) {
                 // if we added a line to the phase report for calc hits, remove
                 // it now
                 while (vPhaseReport.size() > id) {
@@ -1439,7 +1439,7 @@ public class WeaponHandler implements AttackHandler, Serializable {
         
         boolean isIndirect = wtype.hasModes() && weapon.curMode().equals("Indirect");
         
-        Hex targetHex = game.getBoard().getHex(target.getPosition());
+        Hex targetHex = game.getBoard(ae.getCurrentMap()).getHex(target.getPosition());
         boolean mechPokingOutOfShallowWater = unitGainsPartialCoverFromWater(targetHex, entityTarget);
         
         // a very specific situation where a mech is standing in a height 1 building
@@ -1882,7 +1882,7 @@ public class WeaponHandler implements AttackHandler, Serializable {
         if (entityTarget == null) {
             return nDamage;
         }
-        Hex hex = game.getBoard().getHex(entityTarget.getPosition());
+        Hex hex = game.getBoard(ae.getCurrentMap()).getHex(entityTarget.getPosition());
         boolean hasWoods = hex.containsTerrain(Terrains.WOODS) || hex.containsTerrain(Terrains.JUNGLE);
         boolean isAboveWoods = (entityTarget.relHeight() + 1 > hex.terrainLevel(Terrains.FOLIAGE_ELEV)) 
                 || entityTarget.isAirborne() || !hasWoods;
@@ -1948,15 +1948,15 @@ public class WeaponHandler implements AttackHandler, Serializable {
         // java.util.ArrayList;
         for (Coords curr : coords) {
             // skip hexes not actually on the board
-            if (!game.getBoard().contains(curr)) {
+            if (!game.getBoard(ae.getCurrentMap()).contains(curr)) {
                 continue;
             }
-            Terrain smokeHex = game.getBoard().getHex(curr).getTerrain(Terrains.SMOKE);
-            if (game.getBoard().getHex(curr).containsTerrain(Terrains.SMOKE)
+            Terrain smokeHex = game.getBoard(ae.getCurrentMap()).getHex(curr).getTerrain(Terrains.SMOKE);
+            if (game.getBoard(ae.getCurrentMap()).getHex(curr).containsTerrain(Terrains.SMOKE)
                     && ((smokeHex.getLevel() == SmokeCloud.SMOKE_LI_LIGHT)
                     || (smokeHex.getLevel() == SmokeCloud.SMOKE_LI_HEAVY))) {
 
-                int levit = ((game.getBoard().getHex(curr).getLevel()) + 2);
+                int levit = ((game.getBoard(ae.getCurrentMap()).getHex(curr).getLevel()) + 2);
 
                 // does the hex contain LASER inhibiting smoke?
                 if ((tarLev > atkLev)

@@ -1038,7 +1038,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
         }
         Coords position = entity.getPosition();
         if (!en.isOffBoard() && (position != null)) {
-            Hex hex = game.getBoard().getHex(position);
+            Hex hex = game.getBoard(en.getCurrentMap()).getHex(position);
             if (hex.containsTerrain(Terrains.FIRE)
                 && (hex.getFireTurn() > 0)) {
                 // standing in fire
@@ -2125,7 +2125,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
                 // boolean isCap = wtype.isCapital();
                 int rangeMultiplier = wtype.isCapital() ? 2 : 1;
                 final Game game = unitDisplay.getClientGUI().getClient().getGame();
-                if (game.getBoard().onGround()) {
+                if (entity.getCurrentMap().isGround()) {
                     rangeMultiplier *= 8;
                 }
 

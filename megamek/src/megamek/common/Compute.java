@@ -376,7 +376,7 @@ public class Compute {
     public static Entity stackingViolation(Game game, Entity entering,
             Coords origPosition, int elevation, Coords dest, Entity transport, boolean climbMode) {
         // no stacking violations on the low-atmosphere and space maps
-        if (!game.getBoard().onGround()) {
+        if (!entering.getCurrentMap().isGround()) {
             return null;
         }
 
@@ -407,8 +407,8 @@ public class Compute {
         for (Coords coords : positions) {
             int thisLowStackingLevel = elevation;
             if ((coords != null) && (origPosition != null)) {
-                thisLowStackingLevel = entering.calcElevation(game.getBoard()
-                        .getHex(origPosition), game.getBoard()
+                thisLowStackingLevel = entering.calcElevation(game.getBoard(entering.getCurrentMap())
+                        .getHex(origPosition), game.getBoard(entering.getCurrentMap())
                         .getHex(coords), elevation, climbMode, false);
             }
             int thisHighStackingLevel = thisLowStackingLevel;
@@ -540,8 +540,8 @@ public class Compute {
             boolean isTurning, boolean prevStepIsOnPavement, int srcElevation,
             int destElevation, MoveStep moveStep) {
         final Entity entity = game.getEntity(entityId);
-        final Hex srcHex = game.getBoard().getHex(src);
-        final Hex destHex = game.getBoard().getHex(dest);
+        final Hex srcHex = game.getBoard(entity.getCurrentMap()).getHex(src);
+        final Hex destHex = game.getBoard(entity.getCurrentMap()).getHex(dest);
         final boolean isInfantry = (entity instanceof Infantry);
         int delta_alt = (destElevation + destHex.getLevel())
                         - (srcElevation + srcHex.getLevel());
@@ -669,7 +669,7 @@ public class Compute {
         // need to make a piloting check to avoid damage.
         if ((destElevation < destHex.terrainLevel(Terrains.BLDG_ELEV))
             && !(entity instanceof Infantry)) {
-            Building bldg = game.getBoard().getBuildingAt(dest);
+            Building bldg = game.getBoard(entity.getCurrentMap()).getBuildingAt(dest);
             boolean insideHangar = (null != bldg)
                                    && bldg.isIn(src)
                                    && (bldg.getBldgClass() == Building.HANGAR)
@@ -730,8 +730,8 @@ public class Compute {
     public static boolean isValidDisplacement(Game game, int entityId,
             Coords src, Coords dest) {
         final Entity entity = game.getEntity(entityId);
-        final Hex srcHex = game.getBoard().getHex(src);
-        final Hex destHex = game.getBoard().getHex(dest);
+        final Hex srcHex = game.getBoard(entity.getCurrentMap()).getHex(src);
+        final Hex destHex = game.getBoard(entity.getCurrentMap()).getHex(dest);
         final ArrayList<Coords> intervening = Coords.intervening(src, dest);
         final int direction = src.direction(dest);
 
@@ -750,7 +750,7 @@ public class Compute {
         }
 
         // an easy check
-        if (!game.getBoard().contains(dest)) {
+        if (!game.getBoard(entity.getCurrentMap()).contains(dest)) {
             if (game.getOptions().booleanOption(OptionsConstants.BASE_PUSH_OFF_BOARD)) {
                 return true;
             }
@@ -770,10 +770,10 @@ public class Compute {
         // can't go up more levels than normally possible
         for (Coords c : intervening) {
             // ignore off-board hexes
-            if (!game.getBoard().contains(c)) {
+            if (!game.getBoard(entity.getCurrentMap()).contains(c)) {
                 continue;
             }
-            final Hex hex = game.getBoard().getHex(c);
+            final Hex hex = game.getBoard(entity.getCurrentMap()).getHex(c);
             int change = entity.elevationOccupied(hex)
                          - entity.elevationOccupied(srcHex);
             if (change > entity.getMaxElevationChange()) {
@@ -843,7 +843,7 @@ public class Compute {
         int highestElev = Integer.MIN_VALUE;
         Coords highest = null;
         int srcElevation =
-                entity.elevationOccupied(game.getBoard().getHex(src));
+                entity.elevationOccupied(game.getBoard(entity.getCurrentMap()).getHex(src));
 
         // check the surrounding hexes, nearest to the original direction first
         int[] offsets = {0, 1, 5, 2, 4, 3};
@@ -851,14 +851,14 @@ public class Compute {
         for (int offset : offsets) {
             Coords dest = src.translated((direction + offset) % 6);
             if (Compute.isValidDisplacement(game, entityId, src, dest)
-                && game.getBoard().contains(dest)) {
+                && game.getBoard(entity.getCurrentMap()).contains(dest)) {
                 Iterator<Entity> entities = game.getFriendlyEntities(dest,
                         game.getEntity(entityId));
                 if (entities.hasNext()) {
                     // friendly unit here, try next hex
                     continue;
                 }
-                Hex hex = game.getBoard().getHex(dest);
+                Hex hex = game.getBoard(entity.getCurrentMap()).getHex(dest);
                 int elevation = entity.elevationOccupied(hex);
                 if (elevation > highestElev) {
                     highestElev = elevation;
@@ -878,8 +878,8 @@ public class Compute {
         for (int offset : offsets) {
             Coords dest = src.translated((direction + offset) % 6);
             if (Compute.isValidDisplacement(game, entityId, src, dest)
-                && game.getBoard().contains(dest)) {
-                Hex hex = game.getBoard().getHex(dest);
+                && game.getBoard(entity.getCurrentMap()).contains(dest)) {
+                Hex hex = game.getBoard(entity.getCurrentMap()).getHex(dest);
                 int elevation = entity.elevationOccupied(hex);
                 if (elevation > highestElev) {
                     highestElev = elevation;
@@ -901,11 +901,11 @@ public class Compute {
      */
     public static Coords getMissedChargeDisplacement(Game game, int entityId,
                                                      Coords src, int direction) {
+        Entity entity = game.getEntity(entityId);
         Coords first = src.translated((direction + 1) % 6);
         Coords second = src.translated((direction + 5) % 6);
-        Hex firstHex = game.getBoard().getHex(first);
-        Hex secondHex = game.getBoard().getHex(second);
-        Entity entity = game.getEntity(entityId);
+        Hex firstHex = game.getBoard(entity.getCurrentMap()).getHex(first);
+        Hex secondHex = game.getBoard(entity.getCurrentMap()).getHex(second);
 
         if ((firstHex == null) || (secondHex == null)) {
             // leave it, will be handled
@@ -927,11 +927,11 @@ public class Compute {
 
         if (Compute.isValidDisplacement(game, entityId, src,
                                         src.direction(first))
-            && game.getBoard().contains(first)) {
+            && game.getBoard(entity.getCurrentMap()).contains(first)) {
             return first;
         } else if (Compute.isValidDisplacement(game, entityId, src,
                                                src.direction(second))
-                   && game.getBoard().contains(second)) {
+                   && game.getBoard(entity.getCurrentMap()).contains(second)) {
             return second;
         } else {
             return src;
@@ -1163,7 +1163,7 @@ public class Compute {
         }
 
         // is water involved?
-        Hex targHex = game.getBoard().getHex(target.getPosition());
+        Hex targHex = game.getBoard(ae.getCurrentMap()).getHex(target.getPosition());
         int targTop = target.relHeight();
         int targBottom = target.getElevation();
 
@@ -1253,7 +1253,7 @@ public class Compute {
 
         // if Aero then adjust to standard ranges
         if (ae.isAero() && (ae.isAirborne()
-            || (ae.usesWeaponBays() && game.getBoard().onGround()))) {
+            || (ae.usesWeaponBays() && game.getBoard(ae.getCurrentMap()).onGround()))) {
             weaponRanges = wtype.getATRanges();
         }
         // And if you're using bearings-only capital missiles, update the extreme range
@@ -1309,7 +1309,7 @@ public class Compute {
         int maxRange = wtype.getMaxRange(weapon);
 
         // if aero and greater than max range then swith to range_out
-        if ((ae.isAirborne() || (ae.usesWeaponBays() && game.getBoard()
+        if ((ae.isAirborne() || (ae.usesWeaponBays() && game.getBoard(ae.getCurrentMap())
                 .onGround())) && (range > maxRange)) {
             range = RangeType.RANGE_OUT;
         }
@@ -1727,14 +1727,14 @@ public class Compute {
             // This is totally crazy, but I don't see how else to do it. Use
             // the unofficial
             // "grounded dropships use individual weapons" for sanity.
-            if (attacker.usesWeaponBays() && game.getBoard().onGround()) {
+            if (attacker.usesWeaponBays() && attacker.getCurrentMap().isGround()) {
                 distance = (int) Math.ceil(distance / 16.0);
             }
         }
 
         // if this is an air-to-air attack on the ground map, then divide
         // distance by 16
-        if (Compute.isAirToAir(attacker, target) && game.getBoard().onGround() && !useGroundDistance) {
+        if (Compute.isAirToAir(attacker, target) && attacker.getCurrentMap().isGround() && !useGroundDistance) {
             distance = (int) Math.ceil(distance / 16.0);
         }
 
@@ -1758,7 +1758,7 @@ public class Compute {
         }
 
         if (Compute.isGroundToAir(attacker, target)) {
-            if (attacker.usesWeaponBays() && game.getBoard().onGround()) {
+            if (attacker.usesWeaponBays() && attacker.getCurrentMap().isGround()) {
                 distance += (target.getAltitude());
             } else {
                 distance += (2 * target.getAltitude());
@@ -2488,7 +2488,7 @@ public class Compute {
 
         if (attacker.hasAbility(OptionsConstants.PILOT_TM_FROGMAN)
                 && ((attacker instanceof Mech) || (attacker instanceof Protomech))
-                && (game.getBoard().getHex(attacker.getPosition()).terrainLevel(Terrains.WATER) > 1)) {
+                && (game.getBoard(attacker.getCurrentMap()).getHex(attacker.getPosition()).terrainLevel(Terrains.WATER) > 1)) {
             toHit.addModifier(-1, "Frogman");
         }
 
@@ -2635,7 +2635,7 @@ public class Compute {
      */
     public static ToHitData getAttackerTerrainModifier(Game game, int entityId) {
         final Entity attacker = game.getEntity(entityId);
-        final Hex hex = game.getBoard().getHex(attacker.getPosition());
+        final Hex hex = game.getBoard(attacker.getCurrentMap()).getHex(attacker.getPosition());
 
         ToHitData toHit = new ToHitData();
 
@@ -3814,7 +3814,7 @@ public class Compute {
         // aeros in the same hex in space may still be able to fire at one
         // another. First I need to translate
         // their positions to see who was further back
-        if (game.getBoard().inSpace()
+        if (ae.isSpaceborne()
             && ae.getPosition().equals(t.getPosition())
             && ae.isAero() && t.isAero()) {
             int moveSort = shouldMoveBackHex(ae, (Entity) t);
@@ -4184,7 +4184,7 @@ public class Compute {
         //Use firing solution if Advanced Sensors is on
         if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ADVANCED_SENSORS)
                 && target.getTargetType() == Targetable.TYPE_ENTITY
-                && game.getBoard().inSpace()) {
+                && ae.isSpaceborne()) {
             Entity te = (Entity) target;
             return hasAnyFiringSolution(game, te.getId());
         }
@@ -4727,7 +4727,7 @@ public class Compute {
         //For Space games with this option, return something different
         if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ADVANCED_SENSORS)
                 && target.getTargetType() == Targetable.TYPE_ENTITY
-                && game.getBoard().inSpace()) {
+                && ae.isSpaceborne()) {
             Entity te = (Entity) target;
             return hasSensorContact(ae, te.getId());
         }
@@ -4773,7 +4773,7 @@ public class Compute {
         // I purposely left this calculation out of visual spotting, so we should do some testing with this and
         // see if it's errata-worthy. The idea is that you'll boost sensor range to help find an enemy aero on the map
         // but still won't be able to see it and shoot at it beyond normal visual conditions.
-        if (isAirToAir(ae, target) && game.getBoard().onGround()) {
+        if (isAirToAir(ae, target) && ae.getCurrentMap().isGround()) {
             distance = (int) Math.ceil(distance / 16.0);
         }
         return (distance > minSensorRange) && (distance <= maxSensorRange);
@@ -5257,7 +5257,7 @@ public class Compute {
         if ((ae == null) || (a == null) || (b == null)) {
             return 0;
         }
-        Board board = ae.getGame().getBoard();
+        Board board = ae.getGame().getBoard(ae.getCurrentMap());
         if (board.inSpace()) {
             return 0;
         }
@@ -5285,7 +5285,7 @@ public class Compute {
      * return the highest target roll. -1 if no Ghost Targets
      */
     public static int getGhostTargetNumber(Entity ae, Coords a, Coords b) {
-        if (ae.getGame().getBoard().inSpace()) {
+        if (ae.isSpaceborne()) {
             // ghost targets don't work in space
             return 0;
         }
@@ -5496,11 +5496,9 @@ public class Compute {
             reason.append("the attacker is not facing the direction of travel");
         }
         // attacker and defender must both be in space hex
-        else if (!game.getBoard().getHex(attacker.getPosition())
-                      .containsTerrain(Terrains.SPACE)) {
+        else if (!attacker.isSpaceborne()) {
             reason.append("attacker not in space hex");
-        } else if (!game.getBoard().getHex(defender.getPosition())
-                        .containsTerrain(Terrains.SPACE)) {
+        } else if (!defender.isSpaceborne()) {
             reason.append("defender not in space hex");
         } else if (!canTarget) {
             reason.append("defender is not in hex passed through by attacker this turn");
@@ -5997,9 +5995,9 @@ public class Compute {
             return false;
         }
 
-        Building attkBldg = game.getBoard().getBuildingAt(
+        Building attkBldg = game.getBoard(attacker.getCurrentMap()).getBuildingAt(
                 attacker.getPosition());
-        Building targBldg = game.getBoard().getBuildingAt(target.getPosition());
+        Building targBldg = game.getBoard(attacker.getCurrentMap()).getBuildingAt(target.getPosition());
 
         return attkBldg.equals(targBldg);
     }
@@ -6819,7 +6817,7 @@ public class Compute {
         // the rules don't say that the unit must be facing loader
         // so lets take the ring
         for (Coords c : pos.allAdjacent()) {
-            Hex hex = game.getBoard().getHex(c);
+            Hex hex = game.getBoard(en.getCurrentMap()).getHex(c);
             if (null == hex) {
                 continue;
             }
@@ -7186,7 +7184,7 @@ public class Compute {
             return false;
         }
         // are we in space?
-        if (game.getBoard().inSpace()) {
+        if (en.isSpaceborne()) {
             return false;
         }
         // aerodyne's will operate like spheroids in vacuum
@@ -7202,7 +7200,7 @@ public class Compute {
      * Worker function that checks if an indirect attack is impossible for the given passed-in arguments
      */
     public static boolean indirectAttackImpossible(Game game, Entity ae, Targetable target, WeaponType wtype, Mounted weapon) {        
-        boolean isLandedSpheroid = ae.isAero() && ((IAero) ae).isSpheroid() && (ae.getAltitude() == 0) && game.getBoard().onGround();
+        boolean isLandedSpheroid = ae.isAero() && ((IAero) ae).isSpheroid() && (ae.getAltitude() == 0) && ae.getCurrentMap().isGround();
         int altDif = target.getAltitude() - ae.getAltitude();
         boolean noseWeaponAimedAtGroundTarget = (weapon != null) && (weapon.getLocation() == Aero.LOC_NOSE) && (altDif < 1);
         

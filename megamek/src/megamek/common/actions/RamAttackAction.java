@@ -94,8 +94,8 @@ public class RamAttackAction extends AbstractAttackAction {
                         "A friendly unit can never be the target of a direct attack.");
             }
         }
-        Hex attHex = game.getBoard().getHex(src);
-        Hex targHex = game.getBoard().getHex(target.getPosition());
+        Hex attHex = game.getBoard(ae.getCurrentMap()).getHex(src);
+        Hex targHex = game.getBoard(ae.getCurrentMap()).getHex(target.getPosition());
         final int attackerElevation = elevation + attHex.getLevel();
         final int targetElevation = target.getElevation() + targHex.getLevel();
         ToHitData toHit;

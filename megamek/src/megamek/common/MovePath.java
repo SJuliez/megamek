@@ -151,7 +151,7 @@ public class MovePath implements Cloneable, Serializable {
             sb.append(' ');
         }
 
-        if (!getGame().getBoard().contains(this.getFinalCoords())) {
+        if (!getGame().getBoard(entity.getCurrentMap()).contains(this.getFinalCoords())) {
             sb.append("OUT!");
         }
 
@@ -310,7 +310,7 @@ public class MovePath implements Cloneable, Serializable {
 
         // jumping into heavy woods is danger
         if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_PSR_JUMP_HEAVY_WOODS)) {
-            Hex hex = game.getBoard().getHex(step.getPosition());
+            Hex hex = game.getBoard(entity.getCurrentMap()).getHex(step.getPosition());
             if ((hex != null) && isJumping() && step.isEndPos(this)) {
                 PilotingRollData psr = entity.checkLandingInHeavyWoods(step.getMovementType(false), hex);
                 if (psr.getValue() != PilotingRollData.CHECK_FALSE) {
@@ -433,7 +433,7 @@ public class MovePath implements Cloneable, Serializable {
         }
 
         // If JumpShips turn, they can't do anything else
-        if (game.getBoard().inSpace()
+        if (entity.isSpaceborne()
                 && (entity instanceof Jumpship)
                 && !(entity instanceof Warship)
                 && !step.isFirstStep()
@@ -480,8 +480,8 @@ public class MovePath implements Cloneable, Serializable {
             // and we are not exceeding the maximum five hexes.
             if (last.isStrafingStep()) {
                 if (step.getFacing() != last.getFacing()
-                        || (step.getElevation() + getGame().getBoard().getHex(step.getPosition()).floor()
-                            != last.getElevation() + getGame().getBoard().getHex(last.getPosition()).floor())
+                        || (step.getElevation() + getGame().getBoard(entity.getCurrentMap()).getHex(step.getPosition()).floor()
+                            != last.getElevation() + getGame().getBoard(entity.getCurrentMap()).getHex(last.getPosition()).floor())
                         || steps.stream().filter(MoveStep::isStrafingStep).count() > 5) {
                     step.setMovementType(EntityMovementType.MOVE_ILLEGAL);
                     return;
@@ -710,16 +710,16 @@ public class MovePath implements Cloneable, Serializable {
         // a) level 1 level higher than your hex level
         // b) building/bridge ceiling 1 level higher than your hex level (?)
         if (getEntity() instanceof Mech) {
-            boolean onBoard = getGame().getBoard().contains(coords);
+            boolean onBoard = getGame().getBoard(entity.getCurrentMap()).contains(coords);
             Coords nextPosition = coords.translated(facing);
-            boolean nextHexOnBoard = getGame().getBoard().contains(nextPosition);
+            boolean nextHexOnBoard = getGame().getBoard(entity.getCurrentMap()).contains(nextPosition);
 
             if (!onBoard || !nextHexOnBoard) {
                 return false;
             }
 
-            Hex nextHex = getGame().getBoard().getHex(nextPosition);
-            Hex currentHex = getGame().getBoard().getHex(coords);
+            Hex nextHex = getGame().getBoard(entity.getCurrentMap()).getHex(nextPosition);
+            Hex currentHex = getGame().getBoard(entity.getCurrentMap()).getHex(coords);
 
             int curHexLevel = currentHex.containsAnyTerrainOf(Terrains.BLDG_ELEV, Terrains.BRIDGE_ELEV) ?
                     currentHex.ceiling() : currentHex.floor();
@@ -897,7 +897,7 @@ public class MovePath implements Cloneable, Serializable {
         if (getLastStep() != null) {
             return getLastStep().getClearance();
         }
-        Hex hex = entity.getGame().getBoard().getHex(getEntity().getPosition());
+        Hex hex = entity.getGame().getBoard(entity.getCurrentMap()).getHex(getEntity().getPosition());
         if (hex.containsTerrain(Terrains.BLDG_ELEV)) {
             return getEntity().getElevation() - hex.terrainLevel(Terrains.BLDG_ELEV);
         }
@@ -913,7 +913,7 @@ public class MovePath implements Cloneable, Serializable {
         int maxElev = 0;
         for (MoveStep step : steps) {
             maxElev = Math.max(maxElev,
-                    getGame().getBoard().getHex(step.getPosition()).getLevel());
+                    getGame().getBoard(entity.getCurrentMap()).getHex(step.getPosition()).getLevel());
         }
         return maxElev;
     }
@@ -1268,7 +1268,7 @@ public class MovePath implements Cloneable, Serializable {
 
     public boolean isMoveLegal() {
         // Moves which end up off of the board are not legal.
-        if (!getGame().getBoard().contains(getFinalCoords())) {
+        if (!getGame().getBoard(entity.getCurrentMap()).contains(getFinalCoords())) {
             return false;
         }
 
@@ -1585,7 +1585,7 @@ public class MovePath implements Cloneable, Serializable {
         Coords highestCoords = null;
         int highestElevation = 0;
         for (MoveStep step : steps) {
-            if (getGame().getBoard().getHex(step.getPosition()).getLevel() > highestElevation) {
+            if (getGame().getBoard(entity.getCurrentMap()).getHex(step.getPosition()).getLevel() > highestElevation) {
                 highestElevation = step.getElevation();
                 highestCoords = step.getPosition();
             }
@@ -1600,7 +1600,7 @@ public class MovePath implements Cloneable, Serializable {
      */
     public int getJumpMaxElevationChange() {
         return getMaxElevation() -
-               getGame().getBoard().getHex(getFinalCoords()).getLevel();
+               getGame().getBoard(entity.getCurrentMap()).getHex(getFinalCoords()).getLevel();
     }
 
     /**
@@ -1849,7 +1849,7 @@ public class MovePath implements Cloneable, Serializable {
      * @return
      */
     public boolean nextForwardStepOffBoard() {
-        return !game.getBoard().contains(getFinalCoords().translated(getFinalFacing()));
+        return !game.getBoard(entity.getCurrentMap()).contains(getFinalCoords().translated(getFinalFacing()));
     }
 
     /**

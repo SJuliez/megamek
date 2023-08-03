@@ -1068,7 +1068,7 @@ public abstract class Mech extends Entity {
 
         if (!mpCalculationSetting.ignoreSubmergedJumpJets && hasOccupiedHex()
                 && !isJumpBooster && getElevation() < 0) {
-            int waterLevel = game.getBoard().getHex(getPosition()).terrainLevel(Terrains.WATER);
+            int waterLevel = game.getBoard(currentMap).getHex(getPosition()).terrainLevel(Terrains.WATER);
             if (waterLevel > 1) {
                 return 0;
             } else if (waterLevel == 1) {
@@ -1592,7 +1592,7 @@ public abstract class Mech extends Entity {
             return 0;
         }
 
-        Hex curHex = game.getBoard().getHex(getPosition());
+        Hex curHex = game.getBoard(currentMap).getHex(getPosition());
         // are we even in water? is it depth 1+
         if ((curHex.terrainLevel(Terrains.WATER) <= 0) || (getElevation() >= 0)) {
             return 0;
@@ -4049,7 +4049,7 @@ public abstract class Mech extends Entity {
 
     @Override
     public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getBoard(getCurrentMap()).getHex(c);
         if (hex.containsTerrain(Terrains.IMPASSABLE)) {
             return true;
         }

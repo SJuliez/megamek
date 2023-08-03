@@ -97,7 +97,7 @@ public class VGLWeaponHandler extends AmmoWeaponHandler {
         
         
         for (Coords c : affectedCoords) {
-            Building bldg = game.getBoard().getBuildingAt(c);
+            Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(c);
             if (atype.getMunitionType() == AmmoType.M_SMOKE) {
                 gameManager.deliverSmokeGrenade(c, vPhaseReport);
             } else if (atype.getMunitionType() == AmmoType.M_CHAFF) {
@@ -119,7 +119,7 @@ public class VGLWeaponHandler extends AmmoWeaponHandler {
                 vPhaseReport.addAll(dmgReports);
                 // If there's a building, delivery an inferno to it
                 if (bldg != null) {
-                    grenadeTarget = new BuildingTarget(c, game.getBoard(),
+                    grenadeTarget = new BuildingTarget(c, game.getBoard(ae.getCurrentMap()),
                             Targetable.TYPE_BLDG_IGNITE);
                     dmgReports = gameManager.deliverInfernoMissiles(ae,
                             grenadeTarget, 1);

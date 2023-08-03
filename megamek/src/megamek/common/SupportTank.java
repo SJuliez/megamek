@@ -171,7 +171,7 @@ public class SupportTank extends Tank {
 
     @Override
     public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getBoard(currentMap).getHex(c);
         if (hex.containsTerrain(Terrains.IMPASSABLE)) {
             return true;
         }
@@ -228,11 +228,8 @@ public class SupportTank extends Tank {
             case SUBMARINE:
                 return (hex.terrainLevel(Terrains.WATER) <= 0);
             case WIGE:
-                return (hex.containsTerrain(Terrains.WOODS) || (hex
-                        .containsTerrain(Terrains.BUILDING)))
-                        && !(currElevation > hex
-                                .maxTerrainFeatureElevation(game.getBoard()
-                                        .inAtmosphere()));
+                return (hex.containsTerrain(Terrains.WOODS) || (hex.containsTerrain(Terrains.BUILDING)))
+                        && !(currElevation > hex.maxTerrainFeatureElevation(currentMap.isLowAtmo()));
             default:
                 return false;
         }

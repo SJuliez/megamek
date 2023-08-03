@@ -339,7 +339,7 @@ public class CapitalMissileBearingsOnlyHandler extends AmmoBayWeaponHandler {
                 toHit.setSideTable(entityTarget.sideTable(aaa.getOldTargetCoords()));
             }    
         }
-        if (target.isAirborne() || game.getBoard().inSpace() || ae.usesWeaponBays()) {
+        if (target.isAirborne() || ae.getCurrentMap().isSpace() || ae.usesWeaponBays()) {
             // if we added a line to the phase report for calc hits, remove
             // it now
             while (vPhaseReport.size() > id) {
@@ -356,7 +356,7 @@ public class CapitalMissileBearingsOnlyHandler extends AmmoBayWeaponHandler {
         
         // Bearings-only missiles shouldn't be able to target buildings, being space-only weapons
         // but if these two things aren't defined, handleEntityDamage() doesn't work.
-        Building bldg = game.getBoard().getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
         int bldgAbsorbs = 0;
 
         // We have to adjust the reports on a miss, so they line up
@@ -606,7 +606,7 @@ public class CapitalMissileBearingsOnlyHandler extends AmmoBayWeaponHandler {
         }
     
         // is the target at zero velocity
-        if ((targetship.getCurrentVelocity() == 0) && !(targetship.isSpheroid() && !game.getBoard().inSpace())) {
+        if ((targetship.getCurrentVelocity() == 0) && !(targetship.isSpheroid() && !ae.getCurrentMap().isSpace())) {
             toHit.addModifier(-2, "target is not moving");
         }
     
@@ -619,7 +619,7 @@ public class CapitalMissileBearingsOnlyHandler extends AmmoBayWeaponHandler {
         }
    
         if (target.isAirborne() && target.isAero()) {
-            if (!(((IAero) target).isSpheroid() && !game.getBoard().inSpace())) {
+            if (!(((IAero) target).isSpheroid() && !ae.getCurrentMap().isSpace())) {
                 // get mods for direction of attack
                 int side = toHit.getSideTable();
                 // if this is an aero attack using advanced movement rules then
@@ -638,7 +638,7 @@ public class CapitalMissileBearingsOnlyHandler extends AmmoBayWeaponHandler {
         }
             
         // Space ECM
-        if (game.getBoard().inSpace() && game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
+        if (ae.getCurrentMap().isSpace() && game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
             int ecm = ComputeECM.getLargeCraftECM(ae, targetCoords, target.getPosition());
             ecm = Math.min(4, ecm);
             if (ecm > 0) {

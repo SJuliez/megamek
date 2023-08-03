@@ -489,10 +489,10 @@ public class Infantry extends Entity {
     @Override
     public boolean isLocationProhibited(Coords c, int currElevation) {
         // Coords off the board aren't legal
-        if (!game.getBoard().contains(c)) {
+        if (!game.getBoard(currentMap).contains(c)) {
             return true;
         }
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getBoard(currentMap).getHex(c);
         // Taharqa: waiting to hear back from Welshie but I am going to assume that units pulling artillery
         // should be treated as wheeled rather than motorized because otherwise mechanized units face fewer
         // terrain restrictions when pulling field artillery

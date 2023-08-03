@@ -955,7 +955,7 @@ public class Aero extends Entity implements IAero, IBomber {
         }
 
         // if in atmosphere, then halve next turn's velocity
-        if (!game.getBoard().inSpace() && isDeployed() && (roundNumber > 0)) {
+        if (!isSpaceborne() && isDeployed() && (roundNumber > 0)) {
             setNextVelocity((int) Math.floor(getNextVelocity() / 2.0));
         }
 
@@ -1363,13 +1363,13 @@ public class Aero extends Entity implements IAero, IBomber {
         }
         int vel = getCurrentVelocity();
         int vmod = vel - (2 * getWalkMP());
-        if (!getGame().getBoard().inSpace() && (vmod > 0)) {
+        if (!isSpaceborne() && (vmod > 0)) {
             prd.addModifier(vmod, "Velocity greater than 2x safe thrust");
         }
 
         int atmoCond = game.getPlanetaryConditions().getAtmosphere();
         // add in atmospheric effects later
-        if (!(game.getBoard().inSpace() || (atmoCond == PlanetaryConditions.ATMO_VACUUM)) && isAirborne()) {
+        if (!(isSpaceborne() || (atmoCond == PlanetaryConditions.ATMO_VACUUM)) && isAirborne()) {
             prd.addModifier(+2, "Atmospheric operations");
 
             // check type
@@ -1406,10 +1406,10 @@ public class Aero extends Entity implements IAero, IBomber {
         }
 
         // quirks?
-        if (hasQuirk(OptionsConstants.QUIRK_POS_ATMO_FLYER) && !game.getBoard().inSpace()) {
+        if (hasQuirk(OptionsConstants.QUIRK_POS_ATMO_FLYER) && !isSpaceborne()) {
             prd.addModifier(-1, "atmospheric flyer");
         }
-        if (hasQuirk(OptionsConstants.QUIRK_NEG_ATMO_INSTABILITY) && !game.getBoard().inSpace()) {
+        if (hasQuirk(OptionsConstants.QUIRK_NEG_ATMO_INSTABILITY) && !isSpaceborne()) {
             prd.addModifier(+1, "atmospheric flight instability");
         }
         if (hasQuirk(OptionsConstants.QUIRK_NEG_CRAMPED_COCKPIT) && !hasAbility(OptionsConstants.UNOFF_SMALL_PILOT)) {
@@ -1789,7 +1789,7 @@ public class Aero extends Entity implements IAero, IBomber {
     @Override
     public int sideTableRam(Coords src) {
         int side = super.sideTableRam(src);
-        if (game.useVectorMove() && game.getBoard().inSpace()) {
+        if (game.useVectorMove() && isSpaceborne()) {
             int newside = chooseSideRam(src);
             if (newside != -1) {
                 side = newside;
@@ -1987,7 +1987,7 @@ public class Aero extends Entity implements IAero, IBomber {
             return false;
         }
 
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getBoard(getCurrentMap()).getHex(c);
 
         // Additional restrictions for hidden units
         if (isHidden()) {
@@ -2184,7 +2184,7 @@ public class Aero extends Entity implements IAero, IBomber {
     @Override
     public int getECMRange() {
         if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)
-                || !game.getBoard().inSpace()) {
+                || !isSpaceborne()) {
             return super.getECMRange();
         }
         return Math.min(super.getECMRange(), 0);
@@ -2196,7 +2196,7 @@ public class Aero extends Entity implements IAero, IBomber {
     @Override
     public double getECCMStrength() {
         if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)
-                || !game.getBoard().inSpace()) {
+                || !isSpaceborne()) {
             return super.getECCMStrength();
         }
         if (hasActiveECCM()) {
@@ -2399,7 +2399,7 @@ public class Aero extends Entity implements IAero, IBomber {
 
     @Override
     public int getElevation() {
-        if ((game != null) && game.getBoard().inSpace()) {
+        if ((game != null) && isSpaceborne()) {
             return 0;
         }
         // Altitude is not the same as elevation. If an aero is at 0 altitude, then it is grounded

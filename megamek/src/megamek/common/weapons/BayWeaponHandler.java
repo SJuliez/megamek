@@ -119,7 +119,7 @@ public class BayWeaponHandler extends WeaponHandler {
                 && (target.getTargetType() != Targetable.TYPE_HEX_CLEAR 
                 &&  target.getTargetType() != Targetable.TYPE_HEX_IGNITE
                 &&  target.getTargetType() != Targetable.TYPE_BUILDING)) 
-                || game.getBoard().inSpace()
+                || ae.isSpaceborne()
                 // Capital missile launchers should return the root handler...
                 || (wtype.getAtClass() == (WeaponType.CLASS_CAPITAL_MISSILE))
                 || (wtype.getAtClass() == (WeaponType.CLASS_AR10))) {
@@ -142,7 +142,7 @@ public class BayWeaponHandler extends WeaponHandler {
         }
 
         // Which building takes the damage?
-        Building bldg = game.getBoard().getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
         String number = nweapons > 1 ? " (" + nweapons + ")" : "";
 
         // Report weapon attack and its to-hit value.
@@ -355,7 +355,7 @@ public class BayWeaponHandler extends WeaponHandler {
             ae.setLastTargetDisplayName(entityTarget.getDisplayName());
         }
         // Which building takes the damage?
-        Building bldg = game.getBoard().getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
         // Report weapon attack and its to-hit value.
         Report r = new Report(3115);
         r.indent();

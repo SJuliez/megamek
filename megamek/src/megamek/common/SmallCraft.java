@@ -337,7 +337,7 @@ public class SmallCraft extends Aero {
         // special rules for spheroids in atmosphere
         // http://www.classicbattletech.com/forums/index.php/topic,54077.0.html
         if (isSpheroid() && table != ToHitData.HIT_SPHEROID_CRASH && 
-                !game.getBoard().inSpace()) {
+                !isSpaceborne()) {
             int preroll = Compute.d6(1);
             if ((table == ToHitData.HIT_ABOVE) && (preroll < 4)) {
                 side = ToHitData.SIDE_FRONT;
@@ -614,7 +614,7 @@ public class SmallCraft extends Aero {
                     arc = Compute.ARC_360;
             }
         } else {
-            if ((game != null) && game.getBoard().inSpace()) {
+            if ((game != null) && isSpaceborne()) {
                 switch (mounted.getLocation()) {
                     case LOC_NOSE:
                         if (mounted.isInWaypointLaunchMode()) {
@@ -826,7 +826,7 @@ public class SmallCraft extends Aero {
      */
     @Override
     public boolean hasActiveECM() {
-        if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM) || !game.getBoard().inSpace()) {
+        if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM) || !isSpaceborne()) {
             return super.hasActiveECM();
         }
         return getECMRange() >= 0;
@@ -841,7 +841,7 @@ public class SmallCraft extends Aero {
     @Override
     public int getECMRange() {
         if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)
-                || !game.getBoard().inSpace()) {
+                || !isSpaceborne()) {
             return super.getECMRange();
         }
         if (!isMilitary()) {

@@ -166,7 +166,7 @@ public class Dropship extends SmallCraft {
 
     @Override
     public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getBoard(getCurrentMap()).getHex(c);
         if (isAirborne()) {
             return hex.containsTerrain(Terrains.IMPASSABLE);
         }
@@ -179,7 +179,7 @@ public class Dropship extends SmallCraft {
         elevations.put(hex.getLevel(), 1);
         for (int dir = 0; dir < 6; dir++) {
             Coords secondaryCoord = c.translated(dir);
-            Hex secondaryHex = game.getBoard().getHex(secondaryCoord);
+            Hex secondaryHex = game.getBoard(getCurrentMap()).getHex(secondaryCoord);
             if (secondaryHex == null) {
                 // Don't allow landed dropships to hang off the board
                 isProhibited = true;
@@ -232,7 +232,7 @@ public class Dropship extends SmallCraft {
         int numAdjacencies = 0;
         int centralElev = hex.getLevel();
         int secondElev = centralElev;
-        Hex currHex = game.getBoard().getHex(c.translated(5));
+        Hex currHex = game.getBoard(getCurrentMap()).getHex(c.translated(5));
         // Ensure we aren't trying to deploy off the board
         if (currHex == null) {
             return true;
@@ -241,7 +241,7 @@ public class Dropship extends SmallCraft {
             if (currHex.getLevel() != centralElev) {
                 secondElev = currHex.getLevel();
             }
-            Hex nextHex = game.getBoard().getHex(c.translated(dir));
+            Hex nextHex = game.getBoard(getCurrentMap()).getHex(c.translated(dir));
             // Ensure we aren't trying to deploy off the board
             if (nextHex == null) {
                 return true;
@@ -433,7 +433,7 @@ public class Dropship extends SmallCraft {
     @Override
     public boolean hasActiveECM() {
         if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)
-                || !game.getBoard().inSpace()) {
+                || !isSpaceborne()) {
             return super.hasActiveECM();
         }
         return getECMRange() > Entity.NONE;
@@ -448,7 +448,7 @@ public class Dropship extends SmallCraft {
     @Override
     public int getECMRange() {
         if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)
-                || !game.getBoard().inSpace()) {
+                || !isSpaceborne()) {
             return super.getECMRange();
         }
         if (!isMilitary()) {
@@ -484,7 +484,7 @@ public class Dropship extends SmallCraft {
     public void setPosition(Coords position) {
         HashSet<Coords> oldPositions = getOccupiedCoords();
         super.setPosition(position, false);
-        if ((getAltitude() == 0) && (null != game) && !game.getBoard().inSpace() && (position != null)) {
+        if ((getAltitude() == 0) && (null != game) && !isSpaceborne() && (position != null)) {
             secondaryPositions.put(0, position);
             secondaryPositions.put(1, position.translated(getFacing()));
             secondaryPositions.put(2, position.translated((getFacing() + 1) % 6));
@@ -501,7 +501,7 @@ public class Dropship extends SmallCraft {
     @Override
     public void setAltitude(int altitude) {
         super.setAltitude(altitude);
-        if ((getAltitude() == 0) && (game != null) && !game.getBoard().inSpace() && (getPosition() != null)) {
+        if ((getAltitude() == 0) && (game != null) && !isSpaceborne() && (getPosition() != null)) {
             secondaryPositions.put(0, getPosition());
             secondaryPositions.put(1, getPosition().translated(getFacing()));
             secondaryPositions.put(2, getPosition().translated((getFacing() + 1) % 6));
@@ -538,8 +538,7 @@ public class Dropship extends SmallCraft {
             positions.add(getPosition().translated(i));
         }
         for (Coords pos : positions) {
-            Hex hex = game.getBoard().getHex(getPosition());
-            hex = game.getBoard().getHex(pos);
+            Hex hex = game.getBoard(getCurrentMap()).getHex(pos);
             // if the hex is null, then we are offboard. Don't let units
             // land offboard.
             if (null == hex) {

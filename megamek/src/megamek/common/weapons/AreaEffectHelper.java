@@ -122,7 +122,7 @@ public class AreaEffectHelper {
                                             Vector<Report> vPhaseReport, GameManager gameManager) {
         Game game = attacker.getGame();
         // sanity check: if this attack is happening in vacuum through very thin atmo, add that to the phase report and terminate early 
-        boolean notEnoughAtmo = game.getBoard().inSpace() ||
+        boolean notEnoughAtmo = attacker.getCurrentMap().isSpace() ||
                 game.getPlanetaryConditions().getAtmosphere() <= PlanetaryConditions.ATMO_TRACE;
         
         if (notEnoughAtmo) {
@@ -178,7 +178,7 @@ public class AreaEffectHelper {
                                             Vector<Report> vPhaseReport, GameManager gameManager) {
         Game game = attacker.getGame();
         // sanity check: if this attack is happening in vacuum through very thin atmo, add that to the phase report and terminate early 
-        boolean notEnoughAtmo = game.getBoard().inSpace() ||
+        boolean notEnoughAtmo = attacker.getCurrentMap().isSpace() ||
                 game.getPlanetaryConditions().getAtmosphere() <= PlanetaryConditions.ATMO_TRACE;
         
         if (notEnoughAtmo) {

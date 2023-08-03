@@ -427,7 +427,7 @@ public class CLIATMHandler extends ATMHandler {
                     && ae.getPosition().distance(target.getPosition()) <= 1;
 
             // Which building takes the damage?
-            Building bldg = game.getBoard().getBuildingAt(target.getPosition());
+            Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
 
             // Report weapon attack and its to-hit value.
             Report r = new Report(3115);
@@ -550,7 +550,7 @@ public class CLIATMHandler extends ATMHandler {
             }
 
             // Which building takes the damage?
-            Building bldg = game.getBoard().getBuildingAt(target.getPosition());
+            Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
             String number = nweapons > 1 ? " (" + nweapons + ")" : "";
             // Report weapon attack and its to-hit value.
             Report r = new Report(3115);
@@ -706,7 +706,7 @@ public class CLIATMHandler extends ATMHandler {
 
             // Now I need to adjust this for attacks on aeros because they use
             // attack values and different rules
-            if (target.isAirborne() || game.getBoard().inSpace()) {
+            if (target.isAirborne() || ae.getCurrentMap().isSpace()) {
                 // this will work differently for cluster and non-cluster
                 // weapons, and differently for capital fighter/fighter
                 // squadrons

@@ -359,7 +359,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             bMekTankStealthActive = ae.isStealthActive();
         }
 
-        boolean isFlakAttack = !game.getBoard().inSpace() && (te != null)
+        boolean isFlakAttack = !ae.isSpaceborne() && (te != null)
                 && (te.isAirborne() || te.isAirborneVTOLorWIGE()) && (atype != null)
                 && ((((atype.getAmmoType() == AmmoType.T_AC_LBX) || (atype.getAmmoType() == AmmoType.T_AC_LBX_THB)
                         || (atype.getAmmoType() == AmmoType.T_SBGAUSS))
@@ -485,7 +485,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
         int targEl;
 
         if (te == null) {
-            Hex hex = game.getBoard().getHex(target.getPosition());
+            Hex hex = game.getBoard(ae.getCurrentMap()).getHex(target.getPosition());
 
             targEl = hex == null ? 0 : -hex.depth();
         } else {
@@ -740,7 +740,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
         // building which provides it partial cover. Unlike other partial cover situations,
         // this occurs regardless of other LOS consideration.
         if (WeaponAttackAction.targetInShortCoverBuilding(target)) {
-            Building currentBuilding = game.getBoard().getBuildingAt(target.getPosition());
+            Building currentBuilding = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
 
             LosEffects shortBuildingLos = new LosEffects();
             shortBuildingLos.setTargetCover(LosEffects.COVER_HORIZONTAL);
@@ -802,7 +802,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
         int tElev = target.getElevation();
         int targEl;
         if (te == null) {
-            targEl = game.getBoard().getHex(target.getPosition()).floor();
+            targEl = game.getBoard(ae.getCurrentMap()).getHex(target.getPosition()).floor();
         } else {
             targEl = te.relHeight();
         }
@@ -1152,7 +1152,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
 
         // Infantry can't clear woods.
         if (isAttackerInfantry && (Targetable.TYPE_HEX_CLEAR == target.getTargetType())) {
-            Hex hexTarget = game.getBoard().getHex(target.getPosition());
+            Hex hexTarget = game.getBoard(ae.getCurrentMap()).getHex(target.getPosition());
             if ((hexTarget != null) && hexTarget.containsTerrain(Terrains.WOODS)) {
                 return Messages.getString("WeaponAttackAction.NoInfantryWoodsClearing");
             }
@@ -1515,7 +1515,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
         // TW errata 2.1
         
         if ((Compute.useSpheroidAtmosphere(game, ae) ||
-                (ae.isAero() && ((IAero) ae).isSpheroid() && (ae.getAltitude() == 0) && game.getBoard().onGround()))
+                (ae.isAero() && ((IAero) ae).isSpheroid() && (ae.getAltitude() == 0) && ae.getCurrentMap().isGround()))
                 && (weapon != null)) {
             int range = Compute.effectiveDistance(game, ae, target, false);
             // Only aft-mounted weapons can be fired at range 0 (targets directly underneath)
@@ -1558,8 +1558,8 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
                 if (!ae.isAirborne() && !target.isAirborne()) {
                     boolean targetInAttackerHex = ae.getOccupiedCoords().contains(target.getPosition()) ||
                             ae.getPosition().equals(target.getPosition());
-                    boolean targetBelowAttacker = game.getBoard().getHex(ae.getPosition()).getLevel() >
-                            game.getBoard().getHex(target.getPosition()).getLevel() + target.getElevation();
+                    boolean targetBelowAttacker = game.getBoard(ae.getCurrentMap()).getHex(ae.getPosition()).getLevel() >
+                            game.getBoard(ae.getCurrentMap()).getHex(target.getPosition()).getLevel() + target.getElevation();
 
                     if (!targetInAttackerHex || !targetBelowAttacker) {
                         return Messages.getString("WeaponAttackAction.GroundedSpheroidDropshipAftWeaponRestriction");
@@ -1629,8 +1629,8 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
                     }
                     // Otherwise, check for a dead-zone, TW pg 243
                     Coords prevCoords = ae.passedThroughPrevious(target.getPosition());
-                    Hex prevHex = game.getBoard().getHex(prevCoords);
-                    Hex currHex = game.getBoard().getHex(target.getPosition());
+                    Hex prevHex = game.getBoard(ae.getCurrentMap()).getHex(prevCoords);
+                    Hex currHex = game.getBoard(ae.getCurrentMap()).getHex(target.getPosition());
                     int prevElev = prevHex.getLevel();
                     int currElev = currHex.getLevel();
                     if ((prevElev - currElev - target.relHeight()) > 2) {
@@ -1855,7 +1855,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             // Ballistic and Missile weapons are subject to wind conditions
             int windCond = game.getPlanetaryConditions().getWindStrength();
             if ((windCond == PlanetaryConditions.WI_TORNADO_F13) && wtype.hasFlag(WeaponType.F_MISSILE)
-                    && !game.getBoard().inSpace()) {
+                    && !ae.isSpaceborne()) {
                 return Messages.getString("WeaponAttackAction.NoMissileTornado");
             }
 

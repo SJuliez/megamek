@@ -142,7 +142,7 @@ public class RifleWeaponHandler extends AmmoWeaponHandler {
 
         // if the target was in partial cover, then we already handled
         // damage absorption by the partial cover, if it would have happened
-        Hex targetHex = game.getBoard().getHex(target.getPosition());
+        Hex targetHex = game.getBoard(ae.getCurrentMap()).getHex(target.getPosition());
         boolean targetStickingOutOfBuilding = unitStickingOutOfBuilding(targetHex, entityTarget);
                 
         nDamage = absorbBuildingDamage(nDamage, entityTarget, bldgAbsorbs, 

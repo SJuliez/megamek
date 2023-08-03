@@ -207,7 +207,13 @@ public class Game extends AbstractGame implements Serializable {
 
     @ServerUse
     public void setBoardDirect(final Board board) {
-        this.board = board;
+        this.board = board; // TODO: Remove this line
+        if (board == null) {
+            gameBoards.remove(MapType.GROUND);
+        } else {
+            gameBoards.put(MapType.GROUND, board);
+        }
+
     }
 
     public boolean containsMinefield(Coords coords) {
@@ -3605,7 +3611,7 @@ public class Game extends AbstractGame implements Serializable {
     @ServerUse
     public void setSpaceMapDirect(final Board board) {
         if (board == null) {
-            gameBoards.remove(MapType.LOW_ATMOSPHERE);
+            gameBoards.remove(MapType.SPACE);
         } else {
             gameBoards.put(MapType.SPACE, board);
         }

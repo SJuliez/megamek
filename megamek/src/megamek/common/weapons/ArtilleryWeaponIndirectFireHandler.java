@@ -80,7 +80,7 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
                         + ", fired by "
                         + game.getPlayer(aaa.getPlayerId()).getName();
                 if (aaa.getTarget(game) != null) {
-                    game.getBoard().addSpecialHexDisplay(
+                    game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(
                             aaa.getTarget(game).getPosition(),
                             new SpecialHexDisplay(
                                     SpecialHexDisplay.Type.ARTILLERY_INCOMING, game
@@ -433,7 +433,7 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
             String artyMsg = "Artillery hit here on round " + game.getRoundCount() 
                     + ", fired by " + game.getPlayer(aaa.getPlayerId()).getName()
                     + " (this hex is now an auto-hit)";
-            game.getBoard().addSpecialHexDisplay(
+            game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(
                     targetPos,
                     new SpecialHexDisplay(SpecialHexDisplay.Type.ARTILLERY_HIT,
                             game.getRoundCount(), game.getPlayer(aaa
@@ -451,14 +451,14 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
                 moF = Math.max(moF + 2, 0);
             }
             targetPos = Compute.scatterDirectArty(targetPos, moF);
-            if (game.getBoard().contains(targetPos)) {
+            if (game.getBoard(ae.getCurrentMap()).contains(targetPos)) {
                 // misses and scatters to another hex
                 if (!isFlak) {
                     r = new Report(3195);
                     String artyMsg = "Artillery missed here on round "
                             + game.getRoundCount() + ", fired by "
                             + game.getPlayer(aaa.getPlayerId()).getName();
-                    game.getBoard().addSpecialHexDisplay(
+                    game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(
                             origPos,
                             new SpecialHexDisplay(
                                     SpecialHexDisplay.Type.ARTILLERY_HIT, game
@@ -502,7 +502,7 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
         // if the round landed on the board, and the attacker is an off-board artillery piece
         // then check to see if the hex where it landed can be seen by anyone on an opposing team
         // if so, mark the attacker so that it can be targeted by counter-battery fire
-        if (game.getBoard().contains(targetPos)) {
+        if (game.getBoard(ae.getCurrentMap()).contains(targetPos)) {
             HexTarget hexTarget = new HexTarget(targetPos, Targetable.TYPE_HEX_ARTILLERY);
             
             for (Entity entity : game.getEntitiesVector()) {

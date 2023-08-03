@@ -125,7 +125,7 @@ public class SharedUtility {
         checkNag(rollTarget, nagReport, psrList);
 
         // Atmospheric checks
-        if (!game.getBoard().inSpace() && !md.contains(MoveStepType.LAND)
+        if (!entity.isSpaceborne() && !md.contains(MoveStepType.LAND)
                 && !md.contains(MoveStepType.VLAND)) {
             // check to see if velocity is 2x thrust
             rollTarget = a.checkVelocityDouble(md.getFinalVelocity(),
@@ -176,7 +176,7 @@ public class SharedUtility {
         EntityMovementType overallMoveType = EntityMovementType.MOVE_NONE;
         boolean firstStep;
         int prevFacing = curFacing;
-        Hex prevHex = game.getBoard().getHex(curPos);
+        Hex prevHex = game.getBoard(entity.getCurrentMap()).getHex(curPos);
         final boolean isInfantry = (entity instanceof Infantry);
 
         PilotingRollData rollTarget;
@@ -222,7 +222,7 @@ public class SharedUtility {
             curFacing = step.getFacing();
             curElevation = step.getElevation();
 
-            final Hex curHex = game.getBoard().getHex(curPos);
+            final Hex curHex = game.getBoard(entity.getCurrentMap()).getHex(curPos);
 
             // check for vertical takeoff
             if ((step.getType() == MoveStepType.VTAKEOFF)
@@ -249,7 +249,7 @@ public class SharedUtility {
             if (!lastPos.equals(curPos) && (moveType != EntityMovementType.MOVE_JUMP) && (entity instanceof Mech)
                     && !entity.isAirborne() && (step.getClearance() <= 0) // Don't check airborne LAMs
                     && game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_LEAPING)) {
-                int leapDistance = (lastElevation + game.getBoard().getHex(lastPos).getLevel())
+                int leapDistance = (lastElevation + game.getBoard(entity.getCurrentMap()).getHex(lastPos).getLevel())
                         - (curElevation + curHex.getLevel());
                 if (leapDistance > 2) {
                     rollTarget = entity.getBasePilotingRoll(moveType);
@@ -370,7 +370,7 @@ public class SharedUtility {
                             entity.addPilotingModifierForTerrain(rollTarget, step);
                             int gravMod = game.getPlanetaryConditions()
                                     .getGravityPilotPenalty();
-                            if ((gravMod != 0) && !game.getBoard().inSpace()) {
+                            if ((gravMod != 0) && !entity.isSpaceborne()) {
                                 rollTarget.addModifier(gravMod, game
                                         .getPlanetaryConditions().getGravity()
                                         + "G gravity");
@@ -438,7 +438,7 @@ public class SharedUtility {
                 Building bldg = null;
                 String reason ="entering";
                 if ((buildingMove & 2) == 2) {
-                    bldg = game.getBoard().getBuildingAt(curPos);
+                    bldg = game.getBoard(entity.getCurrentMap()).getBuildingAt(curPos);
                 }
 
                 if (bldg != null) {
@@ -452,7 +452,7 @@ public class SharedUtility {
                 checkNag(rollTarget, nagReport, psrList);
             }
 
-            Hex lastHex = game.getBoard().getHex(lastPos);
+            Hex lastHex = game.getBoard(entity.getCurrentMap()).getHex(lastPos);
             if (((step.getType() == MoveStepType.BACKWARDS)
                     || (step.getType() == MoveStepType.LATERAL_LEFT_BACKWARDS)
                     || (step.getType() == MoveStepType.LATERAL_RIGHT_BACKWARDS))
@@ -544,7 +544,7 @@ public class SharedUtility {
             rollTarget = entity.checkLandingWithPrototypeJJ(overallMoveType);
             checkNag(rollTarget, nagReport, psrList);
             // jumped into water?
-            Hex hex = game.getBoard().getHex(curPos);
+            Hex hex = game.getBoard(entity.getCurrentMap()).getHex(curPos);
             // check for jumping into heavy woods
             if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_PSR_JUMP_HEAVY_WOODS)) {
                 rollTarget = entity.checkLandingInHeavyWoods(overallMoveType,
@@ -581,7 +581,7 @@ public class SharedUtility {
             checkNag(rollTarget, nagReport, psrList);
 
             // Atmospheric checks
-            if (!game.getBoard().inSpace() && !md.contains(MoveStepType.LAND)
+            if (!entity.isSpaceborne() && !md.contains(MoveStepType.LAND)
                     && !md.contains(MoveStepType.VLAND)) {
                 // check to see if velocity is 2x thrust
                 rollTarget = a.checkVelocityDouble(md.getFinalVelocity(), overallMoveType);
@@ -710,15 +710,15 @@ public class SharedUtility {
             while (vel > 0) {
                 int steps = 1;
                 // if moving on the ground map, then 16 hexes forward
-                if (game.getBoard().onGround()) {
+                if (entity.getCurrentMap().isGround()) {
                     steps = 16;
                 }
                 while (steps > 0 &&
-                        game.getBoard().contains(md.getFinalCoords())) {
+                        game.getBoard(entity.getCurrentMap()).contains(md.getFinalCoords())) {
                     md.addStep(MoveStepType.FORWARDS);
                     steps--;
                 }
-                if (!game.getBoard().contains(md.getFinalCoords())) {
+                if (!game.getBoard(entity.getCurrentMap()).contains(md.getFinalCoords())) {
                     md.removeLastStep();
                     if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_RETURN_FLYOVER)) {
                         // Telemissiles shouldn't get a return option
@@ -838,14 +838,14 @@ public class SharedUtility {
                 }
 
                 // if the left is preferred, increment i so next one is skipped
-                if ((leftTonnage < rightTonnage) || !game.getBoard().contains(right)) {
+                if ((leftTonnage < rightTonnage) || !game.getBoard(en.getCurrentMap()).contains(right)) {
                     i++;
                 } else {
                     continue;
                 }
             }
 
-            if (!game.getBoard().contains(c)) {
+            if (!game.getBoard(en.getCurrentMap()).contains(c)) {
                 if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_RETURN_FLYOVER)) {
                     // Telemissiles shouldn't get a return option
                     if (en instanceof TeleMissile) {

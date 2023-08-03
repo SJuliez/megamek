@@ -124,7 +124,7 @@ public class ArtilleryCannonWeaponHandler extends AmmoWeaponHandler {
             vPhaseReport.addElement(r);
         } else {
             targetPos = Compute.scatter(targetPos, (Math.abs(toHit.getMoS()) + 1) / 2);
-            if (game.getBoard().contains(targetPos)) {
+            if (game.getBoard(ae.getCurrentMap()).contains(targetPos)) {
                 // misses and scatters to another hex
                 if (!isFlak) {
                     r = new Report(3195);

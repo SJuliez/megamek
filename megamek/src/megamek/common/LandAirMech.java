@@ -281,16 +281,14 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
     }
 
     public int getAirMechCruiseMP(MPCalculationSetting mpCalculationSetting) {
-        if (game != null && game.getBoard().inAtmosphere()
-                && (isLocationBad(Mech.LOC_LT) || isLocationBad(Mech.LOC_RT))) {
+        if (currentMap.isLowAtmo() && (isLocationBad(Mech.LOC_LT) || isLocationBad(Mech.LOC_RT))) {
             return 0;
         }
         return getJumpMP(mpCalculationSetting) * 3;
     }
 
     public int getAirMechFlankMP(MPCalculationSetting mpCalculationSetting) {
-        if (game != null && game.getBoard().inAtmosphere()
-                && (isLocationBad(Mech.LOC_LT) || isLocationBad(Mech.LOC_RT))) {
+        if (currentMap.isLowAtmo() && (isLocationBad(Mech.LOC_LT) || isLocationBad(Mech.LOC_RT))) {
             return 0;
         }
         return (int) Math.ceil(getAirMechCruiseMP(mpCalculationSetting) * 1.5);
@@ -537,7 +535,7 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
             if (isAirborne()) {
                 return false;
             }
-            Hex hex = game.getBoard().getHex(c);
+            Hex hex = game.getBoard(getCurrentMap()).getHex(c);
 
             // Additional restrictions for hidden units
             if (isHidden()) {
@@ -565,7 +563,7 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
             // Cannot enter woods or a building hex in AirMech mode unless using
             // ground movement
             // or flying over the terrain.
-            Hex hex = game.getBoard().getHex(c);
+            Hex hex = game.getBoard(getCurrentMap()).getHex(c);
             return (hex.containsTerrain(Terrains.WOODS) || hex.containsTerrain(Terrains.JUNGLE)
                     || hex.containsTerrain(Terrains.BLDG_ELEV)) && hex.ceiling() > currElevation;
         } else {
@@ -642,7 +640,7 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
     @Override
     public int getECMRange() {
         if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)
-                || !game.getBoard().inSpace()) {
+                || !isSpaceborne()) {
             return super.getECMRange();
         }
         return Math.min(super.getECMRange(), 0);
@@ -718,20 +716,20 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
 
             int vel = getCurrentVelocity();
             int vmod = vel - (2 * getWalkMP());
-            if (!getGame().getBoard().inSpace() && (vmod > 0)) {
+            if (!isSpaceborne() && (vmod > 0)) {
                 roll.addModifier(vmod, "Velocity greater than 2x safe thrust");
             }
 
             int atmoCond = game.getPlanetaryConditions().getAtmosphere();
             // add in atmospheric effects later
-            if (!(game.getBoard().inSpace() || (atmoCond == PlanetaryConditions.ATMO_VACUUM)) && isAirborne()) {
+            if (!(isSpaceborne() || (atmoCond == PlanetaryConditions.ATMO_VACUUM)) && isAirborne()) {
                 roll.addModifier(+1, "Atmospheric operations");
             }
 
-            if (hasQuirk(OptionsConstants.QUIRK_POS_ATMO_FLYER) && !game.getBoard().inSpace()) {
+            if (hasQuirk(OptionsConstants.QUIRK_POS_ATMO_FLYER) && !isSpaceborne()) {
                 roll.addModifier(-1, "atmospheric flyer");
             }
-            if (hasQuirk(OptionsConstants.QUIRK_NEG_ATMO_INSTABILITY) && !game.getBoard().inSpace()) {
+            if (hasQuirk(OptionsConstants.QUIRK_NEG_ATMO_INSTABILITY) && !isSpaceborne()) {
                 roll.addModifier(+1, "atmospheric flight instability");
             }
         }
@@ -849,7 +847,7 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
 
         if (getConversionMode() == CONV_MODE_FIGHTER) {
             // if in atmosphere, then halve next turn's velocity
-            if (!game.getBoard().inSpace() && isDeployed() && (roundNumber > 0)) {
+            if (!isSpaceborne() && isDeployed() && (roundNumber > 0)) {
                 setNextVelocity((int) Math.floor(getNextVelocity() / 2.0));
             }
 
@@ -906,7 +904,7 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
      */
     @Override
     public EntityMovementMode nextConversionMode(EntityMovementMode afterMode) {
-        boolean inSpace = game != null && game.getBoard().inSpace();
+        boolean inSpace = isSpaceborne();
         if (previousMovementMode == EntityMovementMode.WIGE) {
             if (afterMode == EntityMovementMode.WIGE) {
                 return EntityMovementMode.AERODYNE;
@@ -986,13 +984,13 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
             // Standard LAMs can convert from mech to fighter mode in a single
             // round on a space map
             if (fromMode == CONV_MODE_MECH) {
-                return getLAMType() == LAM_BIMODAL || game.getBoard().inSpace();
+                return getLAMType() == LAM_BIMODAL || isSpaceborne();
             }
         } else if (toMode == CONV_MODE_MECH) {
             // Standard LAMs can convert from fighter to mech mode in a single
             // round on a space map
             if (fromMode == CONV_MODE_FIGHTER) {
-                return getLAMType() == LAM_BIMODAL || game.getBoard().inSpace();
+                return getLAMType() == LAM_BIMODAL || isSpaceborne();
             }
         }
         return true;
@@ -1708,15 +1706,12 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
 
     @Override
     public int getElevation() {
-        if ((game != null) && game.getBoard().inSpace()) {
+        if (isSpaceborne()) {
             return 0;
         }
-        // Altitude is not the same as elevation. If an aero is at 0 altitude,
-        // then it is
-        // grounded and uses elevation normally. Otherwise, just set elevation
-        // to a very
-        // large number so that a flying aero won't interact with the ground
-        // maps in any way
+        // Altitude is not the same as elevation. If an aero is at 0 altitude, then it is
+        // grounded and uses elevation normally. Otherwise, just set elevation to a very
+        // large number so that a flying aero won't interact with the ground maps in any way
         if (isAirborne()) {
             return 999;
         }

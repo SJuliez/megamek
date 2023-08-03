@@ -172,7 +172,7 @@ public class FighterSquadron extends Aero {
     @Override
     public boolean hasActiveECM() {
         if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)
-                || !game.getBoard().inSpace()) {
+                || !isSpaceborne()) {
             return super.hasActiveECM();
         } else {
             return getActiveSubEntities().stream().anyMatch(Entity::hasActiveECM);
@@ -194,13 +194,13 @@ public class FighterSquadron extends Aero {
         }
         int vel = getCurrentVelocity();
         int vmod = vel - (2 * getWalkMP());
-        if (!getGame().getBoard().inSpace() && (vmod > 0)) {
+        if (!isSpaceborne() && (vmod > 0)) {
             prd.addModifier(vmod, "Velocity greater than 2x safe thrust");
         }
 
         // add in atmospheric effects later
         int atmoCond = game.getPlanetaryConditions().getAtmosphere();
-        if (!(game.getBoard().inSpace() || atmoCond == PlanetaryConditions.ATMO_VACUUM)) {
+        if (!(isSpaceborne() || atmoCond == PlanetaryConditions.ATMO_VACUUM)) {
             prd.addModifier(+2, "Atmospheric operations");
             prd.addModifier(-1, "fighter/ small craft");
         }
@@ -555,7 +555,7 @@ public class FighterSquadron extends Aero {
         }
         // add the space bomb attack
         if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_SPACE_BOMB)
-                && game.getBoard().inSpace() && !getBombs(AmmoType.F_SPACE_BOMB).isEmpty()) {
+                && isSpaceborne() && !getBombs(AmmoType.F_SPACE_BOMB).isEmpty()) {
             try {
                 addEquipment(EquipmentType.get(SPACE_BOMB_ATTACK), LOC_NOSE, false);
             } catch (Exception ignored) {
@@ -563,7 +563,7 @@ public class FighterSquadron extends Aero {
             }
         }
 
-        if (!game.getBoard().inSpace() && !getBombs(AmmoType.F_GROUND_BOMB).isEmpty()) {
+        if (!isSpaceborne() && !getBombs(AmmoType.F_GROUND_BOMB).isEmpty()) {
             try {
                 addEquipment(EquipmentType.get(DIVE_BOMB_ATTACK), LOC_NOSE, false);
             } catch (Exception ignored) {

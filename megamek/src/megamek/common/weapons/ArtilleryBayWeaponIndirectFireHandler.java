@@ -115,7 +115,7 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
                         + (game.getRoundCount() + aaa.getTurnsTilHit())
                         + ", fired by "
                         + game.getPlayer(aaa.getPlayerId()).getName();
-                game.getBoard().addSpecialHexDisplay(
+                game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(
                         aaa.getTarget(game).getPosition(),
                         new SpecialHexDisplay(
                                 SpecialHexDisplay.Type.ARTILLERY_INCOMING, game
@@ -305,7 +305,7 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
             artyMsg = "Artillery hit here on round " + game.getRoundCount() 
                     + ", fired by " + game.getPlayer(aaa.getPlayerId()).getName()
                     + " (this hex is now an auto-hit)";
-            game.getBoard().addSpecialHexDisplay(targetPos,
+            game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(targetPos,
                     new SpecialHexDisplay(SpecialHexDisplay.Type.ARTILLERY_HIT,
                             game.getRoundCount(), game.getPlayer(aaa.getPlayerId()), artyMsg));
         } else {
@@ -324,13 +324,13 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
             artyMsg = "Artillery missed here on round "
                     + game.getRoundCount() + ", fired by "
                     + game.getPlayer(aaa.getPlayerId()).getName();
-            game.getBoard().addSpecialHexDisplay(origPos,
+            game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(origPos,
                     new SpecialHexDisplay(SpecialHexDisplay.Type.ARTILLERY_HIT, game.getRoundCount(),
                             game.getPlayer(aaa.getPlayerId()), artyMsg));
             while (nweaponsHit > 0) {
                 //We'll generate a new report and scatter for each weapon fired
                 targetPos = Compute.scatterDirectArty(targetPos, moF);
-                if (game.getBoard().contains(targetPos)) {
+                if (game.getBoard(ae.getCurrentMap()).contains(targetPos)) {
                     targets.add(targetPos);
                     // misses and scatters to another hex
                     if (!isFlak) {

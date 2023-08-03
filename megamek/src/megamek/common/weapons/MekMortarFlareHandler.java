@@ -112,7 +112,7 @@ public class MekMortarFlareHandler extends AmmoWeaponHandler {
         } else {
             // only scatters by one d6
             targetPos = Compute.scatter(targetPos, 1);
-            if (game.getBoard().contains(targetPos)) {
+            if (game.getBoard(ae.getCurrentMap()).contains(targetPos)) {
                 // misses and scatters to another hex
                 r = new Report(3195);                    
                 r.subject = subjectId;
