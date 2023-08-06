@@ -39,6 +39,11 @@ public class SpaceMapPreviewPanel extends JPanel {
         scaledImage = null;
     }
 
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        scaledImage = null;
+    }
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -54,10 +59,13 @@ public class SpaceMapPreviewPanel extends JPanel {
                 if ((lastScaleFactor != factor) || (scaledImage == null)) {
                     lastPanelWidth = (int) (factor * baseImage.getWidth(null));
                     lastPanelHeight = (int) (factor * baseImage.getHeight(null));
-//                    if (lastPanelWidth != 0 && lastPanelHeight != 0) {
+                    if (lastPanelWidth != 0 && lastPanelHeight != 0) {
                         scaledImage = baseImage.getScaledInstance(lastPanelWidth, lastPanelHeight, Image.SCALE_SMOOTH);
                         lastScaleFactor = factor;
-//                    }
+                        if (scaledImage != null && !isEnabled()) {
+                            scaledImage = GrayFilter.createDisabledImage(scaledImage);
+                        }
+                    }
                 }
             }
             if (scaledImage != null) {

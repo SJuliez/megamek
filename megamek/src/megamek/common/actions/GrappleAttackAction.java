@@ -214,8 +214,8 @@ public class GrappleAttackAction extends PhysicalAttackAction {
             }
         }
 
-        Hex attHex = game.getBoard().getHex(ae.getPosition());
-        Hex targHex = game.getBoard().getHex(target.getPosition());
+        Hex attHex = game.getBoard(ae).getHex(ae.getPosition());
+        Hex targHex = game.getBoard(ae).getHex(target.getPosition());
         final int attackerElevation = ae.getElevation() + attHex.getLevel();
         // final int attackerHeight = attackerElevation + ae.getHeight();
         final int targetElevation = target.getElevation() + targHex.getLevel();

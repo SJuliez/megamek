@@ -18,12 +18,24 @@
  */
 package megamek.common;
 
+/**
+ * Represents the type of a game map. Note that low atmosphere (aka atmospheric) maps may come with or without
+ * terrain and space maps may be high atmospheric maps when they are near a planet.
+ * Radar and Capital Radar maps may be used in the Abstract Aerospace Combat rules of SO:AA.
+ *
+ */
 public enum MapType {
-    GROUND,
-    LOW_ATMOSPHERE,
-    SPACE,
-    RADAR,
-    CAPITAL_RADAR;
+    GROUND("G"),
+    LOW_ATMOSPHERE("A"),
+    SPACE("S"),
+    RADAR("R"),
+    CAPITAL_RADAR("C");
+
+    private final String code;
+
+    MapType(String code) {
+        this.code = code;
+    }
 
     public boolean isSpace() {
         return this == SPACE;
@@ -47,5 +59,49 @@ public enum MapType {
 
     public String getdisplayName() {
         return Messages.getString("MapType." + name());
+    }
+
+    /**
+     * Returns a single character code identifying the this MapType (e.g. "G" for GROUND). Can be used
+     * e.g. in context menus. Use {@link #mapTypeForCode(String)} to reconstruct the MapType.
+     *
+     * @return the code character for this MapType
+     */
+    public String getCode() {
+        return code;
+    }
+
+    /**
+     * Returns the MapType represented by the given code. (e.g. GROUND for "G"). Can be used
+     * e.g. in context menus.
+     *
+     * @throws IllegalArgumentException When the given code has no corresponding MapType
+     * @return the MapType for the given code
+     */
+    public static MapType mapTypeForCode(String code) {
+        for (MapType mapType: values()) {
+            if (mapType.code.equals(code)) {
+                return mapType;
+            }
+        }
+        throw new IllegalArgumentException("No MapType exists for the code " + code);
+    }
+
+    @Override
+    public String toString() {
+        switch (this) {
+            case CAPITAL_RADAR:
+                return "Map Type: Capital Radar";
+            case LOW_ATMOSPHERE:
+                return "Map Type: Low Atmosphere";
+            case SPACE:
+                return "Map Type: Space";
+            case RADAR:
+                return "Map Type: Radar";
+            case GROUND:
+                return "Map Type: Ground";
+            default:
+                return "Unknown";
+        }
     }
 }

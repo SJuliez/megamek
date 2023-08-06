@@ -430,7 +430,7 @@ public class MoveStep implements Serializable {
      */
     public void setVTOLBombing(boolean bombing) {
         if (bombing) {
-            setTarget(new HexTarget(getPosition(), Targetable.TYPE_HEX_AERO_BOMB));
+            setTarget(new HexTarget(getPosition(), entity.getCurrentMap(), Targetable.TYPE_HEX_AERO_BOMB));
         } else {
             setTarget(null);
         }
@@ -441,7 +441,7 @@ public class MoveStep implements Serializable {
      */
     public void setStrafing(boolean strafing) {
         if (strafing) {
-            setTarget(new HexTarget(getPosition(), Targetable.TYPE_HEX_CLEAR));
+            setTarget(new HexTarget(getPosition(), entity.getCurrentMap(), Targetable.TYPE_HEX_CLEAR));
         } else {
             setTarget(null);
         }

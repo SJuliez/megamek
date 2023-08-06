@@ -41,6 +41,9 @@ public interface Targetable extends InGameObject, Serializable {
 
     int getTargetType();
 
+    /** @return the full location containing the target */
+    MapLocation getMapLocation();
+
     /** @return the coordinates of the hex containing the target */
     Coords getPosition();
     

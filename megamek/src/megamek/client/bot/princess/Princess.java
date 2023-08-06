@@ -76,7 +76,7 @@ public class Princess extends BotClient {
      * Used to allocate damage more intelligently and avoid overkill.
      */
     private final ConcurrentHashMap<Integer, Double> damageMap = new ConcurrentHashMap<>(); 
-    private final Set<Coords> strategicBuildingTargets = new HashSet<>();
+    private final Set<MapLocation> strategicBuildingTargets = new HashSet<>();
     private boolean fallBack = false;
     private final ChatProcessor chatProcessor = new ChatProcessor();
     private boolean fleeBoard = false;
@@ -280,7 +280,7 @@ public class Princess extends BotClient {
             // which is Coords X + 1Y + 1
             final Coords coords = new Coords(Integer.parseInt(x) - 1,
                     Integer.parseInt(y) - 1);
-            getStrategicBuildingTargets().add(coords);
+            getStrategicBuildingTargets().add(new MapLocation(coords, MapType.GROUND));
         }
         
         spinupThreshold = null;
@@ -326,7 +326,7 @@ public class Princess extends BotClient {
         return behaviorSettings;
     }
 
-    public Set<Coords> getStrategicBuildingTargets() {
+    public Set<MapLocation> getStrategicBuildingTargets() {
         return strategicBuildingTargets;
     }
 
@@ -338,16 +338,20 @@ public class Princess extends BotClient {
             LogManager.getLogger().warn("Board does not contain " + coords.toFriendlyString());
             return;
         }
-        getStrategicBuildingTargets().add(coords);
+        getStrategicBuildingTargets().add(new MapLocation(coords, MapType.GROUND));
     }
 
     public Set<Integer> getPriorityUnitTargets() {
         return getBehaviorSettings().getPriorityUnitTargets();
     }
+
+    public Targetable getAppropriateTarget(MapLocation mapLocation) {
+        return getAppropriateTarget(mapLocation.getCoords(), mapLocation.getMapType());
+    }
     
-    public Targetable getAppropriateTarget(Coords strategicTarget) {
-        if (null == game.getBoard().getBuildingAt(strategicTarget)) {
-            return new HexTarget(strategicTarget, Targetable.TYPE_HEX_CLEAR);
+    public Targetable getAppropriateTarget(Coords strategicTarget, MapType mapType) {
+        if (null == game.getBoard(mapType).getBuildingAt(strategicTarget)) {
+            return new HexTarget(strategicTarget, mapType, Targetable.TYPE_HEX_CLEAR);
         } else {
             return new BuildingTarget(strategicTarget, game.getBoard(), false);
         }
@@ -1384,7 +1388,7 @@ public class Princess extends BotClient {
                 Targetable levelingTarget = null;
 
                 if (bulldozerPaths.get(0).needsLeveling()) {
-                    levelingTarget = getAppropriateTarget(bulldozerPaths.get(0).getCoordsToLevel().get(0));
+                    levelingTarget = getAppropriateTarget(bulldozerPaths.get(0).getCoordsToLevel().get(0), mover.getCurrentMap());
                     getFireControlState().getAdditionalTargets().add(levelingTarget);
                     sendChat("Hex " + levelingTarget.getPosition().toFriendlyString() + " impedes route to destination, targeting for clearing.", Level.INFO);
                 }
@@ -1518,7 +1522,7 @@ public class Princess extends BotClient {
 
             // reset strategic targets
             fireControlState.setAdditionalTargets(new ArrayList<>());
-            for (final Coords strategicTarget : getStrategicBuildingTargets()) {
+            for (final MapLocation strategicTarget : getStrategicBuildingTargets()) {
                 if (null == game.getBoard().getBuildingAt(strategicTarget)) {
                     fireControlState.getAdditionalTargets().add(
                             getAppropriateTarget(strategicTarget));
@@ -1535,14 +1539,14 @@ public class Princess extends BotClient {
             }
 
             // Pick up on any turrets and shoot their buildings as well.
-            final Enumeration<Building> buildings = game.getBoard().getBuildings();
+            final Enumeration<Building> buildings = game.getBoard(MapType.GROUND).getBuildings();
             while (buildings.hasMoreElements()) {
                 final Building bldg = buildings.nextElement();
                 final Enumeration<Coords> bldgCoords = bldg.getCoords();
                 while (bldgCoords.hasMoreElements()) {
                     final Coords coords = bldgCoords.nextElement();
                     for (final Entity entity : game.getEntitiesVector(coords, true)) {
-                        final Targetable bt = getAppropriateTarget(coords);
+                        final Targetable bt = getAppropriateTarget(coords, MapType.GROUND);
                         
                         if (isEnemyGunEmplacement(entity, coords)) {
                             fireControlState.getAdditionalTargets().add(bt);
@@ -1573,11 +1577,6 @@ public class Princess extends BotClient {
     }
 
     @Override
-    public Game getGame() {
-        return game;
-    }
-
-    @Override
     public void initialize() {
         try {
             if (initialized) {
@@ -1603,7 +1602,7 @@ public class Princess extends BotClient {
                     final Coords coords = bldgCoords.nextElement();
                     for (final Entity entity : game.getEntitiesVector(coords, true)) {
                         if (isEnemyGunEmplacement(entity, coords)) {
-                            getStrategicBuildingTargets().add(coords);
+                            getStrategicBuildingTargets().add(entity.getMapLocation());
                             sendChat("Building in Hex " + coords.toFriendlyString()
                                     + " designated target due to Gun Emplacement.", Level.INFO);
                         }

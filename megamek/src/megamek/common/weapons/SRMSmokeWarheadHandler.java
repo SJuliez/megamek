@@ -59,7 +59,7 @@ public class SRMSmokeWarheadHandler extends SRMHandler {
         } else {
             // scatterable SRMs scatter like dive bombs
             coords = Compute.scatter(coords, 1);
-            if (game.getBoard().contains(coords)) {
+            if (game.getBoard(target.getMapLocation()).contains(coords)) {
                 // misses and scatters to another hex
                 Report r = new Report(3195);
                 r.subject = subjectId;
@@ -82,9 +82,9 @@ public class SRMSmokeWarheadHandler extends SRMHandler {
                 smokeType = SmokeCloud.SMOKE_HEAVY;
             }
 
-            gameManager.deliverMissileSmoke(center, smokeType, vPhaseReport);
+            gameManager.deliverMissileSmoke(new MapLocation(center, target.getMapLocation().getMapType()), smokeType, vPhaseReport);
         } else if (atype.getMunitionType() == AmmoType.M_ANTI_TSM) {
-            gameManager.deliverMissileSmoke(center, SmokeCloud.SMOKE_GREEN, vPhaseReport);
+            gameManager.deliverMissileSmoke(new MapLocation(center, target.getMapLocation().getMapType()), SmokeCloud.SMOKE_GREEN, vPhaseReport);
         }
         return true;
     }

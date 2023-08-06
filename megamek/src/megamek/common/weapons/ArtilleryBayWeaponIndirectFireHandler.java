@@ -443,11 +443,11 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
         if (atype.getMunitionType() == AmmoType.M_SMOKE) {
             if (!bMissed) {
                 // If we hit, only one effect will stack in the target hex
-                gameManager.deliverArtillerySmoke(targetPos, vPhaseReport);
+                gameManager.deliverArtillerySmoke(new MapLocation(targetPos, ae.getCurrentMap()), vPhaseReport);
             } else {
                 // Deliver a round to each target hex
                 for (Coords c : targets) {
-                    gameManager.deliverArtillerySmoke(c, vPhaseReport);
+                    gameManager.deliverArtillerySmoke(new MapLocation(c, ae.getCurrentMap()), vPhaseReport);
                 }
             }
             return false;
@@ -455,11 +455,11 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
         if (atype.getMunitionType() == AmmoType.M_LASER_INHIB) {
             if (!bMissed) {
                 //If we hit, only one effect will stack in the target hex
-                gameManager.deliverLIsmoke(targetPos, vPhaseReport);
+                gameManager.deliverLIsmoke(new MapLocation(targetPos, ae.getCurrentMap()), vPhaseReport);
             } else {
                 //Deliver a round to each target hex
                 for (Coords c : targets) {
-                    gameManager.deliverLIsmoke(c, vPhaseReport);
+                    gameManager.deliverLIsmoke(new MapLocation(c, ae.getCurrentMap()), vPhaseReport);
                 }
             }
             return false;

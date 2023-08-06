@@ -194,11 +194,11 @@ public class ArtilleryTargetingControl {
                     && !e.isOffBoard()
                     && !owner.getBehaviorSettings().getIgnoredUnitTargets().contains(e.getId())) {
 
-                targetSet.add(new HexTarget(e.getPosition(), Targetable.TYPE_HEX_ARTILLERY));
+                targetSet.add(new HexTarget(e.getPosition(), e.getCurrentMap(), Targetable.TYPE_HEX_ARTILLERY));
                 
                 // while we're here, consider shooting at hexes within "MAX_BLAST_RADIUS"
                 // of the entity. 
-                addHexDonuts(e.getPosition(), targetSet, game);
+                addHexDonuts(new MapLocation(e.getPosition(), e.getCurrentMap()), targetSet, game);
             }
         }
         
@@ -208,30 +208,30 @@ public class ArtilleryTargetingControl {
             }
         }
         
-        for (Coords coords : owner.getStrategicBuildingTargets()) {
-            targetSet.add(new HexTarget(coords, Targetable.TYPE_HEX_ARTILLERY));
+        for (MapLocation mapLocation : owner.getStrategicBuildingTargets()) {
+            targetSet.add(new HexTarget(mapLocation, Targetable.TYPE_HEX_ARTILLERY));
             
             // while we're here, consider shooting at hexes within "MAX_BLAST_RADIUS"
             // of the strategic targets.
-            addHexDonuts(coords, targetSet, game);
+            addHexDonuts(mapLocation, targetSet, game);
         }
     }
     
     /**
      * Adds on-board HexTargets within the MAX_ARTILLERY_BLAST_RADIUS of the given coordinates
      * to the given HexTarget set. 
-     * @param coords Center coordinates
+     * @param mapLocation Center coordinates and map
      * @param targetList List of target hexes
      * @param game The current {@link Game}
      */
-    private void addHexDonuts(Coords coords, Set<Targetable> targetList, Game game) {
+    private void addHexDonuts(MapLocation mapLocation, Set<Targetable> targetList, Game game) {
         // while we're here, consider shooting at hexes within "MAX_BLAST_RADIUS"
         // of the designated coordinates 
         for (int radius = 1; radius <= MAX_ARTILLERY_BLAST_RADIUS; radius++) {
-            for (Coords donutHex : coords.allAtDistance(radius)) {
+            for (Coords donutHex : mapLocation.getCoords().allAtDistance(radius)) {
                 // don't bother adding off-board donuts.
-                if (game.getBoard().contains(donutHex)) {
-                    targetList.add(new HexTarget(donutHex, Targetable.TYPE_HEX_ARTILLERY));
+                if (game.getBoard(mapLocation).contains(donutHex)) {
+                    targetList.add(new HexTarget(donutHex, mapLocation.getMapType(), Targetable.TYPE_HEX_ARTILLERY));
                 }
             }
         }

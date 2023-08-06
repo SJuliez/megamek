@@ -303,7 +303,7 @@ public class ArtilleryBayWeaponIndirectHomingHandler extends ArtilleryBayWeaponI
             }
 
             bldg = null;
-            bldg = game.getBoard().getBuildingAt(coords);
+            bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(coords);
             bldgAbsorbs = (bldg != null) ? bldg.getAbsorbtion(coords) : 0;
             bldgAbsorbs = Math.min(bldgAbsorbs, ratedDamage);
             // assumption: homing artillery splash damage is area effect.

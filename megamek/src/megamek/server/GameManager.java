@@ -2852,44 +2852,46 @@ public class GameManager implements IGameManager {
      */
     public void applyBoardSettings() {
         MapSettings mapSettings = game.getMapSettings();
-        mapSettings.chooseSurpriseBoards();
-        Board[] sheetBoards = new Board[mapSettings.getMapWidth() * mapSettings.getMapHeight()];
-        List<Boolean> rotateBoard = new ArrayList<>();
-        for (int i = 0; i < (mapSettings.getMapWidth() * mapSettings.getMapHeight()); i++) {
-            sheetBoards[i] = new Board();
-            String name = mapSettings.getBoardsSelectedVector().get(i);
-            boolean isRotated = false;
-            if (name.startsWith(Board.BOARD_REQUEST_ROTATION)) {
-                // only rotate boards with an even width
-                if ((mapSettings.getBoardWidth() % 2) == 0) {
-                    isRotated = true;
+        if (mapSettings.isUsed()) {
+            mapSettings.chooseSurpriseBoards();
+            Board[] sheetBoards = new Board[mapSettings.getMapWidth() * mapSettings.getMapHeight()];
+            List<Boolean> rotateBoard = new ArrayList<>();
+            for (int i = 0; i < (mapSettings.getMapWidth() * mapSettings.getMapHeight()); i++) {
+                sheetBoards[i] = new Board();
+                String name = mapSettings.getBoardsSelectedVector().get(i);
+                boolean isRotated = false;
+                if (name.startsWith(Board.BOARD_REQUEST_ROTATION)) {
+                    // only rotate boards with an even width
+                    if ((mapSettings.getBoardWidth() % 2) == 0) {
+                        isRotated = true;
+                    }
+                    name = name.substring(Board.BOARD_REQUEST_ROTATION.length());
                 }
-                name = name.substring(Board.BOARD_REQUEST_ROTATION.length());
+                if (name.startsWith(MapSettings.BOARD_GENERATED)
+                        || (mapSettings.getMedium() == MapSettings.MEDIUM_SPACE)) {
+                    sheetBoards[i] = BoardUtilities.generateRandom(mapSettings);
+                } else {
+                    sheetBoards[i].load(new MegaMekFile(Configuration.boardsDir(), name + ".board").getFile());
+                    BoardUtilities.flip(sheetBoards[i], isRotated, isRotated);
+                }
+                rotateBoard.add(isRotated);
             }
-            if (name.startsWith(MapSettings.BOARD_GENERATED)
-                    || (mapSettings.getMedium() == MapSettings.MEDIUM_SPACE)) {
-                sheetBoards[i] = BoardUtilities.generateRandom(mapSettings);
-            } else {
-                sheetBoards[i].load(new MegaMekFile(Configuration.boardsDir(), name + ".board").getFile());
-                BoardUtilities.flip(sheetBoards[i], isRotated, isRotated);
+            Board newBoard = BoardUtilities.combine(mapSettings.getBoardWidth(),
+                    mapSettings.getBoardHeight(), mapSettings.getMapWidth(),
+                    mapSettings.getMapHeight(), sheetBoards, rotateBoard,
+                    mapSettings.getMedium());
+            if (game.getOptions().getOption(OptionsConstants.BASE_BRIDGECF).intValue() > 0) {
+                newBoard.setBridgeCF(game.getOptions().getOption(OptionsConstants.BASE_BRIDGECF).intValue());
             }
-            rotateBoard.add(isRotated);
+            if (!game.getOptions().booleanOption(OptionsConstants.BASE_RANDOM_BASEMENTS)) {
+                newBoard.setRandomBasementsOff();
+            }
+            if (game.getPlanetaryConditions().isTerrainAffected()) {
+                BoardUtilities.addWeatherConditions(newBoard, game.getPlanetaryConditions().getWeather(),
+                        game.getPlanetaryConditions().getWindStrength());
+            }
+            game.setGroundMap(newBoard);
         }
-        Board newBoard = BoardUtilities.combine(mapSettings.getBoardWidth(),
-                mapSettings.getBoardHeight(), mapSettings.getMapWidth(),
-                mapSettings.getMapHeight(), sheetBoards, rotateBoard,
-                mapSettings.getMedium());
-        if (game.getOptions().getOption(OptionsConstants.BASE_BRIDGECF).intValue() > 0) {
-            newBoard.setBridgeCF(game.getOptions().getOption(OptionsConstants.BASE_BRIDGECF).intValue());
-        }
-        if (!game.getOptions().booleanOption(OptionsConstants.BASE_RANDOM_BASEMENTS)) {
-            newBoard.setRandomBasementsOff();
-        }
-        if (game.getPlanetaryConditions().isTerrainAffected()) {
-            BoardUtilities.addWeatherConditions(newBoard, game.getPlanetaryConditions().getWeather(),
-                    game.getPlanetaryConditions().getWindStrength());
-        }
-        game.setBoard(newBoard);
 
         mapSettings = game.getMapSettings(MapType.LOW_ATMOSPHERE);
         if (mapSettings.isUsed()) {
@@ -7565,7 +7567,7 @@ public class GameManager implements IGameManager {
                         .collect(Collectors.toList());
                 if (chaffDispensers.size() > 0) {
                     chaffDispensers.get(0).setFired(true);
-                    createSmoke(curPos, SmokeCloud.SMOKE_CHAFF_LIGHT, 1);
+                    createSmoke(curPos, SmokeCloud.SMOKE_CHAFF_LIGHT, 1, entity.getCurrentMap());
                     Hex hex = game.getBoard().getHex(curPos);
                     hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_CHAFF_LIGHT));
                     sendChangedHex(curPos);
@@ -9956,7 +9958,7 @@ public class GameManager implements IGameManager {
      *
      * @param coords the <code>Coords</code> where to deliver
      */
-    public void deliverMissileSmoke(Coords coords, int smokeType, Vector<Report> vPhaseReport) {
+    public void deliverMissileSmoke(MapLocation mapLocation, int smokeType, Vector<Report> vPhaseReport) {
         Report r;
         if (smokeType == SmokeCloud.SMOKE_GREEN) {
             r = new Report(5184, Report.PUBLIC);
@@ -9966,42 +9968,41 @@ public class GameManager implements IGameManager {
             r.choose(smokeType == SmokeCloud.SMOKE_LIGHT);
             r.indent(2);
         }
-        r.add(coords.getBoardNum());
+        r.add(mapLocation.getBoardNum());
         vPhaseReport.add(r);
-        createSmoke(coords, smokeType, 3);
-        Hex hex = game.getBoard().getHex(coords);
+        createSmoke(mapLocation, smokeType, 3);
+        Hex hex = game.getHex(mapLocation);
         hex.addTerrain(new Terrain(Terrains.SMOKE, smokeType));
-        sendChangedHex(coords);
+        sendChangedHex(mapLocation.getCoords());
     }
 
-    public void deliverSmokeGrenade(Coords coords, Vector<Report> vPhaseReport) {
+    public void deliverSmokeGrenade(MapLocation mapLocation, Vector<Report> vPhaseReport) {
+        Coords coords = mapLocation.getCoords();
         Report r = new Report(5200, Report.PUBLIC);
         r.indent(2);
         r.add(coords.getBoardNum());
         vPhaseReport.add(r);
-        createSmoke(coords, SmokeCloud.SMOKE_LIGHT, 3);
+        createSmoke(mapLocation, SmokeCloud.SMOKE_LIGHT, 3);
         Hex hex = game.getBoard().getHex(coords);
         hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_LIGHT));
         sendChangedHex(coords);
     }
 
-    public void deliverSmokeMortar(Coords coords, Vector<Report> vPhaseReport, int duration) {
-        Report r = new Report(5185, Report.PUBLIC);
-        r.indent(2);
-        r.add(coords.getBoardNum());
-        vPhaseReport.add(r);
-        createSmoke(coords, SmokeCloud.SMOKE_HEAVY, duration);
-        Hex hex = game.getBoard().getHex(coords);
-        hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_HEAVY));
+    public void deliverSmokeMortar(MapLocation mapLocation, Vector<Report> vPhaseReport, int duration) {
+        Coords coords = mapLocation.getCoords();
+        vPhaseReport.add(Report.publicReport(5185).indent(2).add(coords.getBoardNum()));
+        createSmoke(mapLocation, SmokeCloud.SMOKE_HEAVY, duration);
+        game.getHex(mapLocation).addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_HEAVY));
         sendChangedHex(coords);
     }
 
-    public void deliverChaffGrenade(Coords coords, Vector<Report> vPhaseReport) {
+    public void deliverChaffGrenade(MapLocation mapLocation, Vector<Report> vPhaseReport) {
+        Coords coords = mapLocation.getCoords();
         Report r = new Report(5187, Report.PUBLIC);
         r.indent(2);
         r.add(coords.getBoardNum());
         vPhaseReport.add(r);
-        createSmoke(coords, SmokeCloud.SMOKE_CHAFF_LIGHT, 1);
+        createSmoke(coords, SmokeCloud.SMOKE_CHAFF_LIGHT, 1, mapLocation.getMapType());
         Hex hex = game.getBoard().getHex(coords);
         hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_CHAFF_LIGHT));
         sendChangedHex(coords);
@@ -10010,14 +10011,15 @@ public class GameManager implements IGameManager {
     /**
      * deliver artillery smoke
      *
-     * @param coords the <code>Coords</code> where to deliver
+     * @param mapLocation the <code>Coords</code> where to deliver
      */
-    public void deliverArtillerySmoke(Coords coords, Vector<Report> vPhaseReport) {
+    public void deliverArtillerySmoke(MapLocation mapLocation, Vector<Report> vPhaseReport) {
+        Coords coords = mapLocation.getCoords();
         Report r = new Report(5185, Report.PUBLIC);
         r.indent(2);
         r.add(coords.getBoardNum());
         vPhaseReport.add(r);
-        createSmoke(coords, SmokeCloud.SMOKE_HEAVY, 3);
+        createSmoke(coords, SmokeCloud.SMOKE_HEAVY, 3, mapLocation.getMapType());
         Hex hex = game.getBoard().getHex(coords);
         hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_HEAVY));
         sendChangedHex(coords);
@@ -10033,7 +10035,7 @@ public class GameManager implements IGameManager {
             r.indent(2);
             r.add(tempcoords.getBoardNum());
             vPhaseReport.add(r);
-            createSmoke(tempcoords, SmokeCloud.SMOKE_HEAVY, 3);
+            createSmoke(tempcoords, SmokeCloud.SMOKE_HEAVY, 3, mapLocation.getMapType());
             hex = game.getBoard().getHex(tempcoords);
             hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_HEAVY));
             sendChangedHex(tempcoords);
@@ -10043,14 +10045,15 @@ public class GameManager implements IGameManager {
     /**
      * deliver LASER inhibiting smoke
      *
-     * @param coords the <code>Coords</code> where to deliver
+     * @param mapLocation the MapLocation (Coords and map type) where to deliver
      */
-    public void deliverLIsmoke(Coords coords, Vector<Report> vPhaseReport) {
+    public void deliverLIsmoke(MapLocation mapLocation, Vector<Report> vPhaseReport) {
+        Coords coords = mapLocation.getCoords();
         Report r = new Report(5186, Report.PUBLIC);
         r.indent(2);
         r.add(coords.getBoardNum());
         vPhaseReport.add(r);
-        createSmoke(coords, SmokeCloud.SMOKE_LI_HEAVY, 2);
+        createSmoke(coords, SmokeCloud.SMOKE_LI_HEAVY, 2, mapLocation.getMapType());
         Hex hex = game.getBoard().getHex(coords);
         hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_LI_HEAVY));
         sendChangedHex(coords);
@@ -10066,7 +10069,7 @@ public class GameManager implements IGameManager {
             r.indent(2);
             r.add(tempcoords.getBoardNum());
             vPhaseReport.add(r);
-            createSmoke(tempcoords, SmokeCloud.SMOKE_LI_HEAVY, 2);
+            createSmoke(tempcoords, SmokeCloud.SMOKE_LI_HEAVY, 2, mapLocation.getMapType());
             hex = game.getBoard().getHex(tempcoords);
             hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_LI_HEAVY));
             sendChangedHex(tempcoords);
@@ -11327,7 +11330,7 @@ public class GameManager implements IGameManager {
                         continue;
                     }
                     if (LosEffects.calculateLOS(game, en,
-                            new HexTarget(mf.getCoords(), Targetable.TYPE_HEX_CLEAR)).canSee()) {
+                            new HexTarget(mf.getCoords(), layer.getCurrentMap(), Targetable.TYPE_HEX_CLEAR)).canSee()) {
                         target = 0;
                         break;
                     }
@@ -13629,7 +13632,7 @@ public class GameManager implements IGameManager {
                     for (Coords pos : coords) {
                         // Check that we're in the right arc
                         if (Compute.isInArc(game, e.getId(), e.getEquipmentNum(ams),
-                                new HexTarget(pos, HexTarget.TYPE_HEX_CLEAR))) {
+                                new HexTarget(pos, e.getCurrentMap(), HexTarget.TYPE_HEX_CLEAR))) {
                             apdsList = apdsCoords.computeIfAbsent(pos, k -> new ArrayList<>());
                             apdsList.add(ams);
                         }
@@ -22653,7 +22656,7 @@ public class GameManager implements IGameManager {
                                     }
                                     if (c != null) {
                                         vPhaseReport.addAll(deliverInfernoMissiles(te,
-                                                new HexTarget(c, Targetable.TYPE_HEX_ARTILLERY),
+                                                new HexTarget(te.getMapLocation(), Targetable.TYPE_HEX_ARTILLERY),
                                                 infernos));
                                     }
                                 }
@@ -28387,63 +28390,6 @@ public class GameManager implements IGameManager {
     }
 
     /**
-     * Called when a fire is burning. Called 3 times per fire hex.
-     *
-     * @param coords The <code>Coords</code> x-coordinate of the hex
-     */
-    public void addSmoke(ArrayList<Coords> coords, int windDir, boolean bInferno) {
-        // if a tornado, then no smoke!
-        if (game.getPlanetaryConditions().getWindStrength() > PlanetaryConditions.WI_STORM) {
-            return;
-        }
-
-        int smokeLevel = 0;
-        for (Coords smokeCoords : coords) {
-            Hex smokeHex = game.getBoard().getHex(smokeCoords);
-            Report r;
-            if (smokeHex == null) {
-                continue;
-            }
-            // Have to check if it's inferno smoke or from a heavy/hardened
-            // building
-            // - heavy smoke from those
-            if (bInferno || (Building.MEDIUM < smokeHex.terrainLevel(Terrains.FUEL_TANK))
-                    || (Building.MEDIUM < smokeHex.terrainLevel(Terrains.BUILDING))) {
-                if (smokeHex.terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_HEAVY) {
-                    // heavy smoke fills hex
-                    r = new Report(5180, Report.PUBLIC);
-                } else {
-                    r = new Report(5185, Report.PUBLIC);
-                }
-                smokeLevel = SmokeCloud.SMOKE_HEAVY;
-                r.add(smokeCoords.getBoardNum());
-                addReport(r);
-            } else {
-                if (smokeHex.terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_HEAVY) {
-                    // heavy smoke overpowers light
-                    r = new Report(5190, Report.PUBLIC);
-                    r.add(smokeCoords.getBoardNum());
-                    smokeLevel = Math.max(smokeLevel, SmokeCloud.SMOKE_LIGHT);
-                    addReport(r);
-                } else if (smokeHex.terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_LIGHT) {
-                    // light smoke continue to fill hex
-                    r = new Report(5195, Report.PUBLIC);
-                    r.add(smokeCoords.getBoardNum());
-                    addReport(r);
-                    smokeLevel = Math.max(smokeLevel, SmokeCloud.SMOKE_LIGHT);
-                } else {
-                    smokeLevel = Math.max(smokeLevel, SmokeCloud.SMOKE_LIGHT);
-                    // light smoke fills hex
-                    r = new Report(5200, Report.PUBLIC);
-                    r.add(smokeCoords.getBoardNum());
-                    addReport(r);
-                }
-            }
-        }
-        createSmoke(coords, smokeLevel, 0);
-    }
-
-    /**
      * Recursively scan the specified path to determine the board sizes
      * available.
      *
@@ -30104,7 +30050,7 @@ public class GameManager implements IGameManager {
      * Creates a packet containing the game board
      */
     private Packet createBoardPacket() {
-        return new Packet(PacketCommand.SENDING_BOARD, getGame().getBoard(), game.getLowAtmoMap(), game.getSpaceMap());
+        return new Packet(PacketCommand.SENDING_BOARD, game.getBoard(MapType.GROUND), game.getLowAtmoMap(), game.getSpaceMap());
     }
 
     /**
@@ -34375,10 +34321,19 @@ public class GameManager implements IGameManager {
      * @param level    1=Light 2=Heavy Smoke 3:light LI smoke 4: Heavy LI smoke
      * @param duration How long the smoke will last.
      */
-    public void createSmoke(Coords coords, int level, int duration) {
-        SmokeCloud cloud = new SmokeCloud(coords, level, duration, game.getRoundCount());
-        game.addSmokeCloud(cloud);
-        sendSmokeCloudAdded(cloud);
+    public void createSmoke(Coords coords, int level, int duration, MapType mapType) {
+        createSmoke(List.of(coords), level, duration, mapType);
+    }
+
+    /**
+     * create a <code>SmokeCloud</code> object and add it to the server list
+     *
+     * @param mapLocation   the location to create the smoke
+     * @param level    1=Light 2=Heavy Smoke 3:light LI smoke 4: Heavy LI smoke
+     * @param duration How long the smoke will last.
+     */
+    public void createSmoke(MapLocation mapLocation, int level, int duration) {
+        createSmoke(List.of(mapLocation.getCoords()), level, duration, mapLocation.getMapType());
     }
 
     /**
@@ -34388,29 +34343,10 @@ public class GameManager implements IGameManager {
      * @param level    1=Light 2=Heavy Smoke 3:light LI smoke 4: Heavy LI smoke
      * @param duration duration How long the smoke will last.
      */
-    public void createSmoke(ArrayList<Coords> coords, int level, int duration) {
-        SmokeCloud cloud = new SmokeCloud(coords, level, duration, game.getRoundCount());
+    public void createSmoke(List<Coords> coords, int level, int duration, MapType mapType) {
+        SmokeCloud cloud = new SmokeCloud(coords, level, duration, game.getRoundCount(), mapType);
         game.addSmokeCloud(cloud);
         sendSmokeCloudAdded(cloud);
-    }
-
-    /**
-     * remove a cloud from the map
-     *
-     * @param cloud the location to remove the smoke from
-     */
-    public void removeSmokeTerrain(SmokeCloud cloud) {
-        for (Coords coords : cloud.getCoordsList()) {
-            Hex hex = game.getBoard().getHex(coords);
-            if ((hex != null) && hex.containsTerrain(Terrains.SMOKE)) {
-                hex.removeTerrain(Terrains.SMOKE);
-                sendChangedHex(coords);
-            }
-        }
-    }
-
-    public List<SmokeCloud> getSmokeCloudList() {
-        return game.getSmokeCloudList();
     }
 
     /**

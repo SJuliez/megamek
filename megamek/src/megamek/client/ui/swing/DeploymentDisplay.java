@@ -289,6 +289,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         final Game game = clientgui.getClient().getGame();
         final Entity en = ce();
 
+
         if ((en instanceof Dropship) && !en.isAirborne()) {
             ArrayList<Coords> crushedBuildingLocs = new ArrayList<>();
             ArrayList<Coords> secondaryPositions = new ArrayList<>();
@@ -297,7 +298,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
                 secondaryPositions.add(en.getPosition().translated(dir));
             }
             for (Coords pos : secondaryPositions) {
-                Building bld = game.getBoard().getBuildingAt(pos);
+                Building bld = game.getBoard(en).getBuildingAt(pos);
                 if (bld != null) {
                     crushedBuildingLocs.add(pos);
                 }
@@ -330,7 +331,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         int elevation = en.getElevation();
         // If elevation was set in lounge, try to preserve it
         // Server.processDeployment will adjust elevation, so we want to account for this
-        Hex hex = game.getBoard().getHex(en.getPosition());
+        Hex hex = game.getHex(en.getMapLocation());
         if ((en instanceof VTOL) && (elevation >= 1)) {
             elevation = Math.max(0, elevation - (hex.ceiling() - hex.getLevel() + 1));
         }
@@ -570,7 +571,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
     }
 
     private boolean processBuildingDeploy(Coords moveto) {
-        final Board board = clientgui.getClient().getGame().getBoard();
+        final Board board = clientgui.getClient().getGame().getBoard(ce());
         final Game game = clientgui.getClient().getGame();
 
         int height = board.getHex(moveto).terrainLevel(Terrains.BLDG_ELEV);
@@ -621,7 +622,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
     }
 
     private boolean processBridgeDeploy(Coords moveto) {
-        final Board board = clientgui.getClient().getGame().getBoard();
+        final Board board = clientgui.getClient().getGame().getBoard(ce());
         final Hex deployhex = board.getHex(moveto);
 
         int height = board.getHex(moveto).terrainLevel(Terrains.BRIDGE_ELEV);

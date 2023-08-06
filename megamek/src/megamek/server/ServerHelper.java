@@ -48,7 +48,7 @@ public class ServerHelper {
                 && (((Infantry) te).getDugIn() != Infantry.DUG_IN_COMPLETE)) {
 
             if (te_hex == null) {
-                te_hex = game.getBoard().getHex(te.getPosition());
+                te_hex = game.getBoard(te.getCurrentMap()).getHex(te.getPosition());
             }
 
             if ((te_hex != null) && !te_hex.containsTerrain(Terrains.WOODS) && !te_hex.containsTerrain(Terrains.JUNGLE)
@@ -413,7 +413,7 @@ public class ServerHelper {
             heatArmor = ((Mech) entity).hasIntactHeatDissipatingArmor();
         }
 
-        if (game.getBoard().inSpace() || (tempDiff == 0) || laserHS) {
+        if (entity.isSpaceborne() || (tempDiff == 0) || laserHS) {
             return;
         } else {
             if (game.getPlanetaryConditions().getTemperature() > 50) {
@@ -445,11 +445,11 @@ public class ServerHelper {
      * hex it's currently in.
      */
     public static void sinkToBottom(Entity entity) {
-        if ((entity == null) || !entity.getGame().getBoard().contains(entity.getPosition())) {
+        if ((entity == null) || !entity.getGame().getBoard(entity.getCurrentMap()).contains(entity.getPosition())) {
             return;
         }
         
-        Hex fallHex = entity.getGame().getBoard().getHex(entity.getPosition());
+        Hex fallHex = entity.getGame().getBoard(entity.getCurrentMap()).getHex(entity.getPosition());
         int waterDepth = 0;
         
         // we're going hull down, we still sink to the bottom if appropriate
@@ -553,7 +553,7 @@ public class ServerHelper {
         
         for (int distance = 1; distance <= probeRange; distance++) {
             for (Coords potentialMineCoords : coords.allAtDistance(distance)) {
-                if (!game.getBoard().contains(potentialMineCoords)) {
+                if (!game.getBoard(entity.getCurrentMap()).contains(potentialMineCoords)) {
                     continue;
                 }
                 

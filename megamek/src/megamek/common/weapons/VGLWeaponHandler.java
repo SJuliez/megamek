@@ -16,20 +16,7 @@ package megamek.common.weapons;
 import java.util.ArrayList;
 import java.util.Vector;
 
-import megamek.common.AmmoType;
-import megamek.common.Building;
-import megamek.common.BuildingTarget;
-import megamek.common.Compute;
-import megamek.common.Coords;
-import megamek.common.Entity;
-import megamek.common.HexTarget;
-import megamek.common.HitData;
-import megamek.common.Game;
-import megamek.common.Infantry;
-import megamek.common.Report;
-import megamek.common.Targetable;
-import megamek.common.ToHitData;
-import megamek.common.WeaponType;
+import megamek.common.*;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.enums.GamePhase;
 import megamek.server.GameManager;
@@ -99,13 +86,13 @@ public class VGLWeaponHandler extends AmmoWeaponHandler {
         for (Coords c : affectedCoords) {
             Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(c);
             if (atype.getMunitionType() == AmmoType.M_SMOKE) {
-                gameManager.deliverSmokeGrenade(c, vPhaseReport);
+                gameManager.deliverSmokeGrenade(new MapLocation(c, ae.getCurrentMap()), vPhaseReport);
             } else if (atype.getMunitionType() == AmmoType.M_CHAFF) {
-                gameManager.deliverChaffGrenade(c, vPhaseReport);
+                gameManager.deliverChaffGrenade(new MapLocation(c, ae.getCurrentMap()), vPhaseReport);
             } else if (atype.getMunitionType() == AmmoType.M_INCENDIARY) {
                 Vector<Report> dmgReports;
                 // Delivery an inferno to the hex
-                Targetable grenadeTarget = new HexTarget(c, Targetable.TYPE_HEX_IGNITE);
+                Targetable grenadeTarget = new HexTarget(c, ae.getCurrentMap(), Targetable.TYPE_HEX_IGNITE);
                 dmgReports = gameManager
                         .deliverInfernoMissiles(ae, grenadeTarget, 1);
                 r = new Report(3372);

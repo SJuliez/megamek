@@ -353,7 +353,7 @@ public class ScenarioLoader {
         Game g = new Game();
 
         // build the board
-        g.setBoardDirect(createBoard(p));
+        g.setGroundMapDirect(createBoard(p));
 
         // build the faction players
         Collection<Player> players = createPlayers(p);

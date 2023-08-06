@@ -143,7 +143,7 @@ public class SummaryPanel extends PicMap {
             String row = "";
 
             BoardView bv = unitDisplay.getClientGUI().getBoardView();
-            Hex mhex = entity.getGame().getBoard().getHex(entity.getPosition());
+            Hex mhex = entity.getGame().getHex(entity.getMapLocation());
             if (bv != null && mhex != null) {
                 StringBuffer sb = new StringBuffer();
                 bv.appendTerrainTooltip(sb, mhex);

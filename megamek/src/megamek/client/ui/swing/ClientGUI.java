@@ -404,10 +404,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         return minimapW;
     }
 
-    public void setMiniMapDialog(final JDialog miniMapDialog) {
-        minimapW = miniMapDialog;
-    }
-
     public MiniReportDisplay getMiniReportDisplay() {
         return miniReportDisplay;
     }
@@ -611,7 +607,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 //        ruler.setSize(GUIP.getRulerSizeHeight(), GUIP.getRulerSizeWidth());
 //        UIUtil.updateWindowBounds(ruler);
 
-        setMiniMapDialog(Minimap.createMinimap(frame, getBoardView(), getClient().getGame(), this, MapType.GROUND));
+//        setMiniMapDialog(Minimap.createMinimap(frame, getBoardView(), getClient().getGame(), this, MapType.GROUND));
 
         cb = new ChatterBox(this);
 //        cb.setChatterBox2(cb2);
@@ -2999,7 +2995,15 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     }
 
     protected BoardView boardViewFor(Entity entity) {
-        return boardViews.get(entity.getCurrentMap());
+        return boardViewFor(entity.getCurrentMap());
+    }
+
+    protected BoardView boardViewFor(MapType mapType) {
+        return boardViews.get(mapType);
+    }
+
+    protected BoardView boardViewFor(MapLocation mapLocation) {
+        return boardViewFor(mapLocation.getMapType());
     }
 
     public List<BoardView> boardViews() {

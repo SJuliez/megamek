@@ -15,10 +15,7 @@
 package megamek.client.commands;
 
 import megamek.client.Client;
-import megamek.common.Coords;
-import megamek.common.LosEffects;
-import megamek.common.TargetRoll;
-import megamek.common.ToHitData;
+import megamek.common.*;
 
 /**
  * @author dirk
@@ -79,7 +76,7 @@ public class RulerCommand extends ClientCommand {
             thd = LosEffects.calculateLos(getClient().getGame(),
                     LosEffects.buildAttackInfo(start, end, elev1, elev2,
                             getClient().getBoard().getHex(start).floor(),
-                            getClient().getBoard().getHex(end).floor())
+                            getClient().getBoard().getHex(end).floor(), MapType.GROUND)
             ).losModifiers(getClient().getGame());
 
             if (thd.getValue() != TargetRoll.IMPOSSIBLE) {
@@ -90,7 +87,7 @@ public class RulerCommand extends ClientCommand {
             thd = LosEffects.calculateLos(getClient().getGame(),
                     LosEffects.buildAttackInfo(end, start, elev2, elev1,
                             getClient().getBoard().getHex(end).floor(),
-                            getClient().getBoard().getHex(start).floor())
+                            getClient().getBoard().getHex(start).floor(), MapType.GROUND)
             ).losModifiers(getClient().getGame());
 
             if (thd.getValue() != TargetRoll.IMPOSSIBLE) {

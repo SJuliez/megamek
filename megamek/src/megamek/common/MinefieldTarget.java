@@ -19,10 +19,15 @@ import java.util.Map;
 
 public class MinefieldTarget implements Targetable {
     private static final long serialVersionUID = 420672189241204590L;
-    private final Coords m_coords;
 
-    public MinefieldTarget(Coords c) {
-        m_coords = c;
+    private final MapLocation mapLocation;
+
+    public MinefieldTarget(MapLocation mapLocation) {
+        this.mapLocation = mapLocation;
+    }
+
+    public MinefieldTarget(Coords c, MapType mapType) {
+        this(new MapLocation(c, mapType));
     }
 
     @Override
@@ -32,7 +37,7 @@ public class MinefieldTarget implements Targetable {
 
     @Override
     public int getId() {
-        return MinefieldTarget.coordsToId(m_coords);
+        return locationToId(mapLocation);
     }
 
     @Override
@@ -47,7 +52,7 @@ public class MinefieldTarget implements Targetable {
 
     @Override
     public Coords getPosition() {
-        return m_coords;
+        return mapLocation.getCoords();
     }
 
     @Override
@@ -77,23 +82,15 @@ public class MinefieldTarget implements Targetable {
 
     @Override
     public String getDisplayName() {
-        return "Clear Minefield: " + m_coords.getBoardNum();
+        return "Clear Minefield: " + mapLocation.getBoardNum();
     }
 
-    /**
-     * The transformation encodes the y value in the top 5 decimal digits and
-     * the x value in the bottom 5. Could more efficiently encode this by
-     * partitioning the binary representation, but this is more human readable
-     * and still allows for a 99999x99999 hex map.
-     */
-    public static int coordsToId(Coords c) {
-        return c.getY() * 100000 + c.getX();
+    public static int locationToId(MapLocation mapLocation) {
+        return HexTarget.locationToId(mapLocation);
     }
 
-    // decode 1 number into 2
-    public static Coords idToCoords(int id) {
-        int y = id / 100000;
-        return new Coords(id - (y * 100000), y);
+    public static MapLocation idToLocation(int id) {
+        return HexTarget.idToLocation(id);
     }
 
     @Override
@@ -129,5 +126,10 @@ public class MinefieldTarget implements Targetable {
     @Override
     public boolean isEnemyOf(Entity other) {
         return true;
+    }
+
+    @Override
+    public MapLocation getMapLocation() {
+        return mapLocation;
     }
 }

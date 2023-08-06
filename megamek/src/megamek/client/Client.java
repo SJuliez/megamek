@@ -962,7 +962,7 @@ public class Client implements IClientCommandHandler {
      */
     protected void receiveBoard(Packet c) {
         Board newBoard = (Board) c.getObject(0);
-        game.setBoard(newBoard);
+        game.setGroundMap(newBoard);
         Board lowAtmoMap = (Board) c.getObject(1);
         game.setLowAtmoMap(lowAtmoMap);
         Board spaceMap = (Board) c.getObject(2);

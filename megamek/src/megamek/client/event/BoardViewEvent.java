@@ -16,6 +16,7 @@ package megamek.client.event;
 
 import megamek.common.Coords;
 import megamek.common.Entity;
+import megamek.common.MapLocation;
 
 /**
  * Instances of this class are sent as a result of changes in BoardView
@@ -23,9 +24,6 @@ import megamek.common.Entity;
  * @see BoardViewListener
  */
 public class BoardViewEvent extends java.util.EventObject {
-    /**
-     * 
-     */
     private static final long serialVersionUID = -4823618884833399318L;
     public static final int BOARD_HEX_CLICKED = 0;
     public static final int BOARD_HEX_DOUBLECLICKED = 1;
@@ -42,37 +40,38 @@ public class BoardViewEvent extends java.util.EventObject {
     public static final int SELECT_UNIT = 9;
     public static final int BOARD_HEX_POPUP = 10;
 
-    private Coords c;
-    private Entity entity;
-    private int type;
-    private int modifiers;
-    private int entityId;
-    private int mouseButton = 0;
+    private final int type;
+    private final int modifiers;
+    private final int entityId;
+    private final int mouseButton;
+    private final MapLocation mapLocation;
 
-    public BoardViewEvent(Object source, Coords c, Entity entity, int type,
-            int modifiers) {
-        super(source);
-        this.c = c;
-        this.entity = entity;
-        this.type = type;
-        this.modifiers = modifiers;
+    public BoardViewEvent(Object source, MapLocation mapLocation, Entity entity, int type, int modifiers, int mouseButton) {
+        this(source, mapLocation, entity == null ? Entity.NONE : entity.getId(), type, modifiers, mouseButton);
     }
 
     public BoardViewEvent(Object source, int type) {
-        super(source);
-        this.type = type;
-        entityId = megamek.common.Entity.NONE;
+        this(source, null, Entity.NONE, type, 0, 0);
     }
 
     public BoardViewEvent(Object source, int type, int entityId) {
-        super(source);
-        this.type = type;
-        this.entityId = entityId;
+        this(source, null, entityId, type, 0, 0);
     }
-    
-    public BoardViewEvent(Object source, Coords c, Entity entity, int type, 
-            int modifiers, int mouseButton) {
-        this(source, c, entity, type, modifiers);
+
+    public BoardViewEvent(Object source, MapLocation mapLocation, int type) {
+        this(source, mapLocation, Entity.NONE, type, 0, 0);
+    }
+
+    public BoardViewEvent(Object source, MapLocation mapLocation, int type, int modifiers, int mouseButton) {
+        this(source, mapLocation, Entity.NONE, type, modifiers, mouseButton);
+    }
+
+    private BoardViewEvent(Object source, MapLocation mapLocation, int entityId, int type, int modifiers, int mouseButton) {
+        super(source);
+        this.entityId = entityId;
+        this.type = type;
+        this.modifiers = modifiers;
+        this.mapLocation = mapLocation;
         this.mouseButton = mouseButton;
     }
 
@@ -95,15 +94,7 @@ public class BoardViewEvent extends java.util.EventObject {
      *         <code>null</code> otherwise.
      */
     public Coords getCoords() {
-        return c;
-    }
-
-    /**
-     * @return the entity associated with this event, if applicable;
-     *         <code>null</code> otherwise.
-     */
-    public Entity getEntity() {
-        return entity;
+        return mapLocation.getCoords();
     }
 
     /**
@@ -129,5 +120,13 @@ public class BoardViewEvent extends java.util.EventObject {
      */
     public int getButton() {
         return mouseButton ;
+    }
+
+    public boolean hasLocation() {
+        return (mapLocation != null) && (mapLocation.getCoords() != null) && (mapLocation.getMapType() != null);
+    }
+
+    public MapLocation getMapLocation() {
+        return mapLocation;
     }
 }

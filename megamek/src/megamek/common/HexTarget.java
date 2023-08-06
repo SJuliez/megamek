@@ -15,38 +15,41 @@ package megamek.common;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class HexTarget implements Targetable {
     private static final long serialVersionUID = -5742445409423125942L;
-    private Coords m_coords;
-    private boolean m_bIgnite;
-    private int m_type;
 
-    public HexTarget(Coords c, int nType) {
-        m_coords = c;
-        m_type = nType;
-        m_bIgnite = (nType == Targetable.TYPE_HEX_IGNITE);
-    }
-    
+    private final int targetType;
+    private final MapLocation mapLocation;
+
     /**
-     * Creates a new HexTarget given a set of coordinates and a type defined in Targetable.
-     * the board parameter is ignored.
+     * Creates a new HexTarget for the given {@link Coords} on the map of the given {@link MapType} and a
+     * type defined in {@link Targetable}.
      */
-    @Deprecated
-    public HexTarget(Coords c, Board board, int nType) {
-        m_coords = c;
-        m_type = nType;
-        m_bIgnite = (nType == Targetable.TYPE_HEX_IGNITE);
+    public HexTarget(Coords c, MapType mapType, int nType) {
+        this(new MapLocation(c, mapType), nType);
+    }
+
+    /**
+     * Creates a new HexTarget for the given {@link MapLocation} and a type defined in
+     * {@link Targetable}.
+     */
+    public HexTarget(MapLocation mapLocation, int nType) {
+        this.mapLocation = Objects.requireNonNull(mapLocation);
+        Objects.requireNonNull(mapLocation.getCoords());
+        Objects.requireNonNull(mapLocation.getMapType());
+        targetType = nType;
     }
 
     @Override
     public int getTargetType() {
-        return m_type;
+        return targetType;
     }
 
     @Override
     public int getId() {
-        return HexTarget.coordsToId(m_coords);
+        return HexTarget.locationToId(mapLocation);
     }
 
     @Override
@@ -61,7 +64,7 @@ public class HexTarget implements Targetable {
 
     @Override
     public Coords getPosition() {
-        return m_coords;
+        return mapLocation.getCoords();
     }
 
     @Override
@@ -86,13 +89,13 @@ public class HexTarget implements Targetable {
 
     @Override
     public boolean isImmobile() {
-        return ((m_type != Targetable.TYPE_HEX_BOMB) && (m_type != Targetable.TYPE_HEX_AERO_BOMB));
+        return ((targetType != Targetable.TYPE_HEX_BOMB) && (targetType != Targetable.TYPE_HEX_AERO_BOMB));
     }
 
     @Override
     public String getDisplayName() {
         final String name;
-        switch (m_type) {
+        switch (targetType) {
             case Targetable.TYPE_FLARE_DELIVER:
                 name = Messages.getString("HexTarget.DeliverFlare");
                 break;
@@ -125,29 +128,25 @@ public class HexTarget implements Targetable {
                 name = "";
                 break;
         }
-        return "Hex: " + m_coords.getBoardNum() + name;
-    }
-
-    public boolean isIgniting() {
-        return m_bIgnite;
+        return "Hex: " + mapLocation.getCoords().getBoardNum() + name;
     }
 
     /**
-     * The transformation encodes the y value in the top 5 decimal digits and
-     * the x value in the bottom 5. Could more efficiently encode this by
+     * Could more efficiently encode this by
      * partitioning the binary representation, but this is more human readable
-     * and still allows for a 99999x99999 hex map.
+     * and still allows for a 9999x20000 hex map.
      */
-
-    // encode 2 numbers into 1
-    public static int coordsToId(Coords c) {
-        return c.getY() * 100000 + c.getX();
+    public static int locationToId(MapLocation mapLocation) {
+        return mapLocation.getCoords().getY() * 100000
+                + mapLocation.getCoords().getX() * 10
+                + mapLocation.getMapType().ordinal();
     }
 
-    // decode 1 number into 2
-    public static Coords idToCoords(int id) {
+    public static MapLocation idToLocation(int id) {
         int y = id / 100000;
-        return new Coords(id - (y * 100000), y);
+        int x = (id - y * 100000) / 10;
+        int ordinal = id - y * 100000 - x * 10;
+        return new MapLocation(new Coords(x, y), MapType.values()[ordinal]);
     }
 
     @Override
@@ -160,28 +159,16 @@ public class HexTarget implements Targetable {
         return sideTable(src);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see megamek.common.Targetable#isOffBoard()
-     */
     @Override
     public boolean isOffBoard() {
         return false;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see megamek.common.Targetable#isAirborne()
-     */
     @Override
     public boolean isAirborne() {
         return false;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see megamek.common.Targetable#isAirborneVTOLorWIGE()
-     */
     @Override
     public boolean isAirborneVTOLorWIGE() {
         return false;
@@ -195,5 +182,10 @@ public class HexTarget implements Targetable {
     @Override
     public boolean isEnemyOf(Entity other) {
         return true;
+    }
+
+    @Override
+    public MapLocation getMapLocation() {
+        return mapLocation;
     }
 }

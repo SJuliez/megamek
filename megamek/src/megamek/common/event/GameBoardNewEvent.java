@@ -19,7 +19,7 @@ import megamek.common.Game;
 /**
  * Instances of this class are sent when the new board for game is set
  * 
- * @see Game#setBoard(Board)
+ * @see Game#setGroundMap(Board)
  * @see GameListener
  */
 public class GameBoardNewEvent extends GameEvent {

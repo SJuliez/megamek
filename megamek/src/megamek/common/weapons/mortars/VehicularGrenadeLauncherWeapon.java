@@ -91,24 +91,24 @@ public abstract class VehicularGrenadeLauncherWeapon extends AmmoWeapon {
         
         // attempt to target first the "correct" automatic coordinates.
         Coords c = owner.getPosition().translated(facing);
-        if (owner.getGame().getBoard().contains(c)) {
-            return new HexTarget(c, Targetable.TYPE_HEX_CLEAR);
+        if (owner.getGame().getBoard(owner.getCurrentMap()).contains(c)) {
+            return new HexTarget(c, owner.getCurrentMap(), Targetable.TYPE_HEX_CLEAR);
         }
         
         // then one hex clockwise
         c = owner.getPosition().translated((facing + 1) % 6);
-        if (owner.getGame().getBoard().contains(c)) {
-            return new HexTarget(c, Targetable.TYPE_HEX_CLEAR);
+        if (owner.getGame().getBoard(owner.getCurrentMap()).contains(c)) {
+            return new HexTarget(c, owner.getCurrentMap(), Targetable.TYPE_HEX_CLEAR);
         }
         
         // then one hex counterclockwise
         c = owner.getPosition().translated((facing - 1) % 6);
-        if (owner.getGame().getBoard().contains(c)) {
-            return new HexTarget(c, Targetable.TYPE_HEX_CLEAR);
+        if (owner.getGame().getBoard(owner.getCurrentMap()).contains(c)) {
+            return new HexTarget(c, owner.getCurrentMap(), Targetable.TYPE_HEX_CLEAR);
         }
         
         // default to the "correct" coordinates even though they're off board
         c = owner.getPosition().translated(facing);
-        return new HexTarget(c, Targetable.TYPE_HEX_CLEAR);
+        return new HexTarget(c, owner.getCurrentMap(), Targetable.TYPE_HEX_CLEAR);
     }
 }

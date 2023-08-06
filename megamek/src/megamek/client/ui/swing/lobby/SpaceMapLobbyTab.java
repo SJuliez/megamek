@@ -120,7 +120,6 @@ public class SpaceMapLobbyTab {
     private void refreshGUI() {
         removeListeners();
         butSpaceMap.setSelected(spaceMapSettings.isUsed());
-        splitPanel.setVisible(spaceMapSettings.isUsed());
         butHighAtmo.setEnabled(butSpaceMap.isSelected());
         previewPanel.setEnabled(butSpaceMap.isSelected());
         lblSpaceBoardWidth.setEnabled(butSpaceMap.isSelected());
@@ -129,6 +128,7 @@ public class SpaceMapLobbyTab {
         fldSpaceBoardHeight.setEnabled(butSpaceMap.isSelected());
         fldSpaceBoardWidth.setText(Integer.toString(spaceMapSettings.getBoardWidth()));
         fldSpaceBoardHeight.setText(Integer.toString(spaceMapSettings.getBoardHeight()));
+        previewPanel.setEnabled(butSpaceMap.isSelected());
         addListeners();
     }
 

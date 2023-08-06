@@ -43,9 +43,9 @@ public class FireExtinguisherHandler extends WeaponHandler {
                 r.add(target.getPosition().getBoardNum());
                 r.indent(3);
                 vPhaseReport.add(r);
-                game.getBoard().getHex(target.getPosition()).removeTerrain(Terrains.FIRE);
+                game.getBoard(entityTarget).getHex(target.getPosition()).removeTerrain(Terrains.FIRE);
                 gameManager.sendChangedHex(target.getPosition());
-                game.getBoard().removeInfernoFrom(target.getPosition());
+                game.getBoard(entityTarget).removeInfernoFrom(target.getPosition());
             } else if (target instanceof Entity) {
                 if (entityTarget.infernos.isStillBurning()
                         || (target instanceof Tank && ((Tank) target).isOnFire())) {

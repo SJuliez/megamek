@@ -1471,16 +1471,16 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     setFireEnabled(false);
                 }
             }
-            Building bldg = game.getBoard().getBuildingAt(c);
+            Building bldg = game.getBoard(ce()).getBuildingAt(c);
             if (bldg != null) {
-                Targetable t = new BuildingTarget(c, game.getBoard(), false);
+                Targetable t = new BuildingTarget(c, game.getBoard(ce()), false);
                 toHit = WeaponAttackAction.toHit(game, cen, t, weaponId,
                         Entity.LOC_NONE, AimingMode.NONE, true);
                 toHitBuff.append(t.getDisplayName() + ": ");
                 toHitBuff.append(toHit.getDesc());
                 toHitBuff.append("\n");
             }
-            Targetable hexTarget = new HexTarget(c, HexTarget.TYPE_HEX_CLEAR);
+            Targetable hexTarget = new HexTarget(target.getMapLocation(), HexTarget.TYPE_HEX_CLEAR);
             toHit = WeaponAttackAction.toHit(game, cen, hexTarget, weaponId,
                     Entity.LOC_NONE, AimingMode.NONE, true);
             if (m.getType().hasFlag(WeaponType.F_AUTO_TARGET)
@@ -1587,10 +1587,10 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         ArrayList<Targetable> targets = new ArrayList<>();
         if (isStrafing) {
             for (Coords c : strafingCoords) {
-                targets.add(new HexTarget(c, Targetable.TYPE_HEX_CLEAR));
-                Building bldg = game.getBoard().getBuildingAt(c);
+                targets.add(new HexTarget(c, ce().getCurrentMap(), Targetable.TYPE_HEX_CLEAR));
+                Building bldg = game.getBoard(ce()).getBuildingAt(c);
                 if (bldg != null) {
-                    targets.add(new BuildingTarget(c, game.getBoard(), false));
+                    targets.add(new BuildingTarget(c, game.getBoard(ce()), false));
                 }
                 // Target all ground units (non-airborne, VTOLs still count)
                 for (Entity t : game.getEntitiesVector(c)) {
@@ -2137,7 +2137,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                 // HACK : sometimes we don't show the target choice window
                 Targetable targ = null;
                 if (showTargetChoice) {
-                    targ = chooseTarget(evtCoords);
+                    targ = chooseTarget(b.getMapLocation());
                 }
                 if (shiftheld) {
                     updateFlipArms(false);
@@ -2523,12 +2523,12 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
      *
      * @param pos - the <code>Coords</code> containing targets.
      */
-    private Targetable chooseTarget(Coords pos) {
+    private Targetable chooseTarget(MapLocation mapLocation) {
         final Game game = clientgui.getClient().getGame();
         boolean friendlyFire = game.getOptions().booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE);
         // Assume that we have *no* choice.
         Targetable choice = null;
-        Iterator<Entity> choices;
+        List<Entity> choices;
 
         int wn = clientgui.getUnitDisplay().wPan.getSelectedWeaponNum();
         Mounted weap = ce().getEquipment(wn);
@@ -2541,30 +2541,29 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             // Mek mortar flares should default to deliver flare
             if ((aType.getAmmoType() == AmmoType.T_MEK_MORTAR)
                     && (munitionType == AmmoType.M_FLARE)) {
-                return new HexTarget(pos, Targetable.TYPE_FLARE_DELIVER);
+                return new HexTarget(mapLocation, Targetable.TYPE_FLARE_DELIVER);
             // Certain mek mortar types and LRMs should target hexes
             } else if (((aType.getAmmoType() == AmmoType.T_MEK_MORTAR)
                     || (aType.getAmmoType() == AmmoType.T_LRM)
                     || (aType.getAmmoType() == AmmoType.T_LRM_IMP))
                     && ((munitionType == AmmoType.M_AIRBURST)
                             || (munitionType == AmmoType.M_SMOKE_WARHEAD))) {
-                return new HexTarget(pos, Targetable.TYPE_HEX_CLEAR);
+                return new HexTarget(mapLocation, Targetable.TYPE_HEX_CLEAR);
             } else if (munitionType == AmmoType.M_MINE_CLEARANCE) {
-                return new HexTarget(pos, Targetable.TYPE_HEX_CLEAR);
+                return new HexTarget(mapLocation, Targetable.TYPE_HEX_CLEAR);
             }
         }
         // Get the available choices, depending on friendly fire
         if (friendlyFire) {
-            choices = game.getEntities(pos);
+            choices = game.getEntitiesAt(mapLocation);
         } else {
-            choices = game.getEnemyEntities(pos, ce());
+            choices = game.getEnemyEntitiesAt(mapLocation, ce());
         }
 
         // Convert the choices into a List of targets.
         List<Targetable> targets = new ArrayList<>();
         final Player localPlayer = clientgui.getClient().getLocalPlayer();
-        while (choices.hasNext()) {
-            Entity t = choices.next();
+        for (Entity t: choices) {
             boolean isSensorReturn = false;
             boolean isVisible = true;
             boolean isHidden = false;
@@ -2581,7 +2580,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
 
         // If there aren't other targets, check for targets flying over pos
         if (targets.isEmpty()) {
-            List<Entity> flyovers = clientgui.getBoardView().getEntitiesFlyingOver(pos);
+            List<Entity> flyovers = clientgui.boardViewFor(mapLocation).getEntitiesFlyingOver(mapLocation.getCoords());
             for (Entity e : flyovers) {
                 if (!targets.contains(e)) {
                     targets.add(e);
@@ -2590,17 +2589,17 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         }
 
         // Is there a building in the hex?
-        Building bldg = clientgui.getClient().getGame().getBoard().getBuildingAt(pos);
+        Building bldg = clientgui.getClient().getGame().getBuildingAt(mapLocation);
         if (bldg != null) {
-            targets.add(new BuildingTarget(pos, clientgui.getClient().getGame().getBoard(), false));
+            targets.add(new BuildingTarget(mapLocation.getCoords(), clientgui.getClient().getGame().getBoard(mapLocation), false));
         }
 
         // If we clicked on a wooded hex with no other targets, clear woods
         if (targets.isEmpty()) {
-            Hex hex = game.getBoard().getHex(pos);
+            Hex hex = game.getHex(mapLocation);
             if (hex.containsTerrain(Terrains.WOODS)
                     || hex.containsTerrain(Terrains.JUNGLE)) {
-                targets.add(new HexTarget(pos, Targetable.TYPE_HEX_CLEAR));
+                targets.add(new HexTarget(mapLocation, Targetable.TYPE_HEX_CLEAR));
             }
         }
 
@@ -2612,7 +2611,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             // If we have multiple choices, display a selection dialog.
             choice = TargetChoiceDialog.showSingleChoiceDialog(clientgui.getFrame(),
                     "FiringDisplay.ChooseTargetDialog.title",
-                    Messages.getString("FiringDisplay.ChooseTargetDialog.message", pos.getBoardNum()),
+                    Messages.getString("FiringDisplay.ChooseTargetDialog.message", mapLocation.getCoords().getBoardNum()),
                     targets, clientgui, ce());
         }
 

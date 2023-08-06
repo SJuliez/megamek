@@ -20,8 +20,8 @@ import java.util.*;
  */
 class FovHighlightingAndDarkening {
     private final BoardView boardView1;
-    private java.util.List<Color> ringsColors = new ArrayList<>();
-    private java.util.List<Integer> ringsRadii = new ArrayList<>();
+    private List<Color> ringsColors = new ArrayList<>();
+    private List<Integer> ringsRadii = new ArrayList<>();
     GUIPreferences gs = GUIPreferences.getInstance();
     private IPreferenceChangeListener ringsChangeListner;
 
@@ -316,7 +316,7 @@ class FovHighlightingAndDarkening {
          * change the getCachedLos method accordingly.
          */
         GUIPreferences guip = GUIPreferences.getInstance();
-        Board board = this.boardView1.getBoard();
+        Board board = boardView1.getBoard();
         Hex srcHex = board.getHex(src);
         if (srcHex == null) {
             LogManager.getLogger().error("Cannot process line of sight effects with a null source hex.");
@@ -330,24 +330,24 @@ class FovHighlightingAndDarkening {
         LosEffects.AttackInfo ai = new LosEffects.AttackInfo();
         ai.attackPos = src;
         ai.targetPos = dest;
+        ai.mapType = board.getMapType();
         // First, we check for a selected unit and use its height. If
         // there's no selected unit we use the mechInFirst GUIPref.
-        if (this.boardView1.selectedEntity != null) {
-            ai.attackHeight = this.boardView1.selectedEntity.getHeight();
+        if (boardView1.selectedEntity != null) {
+            ai.attackHeight = boardView1.selectedEntity.getHeight();
             // Elevation of entity above the hex surface
             int elevation;
             if (!boardView1.pathSprites.isEmpty()) {
                 // If we've got a step, get the elevation from it
-                int lastStepIdx = this.boardView1.pathSprites.size() - 1;
-                MoveStep lastMS = this.boardView1.pathSprites.get(lastStepIdx)
-                        .getStep();
+                int lastStepIdx = boardView1.pathSprites.size() - 1;
+                MoveStep lastMS = boardView1.pathSprites.get(lastStepIdx).getStep();
                 elevation = lastMS.getElevation();
             } else {
                 // otherwise we use entity's elevation
-                elevation = this.boardView1.selectedEntity.getElevation();
+                elevation = boardView1.selectedEntity.getElevation();
             }
             ai.attackAbsHeight = srcHex.getLevel() + elevation
-                    + this.boardView1.selectedEntity.getHeight();
+                    + boardView1.selectedEntity.getHeight();
         } else {
             ai.attackHeight = guip.getMechInFirst() ? 1 : 0;
             ai.attackAbsHeight = srcHex.getLevel() + ai.attackHeight;

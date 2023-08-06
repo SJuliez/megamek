@@ -1042,7 +1042,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             // no turning for spheroids in atmosphere
             if ((((IAero) ce()).isSpheroid() || clientgui.getClient().getGame()
                     .getPlanetaryConditions().isVacuum())
-                    && !clientgui.getClient().getGame().getBoard().inSpace()) {
+                    && !ce().isSpaceborne()) {
                 setTurnEnabled(false);
             }
         }
@@ -1667,9 +1667,9 @@ public class MovementDisplay extends ActionPhaseDisplay {
                 && (ce().isAirborneVTOLorWIGE() || (ce().getElevation() != cmd.getFinalElevation()))
                 && !cmd.contains(MoveStepType.FORWARDS) && !cmd.contains(MoveStepType.FLEE)
                 && cmd.getFinalElevation() > 0
-                && ce().getGame().getBoard().getHex(cmd.getFinalCoords())
+                && ce().getGame().getBoard(ce()).getHex(cmd.getFinalCoords())
                     .terrainLevel(Terrains.BLDG_ELEV) < cmd.getFinalElevation()
-                && ce().getGame().getBoard().getHex(cmd.getFinalCoords())
+                && ce().getGame().getBoard(ce()).getHex(cmd.getFinalCoords())
                     .terrainLevel(Terrains.BRIDGE_ELEV) < cmd.getFinalElevation()) {
             String title = Messages.getString("MovementDisplay.MicroliteMove.title");
             String body = Messages.getString("MovementDisplay.MicroliteMove.message");
@@ -2030,7 +2030,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                                     cmd.getHexesMoved());
                         } else if ((target.getTargetType() == Targetable.TYPE_FUEL_TANK)
                                    || (target.getTargetType() == Targetable.TYPE_BUILDING)) {
-                            Building bldg = clientgui.getClient().getGame().getBoard().getBuildingAt(moveto);
+                            Building bldg = clientgui.getClient().getGame().getBuildingAt(target.getMapLocation());
                             toAttacker = ChargeAttackAction.getDamageTakenBy(ce, bldg, moveto);
                         }
                     }
@@ -2211,7 +2211,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                                                        .getGame().getOptions()
                                                        .booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_HULL_DOWN);
                     Hex occupiedHex = clientgui.getClient().getGame()
-                                                .getBoard()
+                                                .getBoard(ce)
                                                 .getHex(cmd.getLastStep().getPosition());
                     boolean fortifiedHex = occupiedHex
                             .containsTerrain(Terrains.FORTIFIED);
@@ -2329,7 +2329,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         }
 
         // only allow landing on the ground map not atmosphere or space map
-        if (!clientgui.getClient().getGame().getBoard().onGround()) {
+        if (!ce.getCurrentMap().isGround()) {
             return;
         }
 
@@ -2350,7 +2350,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
         setRollEnabled(true);
 
-        if (!clientgui.getClient().getGame().getBoard().inSpace()) {
+        if (!ce.isSpaceborne()) {
             setRollEnabled(false);
         }
 
@@ -2369,7 +2369,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             if (!((IAero) ce).isVSTOL()) {
                 return;
             }
-            if (clientgui.getClient().getGame().getBoard().inSpace()) {
+            if (ce.isSpaceborne()) {
                 return;
             }
         } else if (!(ce instanceof Protomech) && !(ce instanceof LandAirMech
@@ -2472,12 +2472,12 @@ public class MovementDisplay extends ActionPhaseDisplay {
         }
 
         // if in atmosphere, limit acceleration to 2x safe thrust
-        if (!clientgui.getClient().getGame().getBoard().inSpace()
+        if (!ce.isSpaceborne()
                 && (vel == (2 * ce.getWalkMP()))) {
             setAccEnabled(false);
         }
         // velocity next will get halved before next turn so allow up to 4 times
-        if (!clientgui.getClient().getGame().getBoard().inSpace()
+        if (!ce.isSpaceborne()
                 && (veln == (4 * ce.getWalkMP()))) {
             setAccNEnabled(false);
         }
@@ -2511,7 +2511,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             velocityLeft = step.getVelocityLeft();
         }
 
-        final Board board = clientgui.getClient().getGame().getBoard();
+        final Board board = clientgui.getClient().getGame().getBoard(ce);
         // for spheroids in atmosphere we just need to check being on the edge
         if (a.isSpheroid() && !board.inSpace()) {
             setFlyOffEnabled((position != null) && (ce.getWalkMP() > 0)
@@ -2708,7 +2708,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             return;
         }
 
-        Hex currHex = clientgui.getClient().getGame().getBoard().getHex(ce.getPosition());
+        Hex currHex = clientgui.getClient().getGame().getHex(ce.getMapLocation());
         if (currHex.containsTerrain(Terrains.WATER) && (ce.getElevation() < 0)) {
             setModeConvertEnabled(false);
             return;
@@ -2770,7 +2770,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             return;
         }
 
-        if (clientgui.getClient().getGame().getBoard().inSpace()) {
+        if (ce.isSpaceborne()) {
             return;
         }
 
@@ -2869,7 +2869,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
         final boolean legalGear = ((gear == GEAR_LAND) || (gear == GEAR_TURN) || (gear == GEAR_BACKUP) || (gear == GEAR_JUMP));
         final int unloadEl = cmd.getFinalElevation();
-        final Hex hex = game().getBoard().getHex(cmd.getFinalCoords());
+        final Hex hex = game().getBoard(ce).getHex(cmd.getFinalCoords());
         boolean canUnloadHere = false;
 
         // A unit that has somehow exited the map is assumed to be unable to unload
@@ -2900,7 +2900,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             mpUsed = cmd.getMpUsed();
         }
         final boolean canMount = isFinalPositionOnBoard() && !ce.isAirborne() && (mpUsed <= Math.ceil(ce.getWalkMP() / 2.0))
-                && !Compute.getMountableUnits(ce, pos, elev + game.getBoard().getHex(pos).getLevel(), game).isEmpty();
+                && !Compute.getMountableUnits(ce, pos, elev + game.getBoard(ce).getHex(pos).getLevel(), game).isEmpty();
         setMountEnabled(canMount);
     }
 
@@ -2914,7 +2914,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         }
 
         final boolean legalGear = ((gear == GEAR_LAND) || (gear == GEAR_TURN) || (gear == GEAR_BACKUP) || (gear == GEAR_JUMP));
-        final Hex hex = game().getBoard().getHex(cmd.getFinalCoords());
+        final Hex hex = game().getBoard(ce).getHex(cmd.getFinalCoords());
         final int unloadEl = cmd.getFinalElevation();
         final boolean canDropTrailerHere = towedUnits.stream().anyMatch(en -> en.isElevationValid(unloadEl, hex));
         setDisconnectEnabled(legalGear && isFinalPositionOnBoard() && canDropTrailerHere);
@@ -2932,7 +2932,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
     /** @return True when the endpoint of the current movement path is on the board. */
     private boolean isFinalPositionOnBoard() {
-        return game().getBoard().contains(cmd == null ? ce().getPosition() : cmd.getFinalCoords());
+        return game().getBoard(ce()).contains(cmd == null ? ce().getPosition() : cmd.getFinalCoords());
     }
 
     private void updateLayMineButton() {
@@ -2961,7 +2961,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             pos = cmd.getFinalCoords();
             elev = cmd.getFinalElevation();
         }
-        Hex hex = clientgui.getClient().getGame().getBoard().getHex(pos);
+        Hex hex = clientgui.getClient().getGame().getBoard(ce).getHex(pos);
         if (null != hex) {
             elev += hex.getLevel();
         }
@@ -3348,7 +3348,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         if (null != cmd) {
             pos = cmd.getFinalCoords();
         }
-        int elev = clientgui.getClient().getGame().getBoard().getHex(pos).getLevel()
+        int elev = clientgui.getClient().getGame().getBoard(ce).getHex(pos).getLevel()
                 + ce.getElevation();
         List<Coords> ring = pos.allAdjacent();
         if (ce instanceof Dropship) {
@@ -3424,7 +3424,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         Entity crew = new EjectedCrew();
         crew.setId(clientgui.getClient().getGame().getNextEntityId());
         crew.setGame(clientgui.getClient().getGame());
-        int elev = clientgui.getClient().getGame().getBoard().getHex(pos).getLevel() + abandoned.getElevation();
+        int elev = clientgui.getClient().getGame().getBoard(abandoned).getHex(pos).getLevel() + abandoned.getElevation();
         List<Coords> ring = pos.allAdjacent();
         if (abandoned instanceof Dropship) {
             ring = pos.allAtDistance(2);
@@ -4105,7 +4105,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         }
 
         IAero a = (IAero) ce;
-        if (!clientgui.getClient().getGame().getBoard().inSpace()) {
+        if (!ce.isSpaceborne()) {
             if (a.isSpheroid()
                     || clientgui.getClient().getGame().getPlanetaryConditions().isVacuum()) {
                 getBtn(MoveCommand.MOVE_ACC).setEnabled(false);
@@ -4139,9 +4139,9 @@ public class MovementDisplay extends ActionPhaseDisplay {
         }
 
         // Is there a building in the hex?
-        Building bldg = clientgui.getClient().getGame().getBoard().getBuildingAt(pos);
+        Building bldg = clientgui.getClient().getGame().getBoard(ce).getBuildingAt(pos);
         if (bldg != null) {
-            targets.add(new BuildingTarget(pos, clientgui.getClient().getGame().getBoard(), false));
+            targets.add(new BuildingTarget(pos, clientgui.getClient().getGame().getBoard(ce), false));
         }
 
         // Do we have a single choice?
@@ -5008,7 +5008,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                 pos = last.getPosition();
                 distance = last.getDistance();
             }
-            Board board = clientgui.getClient().getGame().getBoard();
+            Board board = clientgui.getClient().getGame().getBoard(ce);
             // On Atmospheric maps, elevations are treated as altitudes, so
             // hex ceiling is the ground
             int ceil = board.getHex(pos).ceiling(board.inAtmosphere());

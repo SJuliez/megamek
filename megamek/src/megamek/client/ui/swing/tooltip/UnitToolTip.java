@@ -28,6 +28,7 @@ import megamek.common.weapons.LegAttack;
 import megamek.common.weapons.StopSwarmAttack;
 import megamek.common.weapons.SwarmAttack;
 import megamek.common.weapons.SwarmWeaponAttack;
+import megamek.server.FireProcessor;
 import org.apache.logging.log4j.LogManager;
 
 import java.awt.*;
@@ -172,7 +173,12 @@ public final class UnitToolTip {
         } else if (target instanceof BuildingTarget) {
             return HexTooltip.getBuildingTargetTip((BuildingTarget) target, (client != null) ? client.getBoard() : null);
         } else if (target instanceof Hex) {
-            return HexTooltip.getHexTip((Hex) target, client);
+            if (client != null) {
+                return HexTooltip.getHexTip(client.getGame().getBoard(target.getMapLocation()),
+                        target.getMapLocation().getCoords(), client);
+            } else {
+                return "?";
+            }
         } else {
             return getTargetTipSummary(target, client);
         }

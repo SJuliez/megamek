@@ -128,7 +128,7 @@ public class MekMortarSmokeHandler extends AmmoWeaponHandler {
             }
         }
 
-        gameManager.deliverSmokeMortar(targetPos, vPhaseReport, duration);
+        gameManager.deliverSmokeMortar(new MapLocation(targetPos, ae.getCurrentMap()), vPhaseReport, duration);
         return false;
     }
 

@@ -112,7 +112,7 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
     /** Creates new TilesetManager. */
     public TilesetManager(BoardView bv) throws IOException {
         boardview = bv;
-        hexTileset = new HexTileset(boardview.game);
+        hexTileset = new HexTileset(boardview.game, boardview.getBoard().getMapType());
         tracker = new MediaTracker(boardview);
         wreckageDecalCount = new HashMap<>();
         wreckageDecalCount.put(FILENAME_SUFFIX_WRECKS_ULTRALIGHT, getULightDecalCount());
@@ -139,7 +139,7 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
     public void preferenceChange(PreferenceChangeEvent e) {
         // A new Hex Tileset has been selected
         if (e.getName().equals(ClientPreferences.MAP_TILESET)) {
-            HexTileset hts = new HexTileset(boardview.game);
+            HexTileset hts = new HexTileset(boardview.game, boardview.getBoard().getMapType());
             try {
                 hexTileset.incDepth = 0;
                 hts.loadFromFile((String) e.getNewValue());

@@ -1645,7 +1645,7 @@ public class FireControl {
                                       final boolean passedOverTarget,
                                       final boolean guess) {
         final FiringPlan diveBombPlan = new FiringPlan(target);
-        final HexTarget hexToBomb = new HexTarget(target.getPosition(), 
+        final HexTarget hexToBomb = new HexTarget(target.getMapLocation(),
                 shooter.isAero() ? Targetable.TYPE_HEX_AERO_BOMB : Targetable.TYPE_HEX_BOMB);
 
         // things that cause us to avoid calculating a bomb plan:

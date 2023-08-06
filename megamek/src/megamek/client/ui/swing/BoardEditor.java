@@ -1379,7 +1379,7 @@ public class BoardEditor extends JPanel
             board = BoardUtilities.generateRandom(mapSettings);
             // "Initialize" all hexes to add internally handled terrains
             correctExits();
-            game.setBoard(board);
+            game.setGroundMap(board);
             curBoardFile = null;
             choTheme.setSelectedItem(mapSettings.getTheme());
             setupUiFreshBoard();
@@ -1399,7 +1399,7 @@ public class BoardEditor extends JPanel
             int south = emd.getExpandSouth();
             board = implantOldBoard(game, west, north, east, south);
 
-            game.setBoard(board);
+            game.setGroundMap(board);
             curBoardFile = null;
             setupUiFreshBoard();
         }
@@ -1462,7 +1462,7 @@ public class BoardEditor extends JPanel
             // for the background image to work in the BoardEditor
             board = BoardUtilities.combine(board.getWidth(), board.getHeight(), 1, 1, 
                     new Board[]{ board }, Collections.singletonList(false), MapSettings.MEDIUM_GROUND);
-            game.setBoard(board);
+            game.setGroundMap(board);
             // BoardUtilities.combine does not preserve tags, so add them back
             for (String tag : boardTags) {
                 board.addTag(tag);

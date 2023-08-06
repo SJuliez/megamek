@@ -124,6 +124,7 @@ public class LowAtmoMapLobbyTab {
         lowAtmoBoardHeightField.setEnabled(lowAtmoMapButton.isSelected());
         lowAtmoBoardWidthField.setText(Integer.toString(lowAtmoMapSettings.getBoardWidth()));
         lowAtmoBoardHeightField.setText(Integer.toString(lowAtmoMapSettings.getBoardHeight()));
+        previewPanel.setEnabled(lowAtmoMapButton.isSelected());
         addListeners();
     }
 

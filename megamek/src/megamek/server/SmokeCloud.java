@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.List;
 
 import megamek.common.Coords;
+import megamek.common.MapType;
 
 public class SmokeCloud implements Serializable {
 
@@ -33,27 +34,31 @@ public class SmokeCloud implements Serializable {
     public static final int SMOKE_CHAFF_LIGHT = 5;
     public static final int SMOKE_GREEN = 6; // Anti-TSM smoke
 
-    private int smokeDuration = 0;
+    private int smokeDuration;
+    private final MapType mapType;
     private final List<Coords> smokeHexList = new ArrayList<>();
-    private int smokeLevel = 1;
+    private int smokeLevel;
     private boolean didDrift = false;
-    private int roundOfGeneration;
-    
-    public SmokeCloud() { }
-    
+    private final int roundOfGeneration;
+
     public SmokeCloud(Coords coords, int level, int duration, int roundOfGeneration) {
-        this(List.of(coords), level, duration, roundOfGeneration);
+        this(List.of(coords), level, duration, roundOfGeneration, MapType.GROUND);
     }
     
-    public SmokeCloud(List<Coords> coords, int level, int duration, int roundOfGeneration) {
-        this.smokeDuration = duration;
-        this.smokeLevel = level;
-        this.smokeHexList.addAll(coords);
+    public SmokeCloud(Coords coords, int level, int duration, int roundOfGeneration, MapType mapType) {
+        this(List.of(coords), level, duration, roundOfGeneration, mapType);
+    }
+    
+    public SmokeCloud(List<Coords> coords, int level, int duration, int roundOfGeneration, MapType mapType) {
+        this.mapType = mapType;
+        smokeDuration = duration;
+        smokeLevel = level;
+        smokeHexList.addAll(coords);
         this.roundOfGeneration = roundOfGeneration;
     }
     
     public void setSmokeLevel(int level) {
-        this.smokeLevel = Math.min(6, level);
+        smokeLevel = Math.min(6, level);
     }
     
     /**
@@ -88,13 +93,9 @@ public class SmokeCloud implements Serializable {
     public boolean isCompletelyDissipated() {
         return smokeLevel == SMOKE_NONE;
     }
-    
-    public void addCoords(Coords coords) {
-        smokeHexList.add(coords);
-    }
-    
-    public void removeCoords(Coords coords) {
-        smokeHexList.remove(coords);
+
+    public MapType getMapType() {
+        return mapType;
     }
     
     public List<Coords> getCoordsList() {
@@ -130,5 +131,9 @@ public class SmokeCloud implements Serializable {
 
     public int getRoundOfGeneration() {
         return roundOfGeneration;
+    }
+
+    public boolean isOnMap(MapType mapType) {
+        return this.mapType == mapType;
     }
 }

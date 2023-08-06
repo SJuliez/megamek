@@ -46,7 +46,8 @@ public class HexTileset implements BoardListener {
 
     public static final String TRANSPARENT_THEME = "transparent";
     
-    private Game game;
+    private final Game game;
+    private final MapType mapType;
 
     private ArrayList<HexEntry> bases = new ArrayList<>();
     private ArrayList<HexEntry> supers = new ArrayList<>();
@@ -59,10 +60,11 @@ public class HexTileset implements BoardListener {
     /**
      * Creates new HexTileset
      */
-    public HexTileset(Game g) {
+    public HexTileset(Game g, MapType mapType) {
         game = g;
+        this.mapType = mapType;
         game.addGameListener(gameListener);
-        game.getBoard().addBoardListener(this);
+        game.getBoard(mapType).addBoardListener(this);
     }
 
     /** Clears the image cache for the given hex. */
@@ -593,7 +595,7 @@ public class HexTileset implements BoardListener {
     // hexes from the cache. 
     // It must listen to Game events to catch when a board is entirely replaced
     // to be able to register itself to the new board.
-    private GameListener gameListener = new GameListenerAdapter() {
+    private final GameListener gameListener = new GameListenerAdapter() {
 
         @Override
         public void gameBoardNew(GameBoardNewEvent e) {
@@ -605,12 +607,15 @@ public class HexTileset implements BoardListener {
         public void gameBoardChanged(GameBoardChangeEvent e) {
             clearAllHexes();
         }
-
     };
     
     private void replacedBoard(GameBoardNewEvent e) {
-        e.getOldBoard().removeBoardListener(this);
-        e.getNewBoard().addBoardListener(this);
+        if (e.getOldBoard() != null) {
+            e.getOldBoard().removeBoardListener(this);
+        }
+        if (e.getNewBoard() != null) {
+            e.getNewBoard().addBoardListener(this);
+        }
     }
     
     @Override

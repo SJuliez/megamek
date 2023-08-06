@@ -27,66 +27,55 @@ import java.util.Map;
 public class BuildingTarget implements Targetable {
     private static final long serialVersionUID = 6432766092407639630L;
 
-    /**
-     * The coordinates of the hex being targeted.
-     */
-    private Coords position = null;
-
-    /**
-     * The ID of the building being targeted.
-     */
-    private int id = Building.UNKNOWN;
+    private final MapLocation mapLocation;
+    private final int id;
 
     /**
      * The height of the building at the targeted position, used to indicate
      * the number of levels of the building.  A height 0 building is a 1-story
      * (level 1) building.  Bridges will always have a height of 0.
      */
-    private int height = Building.UNKNOWN;
+    private int height;
 
     /**
      * The elevation of the building at the targeted position, generally only
      * used by bridges but also for buildings on hexes with depth.
      */
-    private int elevation = Building.UNKNOWN;
+    private final int elevation;
+
+    /** The name of this hex of the building. */
+    private final String name;
+
+    /** The type of attack that is targeting this building. */
+    private final int type;
 
     /**
-     * The name of this hex of the building.
-     */
-    private String name = null;
-
-    /**
-     * The type of attack that is targeting this building.
-     */
-    private int type;
-
-    /**
-     * Initialize this object from the input.
+     * Target a single hex of a building.
      *
      * @param coords - the <code>Coords</code> of the hext being targeted.
      * @param board  - the game's <code>Board</code> object.
-     * @param nType
+     * @param nType  - an <code>int</code> value that indicates whether the
+     *               player is attempting to set the building on fire, or not.
      * @throws IllegalArgumentException will be thrown if
      *            the given coordinates do not contain a building.
      */
-    protected void init(Coords coords, Board board, int nType) {
-        position = coords;
+    public BuildingTarget(Coords coords, Board board, int nType) {
+        mapLocation = new MapLocation(coords, board.getMapType());
         type = nType;
 
         // Get the building at the given coordinates.
-        Building bldg = board.getBuildingAt(position);
+        Building bldg = board.getBuildingAt(mapLocation);
         if (bldg == null) {
-            throw new IllegalArgumentException("The coordinates, " + position.getBoardNum()
+            throw new IllegalArgumentException("The coordinates, " + coords.getBoardNum()
                     + ", do not contain a building.");
         }
 
         // Save the building's ID.
-        id = BuildingTarget.coordsToId(coords);
+        id = HexTarget.locationToId(mapLocation);
 
         // Generate a name.
         StringBuilder sb = new StringBuilder();
-        sb.append("Hex ").append(position.getBoardNum()).append(" of ")
-            .append(bldg.getName());
+        sb.append("Hex ").append(coords.getBoardNum()).append(" of ").append(bldg.getName());
         switch (nType) {
             case Targetable.TYPE_BLDG_IGNITE:
                 sb.append(Messages.getString("BuildingTarget.Ignite"));
@@ -101,12 +90,10 @@ public class BuildingTarget implements Targetable {
 
         name = sb.toString();
 
-        // Bottom of building is at ground level, top of building is at
-        // BLDG_ELEV.
+        // Bottom of building is at ground level, top of building is at BLDG_ELEV.
         // Note that height of 0 is a single story building.
-        // Bridges are always height 0, and the BRIDGE_ELEV indicates the
-        // elevation
-        Hex targetHex = board.getHex(position);
+        // Bridges are always height 0, and the BRIDGE_ELEV indicates the elevation
+        Hex targetHex = board.getHex(coords);
         elevation = Math.max(-targetHex.depth(), targetHex.terrainLevel(Terrains.BRIDGE_ELEV));
         height = targetHex.terrainLevel(Terrains.BLDG_ELEV);
         if (height <= 0) {
@@ -121,30 +108,14 @@ public class BuildingTarget implements Targetable {
      *
      * @param coords - the <code>Coords</code> of the hext being targeted.
      * @param board  - the game's <code>Board</code> object.
-     * @param nType  - an <code>int</code> value that indicates whether the
-     *               player is attempting to set the building on fire, or not.
-     * @throws IllegalArgumentException will be thrown if
-     *            the given coordinates do not contain a building.
-     */
-    public BuildingTarget(Coords coords, Board board, int nType) {
-        init(coords, board, nType);
-    }
-
-    /**
-     * Target a single hex of a building.
-     *
-     * @param coords - the <code>Coords</code> of the hext being targeted.
-     * @param board  - the game's <code>Board</code> object.
      * @param ignite - a <code>boolean</code> flag that indicates whether the
      *               player is attempting to set the building on fire, or not.
      * @throws IllegalArgumentException will be thrown if
      *            the given coordinates do not contain a building.
      */
     public BuildingTarget(Coords coords, Board board, boolean ignite) {
-        init(coords, board, ignite ? Targetable.TYPE_BLDG_IGNITE : Targetable.TYPE_BUILDING);
+        this(coords, board, ignite ? Targetable.TYPE_BLDG_IGNITE : Targetable.TYPE_BUILDING);
     }
-
-    // Implementation of Targetable
 
     @Override
     public int getTargetType() {
@@ -168,7 +139,7 @@ public class BuildingTarget implements Targetable {
 
     @Override
     public Coords getPosition() {
-        return position;
+        return mapLocation.getCoords();
     }
 
     @Override
@@ -201,23 +172,8 @@ public class BuildingTarget implements Targetable {
         return name;
     }
 
-    /**
-     * Creates an id for this building based on its location as well as a
-     * building code.
-     * The transformation encodes the y value in the top 5 decimal digits and
-     * the x value in the bottom 5. Could more efficiently encode this by
-     * partitioning the binary representation, but this is more human readable
-     * and still allows for a 99999x99999 hex map.
-     */
-    public static int coordsToId(Coords c) {
-        return Targetable.TYPE_BUILDING * 1000000 + c.getY() * 1000 + c.getX();
-    }
-
-    // decode 1 number into 2
-    public static Coords idToCoords(int id) {
-        int idNoType = id - Targetable.TYPE_BUILDING * 1000000;
-        int y = (idNoType) / 1000;
-        return new Coords(idNoType - (y * 1000), y);
+    public static MapLocation idToLocation(int id) {
+        return HexTarget.idToLocation(id);
     }
 
     @Override
@@ -230,28 +186,16 @@ public class BuildingTarget implements Targetable {
         return sideTable(src);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see megamek.common.Targetable#isOffBoard()
-     */
     @Override
     public boolean isOffBoard() {
         return false;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see megamek.common.Targetable#isAirborne()
-     */
     @Override
     public boolean isAirborne() {
         return false;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see megamek.common.Targetable#isAirborneVTOLorWIGE()
-     */
     @Override
     public boolean isAirborneVTOLorWIGE() {
         return false;
@@ -265,5 +209,10 @@ public class BuildingTarget implements Targetable {
     @Override
     public boolean isEnemyOf(Entity other) {
         return true;
+    }
+
+    @Override
+    public MapLocation getMapLocation() {
+        return mapLocation;
     }
 }

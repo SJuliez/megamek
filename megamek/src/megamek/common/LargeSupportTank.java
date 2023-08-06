@@ -211,7 +211,7 @@ public class LargeSupportTank extends SupportTank {
             if ((srcHex != null) && (curHex != null)) {
                 LosEffects.AttackInfo ai = LosEffects.buildAttackInfo(src,
                         getPosition(), 1, getElevation(), srcHex.floor(),
-                        curHex.floor());
+                        curHex.floor(), getCurrentMap());
                 ArrayList<Coords> in = Coords.intervening(ai.attackPos,
                         ai.targetPos, true);
                 leftBetter = LosEffects.dividedLeftBetter(in, game, ai,

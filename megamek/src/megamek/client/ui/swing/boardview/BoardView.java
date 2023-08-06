@@ -1284,7 +1284,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
     private void renderMovementBoundingBox(Graphics2D g) {
         if (selectedEntity != null) {
             Princess princess = new Princess("test", MMConstants.LOCALHOST, 2020);
-            princess.getGame().setBoard(this.boardSupplier.get());
+            princess.getGame().setGroundMap(this.boardSupplier.get());
             PathEnumerator pathEnum = new PathEnumerator(princess, this.game);
             pathEnum.recalculateMovesFor(this.selectedEntity);
 
@@ -4361,6 +4361,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 ai.attackerIsMech = mechInFirst;
                 ai.attackAbsHeight = boardSupplier.get().getHex(c1).floor() + ai.attackHeight;
                 ai.targetAbsHeight = boardSupplier.get().getHex(c2).floor() + ai.targetHeight;
+                ai.mapType = boardSupplier.get().getMapType();
                 le = LosEffects.calculateLos(game, ai);
                 message.append(Messages.getString("BoardView1.Attacker",
                         mechInFirst ? Messages.getString("BoardView1.Mech")
@@ -4738,8 +4739,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             moveCursor(selectedSprite, coords);
             moveCursor(firstLOSSprite, null);
             moveCursor(secondLOSSprite, null);
-            processBoardViewEvent(new BoardViewEvent(this, coords, null,
-                    BoardViewEvent.BOARD_HEX_SELECTED, 0));
+            processBoardViewEvent(new BoardViewEvent(this, getMapLocation(coords), BoardViewEvent.BOARD_HEX_SELECTED));
         }
     }
 
@@ -4765,8 +4765,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             moveCursor(highlightSprite, coords);
             moveCursor(firstLOSSprite, null);
             moveCursor(secondLOSSprite, null);
-            processBoardViewEvent(new BoardViewEvent(this, coords, null,
-                    BoardViewEvent.BOARD_HEX_HIGHLIGHTED, 0));
+            processBoardViewEvent(new BoardViewEvent(this, getMapLocation(coords),
+                    BoardViewEvent.BOARD_HEX_HIGHLIGHTED));
         }
     }
 
@@ -4808,8 +4808,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 moveCursor(cursorSprite, coords);
                 moveCursor(firstLOSSprite, null);
                 moveCursor(secondLOSSprite, null);
-                processBoardViewEvent(new BoardViewEvent(this, coords, null,
-                        BoardViewEvent.BOARD_HEX_CURSOR, 0));
+                processBoardViewEvent(new BoardViewEvent(this, getMapLocation(coords),
+                        BoardViewEvent.BOARD_HEX_CURSOR));
             } else {
                 setLastCursor(coords);
             }
@@ -4831,12 +4831,12 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             if (getFirstLOS() == null) {
                 setFirstLOS(c);
                 firstLOSHex(c);
-                processBoardViewEvent(new BoardViewEvent(this, c, null,
-                        BoardViewEvent.BOARD_FIRST_LOS_HEX, 0));
+                processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
+                        BoardViewEvent.BOARD_FIRST_LOS_HEX));
             } else {
                 secondLOSHex(c, getFirstLOS());
-                processBoardViewEvent(new BoardViewEvent(this, c, null,
-                        BoardViewEvent.BOARD_SECOND_LOS_HEX, 0));
+                processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
+                        BoardViewEvent.BOARD_SECOND_LOS_HEX));
                 setFirstLOS(null);
             }
         }
@@ -4854,20 +4854,20 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                     if ((modifiers & java.awt.event.InputEvent.CTRL_DOWN_MASK) != 0) {
                         checkLOS(c);
                     } else {
-                        processBoardViewEvent(new BoardViewEvent(this, c, null,
+                        processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
                                 BoardViewEvent.BOARD_HEX_CLICKED, modifiers, mouseButton));
                     }
                     break;
                 case BOARD_HEX_DOUBLECLICK:
-                    processBoardViewEvent(new BoardViewEvent(this, c, null,
+                    processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
                             BoardViewEvent.BOARD_HEX_DOUBLECLICKED, modifiers, mouseButton));
                     break;
                 case BOARD_HEX_DRAG:
-                    processBoardViewEvent(new BoardViewEvent(this, c, null,
+                    processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
                             BoardViewEvent.BOARD_HEX_DRAGGED, modifiers, mouseButton));
                     break;
                 case BOARD_HEX_POPUP:
-                    processBoardViewEvent(new BoardViewEvent(this, c, null,
+                    processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
                             BoardViewEvent.BOARD_HEX_POPUP, modifiers, mouseButton));
                     break;
             }
@@ -5781,7 +5781,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
      */
     public void appendBuildingsTooltip(StringBuffer txt, @Nullable Hex mhex) {
         if ((mhex != null) && (clientgui != null)) {
-            String result = HexTooltip.getHexTip(mhex, clientgui.getClient());
+            String result = HexTooltip.getHexTip(boardSupplier.get(), mhex.getCoords(), clientgui.getClient());
             txt.append(result);
         }
     }
@@ -6705,4 +6705,12 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         return boardSupplier.get();
     }
 
+    @Override
+    public String toString() {
+        return "BoardView for " + (getBoard() != null ? getBoard() : "");
+    }
+
+    public MapLocation getMapLocation(Coords c) {
+        return new MapLocation(c, getBoard().getMapType());
+    }
 }

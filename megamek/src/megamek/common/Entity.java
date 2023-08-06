@@ -10843,7 +10843,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             if ((srcHex != null) && (curHex != null)) {
                 LosEffects.AttackInfo ai = LosEffects.buildAttackInfo(src,
                                                                       getPosition(), 1, getElevation(), srcHex.floor(),
-                                                                      curHex.floor());
+                                                                      curHex.floor(), getCurrentMap());
                 ArrayList<Coords> in = Coords.intervening(ai.attackPos,
                                                           ai.targetPos, true);
                 leftBetter = LosEffects.dividedLeftBetter(in, game, ai,
@@ -11027,7 +11027,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
 
         if (!isElevationValid(getElevation(), game.getBoard(currentMap).getHex(getPosition()))) {
             LogManager.getLogger().error(String.format("%s in hex %s is at invalid elevation %s",
-                    getDisplayName(), HexTarget.coordsToId(getPosition()), getElevation()));
+                    getDisplayName(), position, getElevation()));
             setElevation(0 - game.getBoard(currentMap).getHex(getPosition()).depth());
             LogManager.getLogger().error(" moved to elevation " + getElevation());
             return true;
@@ -15437,5 +15437,10 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * */
     protected final GameOptions gameOptions() {
         return game != null ? game.getOptions() : new GameOptions();
+    }
+
+    @Override
+    public MapLocation getMapLocation() {
+        return new MapLocation(getPosition(), currentMap);
     }
 }

@@ -57,7 +57,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.io.StreamTokenizer;
-import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.*;
 
@@ -197,7 +196,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
     /** Returns a minimap image of the given board at the given zoom index. */
     public static BufferedImage getMinimapImage(Board board, int zoom) {
         Game game = new Game();
-        game.setBoard(board);
+        game.setGroundMapDirect(board);
         return getMinimapImage(game, null, zoom);
     }
     
@@ -213,6 +212,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
             }
             Minimap tempMM = new Minimap(null, game, bv, null);
             tempMM.zoom = zoom;
+            tempMM.board = game.getBoard(MapType.GROUND);
             tempMM.initializeMap();
             tempMM.drawMap(true);
             return ImageUtil.createAcceleratedImage(tempMM.mapImage);
@@ -536,12 +536,12 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
                     Hex h = board.getHex(j, k);
                     if (dirtyMap || dirty[j / 10][k / 10]) {
                         gg.setColor(terrainColor(h));
-                        if ((board.getMapType().isSpace()) && (game != null) && game.spaceMapUsesGravity()) {
+                        if ((board.getMapType().isSpace()) && board.getMapTypeFlag().isHighAtmosphere()) {
                             paintHighAtmoCoord(gg, j, k);
                         } else if (board.getMapType().isSpace()) {
                             paintSpaceCoord(gg, j, k);
                         } else if (board.getMapType().isLowAtmo() && h.containsTerrain(SKY)) {
-                            paintLowAtmoCoord(gg, j, k);
+                            paintLowAtmoSkyCoord(gg, j, k);
                         } else {
                             paintCoord(gg, j, k, zoom > 1);
                         }
@@ -930,7 +930,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
         }
     }
 
-    private void paintLowAtmoCoord(Graphics g, int x, int y) {
+    private void paintLowAtmoSkyCoord(Graphics g, int x, int y) {
         int[] xPoints = xPoints(x);
         int[] yPoints = yPoints(x, y);
         int c = 160 + (int) (Math.random() * 80);
@@ -1735,7 +1735,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
 
     @Override
     public String toString() {
-        return "Minimap: " + hashCode() + " " + board.toString() + " Map Type: " + mapType;
+        return "Minimap: " + hashCode() + " " + board.toString();
     }
 
     /** @return True when the given Entity is currently on the board of this Minimap (it may have a null position). */

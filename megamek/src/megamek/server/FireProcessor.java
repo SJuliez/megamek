@@ -36,9 +36,11 @@ public class FireProcessor extends DynamicTerrainProcessor {
     void doEndPhaseChanges(Vector<Report> vPhaseReport) {
         game = gameManager.getGame();
         this.vPhaseReport = vPhaseReport;
-        removeSmokeTerrainFromHexes();
-        resolveFire();
-        reapplySmokeTerrain();
+        for (Board board: game.getBoards()) {
+            removeSmokeTerrainFromHexes(board);
+            resolveFire(board);
+            reapplySmokeTerrain(board);
+        }
         this.vPhaseReport = null;
     }
 
@@ -48,8 +50,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
      * longer determined by level but is rather a characteristic of the hex.
      * Level now denotes standard and inferno fires.
      */
-    private void resolveFire() {
-        Board board = game.getBoard();
+    private void resolveFire(Board board) {
         int width = board.getWidth();
         int height = board.getHeight();
         int windDirection = game.getPlanetaryConditions().getWindDirection();
@@ -60,12 +61,12 @@ public class FireProcessor extends DynamicTerrainProcessor {
 
         // process smoke FIRST, before any fires spread or
         // smoke is produced.
-        resolveSmoke();
+        resolveSmoke(board);
 
         // Cycle through all buildings, checking for fire.
         // ASSUMPTION: buildings don't lose 2 CF on the turn a fire starts.
         // ASSUMPTION: multi-hex buildings lose 2 CF in each burning hex
-        Enumeration<Building> buildings = game.getBoard().getBuildings();
+        Enumeration<Building> buildings = board.getBuildings();
         while (buildings.hasMoreElements()) {
             Building bldg = buildings.nextElement();
             Enumeration<Coords> bldgCoords = bldg.getCoords();
@@ -118,7 +119,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
                         if (burnReports != null) {
                             vPhaseReport.addAll(burnReports);
                         }
-                        spreadFire(currentXCoord, currentYCoord, windDirection, windStrength);
+                        spreadFire(currentXCoord, currentYCoord, windDirection, windStrength, board);
                     }
                 }
             }
@@ -132,7 +133,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
                 Hex currentHex = board.getHex(currentXCoord, currentYCoord);
 
                 if (currentHex.containsTerrain(Terrains.FIRE)) {
-                    Building bldg = game.getBoard().getBuildingAt(currentCoords);
+                    Building bldg = board.getBuildingAt(currentCoords);
                     // Was the fire started this turn?
                     if (currentHex.getFireTurn() == 0) {
                         // Report fire started this round
@@ -160,7 +161,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
                         smokeList.add(currentCoords.translated((windDirection + 1) % 6));
                         smokeList.add(currentCoords.translated((windDirection + 5) % 6));
 
-                        gameManager.addSmoke(smokeList, windDirection, bInferno);
+                        addSmoke(board, smokeList, windDirection, bInferno);
                         board.initializeAround(currentXCoord, currentYCoord);
                     }
 
@@ -195,7 +196,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
     /**
      * Spreads the fire around the specified coordinates.
      */
-    public void spreadFire(int x, int y, int windDir, int windStr) {
+    public void spreadFire(int x, int y, int windDir, int windStr, Board board) {
         Coords src = new Coords(x, y);
         Coords nextCoords = src.translated(windDir);
 
@@ -204,7 +205,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
         //This means that a fire cannot spread from a level 6 building at base level 0 to
         // a level 1 building at base level 0, for example.
 
-        final int curHeight = game.getBoard().getHex(src).ceiling();
+        final int curHeight = board.getHex(src).ceiling();
 
         TargetRoll directroll = new TargetRoll(9, "spread downwind");
         TargetRoll obliqueroll = new TargetRoll(11, "spread 60 degrees to downwind");
@@ -217,25 +218,25 @@ public class FireProcessor extends DynamicTerrainProcessor {
             directroll.addModifier(-2, "strong gale+");
         }
 
-        spreadFire(src, nextCoords, directroll, curHeight);
+        spreadFire(src, nextCoords, directroll, curHeight, board);
 
         // Spread to the next hex downwind on a 12 if the first hex wasn't
         // burning...
         // unless a higher hex intervenes
-        Hex nextHex = game.getBoard().getHex(nextCoords);
-        Hex jumpHex = game.getBoard().getHex(nextCoords.translated(windDir));
+        Hex nextHex = board.getHex(nextCoords);
+        Hex jumpHex = board.getHex(nextCoords.translated(windDir));
         if ((nextHex != null) && (jumpHex != null) && !(nextHex.containsTerrain(Terrains.FIRE))
                 && ((curHeight >= nextHex.ceiling()) || (jumpHex.ceiling() >= nextHex.ceiling()))) {
             // we've already gone one step in the wind direction, now go another
             directroll.addModifier(3, "crossing non-burning hex");
-            spreadFire(src, nextCoords.translated(windDir), directroll, curHeight);
+            spreadFire(src, nextCoords.translated(windDir), directroll, curHeight, board);
         }
 
         // spread fire 60 degrees clockwise....
-        spreadFire(src, src.translated((windDir + 1) % 6), obliqueroll, curHeight);
+        spreadFire(src, src.translated((windDir + 1) % 6), obliqueroll, curHeight, board);
 
         // spread fire 60 degrees counterclockwise
-        spreadFire(src, src.translated((windDir + 5) % 6), obliqueroll, curHeight);
+        spreadFire(src, src.translated((windDir + 5) % 6), obliqueroll, curHeight, board);
     }
 
     /**
@@ -248,8 +249,8 @@ public class FireProcessor extends DynamicTerrainProcessor {
      * @param height the height of the origin hex
      */
     public void spreadFire(final Coords origin, final Coords coords, final TargetRoll roll,
-                           final int height) {
-        Hex hex = game.getBoard().getHex(coords);
+                           final int height, Board board) {
+        Hex hex = board.getHex(coords);
         if ((hex == null) || (Math.abs(hex.ceiling() - height) > 4)) {
             // Don't attempt to spread fire off the board or for large differences in height
             return;
@@ -261,8 +262,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
     }
 
     /** Processes smoke drift and dissipation. */
-    private void resolveSmoke() {
-        final Board board = game.getBoard();
+    private void resolveSmoke(Board board) {
         final int windDir = game.getPlanetaryConditions().getWindDirection();
         int windStr = game.getPlanetaryConditions().getWindStrength();
 
@@ -275,12 +275,12 @@ public class FireProcessor extends DynamicTerrainProcessor {
         HashMap<SmokeCloud, ArrayList<Coords>> allReplacementHexes = new HashMap<>();
 
         // Process smoke drifting
-        for (SmokeCloud cloud : preExistingSmokeClouds()) {
+        for (SmokeCloud cloud : preExistingSmokeClouds(board.getMapType())) {
             gameManager.getHexUpdateSet().addAll(cloud.getCoordsList());
 
             final ArrayList<Coords> replacementHexes = new ArrayList<>();
             for (Coords currentCoords : cloud.getCoordsList()) {
-                Coords smokeCoords = driftAddSmoke(currentCoords, windDir, windStr);
+                Coords smokeCoords = driftAddSmoke(currentCoords, windDir, windStr, board);
                 if (smokeCoords == null) {
                     // Smoke has Dissipated by moving into a hex with a greater than 4 elevation drop.
                     vPhaseReport.addElement(new Report(5220).makePublic().add(currentCoords.getBoardNum()));
@@ -304,7 +304,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
         game.removeEmptySmokeClouds();
 
         // Process smoke dissipation
-        for (SmokeCloud cloud : preExistingSmokeClouds()) {
+        for (SmokeCloud cloud : preExistingSmokeClouds(board.getMapType())) {
             boolean dissipated = checkSmokeDissipation(cloud, windStr);
             if (dissipated || cloud.didDrift()) {
                 driftSmokeReport(cloud, dissipated);
@@ -319,10 +319,10 @@ public class FireProcessor extends DynamicTerrainProcessor {
     }
 
     /** (Re-)Applies smoke (Terrains.SMOKE) to all hexes of all smoke clouds and marks the hexes for client update. */
-    private void reapplySmokeTerrain() {
-        for (SmokeCloud cloud : game.getSmokeCloudList()) {
+    private void reapplySmokeTerrain(Board board) {
+        for (SmokeCloud cloud : game.getSmokeCloudList(board.getMapType())) {
             for (Coords coords : cloud.getCoordsList()) {
-                Hex smokeHex = gameManager.getGame().getBoard().getHex(coords);
+                Hex smokeHex = board.getHex(coords);
                 if (smokeHex != null) {
                     if (smokeHex.containsTerrain(Terrains.SMOKE)) {
                         if (smokeHex.terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_LIGHT) {
@@ -339,15 +339,17 @@ public class FireProcessor extends DynamicTerrainProcessor {
     }
 
     /** @return A list of the game's smoke clouds that have existed before the start of this round. */
-    private List<SmokeCloud> preExistingSmokeClouds() {
-        final int currentRound = gameManager.getGame().getRoundCount();
-        return gameManager.getSmokeCloudList().stream().filter(cloud -> currentRound != cloud.getRoundOfGeneration()).collect(toList());
+    private List<SmokeCloud> preExistingSmokeClouds(MapType mapType) {
+        final int currentRound = game.getRoundCount();
+        return game.getSmokeCloudList(mapType).stream()
+                .filter(cloud -> currentRound != cloud.getRoundOfGeneration())
+                .collect(toList());
     }
 
     /** Removes smoke (Terrains.SMOKE) from all hexes of all smoke clouds. */
-    private void removeSmokeTerrainFromHexes() {
-        for (SmokeCloud cloud : game.getSmokeCloudList()) {
-            game.getBoard().getHexes(cloud.getCoordsList()).forEach(h -> h.removeTerrain(Terrains.SMOKE));
+    private void removeSmokeTerrainFromHexes(Board board) {
+        for (SmokeCloud cloud : game.getSmokeCloudList(board.getMapType())) {
+            board.getHexes(cloud.getCoordsList()).forEach(h -> h.removeTerrain(Terrains.SMOKE));
         }
     }
 
@@ -360,8 +362,8 @@ public class FireProcessor extends DynamicTerrainProcessor {
      * board.
      */
     public @Nullable Coords driftAddSmoke(final Coords source, final int windDirection,
-                                          final int windStrength) {
-        return driftAddSmoke(source, windDirection, windStrength, 0);
+                                          final int windStrength, Board board) {
+        return driftAddSmoke(source, windDirection, windStrength, 0, board);
     }
 
     /**
@@ -377,9 +379,8 @@ public class FireProcessor extends DynamicTerrainProcessor {
      * board.
      */
     public @Nullable Coords driftAddSmoke(final Coords src, final int windDir, final int windStr,
-                                          final int directionChanges) {
+                                          final int directionChanges, Board board) {
         Coords nextCoords = src.translated(windDir);
-        Board board = game.getBoard();
 
         // if the wind conditions are calm, then don't drift it
         if (windStr == PlanetaryConditions.WI_NONE) {
@@ -416,10 +417,10 @@ public class FireProcessor extends DynamicTerrainProcessor {
         if ((hexElevation - nextElevation) < -4) {
             // Try Right
             if (directionChanges == 0) {
-                return driftAddSmoke(src, (windDir + 1) % 6, windStr, directionChanges + 1);
+                return driftAddSmoke(src, (windDir + 1) % 6, windStr, directionChanges + 1, board);
             } else if ( directionChanges == 1) {
                 // Try Left
-                return driftAddSmoke(src, (windDir - 2 ) % 6, windStr, directionChanges + 1);
+                return driftAddSmoke(src, (windDir - 2 ) % 6, windStr, directionChanges + 1, board);
             } else {
                 // Stay put
                 return src;
@@ -428,7 +429,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
 
         // stronger wind causes smoke to drift farther
         if (windStr > PlanetaryConditions.WI_MOD_GALE) {
-            return driftAddSmoke(nextCoords, windDir, windStr - 1);
+            return driftAddSmoke(nextCoords, windDir, windStr - 1, board);
         }
 
         return nextCoords;
@@ -499,5 +500,62 @@ public class FireProcessor extends DynamicTerrainProcessor {
             vPhaseReport.addElement(Report.publicReport(reportType).add(coords.get(pos).getBoardNum()).noNL());
         }
         vPhaseReport.addElement(new Report(closingReport, Report.PUBLIC));
+    }
+
+    /**
+     * Called when a fire is burning. Called 3 times per fire hex.
+     *
+     * @param coords The <code>Coords</code> x-coordinate of the hex
+     */
+    public void addSmoke(Board board, List<Coords> coords, int windDir, boolean bInferno) {
+        // if a tornado, then no smoke!
+        if (game.getPlanetaryConditions().getWindStrength() > PlanetaryConditions.WI_STORM) {
+            return;
+        }
+
+        int smokeLevel = 0;
+        for (Coords smokeCoords : coords) {
+            Hex smokeHex = board.getHex(smokeCoords);
+            Report r;
+            if (smokeHex == null) {
+                continue;
+            }
+            // Have to check if it's inferno smoke or from a heavy/hardened
+            // building
+            // - heavy smoke from those
+            if (bInferno || (Building.MEDIUM < smokeHex.terrainLevel(Terrains.FUEL_TANK))
+                    || (Building.MEDIUM < smokeHex.terrainLevel(Terrains.BUILDING))) {
+                if (smokeHex.terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_HEAVY) {
+                    // heavy smoke fills hex
+                    r = new Report(5180, Report.PUBLIC);
+                } else {
+                    r = new Report(5185, Report.PUBLIC);
+                }
+                smokeLevel = SmokeCloud.SMOKE_HEAVY;
+                r.add(smokeCoords.getBoardNum());
+                gameManager.addReport(r);
+            } else {
+                if (smokeHex.terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_HEAVY) {
+                    // heavy smoke overpowers light
+                    r = new Report(5190, Report.PUBLIC);
+                    r.add(smokeCoords.getBoardNum());
+                    smokeLevel = Math.max(smokeLevel, SmokeCloud.SMOKE_LIGHT);
+                    gameManager.addReport(r);
+                } else if (smokeHex.terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_LIGHT) {
+                    // light smoke continue to fill hex
+                    r = new Report(5195, Report.PUBLIC);
+                    r.add(smokeCoords.getBoardNum());
+                    gameManager.addReport(r);
+                    smokeLevel = Math.max(smokeLevel, SmokeCloud.SMOKE_LIGHT);
+                } else {
+                    smokeLevel = Math.max(smokeLevel, SmokeCloud.SMOKE_LIGHT);
+                    // light smoke fills hex
+                    r = new Report(5200, Report.PUBLIC);
+                    r.add(smokeCoords.getBoardNum());
+                    gameManager.addReport(r);
+                }
+            }
+        }
+        gameManager.createSmoke(coords, smokeLevel, 0, board.getMapType());
     }
 }

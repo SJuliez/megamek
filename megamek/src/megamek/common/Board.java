@@ -1299,6 +1299,18 @@ public class Board implements Serializable {
     }
 
     /**
+     * Returns the Building for the given MapLocation's Coords.
+     * Returns null when there is no Building at the given coords. Note that the maptype of the
+     * given MapLocation is ignored even when it does not correspond to the map type of this board!
+     *
+     * @param mapLocation The location (coords and maptype) to query
+     * @return The Building at the given map location
+     */
+    public @Nullable Building getBuildingAt(MapLocation mapLocation) {
+        return getBuildingAt(mapLocation.getCoords());
+    }
+
+    /**
      * Get the local object for the given building. Call this routine any time
      * the input <code>Building</code> is suspect.
      *
@@ -1926,5 +1938,10 @@ public class Board implements Serializable {
 
     public MapTypeFlag getMapTypeFlag() {
         return mapTypeFlag;
+    }
+
+    @Override
+    public String toString() {
+        return "Board: " + width + "x" + height + "; " + mapType2 + "; " + (tags.isEmpty() ? "" : tags);
     }
 }

@@ -739,26 +739,26 @@ public class ChatLounge extends AbstractPhaseDisplay implements
         panGroundMap.add(splGroundMap);
 
         // setup the board preview window.
-        boardPreviewW = new ClientDialog(clientgui.frame,
-                Messages.getString("BoardSelectionDialog.ViewGameBoard"), false);
-        boardPreviewW.setLocationRelativeTo(clientgui.frame);
-
-        try {
-            previewBV = new BoardView(boardPreviewGame, null, null);
-            previewBV.setDisplayInvalidHexInfo(false);
-            previewBV.setUseLOSTool(false);
-            boardPreviewW.add(previewBV.getComponent(true));
-            boardPreviewW.setSize(clientgui.frame.getWidth() / 2, clientgui.frame.getHeight() / 2);
-            // Most boards will be far too large on the standard zoom
-            previewBV.zoomOut();
-            previewBV.zoomOut();
-            previewBV.zoomOut();
-            previewBV.zoomOut();
-            boardPreviewW.center();
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, Messages.getString("BoardEditor.CouldntInitialize") + e,
-                    Messages.getString("BoardEditor.FatalError"), JOptionPane.ERROR_MESSAGE);
-        }
+//        boardPreviewW = new ClientDialog(clientgui.frame,
+//                Messages.getString("BoardSelectionDialog.ViewGameBoard"), false);
+//        boardPreviewW.setLocationRelativeTo(clientgui.frame);
+//
+//        try {
+//            previewBV = new BoardView(boardPreviewGame, null, null);
+//            previewBV.setDisplayInvalidHexInfo(false);
+//            previewBV.setUseLOSTool(false);
+//            boardPreviewW.add(previewBV.getComponent(true));
+//            boardPreviewW.setSize(clientgui.frame.getWidth() / 2, clientgui.frame.getHeight() / 2);
+//            // Most boards will be far too large on the standard zoom
+//            previewBV.zoomOut();
+//            previewBV.zoomOut();
+//            previewBV.zoomOut();
+//            previewBV.zoomOut();
+//            boardPreviewW.center();
+//        } catch (IOException e) {
+//            JOptionPane.showMessageDialog(this, Messages.getString("BoardEditor.CouldntInitialize") + e,
+//                    Messages.getString("BoardEditor.FatalError"), JOptionPane.ERROR_MESSAGE);
+//        }
         refreshMapButtons();
     }
 
@@ -874,35 +874,26 @@ public class ChatLounge extends AbstractPhaseDisplay implements
      * changes or result in packets to the server.
      */
     private void refreshMapUI() {
-        boolean inSpace = mapSettings().getMedium() == mapSettings().MEDIUM_SPACE;
-        boolean onGround = mapSettings().getMedium() == mapSettings().MEDIUM_GROUND;
-        boolean customSize = Messages.getString("ChatLounge.CustomMapSize").equals(comMapSizes.getSelectedItem());
-        lisBoardsAvailable.setEnabled(!inSpace);
+        boolean usesGroundMap = mapSettings().isUsed();
+        lisBoardsAvailable.setEnabled(usesGroundMap);
         mapIcons.clear();
-        butConditions.setEnabled(!inSpace);
-        fldSearch.setEnabled(!inSpace);
-        butRandomMap.setEnabled(!inSpace);
-        panMapHeight.setVisible(!inSpace);
-        panMapWidth.setVisible(!inSpace);
-        panSpaceBoardWidth.setVisible(inSpace || customSize);
-        panSpaceBoardHeight.setVisible(inSpace || customSize);
-        comMapSizes.setEnabled(!inSpace);
-        lblSearch.setEnabled(!inSpace);
-        lblBoardSize.setEnabled(!inSpace);
-        butSaveMapSetup.setEnabled(!inSpace);
-        butLoadMapSetup.setEnabled(!inSpace);
-        butMapShrinkW.setEnabled(mapSettings().getMapWidth() > 1);
-        butMapShrinkH.setEnabled(mapSettings().getMapHeight() > 1);
+        butConditions.setEnabled(usesGroundMap);
+        fldSearch.setEnabled(usesGroundMap);
+        butRandomMap.setEnabled(usesGroundMap);
+        panMapHeight.setEnabled(usesGroundMap);
+        panMapWidth.setEnabled(usesGroundMap);
+        comMapSizes.setEnabled(usesGroundMap);
+        lblSearch.setEnabled(usesGroundMap);
+        lblBoardSize.setEnabled(usesGroundMap);
+        butSaveMapSetup.setEnabled(usesGroundMap);
+        butLoadMapSetup.setEnabled(usesGroundMap);
+        butMapShrinkW.setEnabled(usesGroundMap && (mapSettings().getMapWidth() > 1));
+        butMapShrinkH.setEnabled(usesGroundMap && (mapSettings().getMapHeight() > 1));
+        butMapGrowW.setEnabled(usesGroundMap);
+        butMapGrowH.setEnabled(usesGroundMap);
         
         butGroundMap.removeActionListener(lobbyListener);
-        if (onGround) {
-            //TODO
-            butGroundMap.setSelected(true);
-        } else if (inSpace) {
-//            butSpaceMap.setSelected(true);
-        } else {
-//            butLowAtmoMap.setSelected(true);
-        }
+        butGroundMap.setSelected(mapSettings().isUsed());
         butGroundMap.addActionListener(lobbyListener);
 
         fldMapWidth.removeActionListener(lobbyListener);
@@ -1112,8 +1103,34 @@ public class ChatLounge extends AbstractPhaseDisplay implements
 
     public void previewGameBoard() {
         Board newBoard = getPossibleGameBoard(false);
-        boardPreviewGame.setBoard(newBoard);
+        boardPreviewGame.setGroundMap(newBoard);
+        if (boardPreviewW == null) {
+            initializePreviewBoardView();
+        }
         boardPreviewW.setVisible(true);
+    }
+
+    private void initializePreviewBoardView() {
+        boardPreviewW = new ClientDialog(clientgui.frame,
+                Messages.getString("BoardSelectionDialog.ViewGameBoard"), false);
+        boardPreviewW.setLocationRelativeTo(clientgui.frame);
+
+        try {
+            previewBV = new BoardView(boardPreviewGame, null, null, () -> boardPreviewGame.getBoard(MapType.GROUND));
+            previewBV.setDisplayInvalidHexInfo(false);
+            previewBV.setUseLOSTool(false);
+            boardPreviewW.add(previewBV.getComponent(true));
+            boardPreviewW.setSize(clientgui.frame.getWidth() / 2, clientgui.frame.getHeight() / 2);
+            // Most boards will be far too large on the standard zoom
+            previewBV.zoomOut();
+            previewBV.zoomOut();
+            previewBV.zoomOut();
+            previewBV.zoomOut();
+            boardPreviewW.center();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, Messages.getString("BoardEditor.CouldntInitialize") + e,
+                    Messages.getString("BoardEditor.FatalError"), JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /**
@@ -1560,7 +1577,7 @@ public class ChatLounge extends AbstractPhaseDisplay implements
         }
         mapSettings().getBoardsSelectedVector().set(mapButtons.indexOf(button), board);
         clientgui.getClient().sendMapSettings(mapSettings());
-        if (boardPreviewW.isVisible()) {
+        if (boardPreviewW != null && boardPreviewW.isVisible()) {
             previewGameBoard();
         }
 
@@ -1731,7 +1748,7 @@ public class ChatLounge extends AbstractPhaseDisplay implements
                     clientgui.getClient().sendMapSettings(mapSettings());
                 }
             } else if (ev.getSource() == butGroundMap) {
-                mapSettings().setMedium(MapSettings.MEDIUM_GROUND);
+                mapSettings().setUsed(butGroundMap.isSelected());
                 refreshMapUI();
                 clientgui.getClient().sendMapSettings(mapSettings());
             } else if (ev.getSource() == butAddX || ev.getSource() == butMapGrowW) {
