@@ -16,8 +16,6 @@ package megamek.client.ui.swing;
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
-import megamek.client.ui.swing.tooltip.UnitToolTip;
-import megamek.client.ui.swing.unitDisplay.WeaponPanel;
 import megamek.client.ui.swing.util.CommandAction;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.MegaMekController;
@@ -2580,7 +2578,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
 
         // If there aren't other targets, check for targets flying over pos
         if (targets.isEmpty()) {
-            List<Entity> flyovers = clientgui.boardViewFor(mapLocation).getEntitiesFlyingOver(mapLocation.getCoords());
+            List<Entity> flyovers = clientgui.getBoardView(mapLocation).getEntitiesFlyingOver(mapLocation.getCoords());
             for (Entity e : flyovers) {
                 if (!targets.contains(e)) {
                     targets.add(e);

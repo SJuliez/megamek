@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Holds movement path for an entity.
@@ -138,23 +139,14 @@ public class MovePath implements Cloneable, Serializable {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer();
-        sb.append("MOVE PATH:");
-        sb.append(this.getKey().hashCode());
-        sb.append(' '); // it's useful to know for debugging purposes which path you're looking at.
-        sb.append("Length: " + this.length());
-        sb.append("Final Coords: " + this.getFinalCoords());
-        sb.append(System.lineSeparator());
-
-        for (final Enumeration<MoveStep> i = steps.elements(); i.hasMoreElements(); ) {
-            sb.append(i.nextElement().toString());
-            sb.append(' ');
+        final StringBuilder sb = new StringBuilder();
+        sb.append("MOVE PATH:").append(getKey().hashCode()).append("; Length: ").append(length());
+        sb.append("; End: ").append(getFinalCoords()).append("; Steps: ");
+        List<String> stepList = steps.stream().map(MoveStep::toString).collect(Collectors.toList());
+        sb.append(String.join("-", stepList));
+        if (!getGame().getBoard(entity.getCurrentMap()).contains(getFinalCoords())) {
+            sb.append("-OUT!");
         }
-
-        if (!getGame().getBoard(entity.getCurrentMap()).contains(this.getFinalCoords())) {
-            sb.append("OUT!");
-        }
-
         return sb.toString();
     }
 
@@ -1231,7 +1223,7 @@ public class MovePath implements Cloneable, Serializable {
     public void findPathTo(final Coords dest, final MoveStepType type) {
         final int timeLimit = PreferenceManager.getClientPreferences().getMaxPathfinderTime();
 
-        ShortestPathFinder pf = ShortestPathFinder.newInstanceOfAStar(dest, type, game);
+        ShortestPathFinder pf = ShortestPathFinder.newInstanceOfAStar(dest, type, game, game.getBoard(entity));
 
         AbstractPathFinder.StopConditionTimeout<MovePath> timeoutCondition = new AbstractPathFinder.StopConditionTimeout<>(timeLimit);
         pf.addStopCondition(timeoutCondition);

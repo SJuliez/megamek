@@ -191,6 +191,8 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public Board getBoard() {
+        LogManager.getLogger().error("Dont call getboard()", new Exception());
+        new Exception().getStackTrace();
         return board;
     }
 
@@ -210,7 +212,7 @@ public class Game extends AbstractGame implements Serializable {
     public void setGroundMap(Board board) {
         Board oldBoard = this.board;
         setGroundMapDirect(board);
-        processGameEvent(new GameBoardNewEvent(this, oldBoard, board));
+        processGameEvent(new GameBoardNewEvent(this, oldBoard, board, MapType.GROUND));
     }
 
     @ServerUse
@@ -1545,7 +1547,12 @@ public class Game extends AbstractGame implements Serializable {
         return Collections.unmodifiableList(vector);
     }
 
-    /** @return A List of units at the given coords on the ground map. */
+    /** @return A List of units on the given map. */
+    public List<Entity> getSpaceBorneEntities() {
+        return getEntitiesVector().stream().filter(Entity::isSpaceborne).collect(toList());
+    }
+
+    /** @return A List of units at the given MapLocation (coords and maptype). */
     public List<Entity> getEntitiesAt(MapLocation mapLocation) {
         return getEntitiesAt(mapLocation.getCoords(), mapLocation.getMapType());
     }
@@ -3607,7 +3614,7 @@ public class Game extends AbstractGame implements Serializable {
     public void setLowAtmoMap(Board board) {
         Board oldBoard = getLowAtmoMap();
         setLowAtmoMapDirect(board);
-        processGameEvent(new GameBoardNewEvent(this, oldBoard, board));
+        processGameEvent(new GameBoardNewEvent(this, oldBoard, board, MapType.LOW_ATMOSPHERE));
     }
 
     @ServerUse
@@ -3623,7 +3630,7 @@ public class Game extends AbstractGame implements Serializable {
     public void setSpaceMap(Board board) {
         Board oldBoard = getSpaceMap();
         setSpaceMapDirect(board);
-        processGameEvent(new GameBoardNewEvent(this, oldBoard, board));
+        processGameEvent(new GameBoardNewEvent(this, oldBoard, board, MapType.SPACE));
     }
 
     @ServerUse
@@ -3678,5 +3685,21 @@ public class Game extends AbstractGame implements Serializable {
      */
     public @Nullable Board getBoard(MapLocation mapLocation) {
         return getBoard(mapLocation.getMapType());
+    }
+
+    public boolean hasMapLocation(MapLocation mapLocation) {
+        return usesBoard(mapLocation) && getBoard(mapLocation).contains(mapLocation.getCoords());
+    }
+
+    public boolean usesBoard(MapLocation mapLocation) {
+        return gameBoards.containsKey(mapLocation.getMapType());
+    }
+
+    public void addSpecialHexDisplay(MapLocation mapLocation, SpecialHexDisplay shd) {
+        getBoard(mapLocation).addSpecialHexDisplay(mapLocation.getCoords(), shd);
+    }
+
+    public void addSpecialHexDisplay(Coords coords, MapType mapType, SpecialHexDisplay shd) {
+        getBoard(mapType).addSpecialHexDisplay(coords, shd);
     }
 }

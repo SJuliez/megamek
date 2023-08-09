@@ -349,7 +349,8 @@ public abstract class StatusBarPhaseDisplay extends AbstractPhaseDisplay
         if (phase.isReport()) {
             int r = GUIP.getPlayersRemainingToShow();
             if (r > 0) {
-                List<Player> playerList = clientgui.getClient().getGame().getPlayersList().stream().filter(p -> ((!p.isBot()) && (!p.isObserver()) && (!p.isDone()))).collect(Collectors.toList());
+                List<Player> playerList = clientgui.getClient().getGame().getPlayersList().stream()
+                        .filter(p -> ((!p.isBot()) && (!p.isObserver()) && (!p.isDone()))).collect(Collectors.toList());
                 playerList.sort(Comparator.comparingInt(Player::getId));
                 String s = "";
                 String m = "";
@@ -378,20 +379,18 @@ public abstract class StatusBarPhaseDisplay extends AbstractPhaseDisplay
     }
 
     public void setWeaponFieldOfFire(Entity unit, int[][] ranges, int arc, int loc, int facing) {
-        clientgui.getBoardView().fieldOfFireUnit = unit;
-        clientgui.getBoardView().fieldOfFireRanges = ranges;
-        clientgui.getBoardView().fieldOfFireWpArc = arc;
-        clientgui.getBoardView().fieldOfFireWpLoc = loc;
-
-        clientgui.getBoardView().setWeaponFieldOfFire(facing, unit.getPosition());
+        clientgui.getBoardView(unit).fieldOfFireUnit = unit;
+        clientgui.getBoardView(unit).fieldOfFireRanges = ranges;
+        clientgui.getBoardView(unit).fieldOfFireWpArc = arc;
+        clientgui.getBoardView(unit).fieldOfFireWpLoc = loc;
+        clientgui.getBoardView(unit).setWeaponFieldOfFire(facing, unit.getPosition());
     }
 
     public void setWeaponFieldOfFire(Entity unit, int[][] ranges, int arc, int loc, MovePath cmd) {
-        clientgui.getBoardView().fieldOfFireUnit = unit;
-        clientgui.getBoardView().fieldOfFireRanges = ranges;
-        clientgui.getBoardView().fieldOfFireWpArc = arc;
-        clientgui.getBoardView().fieldOfFireWpLoc = loc;
-
-        clientgui.getBoardView().setWeaponFieldOfFire(unit, cmd);
+        clientgui.getBoardView(unit).fieldOfFireUnit = unit;
+        clientgui.getBoardView(unit).fieldOfFireRanges = ranges;
+        clientgui.getBoardView(unit).fieldOfFireWpArc = arc;
+        clientgui.getBoardView(unit).fieldOfFireWpLoc = loc;
+        clientgui.getBoardView(unit).setWeaponFieldOfFire(unit, cmd);
     }
 }

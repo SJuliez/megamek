@@ -2994,16 +2994,16 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         }
     }
 
-    protected BoardView boardViewFor(Entity entity) {
-        return boardViewFor(entity.getCurrentMap());
+    protected BoardView getBoardView(Entity entity) {
+        return getBoardView(entity.getCurrentMap());
     }
 
-    protected BoardView boardViewFor(MapType mapType) {
+    protected BoardView getBoardView(MapType mapType) {
         return boardViews.get(mapType);
     }
 
-    protected BoardView boardViewFor(MapLocation mapLocation) {
-        return boardViewFor(mapLocation.getMapType());
+    protected BoardView getBoardView(MapLocation mapLocation) {
+        return getBoardView(mapLocation.getMapType());
     }
 
     public List<BoardView> boardViews() {
@@ -3014,6 +3014,10 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         return boardViews().stream().anyMatch(BoardView::getChatterBoxActive);
     }
 
+    public boolean isMovingUnits() {
+        return boardViews().stream().anyMatch(BoardView::isMovingUnits);
+    }
+
     public void toggleShowAllDeployment() {
         for (BoardView bv : boardViews()) {
             bv.showAllDeployment = !bv.showAllDeployment;
@@ -3021,6 +3025,11 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         }
     }
 
+    /**
+     * Removes all hex markings on all active boardviews. The is equivalent to calling
+     * {@link BoardView#cursor(Coords)}, {@link BoardView#select(Coords)} and
+     * {@link BoardView#highlight(Coords)}, each with null as the Coords.
+     */
     public void removeAllCoordMarkings() {
         for (BoardView bv : boardViews()) {
             bv.select(null);

@@ -24,6 +24,7 @@ import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.util.KeyCommandBind;
+import megamek.client.ui.swing.util.UIUtil;
 import megamek.client.ui.swing.widget.MegamekButton;
 import megamek.common.*;
 import megamek.common.event.GamePhaseChangeEvent;
@@ -38,7 +39,6 @@ import java.awt.event.MouseEvent;
 import java.util.*;
 
 import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
-import static megamek.client.ui.swing.util.UIUtil.uiLightViolet;
 
 public class DeploymentDisplay extends StatusBarPhaseDisplay {
 
@@ -344,7 +344,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             elevation = Math.max(elevation, minElev);
         }
 
-        clientgui.getClient().deploy(cen, en.getPosition(), en.getFacing(),
+        clientgui.getClient().deploy(cen, en.getMapLocation(), en.getFacing(),
                 elevation, en.getLoadedUnits(), assaultDropPreference);
         en.setDeployed(true);
 
@@ -496,9 +496,9 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         if ((ce().getPosition() != null) && (shiftheld || turnMode)) { // turn
             ce().setFacing(ce().getPosition().direction(moveto));
             ce().setSecondaryFacing(ce().getFacing());
-            clientgui.boardViewFor(ce()).redrawEntity(ce());
-            clientgui.boardViewFor(ce()).setWeaponFieldOfFire(ce().getFacing(), ce().getPosition());
-            clientgui.boardViewFor(ce()).setSensorRange(ce(), ce().getPosition());
+            clientgui.getBoardView(ce()).redrawEntity(ce());
+            clientgui.getBoardView(ce()).setWeaponFieldOfFire(ce().getFacing(), ce().getPosition());
+            clientgui.getBoardView(ce()).setSensorRange(ce(), ce().getPosition());
             turnMode = false;
         } else if (!ce().isMapTypeAllowed(board.getMapType())) {
             // check if this type of unit can be on the given type of map
@@ -560,13 +560,13 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             }
             ce().setPosition(moveto);
 
-            clientgui.boardViews().forEach(boardView -> boardView.redrawEntity(ce()));
-            clientgui.boardViews().forEach(boardView -> boardView.setWeaponFieldOfFire(ce().getFacing(), moveto));
-            clientgui.boardViews().forEach(boardView -> boardView.setSensorRange(ce(), ce().getPosition()));
+            clientgui.boardViews().forEach(bv -> bv.redrawEntity(ce()));
+            clientgui.boardViews().forEach(bv -> bv.setWeaponFieldOfFire(ce().getFacing(), moveto));
+            clientgui.boardViews().forEach(bv -> bv.setSensorRange(ce(), ce().getPosition()));
             butDone.setEnabled(true);
         }
         if (!shiftheld) {
-            clientgui.boardViewFor(ce()).select(moveto);
+            clientgui.getBoardView(ce()).select(moveto);
         }
     }
 

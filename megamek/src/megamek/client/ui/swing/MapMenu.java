@@ -382,7 +382,7 @@ public class MapMenu extends JPopupMenu {
             nd.setVisible(true);
             gui.getBoardView().setShouldIgnoreKeys(false);
             if (nd.isAccepted()) {
-                client.sendSpecialHexDisplayAppend(coords, finalNote);
+                client.sendSpecialHexDisplayAppend(mapLocation, finalNote);
             }
         });
         menu.add(item);

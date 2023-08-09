@@ -24,7 +24,6 @@ import megamek.client.ui.Messages;
 import megamek.client.ui.SharedUtility;
 import megamek.client.ui.swing.boardview.AbstractBoardViewOverlay;
 import megamek.client.ui.swing.boardview.BoardView;
-import megamek.client.ui.swing.boardview.TurnDetailsOverlay;
 import megamek.client.ui.swing.util.CommandAction;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.MegaMekController;
@@ -58,7 +57,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static megamek.client.ui.swing.util.UIUtil.colorString;
 import static megamek.common.MiscType.F_CHAFF_POD;
 import static megamek.common.options.OptionsConstants.ADVGRNDMOV_TACOPS_ZIPLINES;
 
@@ -584,16 +582,16 @@ public class MovementDisplay extends ActionPhaseDisplay {
                                 }
                                 gear = MovementDisplay.GEAR_JUMP;
                                 Color jumpColor = GUIP.getMoveJumpColor();
-                                clientgui.boardViewFor(ce).setHighlightColor(jumpColor);
+                                clientgui.getBoardView(ce).setHighlightColor(jumpColor);
                             } else {
                                 Color walkColor = GUIP.getMoveDefaultColor();
-                                clientgui.boardViewFor(ce).setHighlightColor(walkColor);
+                                clientgui.getBoardView(ce).setHighlightColor(walkColor);
                                 gear = MovementDisplay.GEAR_LAND;
                                 clear();
                             }
                         } else {
                             Color walkColor = GUIP.getMoveDefaultColor();
-                            clientgui.boardViewFor(ce).setHighlightColor(walkColor);
+                            clientgui.getBoardView(ce).setHighlightColor(walkColor);
                             gear = MovementDisplay.GEAR_LAND;
                             clear();
                         }
@@ -753,16 +751,16 @@ public class MovementDisplay extends ActionPhaseDisplay {
         clientgui.setSelectedEntityNum(en);
         gear = MovementDisplay.GEAR_LAND;
         Color walkColor = GUIP.getMoveDefaultColor();
-        clientgui.boardViewFor(ce).setHighlightColor(walkColor);
+        clientgui.getBoardView(ce).setHighlightColor(walkColor);
         clear();
 
         updateButtons();
         clientgui.removeAllCoordMarkings();
-        clientgui.boardViewFor(ce).highlight(ce.getPosition());
+        clientgui.getBoardView(ce).highlight(ce.getPosition());
         clientgui.getUnitDisplay().displayEntity(ce);
         clientgui.getUnitDisplay().showPanel("movement");
-        if (!clientgui.boardViewFor(ce).isMovingUnits()) {
-            clientgui.boardViewFor(ce).centerOnHex(ce.getPosition());
+        if (!clientgui.getBoardView(ce).isMovingUnits()) {
+            clientgui.getBoardView(ce).centerOnHex(ce.getPosition());
         }
 
         String s = getRemainingPlayerWithTurns();
@@ -1025,7 +1023,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
     private void updateMove(boolean redrawMovement) {
         if (redrawMovement) {
-            clientgui.boardViewFor(ce()).drawMovementData(ce(), cmd);
+            clientgui.getBoardView(ce()).drawMovementData(ce(), cmd);
         }
         updateDonePanel();
     }
@@ -1151,7 +1149,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             getBtn(MoveCommand.MOVE_MORE).setEnabled(true);
         }
 
-        if (!clientgui.getBoardView().isMovingUnits()) {
+        if (!clientgui.isMovingUnits()) {
             clientgui.maybeShowUnitDisplay();
         }
         selectEntity(clientgui.getClient().getFirstEntityNum());
@@ -1180,9 +1178,9 @@ public class MovementDisplay extends ActionPhaseDisplay {
         cen = Entity.NONE;
         clientgui.removeAllCoordMarkings();
         // Return the highlight sprite back to its original color
-        clientgui.getBoardView().setHighlightColor(Color.white);
-        clientgui.boardViews().forEach(bv -> bv.selectEntity(null));
         clientgui.setSelectedEntityNum(Entity.NONE);
+        clientgui.boardViews().forEach(bv -> bv.setHighlightColor(Color.white));
+        clientgui.boardViews().forEach(bv -> bv.selectEntity(null));
         clientgui.boardViews().forEach(BoardView::clearFieldOfFire);
         clientgui.boardViews().forEach(BoardView::clearSensorsRanges);
         clientgui.boardViews().forEach(BoardView::clearMovementData);
@@ -1292,14 +1290,14 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
         // create new current and considered paths
         cmd = new MovePath(clientgui.getClient().getGame(), ce);
-        clientgui.boardViewFor(ce).setWeaponFieldOfFire(ce, cmd);
-        clientgui.boardViewFor(ce).setSensorRange(ce, cmd.getFinalCoords());
+        clientgui.getBoardView(ce).setWeaponFieldOfFire(ce, cmd);
+        clientgui.getBoardView(ce).setSensorRange(ce, cmd.getFinalCoords());
 
         // set to "walk," or the equivalent
         if (gear != MovementDisplay.GEAR_JUMP) {
             gear = MovementDisplay.GEAR_LAND;
             Color walkColor = GUIP.getMoveDefaultColor();
-            clientgui.boardViewFor(ce).setHighlightColor(walkColor);
+            clientgui.getBoardView(ce).setHighlightColor(walkColor);
         } else if (!cmd.isJumping()) {
             addStepToMovePath(MoveStepType.START_JUMP);
         }
@@ -1380,11 +1378,11 @@ public class MovementDisplay extends ActionPhaseDisplay {
             }
         } else {
             // clear board cursors
-            clientgui.boardViewFor(entity).select(cmd.getFinalCoords());
-            clientgui.boardViewFor(entity).cursor(cmd.getFinalCoords());
-            clientgui.boardViewFor(entity).drawMovementData(entity, cmd);
-            clientgui.boardViewFor(entity).setWeaponFieldOfFire(entity, cmd);
-            clientgui.boardViewFor(entity).setSensorRange(entity, cmd.getFinalCoords());
+            clientgui.getBoardView(entity).select(cmd.getFinalCoords());
+            clientgui.getBoardView(entity).cursor(cmd.getFinalCoords());
+            clientgui.getBoardView(entity).drawMovementData(entity, cmd);
+            clientgui.getBoardView(entity).setWeaponFieldOfFire(entity, cmd);
+            clientgui.getBoardView(entity).setSensorRange(entity, cmd.getFinalCoords());
 
             //FIXME what is this
             // Set the button's label to "Done"
@@ -1847,7 +1845,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
             LongestPathFinder lpf;
             if (ce().isAero()) {
-                lpf = LongestPathFinder.newInstanceOfAeroPath(maxMp, ce().getGame());
+                lpf = LongestPathFinder.newInstanceOfAeroPath(maxMp, ce().getGame(), ce().getCurrentMap().isSpace());
             } else {
                 lpf = LongestPathFinder.newInstanceOfLongestPath(maxMp, stepType, ce().getGame());
             }
@@ -1861,8 +1859,8 @@ public class MovementDisplay extends ActionPhaseDisplay {
             }
         }
 
-        clientgui.boardViewFor(ce()).setSensorRange(ce(), cmd.getFinalCoords());
-        clientgui.boardViewFor(ce()).setWeaponFieldOfFire(ce(), cmd);
+        clientgui.getBoardView(ce()).setSensorRange(ce(), cmd.getFinalCoords());
+        clientgui.getBoardView(ce()).setWeaponFieldOfFire(ce(), cmd);
     }
 
     //
@@ -4438,7 +4436,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         for (Coords c : mvEnvData.keySet()) {
             mvEnvMP.put(c, mvEnvData.get(c).countMp(mvMode == GEAR_JUMP));
         }
-        clientgui.boardViewFor(en).setMovementEnvelope(mvEnvMP, en.getWalkMP(), en
+        clientgui.getBoardView(en).setMovementEnvelope(mvEnvMP, en.getWalkMP(), en
                 .getRunMP(), en.getJumpMP(), mvMode);
     }
 
@@ -4469,7 +4467,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                 timeLimit * 10);
         lpf.addStopCondition(timeoutCondition);
         lpf.run(mp);
-        clientgui.boardViewFor(ce()).setMovementModifierEnvelope(lpf.getLongestComputedPaths());
+        clientgui.getBoardView(ce()).setMovementModifierEnvelope(lpf.getLongestComputedPaths());
     }
 
     //
@@ -4544,7 +4542,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                 clear();
             }
             Color walkColor = GUIP.getMoveDefaultColor();
-            clientgui.boardViewFor(ce).setHighlightColor(walkColor);
+            clientgui.getBoardView(ce).setHighlightColor(walkColor);
             gear = MovementDisplay.GEAR_LAND;
             computeMovementEnvelope(ce);
         } else if (actionCmd.equals(MoveCommand.MOVE_JUMP.getCmd())) {
@@ -4559,7 +4557,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             }
             gear = MovementDisplay.GEAR_JUMP;
             Color jumpColor = GUIP.getMoveJumpColor();
-            clientgui.boardViewFor(ce).setHighlightColor(jumpColor);
+            clientgui.getBoardView(ce).setHighlightColor(jumpColor);
             computeMovementEnvelope(ce);
         } else if (actionCmd.equals(MoveCommand.MOVE_SWIM.getCmd())) {
             if (gear != MovementDisplay.GEAR_SWIM) {
@@ -4612,7 +4610,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             }
             gear = MovementDisplay.GEAR_BACKUP; // on purpose...
             Color backColor = GUIP.getMoveBackColor();
-            clientgui.boardViewFor(ce).setHighlightColor(backColor);
+            clientgui.getBoardView(ce).setHighlightColor(backColor);
             computeMovementEnvelope(ce);
         } else if (actionCmd.equals(MoveCommand.MOVE_LONGEST_RUN.getCmd())) {
             if (gear == MovementDisplay.GEAR_JUMP) {
@@ -4918,7 +4916,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                     addStepToMovePath(MoveStepType.START_JUMP);
                     gear = GEAR_JUMP;
                     Color jumpColor = GUIP.getMoveJumpColor();
-                    clientgui.boardViewFor(ce).setHighlightColor(jumpColor);
+                    clientgui.getBoardView(ce).setHighlightColor(jumpColor);
                     computeMovementEnvelope(ce);
                 }
                 addStepToMovePath(MoveStepType.LAY_MINE, i);
@@ -5328,7 +5326,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         }
         if (clientgui.getClient().isMyTurn() && (ce != null)) {
             clientgui.maybeShowUnitDisplay();
-            clientgui.boardViewFor(ce).centerOnHex(ce.getPosition());
+            clientgui.getBoardView(ce).centerOnHex(ce.getPosition());
         }
     }
 
@@ -5350,7 +5348,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             clientgui.maybeShowUnitDisplay();
             clientgui.getUnitDisplay().displayEntity(e);
             if (e.isDeployed()) {
-                clientgui.boardViewFor(e).centerOnHex(e.getPosition());
+                clientgui.getBoardView(e).centerOnHex(e.getPosition());
             }
         }
     }
@@ -5694,7 +5692,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         // If the unit is the current unit, then work with
         // the current considered movement
         if (unit.equals(ce())) {
-            super.setWeaponFieldOfFire(unit, ranges, arc, loc, cmd);
+            setWeaponFieldOfFire(unit, ranges, arc, loc, cmd);
         } else {
             super.setWeaponFieldOfFire(unit, ranges, arc, loc);
         }

@@ -1775,7 +1775,7 @@ public class TestBot extends BotClient {
         if (ce.isLocationProhibited(cDeploy)) {
             throw new Exception("Bot tried to deploy to an invalid hex");
         }
-        deploy(entNum, cDeploy, nDir, 0);
+        deploy(entNum, new MapLocation(cDeploy, MapType.GROUND), nDir, 0);
     }
 
     @Override
@@ -1920,8 +1920,8 @@ public class TestBot extends BotClient {
     }
 
     @Override
-    protected PlayerIDandList<Coords> calculateArtyAutoHitHexes() {
-        PlayerIDandList<Coords> artyAutoHitHexes = new PlayerIDandList<>();
+    protected PlayerIDandList<MapLocation> calculateArtyAutoHitHexes() {
+        PlayerIDandList<MapLocation> artyAutoHitHexes = new PlayerIDandList<>();
         artyAutoHitHexes.setPlayerID(getLocalPlayer().getId());
         return artyAutoHitHexes;
     }

@@ -235,7 +235,7 @@ public class Precognition implements Runnable {
                     break;
                 case SENDING_SPECIAL_HEX_DISPLAY:
                     getGame().getBoard().setSpecialHexDisplayTable(
-                            (Hashtable<Coords, Collection<SpecialHexDisplay>>) c.getObject(0));
+                            (Hashtable<MapLocation, Collection<SpecialHexDisplay>>) c.getObject(0));
                     getGame().processGameEvent(new GameBoardChangeEvent(this));
                     break;
                 case ENTITY_NOVA_NETWORK_CHANGE:

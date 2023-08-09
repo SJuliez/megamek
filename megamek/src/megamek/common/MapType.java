@@ -18,13 +18,15 @@
  */
 package megamek.common;
 
+import java.io.Serializable;
+
 /**
  * Represents the type of a game map. Note that low atmosphere (aka atmospheric) maps may come with or without
  * terrain and space maps may be high atmospheric maps when they are near a planet.
  * Radar and Capital Radar maps may be used in the Abstract Aerospace Combat rules of SO:AA.
  *
  */
-public enum MapType {
+public enum MapType implements Serializable {
     GROUND("G"),
     LOW_ATMOSPHERE("A"),
     SPACE("S"),

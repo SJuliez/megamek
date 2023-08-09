@@ -119,7 +119,7 @@ public class Board implements Serializable {
      */
     private Hashtable<Coords, InfernoTracker> infernos = new Hashtable<>();
 
-    private Hashtable<Coords, Collection<SpecialHexDisplay>> specialHexes = new Hashtable<>();
+    private Hashtable<MapLocation, Collection<SpecialHexDisplay>> specialHexes = new Hashtable<>();
 
     /**
      * Option to turn have roads auto-exiting to pavement.
@@ -1619,12 +1619,13 @@ public class Board implements Serializable {
     }
 
     public void addSpecialHexDisplay(Coords coords, SpecialHexDisplay shd) {
+        MapLocation mapLocation = new MapLocation(coords, mapType2);
         Collection<SpecialHexDisplay> col;
-        if (!specialHexes.containsKey(coords)) {
+        if (!specialHexes.containsKey(mapLocation)) {
             col = new LinkedList<>();
-            specialHexes.put(coords, col);
+            specialHexes.put(mapLocation, col);
         } else {
-            col = specialHexes.get(coords);
+            col = specialHexes.get(mapLocation);
             // It's possible we are updating a SHD that is already entered.
             // If that is the case, we want to remove the original entry.
             col.remove(shd);
@@ -1640,11 +1641,11 @@ public class Board implements Serializable {
         }
     }
 
-    public Hashtable<Coords, Collection<SpecialHexDisplay>> getSpecialHexDisplayTable() {
+    public Hashtable<MapLocation, Collection<SpecialHexDisplay>> getSpecialHexDisplayTable() {
         return specialHexes;
     }
 
-    public void setSpecialHexDisplayTable(Hashtable<Coords, Collection<SpecialHexDisplay>> shd) {
+    public void setSpecialHexDisplayTable(Hashtable<MapLocation, Collection<SpecialHexDisplay>> shd) {
         specialHexes = shd;
     }
 

@@ -80,17 +80,13 @@ public abstract class ActionPhaseDisplay extends StatusBarPhaseDisplay {
                     new CommandAction() {
                         @Override
                         public boolean shouldPerformAction() {
-                            if (((!clientgui.getClient().isMyTurn()
-                                    && (clientgui.getClient().getGame().getTurn() != null)
-                                    && (!clientgui.getClient().getGame().getPhase().isReport())))
-                                    || clientgui.getBoardView().getChatterBoxActive()
-                                    || display.isIgnoringEvents()
-                                    || !display.isVisible()
-                                    || !(butDone.isEnabled() || butSkipTurn.isEnabled())) {
-                                return false;
-                            } else {
-                                return true;
-                            }
+                            return ((clientgui.getClient().isMyTurn()
+                                    || (clientgui.getClient().getGame().getTurn() == null)
+                                    || (clientgui.getClient().getGame().getPhase().isReport())))
+                                    && !clientgui.isChatterBoxActive()
+                                    && !display.isIgnoringEvents()
+                                    && display.isVisible()
+                                    && (butDone.isEnabled() || butSkipTurn.isEnabled());
                         }
 
                         @Override
@@ -117,8 +113,9 @@ public abstract class ActionPhaseDisplay extends StatusBarPhaseDisplay {
         updateDonePanel();
     }
 
-    /** called to reset, show, hide and relabel the Done panel buttons. Override to change button labels and states,
-     * being sure to call {@link #updateDonePanelButtons(String,String,boolean) UpdateDonePanelButtons}
+    /**
+     * Called to reset, show, hide and relabel the Done panel buttons. Override to change button labels and states,
+     * being sure to call {@link #updateDonePanelButtons(String, String, boolean, List)}  UpdateDonePanelButtons}
      * to set the button labels and states
      */
     abstract protected void updateDonePanel();
@@ -168,9 +165,10 @@ public abstract class ActionPhaseDisplay extends StatusBarPhaseDisplay {
             butDone.setEnabled(!GUIP.getNagForNoAction());
             butSkipTurn.setEnabled(true);
         }
-
-        if (clientgui.getBoardView().turnDetailsOverlay != null) {
-            clientgui.getBoardView().turnDetailsOverlay.setLines(turnDetails);
-        }
+        clientgui.boardViews().forEach(bv -> {
+            if (bv.turnDetailsOverlay != null) {
+                bv.turnDetailsOverlay.setLines(turnDetails);
+            }
+        });
     }
 }

@@ -2145,6 +2145,11 @@ public class ChatLounge extends AbstractPhaseDisplay implements
             }
         }
 
+        if (!game().usesSpaceMap() && !game().usesLowAtmoMap() && !game().usesGroundMap()) {
+            LobbyErrors.showMustUseMap(clientgui.getFrame());
+            return;
+        }
+
         boolean done = !localPlayer().isDone();
         client.sendDone(done);
         refreshDoneButton(done);

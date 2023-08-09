@@ -115,8 +115,8 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
                         + (game.getRoundCount() + aaa.getTurnsTilHit())
                         + ", fired by "
                         + game.getPlayer(aaa.getPlayerId()).getName();
-                game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(
-                        aaa.getTarget(game).getPosition(),
+                game.addSpecialHexDisplay(
+                        aaa.getTarget(game).getMapLocation(),
                         new SpecialHexDisplay(
                                 SpecialHexDisplay.Type.ARTILLERY_INCOMING, game
                                         .getRoundCount() + aaa.getTurnsTilHit(),
@@ -305,7 +305,7 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
             artyMsg = "Artillery hit here on round " + game.getRoundCount() 
                     + ", fired by " + game.getPlayer(aaa.getPlayerId()).getName()
                     + " (this hex is now an auto-hit)";
-            game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(targetPos,
+            game.addSpecialHexDisplay(targetPos, target.getMapLocation().getMapType(),
                     new SpecialHexDisplay(SpecialHexDisplay.Type.ARTILLERY_HIT,
                             game.getRoundCount(), game.getPlayer(aaa.getPlayerId()), artyMsg));
         } else {
@@ -324,7 +324,7 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
             artyMsg = "Artillery missed here on round "
                     + game.getRoundCount() + ", fired by "
                     + game.getPlayer(aaa.getPlayerId()).getName();
-            game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(origPos,
+            game.addSpecialHexDisplay(origPos, target.getMapLocation().getMapType(),
                     new SpecialHexDisplay(SpecialHexDisplay.Type.ARTILLERY_HIT, game.getRoundCount(),
                             game.getPlayer(aaa.getPlayerId()), artyMsg));
             while (nweaponsHit > 0) {

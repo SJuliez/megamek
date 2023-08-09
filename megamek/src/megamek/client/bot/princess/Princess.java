@@ -358,11 +358,11 @@ public class Princess extends BotClient {
     }
 
     @Override
-    protected Vector<Coords> calculateArtyAutoHitHexes() {
+    protected Vector<MapLocation> calculateArtyAutoHitHexes() {
         try {
             // currently returns no artillery hit spots
             // make an empty list
-            final PlayerIDandList<Coords> artyAutoHitHexes = new PlayerIDandList<>();
+            final PlayerIDandList<MapLocation> artyAutoHitHexes = new PlayerIDandList<>();
             // attach my player id to it
             artyAutoHitHexes.setPlayerID(getLocalPlayer().getId());
             return artyAutoHitHexes;
@@ -429,13 +429,13 @@ public class Princess extends BotClient {
         }
 
         final Entity deployEntity = game.getEntity(entityNum);
-        final Hex deployHex = game.getBoard().getHex(deployCoords);
+        final Hex deployHex = game.getBoard(deployEntity).getHex(deployCoords);
 
         int deployElevation = getDeployElevation(deployEntity, deployHex);
 
         // Compensate for hex elevation where != 0...
         deployElevation -= deployHex.getLevel();
-        deploy(entityNum, deployCoords, decentFacing, deployElevation);
+        deploy(entityNum, new MapLocation(deployCoords, deployEntity.getCurrentMap()), decentFacing, deployElevation);
     }
     
     /**

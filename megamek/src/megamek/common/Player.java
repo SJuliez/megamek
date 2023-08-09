@@ -65,7 +65,7 @@ public final class Player extends TurnOrdered {
     private int numMfInferno = 0;
 
     // hexes that are automatically hit by artillery
-    private Vector<Coords> artyAutoHitHexes = new Vector<>();
+    private Vector<MapLocation> artyAutoHitHexes = new Vector<>();
 
     private int initialEntityCount;
     private int initialBV;
@@ -429,15 +429,15 @@ public final class Player extends TurnOrdered {
         return votedToAllowGameMaster;
     }
 
-    public void setArtyAutoHitHexes(Vector<Coords> artyAutoHitHexes) {
+    public void setArtyAutoHitHexes(Vector<MapLocation> artyAutoHitHexes) {
         this.artyAutoHitHexes = artyAutoHitHexes;
     }
 
-    public Vector<Coords> getArtyAutoHitHexes() {
+    public Vector<MapLocation> getArtyAutoHitHexes() {
         return artyAutoHitHexes;
     }
 
-    public void addArtyAutoHitHex(Coords c) {
+    public void addArtyAutoHitHex(MapLocation c) {
         artyAutoHitHexes.add(c);
     }
 

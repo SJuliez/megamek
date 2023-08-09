@@ -80,8 +80,8 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
                         + ", fired by "
                         + game.getPlayer(aaa.getPlayerId()).getName();
                 if (aaa.getTarget(game) != null) {
-                    game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(
-                            aaa.getTarget(game).getPosition(),
+                    game.addSpecialHexDisplay(
+                            aaa.getTarget(game).getMapLocation(),
                             new SpecialHexDisplay(
                                     SpecialHexDisplay.Type.ARTILLERY_INCOMING, game
                                     .getRoundCount() + aaa.getTurnsTilHit(),
@@ -433,8 +433,8 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
             String artyMsg = "Artillery hit here on round " + game.getRoundCount() 
                     + ", fired by " + game.getPlayer(aaa.getPlayerId()).getName()
                     + " (this hex is now an auto-hit)";
-            game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(
-                    targetPos,
+            game.addSpecialHexDisplay(
+                    targetPos, target.getMapLocation().getMapType(),
                     new SpecialHexDisplay(SpecialHexDisplay.Type.ARTILLERY_HIT,
                             game.getRoundCount(), game.getPlayer(aaa
                                     .getPlayerId()), artyMsg));
@@ -458,8 +458,8 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
                     String artyMsg = "Artillery missed here on round "
                             + game.getRoundCount() + ", fired by "
                             + game.getPlayer(aaa.getPlayerId()).getName();
-                    game.getBoard(ae.getCurrentMap()).addSpecialHexDisplay(
-                            origPos,
+                    game.addSpecialHexDisplay(
+                            origPos, target.getMapLocation().getMapType(),
                             new SpecialHexDisplay(
                                     SpecialHexDisplay.Type.ARTILLERY_HIT, game
                                             .getRoundCount(), game

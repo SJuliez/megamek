@@ -1255,6 +1255,12 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 && boardSupplier.get().getMapType() == entity.getCurrentMap();
     }
 
+    /** @return True when the given MapLocation is of the same MapType as the board of this BoardView. */
+    public boolean isOnThisBoard(MapLocation mapLocation) {
+        return (boardSupplier.get() != null) && (mapLocation != null)
+                && boardSupplier.get().getMapType() == mapLocation.getMapType();
+    }
+
     /**
      * Debugging method that renders a hex in the approximate direction
      * from the selected entity to the selected hex, of both exist.
@@ -2026,11 +2032,11 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
         // Draw pre-designated auto-hit hexes
         if (localPlayer != null) { // Could be null, like in map-editor
-            for (Coords c : localPlayer.getArtyAutoHitHexes()) {
+            for (MapLocation mapLocation : localPlayer.getArtyAutoHitHexes()) {
+                Coords c = mapLocation.getCoords();
                 // Is the Coord within the viewing area?
-                if ((c.getX() >= drawX) && (c.getX() <= (drawX + drawWidth))
+                if (isOnThisBoard(mapLocation) && (c.getX() >= drawX) && (c.getX() <= (drawX + drawWidth))
                     && (c.getY() >= drawY) && (c.getY() <= (drawY + drawHeight))) {
-
                     Point p = getHexLocation(c);
                     artyIconImage = tileManager.getArtilleryTarget(TilesetManager.ARTILLERY_AUTOHIT);
                     g.drawImage(getScaledImage(artyIconImage, true), p.x, p.y, this);
@@ -4999,47 +5005,50 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         }
 
         @Override
-        public void gameBoardNew(GameBoardNewEvent e) {
-            Board b = e.getOldBoard();
-            if (b != null) {
-                b.removeBoardListener(BoardView.this);
+        public void gameBoardNew(GameBoardNewEvent event) {
+            Board newBoard = event.getNewBoard();
+            Board oldBoard = event.getOldBoard();
+            if (!Objects.equals(newBoard, boardSupplier.get()) || (newBoard == null && oldBoard == null)) {
+                return; // Not this boardview's board
             }
-            b = e.getNewBoard();
-            if (b != null) {
-                b.addBoardListener(BoardView.this);
+            if (oldBoard != null) {
+                oldBoard.removeBoardListener(BoardView.this);
             }
-            boardBackgrounds.clear();
-            if (b.hasBoardBackground()) {
-                ListIterator<Boolean> flipItHoriz = b.getFlipBGHoriz().listIterator();
-                ListIterator<Boolean> flipItVert = b.getFlipBGVert().listIterator();
-                for (String path : b.getBackgroundPaths()) {
-                    boolean flipHoriz = flipItHoriz.next();
-                    boolean flipVert = flipItVert.next();
-                    if (path == null) {
-                        boardBackgrounds.add(null);
-                    } else {
-                        Image bgImg = ImageUtil.loadImageFromFile(path);
-                        ImageProducer prod = bgImg.getSource();
-                        if (flipHoriz || flipVert) {
-                            AffineTransform at = new AffineTransform();
+            if (newBoard != null) {
+                newBoard.addBoardListener(BoardView.this);
+                boardBackgrounds.clear();
+                if (newBoard.hasBoardBackground()) {
+                    ListIterator<Boolean> flipItHoriz = newBoard.getFlipBGHoriz().listIterator();
+                    ListIterator<Boolean> flipItVert = newBoard.getFlipBGVert().listIterator();
+                    for (String path : newBoard.getBackgroundPaths()) {
+                        boolean flipHoriz = flipItHoriz.next();
+                        boolean flipVert = flipItVert.next();
+                        if (path == null) {
+                            boardBackgrounds.add(null);
+                        } else {
+                            Image bgImg = ImageUtil.loadImageFromFile(path);
+                            ImageProducer prod = bgImg.getSource();
+                            if (flipHoriz || flipVert) {
+                                AffineTransform at = new AffineTransform();
 
-                            if (flipHoriz) {
-                                at.concatenate(AffineTransform.getScaleInstance(1, -1));
+                                if (flipHoriz) {
+                                    at.concatenate(AffineTransform.getScaleInstance(1, -1));
+                                }
+                                if (flipVert) {
+                                    at.concatenate(AffineTransform.getTranslateInstance(0,
+                                            -bgImg.getHeight(null)));
+                                }
+                                ((Graphics2D) bgImg.getGraphics()).setTransform(at);
                             }
-                            if (flipVert) {
-                                at.concatenate(AffineTransform.getTranslateInstance(0,
-                                        -bgImg.getHeight(null)));
-                            }
-                            ((Graphics2D) bgImg.getGraphics()).setTransform(at);
+                            boardBackgrounds.add(Toolkit.getDefaultToolkit().createImage(prod));
                         }
-                        boardBackgrounds.add(Toolkit.getDefaultToolkit().createImage(prod));
                     }
                 }
+                boardSupplier.get().initializeAllAutomaticTerrain(GUIP.getHexInclines());
+                clearHexImageCache();
+                updateBoard();
+                clearShadowMap();
             }
-            boardSupplier.get().initializeAllAutomaticTerrain(GUIP.getHexInclines());
-            clearHexImageCache();
-            updateBoard();
-            clearShadowMap();
         }
 
         @Override

@@ -124,9 +124,9 @@ class LobbyMekCellFormatter {
 
         // Critical (Red) Warnings
         if ((entity.getGame().getPlanetaryConditions().whyDoomed(entity, entity.getGame()) != null)
-                || (entity.doomedInAtmosphere() && mapType == MapSettings.MEDIUM_ATMOSPHERE)
-                || (entity.doomedOnGround() && mapType == MapSettings.MEDIUM_GROUND)
-                || (entity.doomedInSpace() && mapType == MapSettings.MEDIUM_SPACE)
+                || (entity.getCurrentMap().isLowAtmo() && (entity.doomedInAtmosphere() || !entity.getGame().usesLowAtmoMap()))
+                || (entity.getCurrentMap().isSpace() && (entity.doomedInSpace() || !entity.getGame().usesSpaceMap()))
+                || (entity.getCurrentMap().isGround() && (entity.doomedOnGround() || !entity.getGame().usesGroundMap()))
                 || (!entity.isDesignValid())) {
             result.append(guiScaledFontHTML(GUIP.getWarningColor()));
             result.append(WARNING_SIGN + "</FONT>");

@@ -1559,16 +1559,29 @@ public final class UnitToolTip {
             String msg_cannotsurvive = Messages.getString("BoardView1.Tooltip.CannotSurvive");
             sWarnings += "<BR>" + msg_cannotsurvive + " " + entity.getGame().getPlanetaryConditions().whyDoomed(entity, entity.getGame());
         }
-        if (entity.doomedInAtmosphere() && mapSettings.getMedium() == MapSettings.MEDIUM_ATMOSPHERE) {
+
+        if (entity.getCurrentMap().isLowAtmo() && entity.doomedInAtmosphere()) {
             String msg_cannotsurviveatmo = Messages.getString("BoardView1.Tooltip.CannotSurviveAtmo");
             sWarnings += "<BR>" + msg_cannotsurviveatmo;
         }
-        if (entity.doomedOnGround() && mapSettings.getMedium() == MapSettings.MEDIUM_GROUND) {
+        if (entity.getCurrentMap().isLowAtmo() && !entity.getGame().usesLowAtmoMap()) {
+            String msg_cannotsurviveatmo = Messages.getString("BoardView1.Tooltip.NoAtmoMap");
+            sWarnings += "<BR>" + msg_cannotsurviveatmo;
+        }
+        if (entity.getCurrentMap().isGround() && entity.doomedOnGround()) {
             String msg_cannotsurviveground = Messages.getString("BoardView1.Tooltip.CannotSurviveGround");
             sWarnings += "<BR>" + msg_cannotsurviveground;
         }
-        if (entity.doomedInSpace() && mapSettings.getMedium() == MapSettings.MEDIUM_SPACE) {
+        if (entity.getCurrentMap().isGround() && !entity.getGame().usesGroundMap()) {
+            String msg_cannotsurviveground = Messages.getString("BoardView1.Tooltip.NoGroundMap");
+            sWarnings += "<BR>" + msg_cannotsurviveground;
+        }
+        if (entity.getCurrentMap().isSpace() && entity.doomedInSpace()) {
             String msg_cannotsurvivespace = Messages.getString("BoardView1.Tooltip.CannotSurviveSpace");
+            sWarnings += "<BR>" + msg_cannotsurvivespace;
+        }
+        if (entity.getCurrentMap().isSpace() && !entity.getGame().usesSpaceMap()) {
+            String msg_cannotsurvivespace = Messages.getString("BoardView1.Tooltip.NoSpaceMap");
             sWarnings += "<BR>" + msg_cannotsurvivespace;
         }
         result += guiScaledFontHTML(GUIP.getWarningColor()) + sWarnings + "</FONT>";

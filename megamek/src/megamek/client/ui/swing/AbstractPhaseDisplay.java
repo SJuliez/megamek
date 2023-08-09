@@ -109,17 +109,13 @@ public abstract class AbstractPhaseDisplay extends SkinnedJPanel implements
 
                         @Override
                         public boolean shouldPerformAction() {
-                            if (((!clientgui.getClient().isMyTurn()
-                                    && (clientgui.getClient().getGame().getTurn() != null)
-                                    && (!clientgui.getClient().getGame().getPhase().isReport())))
-                                    || clientgui.getBoardView().getChatterBoxActive()
-                                    || display.isIgnoringEvents()
-                                    || !display.isVisible()
-                                    || !butDone.isEnabled()) {
-                                return false;
-                            } else {
-                                return true;
-                            }
+                            return ((clientgui.getClient().isMyTurn()
+                                    || (clientgui.getClient().getGame().getTurn() == null)
+                                    || (clientgui.getClient().getGame().getPhase().isReport())))
+                                    && !clientgui.isChatterBoxActive()
+                                    && !display.isIgnoringEvents()
+                                    && display.isVisible()
+                                    && butDone.isEnabled();
                         }
 
                         @Override
@@ -295,14 +291,9 @@ public abstract class AbstractPhaseDisplay extends SkinnedJPanel implements
         //noaction default
     }
 
-    public void ready() {
-    }
-    // needed for turn timer to add timer display to GUI
+    public void ready() { }
+
     public ClientGUI getClientgui() {
         return clientgui;
-    }
-
-    protected BoardView boardViewFor(Entity entity) {
-        return clientgui.boardViewFor(entity);
     }
 }

@@ -690,7 +690,9 @@ public class GameManager implements IGameManager {
 
             send(connId, createArtilleryPacket(player));
             send(connId, createFlarePacket());
-            send(connId, createSpecialHexDisplayPacket(connId));
+            for (Board board: game.getBoards()) {
+                send(createSpecialHexDisplayPacket(connId, board.getMapType()));
+            }
             send(connId, new Packet(PacketCommand.PRINCESS_SETTINGS, getGame().getBotSettings()));
         }
     }
@@ -937,8 +939,9 @@ public class GameManager implements IGameManager {
                 sendSpecialHexDisplayPackets();
                 break;
             case SPECIAL_HEX_DISPLAY_APPEND:
-                game.getBoard().addSpecialHexDisplay((Coords) packet.getObject(0),
-                        (SpecialHexDisplay) packet.getObject(1));
+                MapLocation mapLocation = (MapLocation) packet.getObject(0);
+                SpecialHexDisplay specialHexDisplay = (SpecialHexDisplay) packet.getObject(1);
+                game.addSpecialHexDisplay(mapLocation, specialHexDisplay);
                 sendSpecialHexDisplayPackets();
                 break;
             case PLAYER_TEAM_CHANGE:
@@ -1879,12 +1882,8 @@ public class GameManager implements IGameManager {
                 checkForConditionDeath();
 
                 checkForBlueShieldDamage();
-                if (game.getBoard().inAtmosphere()) {
-                    checkForAtmosphereDeath();
-                }
-                if (game.getBoard().inSpace()) {
-                    checkForSpaceDeath();
-                }
+                checkForAtmosphereDeath();
+                checkForSpaceDeath();
 
                 bvReports(true);
 
@@ -2325,7 +2324,7 @@ public class GameManager implements IGameManager {
                 break;
             case INITIATIVE:
                 resolveWhatPlayersCanSeeWhatUnits();
-                detectSpacecraft();
+                GameManagerAdvancedSensorHelper.detectSpacecraft(game);
                 game.addReports(vPhaseReport);
                 changePhase(GamePhase.INITIATIVE_REPORT);
                 break;
@@ -2351,8 +2350,8 @@ public class GameManager implements IGameManager {
             case MOVEMENT:
                 detectHiddenUnits();
                 ServerHelper.detectMinefields(game, vPhaseReport, this);
-                updateSpacecraftDetection();
-                detectSpacecraft();
+                GameManagerAdvancedSensorHelper.updateSpacecraftDetection(game);
+                GameManagerAdvancedSensorHelper.detectSpacecraft(game);
                 resolveWhatPlayersCanSeeWhatUnits();
                 doAllAssaultDrops();
                 addMovementHeat();
@@ -2564,7 +2563,9 @@ public class GameManager implements IGameManager {
 
     private void sendSpecialHexDisplayPackets() {
         for (Player player : game.getPlayersVector()) {
-            send(createSpecialHexDisplayPacket(player.getId()));
+            for (Board board: game.getBoards()) {
+                send(createSpecialHexDisplayPacket(player.getId(), board.getMapType()));
+            }
         }
     }
 
@@ -3475,7 +3476,7 @@ public class GameManager implements IGameManager {
             }
 
             // we don't much care about wind direction and such in a hard vacuum
-            if (!game.getBoard().inSpace()) {
+            if (!game.usesGroundMap()) {
                 // Wind direction and strength
                 Report rWindDir = new Report(1025, Report.PUBLIC);
                 rWindDir.add(game.getPlanetaryConditions().getWindDirDisplayableName());
@@ -6159,7 +6160,7 @@ public class GameManager implements IGameManager {
         // okay, proceed with movement calculations
         Coords lastPos = entity.getPosition();
         Coords curPos = entity.getPosition();
-        Hex firstHex = game.getBoard().getHex(curPos); // Used to check for start/end magma damage
+        Hex firstHex = game.getHex(entity.getMapLocation()); // Used to check for start/end magma damage
         int curFacing = entity.getFacing();
         int curVTOLElevation = entity.getElevation();
         int curElevation;
@@ -6183,7 +6184,7 @@ public class GameManager implements IGameManager {
         boolean detectedHiddenHazard = false;
         boolean turnOver;
         int prevFacing = curFacing;
-        Hex prevHex = game.getBoard().getHex(curPos);
+        Hex prevHex = game.getBoard(entity.getCurrentMap()).getHex(curPos);
         final boolean isInfantry = entity instanceof Infantry;
         AttackAction charge = null;
         RamAttackAction ram = null;
@@ -6219,8 +6220,7 @@ public class GameManager implements IGameManager {
         overallMoveType = md.getLastStepMovementType();
 
         // check for starting in liquid magma
-        if ((game.getBoard().getHex(entity.getPosition())
-                .terrainLevel(Terrains.MAGMA) == 2)
+        if ((game.getHex(entity.getMapLocation()).terrainLevel(Terrains.MAGMA) == 2)
                 && (entity.getElevation() == 0)) {
             doMagmaDamage(entity, false);
         }
@@ -6368,7 +6368,7 @@ public class GameManager implements IGameManager {
 
             // Extra damage if first and last hex are magma
             if (firstStep) {
-                firstHex = game.getBoard().getHex(curPos);
+                firstHex = game.getBoard(entity.getCurrentMap()).getHex(curPos);
             }
             // stop if the entity already killed itself
             if (entity.isDestroyed() || entity.isDoomed()) {
@@ -6613,7 +6613,7 @@ public class GameManager implements IGameManager {
                             fellDuringMovement = true;
                         }
                         // multiply forward by 16 when on ground hexes
-                        if (game.getBoard().onGround()) {
+                        if (game.getBoard(entity.getCurrentMap()).onGround()) {
                             forward *= 16;
                         }
                         while (forward > 0) {
@@ -6622,7 +6622,7 @@ public class GameManager implements IGameManager {
                             distance++;
                             a.setStraightMoves(a.getStraightMoves() + 1);
                             // make sure it didn't fly off the map
-                            if (!game.getBoard().contains(curPos)) {
+                            if (!game.getBoard(entity.getCurrentMap()).contains(curPos)) {
                                 a.setCurrentVelocity(md.getFinalVelocity());
                                 processLeaveMap(md, true, Compute.roundsUntilReturn(game, entity));
                                 return;
@@ -6665,7 +6665,7 @@ public class GameManager implements IGameManager {
                                 Entity ce = game.getEntity(id);
                                 // if we are in atmosphere and not the same altitude
                                 // then skip
-                                if (!game.getBoard().inSpace() && (ce.getAltitude() != curAltitude)) {
+                                if (!entity.getCurrentMap().isSpace() && (ce.getAltitude() != curAltitude)) {
                                     continue;
                                 }
                                 // you can't collide with yourself
@@ -7293,13 +7293,13 @@ public class GameManager implements IGameManager {
             // set climb mode in case of skid
             entity.setClimbMode(curClimbMode);
 
-            Hex curHex = game.getBoard().getHex(curPos);
+            Hex curHex = game.getBoard(entity.getCurrentMap()).getHex(curPos);
 
             // when first entering a building, we need to roll what type
             // of basement it has
             if (isOnGround && curHex.containsTerrain(Terrains.BUILDING)) {
-                Building bldg = game.getBoard().getBuildingAt(curPos);
-                if (bldg.rollBasement(curPos, game.getBoard(), vPhaseReport)) {
+                Building bldg = game.getBoard(entity.getCurrentMap()).getBuildingAt(curPos);
+                if (bldg.rollBasement(curPos, game.getBoard(entity.getCurrentMap()), vPhaseReport)) {
                     sendChangedHex(curPos);
                     Vector<Building> buildings = new Vector<>();
                     buildings.add(bldg);
@@ -7320,7 +7320,7 @@ public class GameManager implements IGameManager {
                     && !entity.isAirborne() && (step.getClearance() <= 0)  // Don't check airborne LAMs
                     && game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_LEAPING)) {
                 int leapDistance = (lastElevation
-                        + game.getBoard().getHex(lastPos).getLevel())
+                        + game.getBoard(entity.getCurrentMap()).getHex(lastPos).getLevel())
                         - (curElevation + curHex.getLevel());
                 if (leapDistance > 2) {
                     // skill check for leg damage
@@ -7568,7 +7568,7 @@ public class GameManager implements IGameManager {
                 if (chaffDispensers.size() > 0) {
                     chaffDispensers.get(0).setFired(true);
                     createSmoke(curPos, SmokeCloud.SMOKE_CHAFF_LIGHT, 1, entity.getCurrentMap());
-                    Hex hex = game.getBoard().getHex(curPos);
+                    Hex hex = game.getBoard(entity.getCurrentMap()).getHex(curPos);
                     hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_CHAFF_LIGHT));
                     sendChangedHex(curPos);
                     r = new Report(2512)
@@ -7623,7 +7623,7 @@ public class GameManager implements IGameManager {
             }
 
             // check to see if we are a mech and we've moved OUT of fire
-            Hex lastHex = game.getBoard().getHex(lastPos);
+            Hex lastHex = game.getBoard(entity.getCurrentMap()).getHex(lastPos);
             if (entity instanceof Mech) {
                 if (!lastPos.equals(curPos) && (prevStep != null)
                         && ((lastHex.containsTerrain(Terrains.FIRE)
@@ -7668,11 +7668,11 @@ public class GameManager implements IGameManager {
 
             // check to see if we are not a mech and we've moved INTO fire
             if (!(entity instanceof Mech)) {
-                boolean underwater = game.getBoard().getHex(curPos)
+                boolean underwater = game.getBoard(entity.getCurrentMap()).getHex(curPos)
                         .containsTerrain(Terrains.WATER)
-                        && (game.getBoard().getHex(curPos).depth() > 0)
-                        && (step.getElevation() < game.getBoard().getHex(curPos).getLevel());
-                if (game.getBoard().getHex(curPos).containsTerrain(
+                        && (game.getBoard(entity.getCurrentMap()).getHex(curPos).depth() > 0)
+                        && (step.getElevation() < game.getBoard(entity.getCurrentMap()).getHex(curPos).getLevel());
+                if (game.getBoard(entity.getCurrentMap()).getHex(curPos).containsTerrain(
                         Terrains.FIRE) && !lastPos.equals(curPos)
                         && (stepMoveType != EntityMovementType.MOVE_JUMP)
                         && (step.getElevation() <= 1) && !underwater) {
@@ -7680,7 +7680,7 @@ public class GameManager implements IGameManager {
                 }
             }
 
-            if ((game.getBoard().getHex(curPos).terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_GREEN)
+            if ((game.getBoard(entity.getCurrentMap()).getHex(curPos).terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_GREEN)
                     && !stepMoveType.equals(EntityMovementType.MOVE_JUMP) && entity.antiTSMVulnerable()) {
                 addReport(doGreenSmokeDamage(entity));
             }
@@ -8132,18 +8132,18 @@ public class GameManager implements IGameManager {
                 // Get the building being exited.
                 Building bldgExited = null;
                 if ((buildingMove & 1) == 1) {
-                    bldgExited = game.getBoard().getBuildingAt(lastPos);
+                    bldgExited = game.getBoard(entity.getCurrentMap()).getBuildingAt(lastPos);
                 }
 
                 // Get the building being entered.
                 Building bldgEntered = null;
                 if ((buildingMove & 2) == 2) {
-                    bldgEntered = game.getBoard().getBuildingAt(curPos);
+                    bldgEntered = game.getBoard(entity.getCurrentMap()).getBuildingAt(curPos);
                 }
 
                 // ProtoMechs changing levels within a building cause damage
                 if (((buildingMove & 8) == 8) && (entity instanceof Protomech)) {
-                    Building bldg = game.getBoard().getBuildingAt(curPos);
+                    Building bldg = game.getBoard(entity.getCurrentMap()).getBuildingAt(curPos);
                     Vector<Report> vBuildingReport = damageBuilding(bldg, 1, curPos);
                     for (Report report : vBuildingReport) {
                         report.subject = entity.getId();
@@ -8189,7 +8189,7 @@ public class GameManager implements IGameManager {
                     || (entity.getMovementMode().isWiGE() && (step.getClearance() == 1))
                     || curElevation == curHex.terrainLevel(Terrains.BLDG_ELEV)
                     || curElevation == curHex.terrainLevel(Terrains.BRIDGE_ELEV))) {
-                Building bldg = game.getBoard().getBuildingAt(curPos);
+                Building bldg = game.getBoard(entity.getCurrentMap()).getBuildingAt(curPos);
                 if ((bldg != null) && (entity.getElevation() >= 0)) {
                     boolean wigeFlyingOver = entity.getMovementMode() == EntityMovementMode.WIGE
                             && ((curHex.containsTerrain(Terrains.BLDG_ELEV)
@@ -8323,8 +8323,8 @@ public class GameManager implements IGameManager {
 
             // Check for crushing buildings by Dropships/Mobile Structures
             for (Coords pos : step.getCrushedBuildingLocs()) {
-                Building bldg = game.getBoard().getBuildingAt(pos);
-                Hex hex = game.getBoard().getHex(pos);
+                Building bldg = game.getBoard(entity.getCurrentMap()).getBuildingAt(pos);
+                Hex hex = game.getBoard(entity.getCurrentMap()).getHex(pos);
 
                 r = new Report(3443);
                 r.subject = entity.getId();
@@ -8440,7 +8440,7 @@ public class GameManager implements IGameManager {
                     && game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_FUEL_CONSUMPTION))
                     || (entity instanceof TeleMissile)) {
                 int fuelUsed = ((IAero) entity).getFuelUsed(thrust);
-                
+
                 // if we're a gas hog, aerospace fighter and going faster than walking, then use 2x fuel
                 if (((overallMoveType == EntityMovementType.MOVE_RUN) ||
                         (overallMoveType == EntityMovementType.MOVE_SPRINT) ||
@@ -8448,7 +8448,7 @@ public class GameManager implements IGameManager {
                         entity.hasQuirk(OptionsConstants.QUIRK_NEG_GAS_HOG)) {
                     fuelUsed *= 2;
                 }
-                
+
                 a.useFuel(fuelUsed);
             }
 
@@ -8481,7 +8481,7 @@ public class GameManager implements IGameManager {
                         "Thrust spent during turn exceeds SI"));
             }
 
-            if (!game.getBoard().inSpace()) {
+            if (!entity.getCurrentMap().isSpace()) {
                 rollTarget = a.checkVelocityDouble(md.getFinalVelocity(),
                         overallMoveType);
                 if (rollTarget.getValue() != TargetRoll.CHECK_FALSE) {
@@ -8641,7 +8641,7 @@ public class GameManager implements IGameManager {
 
         // but the danger isn't over yet! landing from a jump can be risky!
         if ((overallMoveType == EntityMovementType.MOVE_JUMP) && !entity.isMakingDfa()) {
-            final Hex curHex = game.getBoard().getHex(curPos);
+            final Hex curHex = game.getBoard(entity.getCurrentMap()).getHex(curPos);
             // check for damaged criticals
             rollTarget = entity.checkLandingWithDamage(overallMoveType);
             if (rollTarget.getValue() != TargetRoll.CHECK_FALSE) {
@@ -8723,7 +8723,7 @@ public class GameManager implements IGameManager {
             }
 
             // check for building collapse
-            Building bldg = game.getBoard().getBuildingAt(curPos);
+            Building bldg = game.getBoard(entity.getCurrentMap()).getBuildingAt(curPos);
             if (bldg != null) {
                 checkForCollapse(bldg, game.getPositionMap(), curPos, true,
                         vPhaseReport);
@@ -8878,7 +8878,7 @@ public class GameManager implements IGameManager {
                         entity.setElevation(entity.getAltitude() * 10);
                         entity.setAltitude(0);
                     } else {
-                        Hex hex = game.getBoard().getHex(entity.getPosition());
+                        Hex hex = game.getBoard(entity.getCurrentMap()).getHex(entity.getPosition());
                         if (hex.containsTerrain(Terrains.BLDG_ELEV)) {
                             entity.setElevation(hex.terrainLevel(Terrains.BLDG_ELEV));
                         } else {
@@ -8917,7 +8917,7 @@ public class GameManager implements IGameManager {
 
         // update entity's locations' exposure
         vPhaseReport.addAll(doSetLocationsExposure(entity,
-                game.getBoard().getHex(curPos), false, entity.getElevation()));
+                game.getBoard(entity.getCurrentMap()).getHex(curPos), false, entity.getElevation()));
 
         // Check the falls_end_movement option to see if it should be able to
         // move on.
@@ -8949,7 +8949,7 @@ public class GameManager implements IGameManager {
             }
         } else {
             if (entity.getMovementMode() == EntityMovementMode.WIGE) {
-                Hex hex = game.getBoard().getHex(curPos);
+                Hex hex = game.getBoard(entity.getCurrentMap()).getHex(curPos);
                 if (md.automaticWiGELanding(false)) {
                     // try to land safely; LAMs require a psr when landing with gyro or leg actuator
                     // damage and ProtoMechs always require a roll
@@ -8968,7 +8968,7 @@ public class GameManager implements IGameManager {
                     }
 
                     if (hex.containsTerrain(Terrains.BLDG_ELEV)) {
-                        Building bldg = game.getBoard().getBuildingAt(entity.getPosition());
+                        Building bldg = game.getBoard(entity.getCurrentMap()).getBuildingAt(entity.getPosition());
                         entity.setElevation(hex.terrainLevel(Terrains.BLDG_ELEV));
                         addAffectedBldg(bldg, checkBuildingCollapseWhileMoving(bldg,
                                 entity, entity.getPosition()));
@@ -9023,7 +9023,7 @@ public class GameManager implements IGameManager {
 
                     entity.setElevation(Math.min(entity.getElevation(),
                             1 + hex.maxTerrainFeatureElevation(
-                                    game.getBoard().inAtmosphere())));
+                                    entity.getCurrentMap().isLowAtmo())));
                 }
             }
 
@@ -9059,7 +9059,7 @@ public class GameManager implements IGameManager {
             swarmer.setPosition(curPos);
             // If the hex is on fire, and the swarming infantry is
             // *not* Battle Armor, it drops off.
-            if (!(swarmer instanceof BattleArmor) && game.getBoard()
+            if (!(swarmer instanceof BattleArmor) && game.getBoard(entity.getCurrentMap())
                     .getHex(curPos).containsTerrain(Terrains.FIRE)) {
                 swarmer.setSwarmTargetId(Entity.NONE);
                 entity.setSwarmAttackerId(Entity.NONE);
@@ -9155,10 +9155,10 @@ public class GameManager implements IGameManager {
                 && !entity.hasEnvironmentalSealing()
                 && (entity.getEngine().getEngineType() == Engine.COMBUSTION_ENGINE)) {
             if ((!entity.isProne()
-                    && (game.getBoard().getHex(entity.getPosition())
+                    && (game.getBoard(entity.getCurrentMap()).getHex(entity.getPosition())
                     .terrainLevel(Terrains.WATER) >= 2))
                     || (entity.isProne()
-                    && (game.getBoard().getHex(entity.getPosition())
+                    && (game.getBoard(entity.getCurrentMap()).getHex(entity.getPosition())
                     .terrainLevel(Terrains.WATER) == 1))) {
                 ((Mech) entity).setJustMovedIntoIndustrialKillingWater(true);
 
@@ -9956,7 +9956,7 @@ public class GameManager implements IGameManager {
     /**
      * deliver missile smoke
      *
-     * @param coords the <code>Coords</code> where to deliver
+     * @param mapLocation the <code>Coords</code> where to deliver
      */
     public void deliverMissileSmoke(MapLocation mapLocation, int smokeType, Vector<Report> vPhaseReport) {
         Report r;
@@ -12620,7 +12620,12 @@ public class GameManager implements IGameManager {
      */
     private void receiveDeployment(Packet packet, int connId) {
         Entity entity = game.getEntity(packet.getIntValue(0));
-        Coords coords = (Coords) packet.getObject(1);
+        if (entity == null) {
+            LogManager.getLogger().error("Received invalid deployment packet from connection "
+                    + connId + ", Entity was null!");
+            return;
+        }
+        MapLocation mapLocation = (MapLocation) packet.getObject(1);
         int nFacing = packet.getIntValue(2);
         int elevation = packet.getIntValue(3);
 
@@ -12646,16 +12651,12 @@ public class GameManager implements IGameManager {
             turn = game.getTurnForPlayer(connId);
         }
         if ((turn == null) || !turn.isValid(connId, entity, game)
-                || !(game.getBoard().isLegalDeployment(coords, entity)
+                || !(game.getBoard(entity).isLegalDeployment(mapLocation.getCoords(), entity)
                 || (assaultDrop && game.getOptions().booleanOption(OptionsConstants.ADVANCED_ASSAULT_DROP)
                 && entity.canAssaultDrop()))) {
             String msg = "server got invalid deployment packet from "
                     + "connection " + connId;
-            if (entity != null) {
-                msg += ", Entity: " + entity.getShortName();
-            } else {
-                msg += ", Entity was null!";
-            }
+            msg += ", Entity: " + entity.getShortName();
             LogManager.getLogger().error(msg);
             send(connId, createTurnVectorPacket());
             send(connId, createTurnIndexPacket(turn.getPlayerNum()));
@@ -12663,7 +12664,7 @@ public class GameManager implements IGameManager {
         }
 
         // looks like mostly everything's okay
-        processDeployment(entity, coords, nFacing, elevation, loadVector, assaultDrop);
+        processDeployment(entity, mapLocation, nFacing, elevation, loadVector, assaultDrop);
 
         //Update Aero sensors for a space or atmospheric game
         if (entity.isAero()) {
@@ -12742,7 +12743,7 @@ public class GameManager implements IGameManager {
      * specified entities inside of it too. Also, check that the deployment is
      * valid.
      */
-    private void processDeployment(Entity entity, Coords coords, int nFacing, int elevation, Vector<Entity> loadVector,
+    private void processDeployment(Entity entity, MapLocation mapLocation, int nFacing, int elevation, Vector<Entity> loadVector,
                                    boolean assaultDrop) {
         for (Entity loaded : loadVector) {
             if (loaded.getTransportId() != Entity.NONE) {
@@ -12783,10 +12784,11 @@ public class GameManager implements IGameManager {
             }
         }
 
-        entity.setPosition(coords);
+        entity.setPosition(mapLocation.getCoords());
+        entity.setCurrentMap(mapLocation.getMapType());
         entity.setFacing(nFacing);
         entity.setSecondaryFacing(nFacing);
-        Hex hex = game.getBoard().getHex(coords);
+        Hex hex = game.getHex(mapLocation);
         if (assaultDrop) {
             entity.setAltitude(1);
             // from the sky!
@@ -12796,7 +12798,7 @@ public class GameManager implements IGameManager {
             // Only do it for VTOLs, though; assume everything else is on the
             // ground.
             entity.setElevation((hex.ceiling() - hex.getLevel()) + 1);
-            while ((Compute.stackingViolation(game, entity, coords, null, entity.climbMode()) != null)
+            while ((Compute.stackingViolation(game, entity, mapLocation.getCoords(), null, entity.climbMode()) != null)
                     && (entity.getElevation() <= 50)) {
                 entity.setElevation(entity.getElevation() + 1);
             }
@@ -12892,9 +12894,7 @@ public class GameManager implements IGameManager {
      */
     @SuppressWarnings("unchecked")
     private void receiveArtyAutoHitHexes(Packet packet, int connId) {
-        PlayerIDandList<Coords> artyAutoHitHexes = (PlayerIDandList<Coords>) packet
-                .getObject(0);
-
+        PlayerIDandList<MapLocation> artyAutoHitHexes = (PlayerIDandList<MapLocation>) packet.getObject(0);
         int playerId = artyAutoHitHexes.getPlayerID();
 
         // is this the right phase?
@@ -12904,8 +12904,8 @@ public class GameManager implements IGameManager {
         }
         game.getPlayer(playerId).setArtyAutoHitHexes(artyAutoHitHexes);
 
-        for (Coords coord : artyAutoHitHexes) {
-            game.getBoard().addSpecialHexDisplay(coord,
+        for (MapLocation mapLocation : artyAutoHitHexes) {
+            game.addSpecialHexDisplay(mapLocation,
                     new SpecialHexDisplay(
                             SpecialHexDisplay.Type.ARTILLERY_AUTOHIT,
                             SpecialHexDisplay.NO_ROUND, game.getPlayer(playerId),
@@ -13642,122 +13642,6 @@ public class GameManager implements IGameManager {
             }
         }
         return apdsCoords;
-    }
-
-    /**
-     * Called at the start and end of movement. Determines if an entity
-     * has been detected and/or had a firing solution calculated
-     */
-    private void detectSpacecraft() {
-        // Don't bother if we're not in space or if the game option isn't on
-        if (!game.getBoard().inSpace()
-                || !game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ADVANCED_SENSORS)) {
-            return;
-        }
-
-        //Now, run the detection rolls
-        for (Entity detector : game.getEntitiesVector()) {
-            //Don't process for invalid units
-            //in the case of squadrons and transports, we want the 'host'
-            //unit, not the component entities
-            if (detector.getPosition() == null
-                    || detector.isDestroyed()
-                    || detector.isDoomed()
-                    || detector.isOffBoard()
-                    || detector.isPartOfFighterSquadron()
-                    || detector.getTransportId() != Entity.NONE) {
-                continue;
-            }
-            for (Entity target : game.getEntitiesVector()) {
-                //Once a target is detected, we don't need to detect it again
-                if (detector.hasSensorContactFor(target.getId())) {
-                    continue;
-                }
-                //Don't process for invalid units
-                //in the case of squadrons and transports, we want the 'host'
-                //unit, not the component entities
-                if (target.getPosition() == null
-                        || target.isDestroyed()
-                        || target.isDoomed()
-                        || target.isOffBoard()
-                        || target.isPartOfFighterSquadron()
-                        || target.getTransportId() != Entity.NONE) {
-                    continue;
-                }
-                // Only process for enemy units
-                if (!detector.isEnemyOf(target)) {
-                    continue;
-                }
-                //If we successfully detect the enemy, add it to the appropriate detector's sensor contacts list
-                if (Compute.calcSensorContact(game, detector, target)) {
-                    game.getEntity(detector.getId()).addSensorContact(target.getId());
-                    //If detector is part of a C3 network, share the contact
-                    if (detector.hasNavalC3()) {
-                        for (Entity c3NetMate : game.getC3NetworkMembers(detector)) {
-                            game.getEntity(c3NetMate.getId()).addSensorContact(target.getId());
-                        }
-                    }
-                }
-            }
-        }
-        //Now, run the firing solution calculations
-        for (Entity detector : game.getEntitiesVector()) {
-            //Don't process for invalid units
-            //in the case of squadrons and transports, we want the 'host'
-            //unit, not the component entities
-            if (detector.getPosition() == null
-                    || detector.isDestroyed()
-                    || detector.isDoomed()
-                    || detector.isOffBoard()
-                    || detector.isPartOfFighterSquadron()
-                    || detector.getTransportId() != Entity.NONE) {
-                continue;
-            }
-            for (int targetId : detector.getSensorContacts()) {
-                Entity target = game.getEntity(targetId);
-                //if we already have a firing solution, no need to process a new one
-                if (detector.hasFiringSolutionFor(targetId)) {
-                    continue;
-                }
-                //Don't process for invalid units
-                //in the case of squadrons and transports, we want the 'host'
-                //unit, not the component entities
-                if (target == null
-                        || target.getPosition() == null
-                        || target.isDestroyed()
-                        || target.isDoomed()
-                        || target.isOffBoard()
-                        || target.isPartOfFighterSquadron()
-                        || target.getTransportId() != Entity.NONE) {
-                    continue;
-                }
-                // Only process for enemy units
-                if (!detector.isEnemyOf(target)) {
-                    continue;
-                }
-                //If we successfully lock up the enemy, add it to the appropriate detector's firing solutions list
-                if (Compute.calcFiringSolution(game, detector, target)) {
-                    game.getEntity(detector.getId()).addFiringSolution(targetId);
-                }
-            }
-        }
-    }
-
-    /**
-     * Called at the end of movement. Determines if an entity
-     * has moved beyond sensor range
-     */
-    private void updateSpacecraftDetection() {
-        // Don't bother if we're not in space or if the game option isn't on
-        if (!game.getBoard().inSpace()
-                || !game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ADVANCED_SENSORS)) {
-            return;
-        }
-        //Run through our list of units and remove any entities from the plotting board that have moved out of range
-        for (Entity detector : game.getEntitiesVector()) {
-            Compute.updateFiringSolutions(game, detector);
-            Compute.updateSensorContacts(game, detector);
-        }
     }
 
     /**
@@ -19979,7 +19863,7 @@ public class GameManager implements IGameManager {
                 // example...
                 continue;
             }
-            if (entity.doomedInAtmosphere() && (entity.getAltitude() == 0)) {
+            if (entity.doomedInAtmosphere() && (entity.getAltitude() == 0) && entity.getCurrentMap().isLowAtmo()) {
                 r = new Report(6016);
                 r.subject = entity.getId();
                 r.addDesc(entity);
@@ -20074,7 +19958,7 @@ public class GameManager implements IGameManager {
                 // example...
                 continue;
             }
-            if (entity.doomedInSpace()) {
+            if (entity.doomedInSpace() && entity.getCurrentMap().isSpace()) {
                 r = new Report(6017);
                 r.subject = entity.getId();
                 r.addDesc(entity);
@@ -30298,26 +30182,26 @@ public class GameManager implements IGameManager {
         return new Packet(PacketCommand.ENTITY_ATTACK, vector, charge);
     }
 
-    private Packet createSpecialHexDisplayPacket(int toPlayer) {
-        Hashtable<Coords, Collection<SpecialHexDisplay>> shdTable = game
-                .getBoard().getSpecialHexDisplayTable();
-        Hashtable<Coords, Collection<SpecialHexDisplay>> shdTable2 = new Hashtable<>();
+    private Packet createSpecialHexDisplayPacket(int toPlayer, MapType mapType) {
+        Hashtable<MapLocation, Collection<SpecialHexDisplay>> shdTable = game
+                .getBoard(mapType).getSpecialHexDisplayTable();
+        Hashtable<MapLocation, Collection<SpecialHexDisplay>> shdTable2 = new Hashtable<>();
         LinkedList<SpecialHexDisplay> tempList;
         Player player = game.getPlayer(toPlayer);
         if (player != null) {
-            for (Coords coord : shdTable.keySet()) {
+            for (MapLocation mapLocation : shdTable.keySet()) {
                 tempList = new LinkedList<>();
-                for (SpecialHexDisplay shd : shdTable.get(coord)) {
+                for (SpecialHexDisplay shd : shdTable.get(mapLocation)) {
                     if (!shd.isObscured(player)) {
                         tempList.add(0, shd);
                     }
                 }
                 if (!tempList.isEmpty()) {
-                    shdTable2.put(coord, tempList);
+                    shdTable2.put(mapLocation, tempList);
                 }
             }
         }
-        return new Packet(PacketCommand.SENDING_SPECIAL_HEX_DISPLAY, shdTable2);
+        return new Packet(PacketCommand.SENDING_SPECIAL_HEX_DISPLAY, shdTable2, mapType);
     }
 
     /**

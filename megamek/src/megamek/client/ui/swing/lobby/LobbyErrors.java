@@ -19,6 +19,7 @@
 package megamek.client.ui.swing.lobby;
 
 import megamek.client.ui.Messages;
+import megamek.client.ui.swing.util.UIUtil;
 
 import javax.swing.*;
 import java.text.MessageFormat;
@@ -34,7 +35,8 @@ public final class LobbyErrors {
     private static final String TEN_UNITS = "Please select fewer than 10 units.";
     private static final String HEAT_TRACKING = "Cannot apply a heat setting to units that do not track heat.";
     private static final String ONLY_MEKS = "This setting can only be applied to Meks.";
-    private static final String NOT_THIS_MAPTYPE = "Some of the selected units cannot survive on that map type.";
+    private static final String NOT_THIS_MAPTYPE = "Ât least one of the selected units cannot survive on that map type.";
+    private static final String NO_MAP = "At least one of ground, atmosphere and space map must be used.";
     private static final String ONLY_C3M = "Only units with a C3M can be set to be Company Masters.";
     private static final String SAME_C3 = "The C3 systems of the selected units don't match. Select only the same type of C3 units.";
     private static final String EXCEED_C3_CAPACITY = "Connecting the selected units exceed this C3 system's capacity.";
@@ -42,10 +44,10 @@ public final class LobbyErrors {
     private static final String ONLY_FIGHTERS = "Only aerospace and conventional fighters can join squadrons.";
     private static final String NO_BAY = "The unit does not have that bay.";
     private static final String ONLY_OWN_BOT = "Can only remove bots that were added in this lobby.";
-    private static final String NO_DUAL_LOAD = "It is not possible to re-load two units to a new transport where one unit currently carries the other. Please unload the units first.";
+    private static final String NO_DUAL_LOAD = "It is not possible to re-load two units to a new transport where one " +
+            "unit currently carries the other. Please unload the units first.";
     private static final String ONLY_TEAM = "Combinations like loading, C3 connections and shared forces are only valid within a team.";
     private static final String ENTITY_OR_FORCE = "Please select either only forces or only units.";
-    private static final String FORCE_EMPTY = "Please select only empty forces.";
     private static final String FORCE_ASSIGN_ONLYTEAM = "Can only reassign a force to a teammate when reassigning without units.";
     private static final String FORCE_ATTACH_TOSUB = "Cannot attach a force to its own subforce.";
     private static final String SBF_CONVERSIONERROR = "At least some of the forces you selected cannot be " +
@@ -54,99 +56,107 @@ public final class LobbyErrors {
             "will typically work with companies created in the Force Generator.";
 
     public static void showOnlyOwnBot(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, ONLY_OWN_BOT);
+        showErrorDialog(owner, ONLY_OWN_BOT);
     }
     
     public static void showOnlySingleEntityOrForce(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, SINGLE_UNIT_OR_FORCE);
+        showErrorDialog(owner, SINGLE_UNIT_OR_FORCE);
     }
     
     public static void showSingleOwnerRequired(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, SINGLE_OWNER);
+        showErrorDialog(owner, SINGLE_OWNER);
     }
     
     public static void showForceNoAttachSubForce(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, FORCE_ATTACH_TOSUB);
+        showErrorDialog(owner, FORCE_ATTACH_TOSUB);
     }
     
     public static void showOnlyTeam(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, ONLY_TEAM);
+        showErrorDialog(owner, ONLY_TEAM);
     }
     
     public static void showOnlyC3M(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, ONLY_C3M);
+        showErrorDialog(owner, ONLY_C3M);
     }
     
     public static void showNoDualLoad(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, NO_DUAL_LOAD);
+        showErrorDialog(owner, NO_DUAL_LOAD);
     }
     
     public static void showNoSuchBay(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, NO_BAY);
+        showErrorDialog(owner, NO_BAY);
     }
     
     public static void showSquadronTooMany(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, Messages.getString("FighterSquadron.toomany"));
+        showErrorDialog(owner, Messages.getString("FighterSquadron.toomany"));
     }
     
     public static void showOnlyFighter(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, ONLY_FIGHTERS);
+        showErrorDialog(owner, ONLY_FIGHTERS);
     }
     
     public static void showLoadOnlyAllied(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, LOAD_ONLY_ALLIED);
+        showErrorDialog(owner, LOAD_ONLY_ALLIED);
     }
     
     public static void showExceedC3Capacity(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, EXCEED_C3_CAPACITY);
+        showErrorDialog(owner, EXCEED_C3_CAPACITY);
     }
 
     public static void showSameC3(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, SAME_C3);
+        showErrorDialog(owner, SAME_C3);
     }
 
     public static void showCannotConfigEnemies(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, CONFIG_ENEMY);
+        showErrorDialog(owner, CONFIG_ENEMY);
     }
     
     public static void showCannotViewHidden(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, VIEW_HIDDEN);
+        showErrorDialog(owner, VIEW_HIDDEN);
     }
     
     public static void showSingleUnit(JFrame owner, String action) {
-        JOptionPane.showMessageDialog(owner, MessageFormat.format(SINGLE_UNIT, action));
+        showErrorDialog(owner, MessageFormat.format(SINGLE_UNIT, action));
     }
     
     public static void showTenUnits(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, TEN_UNITS);
+        showErrorDialog(owner, TEN_UNITS);
     }
     
     public static void showHeatTracking(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, HEAT_TRACKING);
+        showErrorDialog(owner, HEAT_TRACKING);
     }
     
     public static void showOnlyMeks(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, ONLY_MEKS);
+        showErrorDialog(owner, ONLY_MEKS);
     }
 
     public static void showMapTypeNotAllowed(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, NOT_THIS_MAPTYPE);
+        showErrorDialog(owner, NOT_THIS_MAPTYPE);
     }
 
     public static void showOnlyTeammate(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, FORCE_ASSIGN_ONLYTEAM);
+        showErrorDialog(owner, FORCE_ASSIGN_ONLYTEAM);
     }
     
     public static void showOnlyEntityOrForce(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, ENTITY_OR_FORCE);
-    }
-    
-    public static void showOnlyEmptyForce(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, FORCE_EMPTY);
+        showErrorDialog(owner, ENTITY_OR_FORCE);
     }
 
     public static void showSBFConversion(JFrame owner) {
-        JOptionPane.showMessageDialog(owner, SBF_CONVERSIONERROR);
+        showErrorDialog(owner, SBF_CONVERSIONERROR);
+    }
+
+    public static void showMustUseMap(JFrame owner) {
+        showErrorDialog(owner, NO_MAP);
+    }
+    
+    private static void showErrorDialog(JFrame owner, String message) {
+        JOptionPane pane = new JOptionPane(message, JOptionPane.ERROR_MESSAGE);
+        JDialog dialog = pane.createDialog(owner, "Error");
+        UIUtil.adjustDialog(dialog,  UIUtil.FONT_SCALE1);
+        dialog.pack();
+        dialog.setVisible(true);
     }
 
     private LobbyErrors() { }

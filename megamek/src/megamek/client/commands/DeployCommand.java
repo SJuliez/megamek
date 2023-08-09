@@ -18,6 +18,8 @@ package megamek.client.commands;
 
 import megamek.client.Client;
 import megamek.common.Coords;
+import megamek.common.MapLocation;
+import megamek.common.MapType;
 
 /**
  * @author dirk
@@ -51,7 +53,7 @@ public class DeployCommand extends ClientCommand {
                     .parseInt(args[3]) - 1);
             int nFacing = getDirection(args[4]);
 
-            getClient().deploy(id, coord, nFacing, 0);
+            getClient().deploy(id, new MapLocation(coord, MapType.GROUND), nFacing, 0);
             return "Unit " + id + " deployed to " + coord.toFriendlyString()
                     + ". (this is assuming it worked. No error checking done.)";
         }

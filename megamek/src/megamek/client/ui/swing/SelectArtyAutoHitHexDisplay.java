@@ -91,7 +91,7 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
     protected Map<ArtyAutoHitCommand,MegamekButton> buttons;
 
     private Player p;
-    private PlayerIDandList<Coords> artyAutoHitHexes = new PlayerIDandList<>();
+    private PlayerIDandList<MapLocation> artyAutoHitHexes = new PlayerIDandList<>();
 
     private int startingHexes;
 
@@ -205,29 +205,26 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
         butDone.setEnabled(false);
     }
 
-    private void addArtyAutoHitHex(Coords coords) {
-        if (!clientgui.getClient().getGame().getBoard().contains(coords)) {
+    private void addArtyAutoHitHex(MapLocation mapLocation) {
+        if (!clientgui.getClient().getGame().hasMapLocation(mapLocation)) {
             return;
         }
-        if (!artyAutoHitHexes.contains(coords)
+        Coords coords = mapLocation.getCoords();
+        if (!artyAutoHitHexes.contains(mapLocation)
                 && (artyAutoHitHexes.size() < startingHexes)
                 && clientgui.doYesNoDialog(
                         Messages.getString("SelectArtyAutoHitHexDisplay.setArtilleryTargetDialog.title"),
                         Messages.getString("SelectArtyAutoHitHexDisplay.setArtilleryTargetDialog.message",
                                 coords.getBoardNum()))) {
-            artyAutoHitHexes.addElement(coords);
+            artyAutoHitHexes.addElement(mapLocation);
             setArtyEnabled(startingHexes - artyAutoHitHexes.size());
-            p.addArtyAutoHitHex(coords);
-            clientgui
-                    .getClient()
-                    .getGame()
-                    .getBoard()
-                    .addSpecialHexDisplay(
-                            coords,
+            p.addArtyAutoHitHex(mapLocation);
+            clientgui.getClient().getGame().addSpecialHexDisplay(
+                            mapLocation,
                             new SpecialHexDisplay(
                                     SpecialHexDisplay.Type.ARTILLERY_AUTOHIT,
                                     SpecialHexDisplay.NO_ROUND, p,
-                                    "Artilery autohit, for player "
+                                    "Artillery autohit, for player "
                                             + p.getName(),
                                     SpecialHexDisplay.SHD_OBSCURED_TEAM));
             clientgui.boardViews().forEach(BoardView::refreshDisplayables);
@@ -260,7 +257,7 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
 
         // check for a deployment
         ((BoardView) b.getSource()).select(b.getCoords());
-        addArtyAutoHitHex(b.getCoords());
+        addArtyAutoHitHex(b.getMapLocation());
     }
 
     //

@@ -1,5 +1,6 @@
 package megamek.common;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -10,7 +11,7 @@ import java.util.Objects;
  *
  * @implNote MapLocation is immutable.
  */
-public final class MapLocation {
+public final class MapLocation implements Serializable {
 
     private final Coords coords;
     private final MapType mapType;

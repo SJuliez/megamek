@@ -15,17 +15,20 @@ package megamek.common.event;
 
 import megamek.common.Board;
 import megamek.common.Game;
+import megamek.common.MapType;
 
 /**
- * Instances of this class are sent when the new board for game is set
+ * This event is sent on the client side when one of the game's boards is replaced.
  * 
  * @see Game#setGroundMap(Board)
  * @see GameListener
  */
 public class GameBoardNewEvent extends GameEvent {
     private static final long serialVersionUID = -4444092727458493689L;
-    protected Board oldBoard;
-    protected Board newBoard;
+
+    private final Board oldBoard;
+    private final Board newBoard;
+    private final MapType mapType;
 
     /**
      * Constructs the new event with the specified old/new board objects
@@ -34,22 +37,19 @@ public class GameBoardNewEvent extends GameEvent {
      * @param oldBoard old game board
      * @param newBoard new game board
      */
-    public GameBoardNewEvent(Object source, Board oldBoard, Board newBoard) {
+    public GameBoardNewEvent(Object source, Board oldBoard, Board newBoard, MapType mapType) {
         super(source);
         this.oldBoard = oldBoard;
         this.newBoard = newBoard;
+        this.mapType = mapType;
     }
 
-    /**
-     * @return Returns the newBoard.
-     */
+    /** @return The new Board. */
     public Board getNewBoard() {
         return newBoard;
     }
 
-    /**
-     * @return Returns the oldBoard.
-     */
+    /** @return The old Board. */
     public Board getOldBoard() {
         return oldBoard;
     }
@@ -62,5 +62,10 @@ public class GameBoardNewEvent extends GameEvent {
     @Override
     public String getEventName() {
         return "New Board";
+    }
+
+    /** @return The MapType of both the old and new Board. */
+    public MapType getMapType() {
+        return mapType;
     }
 }
