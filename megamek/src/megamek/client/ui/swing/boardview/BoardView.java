@@ -1036,7 +1036,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             g.drawString(Messages.getString("BoardView1.loadingImages"), 20, 50);
             if (!tileManager.isStarted()) {
                 LogManager.getLogger().info("Loading images for board");
-                tileManager.loadNeededImages(game);
+                tileManager.loadNeededImages(game, boardId);
             }
             // wait 1 second, then repaint
             repaint(1000);
@@ -3745,17 +3745,19 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
      */
     public double[] getVisibleArea() {
         double[] values = new double[4];
-        double x = scrollpane.getViewport().getViewPosition().getX();
-        double y = scrollpane.getViewport().getViewPosition().getY();
-        double w = scrollpane.getViewport().getWidth();
-        double h = scrollpane.getViewport().getHeight();
-        double bw = boardSize.getWidth();
-        double bh = boardSize.getHeight();
+        if (scrollpane != null) {
+            double x = scrollpane.getViewport().getViewPosition().getX();
+            double y = scrollpane.getViewport().getViewPosition().getY();
+            double w = scrollpane.getViewport().getWidth();
+            double h = scrollpane.getViewport().getHeight();
+            double bw = boardSize.getWidth();
+            double bh = boardSize.getHeight();
 
-        values[0] = (x - HEX_W) / bw;
-        values[1] = (y - HEX_H) / bh;
-        values[2] = (x - HEX_W + w) / bw;
-        values[3] = (y - HEX_H + h) / bh;
+            values[0] = (x - HEX_W) / bw;
+            values[1] = (y - HEX_H) / bh;
+            values[2] = (x - HEX_W + w) / bw;
+            values[3] = (y - HEX_H + h) / bh;
+        }
 
         return values;
     }

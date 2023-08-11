@@ -170,8 +170,8 @@ public class SupportTank extends Tank {
     }
 
     @Override
-    public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard(currentMap).getHex(c);
+    public boolean isLocationProhibited(BoardLocation boardLocation, int testElevation) {
+        Hex hex = game.getHex(boardLocation);
         if (hex.containsTerrain(Terrains.IMPASSABLE)) {
             return true;
         }
@@ -184,12 +184,12 @@ public class SupportTank extends Tank {
                 return true;
             }
             // Can't deploy on a bridge
-            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == currElevation)
+            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == testElevation)
                     && hex.containsTerrain(Terrains.BRIDGE)) {
                 return true;
             }
             // Can't deploy on the surface of water
-            if (hex.containsTerrain(Terrains.WATER) && (currElevation == 0)) {
+            if (hex.containsTerrain(Terrains.WATER) && (testElevation == 0)) {
                 return true;
             }
         }
@@ -229,7 +229,7 @@ public class SupportTank extends Tank {
                 return (hex.terrainLevel(Terrains.WATER) <= 0);
             case WIGE:
                 return (hex.containsTerrain(Terrains.WOODS) || (hex.containsTerrain(Terrains.BUILDING)))
-                        && !(currElevation > hex.maxTerrainFeatureElevation(getCurrentMap().isLowAtmo()));
+                        && !(testElevation > hex.maxTerrainFeatureElevation(getCurrentMap().isLowAtmo()));
             default:
                 return false;
         }

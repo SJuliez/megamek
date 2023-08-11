@@ -1981,12 +1981,12 @@ public class Aero extends Entity implements IAero, IBomber {
     }
 
     @Override
-    public boolean isLocationProhibited(Coords c, int currElevation) {
+    public boolean isLocationProhibited(BoardLocation boardLocation, int testElevation) {
         if (isAirborne()) {
             return false;
         }
 
-        Hex hex = game.getBoard(getCurrentMap()).getHex(c);
+        Hex hex = game.getHex(boardLocation);
 
         // Additional restrictions for hidden units
         if (isHidden()) {
@@ -1995,11 +1995,11 @@ public class Aero extends Entity implements IAero, IBomber {
                 return true;
             }
             // Can't deploy on a bridge
-            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == currElevation) && hex.containsTerrain(Terrains.BRIDGE)) {
+            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == testElevation) && hex.containsTerrain(Terrains.BRIDGE)) {
                 return true;
             }
             // Can't deploy on the surface of water
-            if (hex.containsTerrain(Terrains.WATER) && (currElevation == 0)) {
+            if (hex.containsTerrain(Terrains.WATER) && (testElevation == 0)) {
                 return true;
             }
         }

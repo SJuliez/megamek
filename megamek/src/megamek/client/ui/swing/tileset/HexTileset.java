@@ -47,7 +47,7 @@ public class HexTileset implements BoardListener {
     public static final String TRANSPARENT_THEME = "transparent";
     
     private final Game game;
-    private final MapType mapType;
+    private final int boardId;
 
     private ArrayList<HexEntry> bases = new ArrayList<>();
     private ArrayList<HexEntry> supers = new ArrayList<>();
@@ -60,11 +60,11 @@ public class HexTileset implements BoardListener {
     /**
      * Creates new HexTileset
      */
-    public HexTileset(Game g, MapType mapType) {
+    public HexTileset(Game g, int boardId) {
         game = g;
-        this.mapType = mapType;
+        this.boardId = boardId;
         game.addGameListener(gameListener);
-        game.getBoard(mapType).addBoardListener(this);
+        game.getBoard(boardId).addBoardListener(this);
     }
 
     /** Clears the image cache for the given hex. */

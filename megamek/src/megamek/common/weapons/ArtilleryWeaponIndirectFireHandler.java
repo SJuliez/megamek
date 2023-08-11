@@ -336,11 +336,11 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
             return false;
         }
         if (atype.getMunitionType() == AmmoType.M_SMOKE) {
-            gameManager.deliverArtillerySmoke(new BoardLocation(targetPos, ae.getCurrentBoard()), vPhaseReport);
+            gameManager.deliverArtillerySmoke(new BoardLocation(targetPos, ae.getCurrentBoardId()), vPhaseReport);
             return false;
         }
         if (atype.getMunitionType() == AmmoType.M_LASER_INHIB) {
-            gameManager.deliverLIsmoke(new BoardLocation(targetPos, ae.getCurrentBoard()), vPhaseReport);
+            gameManager.deliverLIsmoke(new BoardLocation(targetPos, ae.getCurrentBoardId()), vPhaseReport);
             return false;
         }
         
@@ -503,7 +503,7 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
         // then check to see if the hex where it landed can be seen by anyone on an opposing team
         // if so, mark the attacker so that it can be targeted by counter-battery fire
         if (game.getBoard(ae.getCurrentMap()).contains(targetPos)) {
-            HexTarget hexTarget = new HexTarget(targetPos, ae.getCurrentBoard(), Targetable.TYPE_HEX_ARTILLERY);
+            HexTarget hexTarget = new HexTarget(targetPos, ae.getCurrentBoardId(), Targetable.TYPE_HEX_ARTILLERY);
             
             for (Entity entity : game.getEntitiesVector()) {
                 

@@ -2195,27 +2195,18 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      */
     private void updateMapTabs() {
         bvc.removeAll();
-            bvc.setLayout(new GridLayout(1, 1));
+        bvc.setLayout(new GridLayout(1, 1));
         if (boardViews.size() > 1) {
             mapTabPane.removeAll();
-            if (boardViews.containsKey(MapType.GROUND)) {
-                mapTabPane.add("Ground Map", bv.getComponent(true));
-            }
-            if (boardViews.containsKey(MapType.LOW_ATMOSPHERE)) {
-                mapTabPane.add("Low Atmo Map", bvLowAtmo.getComponent(true));
-            }
-            if (boardViews.containsKey(MapType.SPACE)) {
-                mapTabPane.add("Space Map", bvSpace.getComponent(true));
+            for (BoardView boardView : boardViews()) {
+                String name = boardView.getBoard().getMapType().getdisplayName() + " Map";
+                mapTabPane.add(name, boardView.getComponent(true));
             }
             bvc.add(mapTabPane);
-        } else {
-            if (boardViews.containsKey(MapType.GROUND)) {
-                bvc.add(bv.getComponent(true));
-            } else if (boardViews.containsKey(MapType.LOW_ATMOSPHERE)) {
-                bvc.add(bvLowAtmo.getComponent(true));
-            } else if (boardViews.containsKey(MapType.SPACE)) {
-                bvc.add(bvSpace.getComponent(true));
-            }
+        } else if (boardViews.size() == 1) {
+            // Avoid having a tab for only a single map
+            String name = boardViews().get(0).getBoard().getMapType().getdisplayName() + " Map";
+            bvc.add(name, bv.getComponent(true));
 
         }
         bvc.validate();
@@ -2992,7 +2983,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     }
 
     protected BoardView getBoardView(Entity entity) {
-        return getBoardView(entity.getCurrentBoard());
+        return getBoardView(entity.getCurrentBoardId());
     }
 
     protected BoardView getBoardView(int boardId) {

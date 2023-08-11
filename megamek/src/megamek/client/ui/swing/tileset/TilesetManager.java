@@ -112,7 +112,7 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
     /** Creates new TilesetManager. */
     public TilesetManager(BoardView bv) throws IOException {
         boardview = bv;
-        hexTileset = new HexTileset(boardview.game, boardview.getBoard().getMapType());
+        hexTileset = new HexTileset(boardview.game, boardview.getBoardId());
         tracker = new MediaTracker(boardview);
         wreckageDecalCount = new HashMap<>();
         wreckageDecalCount.put(FILENAME_SUFFIX_WRECKS_ULTRALIGHT, getULightDecalCount());
@@ -139,7 +139,7 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
     public void preferenceChange(PreferenceChangeEvent e) {
         // A new Hex Tileset has been selected
         if (e.getName().equals(ClientPreferences.MAP_TILESET)) {
-            HexTileset hts = new HexTileset(boardview.game, boardview.getBoard().getMapType());
+            HexTileset hts = new HexTileset(boardview.game, boardview.getBoardId());
             try {
                 hexTileset.incDepth = 0;
                 hts.loadFromFile((String) e.getNewValue());
@@ -447,9 +447,9 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
     /**
      * Load all the images we'll need for the game and place them in the tracker
      */
-    public void loadNeededImages(Game game) {
+    public void loadNeededImages(Game game, int boardId) {
         loaded = false;
-        Board board = game.getBoard();
+        Board board = game.getBoard(boardId);
         // pre-match all hexes with images, load hex images
         int width = board.getWidth();
         int height = board.getHeight();
@@ -474,7 +474,7 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
         }
 
         // load all mech images
-        for (Entity e : game.getEntitiesVector()) {
+        for (Entity e : game.getEntitiesOn(boardId)) {
             if (e.getSecondaryPositions().isEmpty()) {
                 loadImage(e, -1);
             } else {

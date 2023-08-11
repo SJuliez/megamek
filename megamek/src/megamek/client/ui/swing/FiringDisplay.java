@@ -1471,7 +1471,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             }
             Building bldg = game.getBoard(ce()).getBuildingAt(c);
             if (bldg != null) {
-                Targetable t = new BuildingTarget(c, ce().getCurrentBoard(), game.getBoard(ce()), false);
+                Targetable t = new BuildingTarget(c, ce().getCurrentBoardId(), game.getBoard(ce()), false);
                 toHit = WeaponAttackAction.toHit(game, cen, t, weaponId,
                         Entity.LOC_NONE, AimingMode.NONE, true);
                 toHitBuff.append(t.getDisplayName() + ": ");
@@ -1585,10 +1585,10 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         ArrayList<Targetable> targets = new ArrayList<>();
         if (isStrafing) {
             for (Coords c : strafingCoords) {
-                targets.add(new HexTarget(c, ce().getCurrentBoard(), Targetable.TYPE_HEX_CLEAR));
+                targets.add(new HexTarget(c, ce().getCurrentBoardId(), Targetable.TYPE_HEX_CLEAR));
                 Building bldg = game.getBoard(ce()).getBuildingAt(c);
                 if (bldg != null) {
-                    targets.add(new BuildingTarget(c, ce().getCurrentBoard(), game.getBoard(ce()), false));
+                    targets.add(new BuildingTarget(c, ce().getCurrentBoardId(), game.getBoard(ce()), false));
                 }
                 // Target all ground units (non-airborne, VTOLs still count)
                 for (Entity t : game.getEntitiesVector(c)) {

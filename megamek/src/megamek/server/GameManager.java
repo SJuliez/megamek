@@ -7562,7 +7562,7 @@ public class GameManager implements IGameManager {
                         .collect(Collectors.toList());
                 if (chaffDispensers.size() > 0) {
                     chaffDispensers.get(0).setFired(true);
-                    createSmoke(curPos, entity.getCurrentBoard(), SmokeCloud.SMOKE_CHAFF_LIGHT, 1);
+                    createSmoke(curPos, entity.getCurrentBoardId(), SmokeCloud.SMOKE_CHAFF_LIGHT, 1);
                     Hex hex = game.getBoard(entity.getCurrentMap()).getHex(curPos);
                     hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_CHAFF_LIGHT));
                     sendChangedHex(curPos);
@@ -10414,7 +10414,7 @@ public class GameManager implements IGameManager {
                                     report.indent(1);
                                 }
                             } else if (damageableCoverType == LosEffects.DAMAGABLE_COVER_BUILDING) {
-                                BuildingTarget bldgTrgt = new BuildingTarget(coverLoc, te.getCurrentBoard(),
+                                BuildingTarget bldgTrgt = new BuildingTarget(coverLoc, te.getCurrentBoardId(),
                                         game.getBoard(te), false);
                                 coverDamageReport = deliverInfernoMissiles(ae, bldgTrgt, 1,
                                         CalledShot.CALLED_NONE);
@@ -11325,7 +11325,7 @@ public class GameManager implements IGameManager {
                         continue;
                     }
                     if (LosEffects.calculateLOS(game, en,
-                            new HexTarget(mf.getCoords(), layer.getCurrentBoard(), Targetable.TYPE_HEX_CLEAR)).canSee()) {
+                            new HexTarget(mf.getCoords(), layer.getCurrentBoardId(), Targetable.TYPE_HEX_CLEAR)).canSee()) {
                         target = 0;
                         break;
                     }
@@ -13627,7 +13627,7 @@ public class GameManager implements IGameManager {
                     for (Coords pos : coords) {
                         // Check that we're in the right arc
                         if (Compute.isInArc(game, e.getId(), e.getEquipmentNum(ams),
-                                new HexTarget(pos, e.getCurrentBoard(), HexTarget.TYPE_HEX_CLEAR))) {
+                                new HexTarget(pos, e.getCurrentBoardId(), HexTarget.TYPE_HEX_CLEAR))) {
                             apdsList = apdsCoords.computeIfAbsent(pos, k -> new ArrayList<>());
                             apdsList.add(ams);
                         }

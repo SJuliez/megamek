@@ -85,13 +85,13 @@ public class VGLWeaponHandler extends AmmoWeaponHandler {
         for (Coords c : affectedCoords) {
             Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(c);
             if (atype.getMunitionType() == AmmoType.M_SMOKE) {
-                gameManager.deliverSmokeGrenade(new BoardLocation(c, ae.getCurrentBoard()), vPhaseReport);
+                gameManager.deliverSmokeGrenade(new BoardLocation(c, ae.getCurrentBoardId()), vPhaseReport);
             } else if (atype.getMunitionType() == AmmoType.M_CHAFF) {
-                gameManager.deliverChaffGrenade(new BoardLocation(c, ae.getCurrentBoard()), vPhaseReport);
+                gameManager.deliverChaffGrenade(new BoardLocation(c, ae.getCurrentBoardId()), vPhaseReport);
             } else if (atype.getMunitionType() == AmmoType.M_INCENDIARY) {
                 Vector<Report> dmgReports;
                 // Delivery an inferno to the hex
-                Targetable grenadeTarget = new HexTarget(c, ae.getCurrentBoard(), Targetable.TYPE_HEX_IGNITE);
+                Targetable grenadeTarget = new HexTarget(c, ae.getCurrentBoardId(), Targetable.TYPE_HEX_IGNITE);
                 dmgReports = gameManager
                         .deliverInfernoMissiles(ae, grenadeTarget, 1);
                 r = new Report(3372);
@@ -105,7 +105,7 @@ public class VGLWeaponHandler extends AmmoWeaponHandler {
                 vPhaseReport.addAll(dmgReports);
                 // If there's a building, delivery an inferno to it
                 if (bldg != null) {
-                    grenadeTarget = new BuildingTarget(c, ae.getCurrentBoard(), game.getBoard(ae.getCurrentMap()),
+                    grenadeTarget = new BuildingTarget(c, ae.getCurrentBoardId(), game.getBoard(ae.getCurrentMap()),
                             Targetable.TYPE_BLDG_IGNITE);
                     dmgReports = gameManager.deliverInfernoMissiles(ae,
                             grenadeTarget, 1);

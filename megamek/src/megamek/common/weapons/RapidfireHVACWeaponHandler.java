@@ -26,7 +26,6 @@ import megamek.common.actions.WeaponAttackAction;
 import megamek.common.enums.GamePhase;
 import megamek.common.options.OptionsConstants;
 import megamek.server.GameManager;
-import megamek.server.Server;
 import megamek.server.SmokeCloud;
 
 public class RapidfireHVACWeaponHandler extends RapidfireACWeaponHandler {
@@ -65,7 +64,7 @@ public class RapidfireHVACWeaponHandler extends RapidfireACWeaponHandler {
                 rearCoords = src;
             }
 
-            gameManager.createSmoke(rearCoords, ae.getCurrentBoard(),SmokeCloud.SMOKE_HEAVY, 2);
+            gameManager.createSmoke(rearCoords, ae.getCurrentBoardId(),SmokeCloud.SMOKE_HEAVY, 2);
         }
         return super.handle(phase, vPhaseReport);
     }

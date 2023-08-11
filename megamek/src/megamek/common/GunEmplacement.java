@@ -100,9 +100,8 @@ public class GunEmplacement extends Tank {
     }
 
     @Override
-    public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard(currentMap).getHex(c);
-
+    public boolean isLocationProhibited(BoardLocation boardLocation, int testElevation) {
+        Hex hex = game.getHex(boardLocation);
         if (hex.containsTerrain(Terrains.SPACE) && doomedInSpace()) {
             return true;
         }
@@ -341,9 +340,9 @@ public class GunEmplacement extends Tank {
         super.setDeployed(deployed);
 
         // very aggressive null defense
-        if (deployed && (getGame() != null) && (getGame().getBoard(currentMap) != null) &&
+        if (deployed && (getGame() != null) && (getGame().getBoard(currentBoard) != null) &&
                 (getPosition() != null)) {
-            Building occupiedStructure = getGame().getBoard(currentMap).getBuildingAt(getPosition());
+            Building occupiedStructure = getGame().getBoard(currentBoard).getBuildingAt(getPosition());
             
             if (occupiedStructure != null) {
                 initialBuildingCF = occupiedStructure.getCurrentCF(getPosition());

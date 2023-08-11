@@ -198,7 +198,7 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public Board getBoard(Entity entity) {
-        return gameBoards2.get(entity.getCurrentBoard());
+        return gameBoards2.get(entity.getCurrentBoardId());
     }
 
     public List<Board> getBoards() {
@@ -1541,6 +1541,11 @@ public class Game extends AbstractGame implements Serializable {
     /** @return A List of units at the given BoardLocation (coords and board id). */
     public List<Entity> getEntitiesAt(BoardLocation boardLocation) {
         return getEntitiesAt(boardLocation.getCoords(), boardLocation.getBoardId());
+    }
+
+    /** @return A List of units at the given BoardLocation (coords and board id). */
+    public List<Entity> getEntitiesOn(int boardId) {
+        return getEntitiesVector().stream().filter(entity -> entity.isOnBoard(boardId)).collect(toList());
     }
 
     /** @return A List of units at the given coords on the ground map. */

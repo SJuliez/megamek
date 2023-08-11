@@ -1101,8 +1101,8 @@ public class Protomech extends Entity {
     }
 
     @Override
-    public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard(currentMap).getHex(c);
+    public boolean isLocationProhibited(BoardLocation boardLocation, int testElevation) {
+        Hex hex = game.getHex(boardLocation);
         if (hex.containsTerrain(Terrains.IMPASSABLE)) {
             return true;
         }
@@ -1121,12 +1121,12 @@ public class Protomech extends Entity {
                 return true;
             }
             // Can't deploy on a bridge
-            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == currElevation)
+            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == testElevation)
                     && hex.containsTerrain(Terrains.BRIDGE)) {
                 return true;
             }
             // Can't deploy on the surface of water
-            if (hex.containsTerrain(Terrains.WATER) && (currElevation == 0)) {
+            if (hex.containsTerrain(Terrains.WATER) && (testElevation == 0)) {
                 return true;
             }
         }

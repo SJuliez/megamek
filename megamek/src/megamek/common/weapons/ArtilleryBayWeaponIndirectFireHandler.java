@@ -443,11 +443,11 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
         if (atype.getMunitionType() == AmmoType.M_SMOKE) {
             if (!bMissed) {
                 // If we hit, only one effect will stack in the target hex
-                gameManager.deliverArtillerySmoke(new BoardLocation(targetPos, ae.getCurrentBoard()), vPhaseReport);
+                gameManager.deliverArtillerySmoke(new BoardLocation(targetPos, ae.getCurrentBoardId()), vPhaseReport);
             } else {
                 // Deliver a round to each target hex
                 for (Coords c : targets) {
-                    gameManager.deliverArtillerySmoke(new BoardLocation(c, ae.getCurrentBoard()), vPhaseReport);
+                    gameManager.deliverArtillerySmoke(new BoardLocation(c, ae.getCurrentBoardId()), vPhaseReport);
                 }
             }
             return false;
@@ -455,11 +455,11 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
         if (atype.getMunitionType() == AmmoType.M_LASER_INHIB) {
             if (!bMissed) {
                 //If we hit, only one effect will stack in the target hex
-                gameManager.deliverLIsmoke(new BoardLocation(targetPos, ae.getCurrentBoard()), vPhaseReport);
+                gameManager.deliverLIsmoke(new BoardLocation(targetPos, ae.getCurrentBoardId()), vPhaseReport);
             } else {
                 //Deliver a round to each target hex
                 for (Coords c : targets) {
-                    gameManager.deliverLIsmoke(new BoardLocation(c, ae.getCurrentBoard()), vPhaseReport);
+                    gameManager.deliverLIsmoke(new BoardLocation(c, ae.getCurrentBoardId()), vPhaseReport);
                 }
             }
             return false;

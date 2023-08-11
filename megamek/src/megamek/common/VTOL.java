@@ -103,8 +103,8 @@ public class VTOL extends Tank implements IBomber {
     }
 
     @Override
-    public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard(currentMap).getHex(c);
+    public boolean isLocationProhibited(BoardLocation boardLocation, int testElevation) {
+        Hex hex = game.getHex(boardLocation);
         // Additional restrictions for hidden units
         if (isHidden()) {
             // Can't deploy in paved hexes
@@ -113,16 +113,16 @@ public class VTOL extends Tank implements IBomber {
                 return true;
             }
             // Can't deploy on a bridge
-            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == currElevation)
+            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == testElevation)
                     && hex.containsTerrain(Terrains.BRIDGE)) {
                 return true;
             }
             // Can't deploy on the surface of water
-            if (hex.containsTerrain(Terrains.WATER) && (currElevation == 0)) {
+            if (hex.containsTerrain(Terrains.WATER) && (testElevation == 0)) {
                 return true;
             }
             // Airborne units can't deploy hidden
-            if (currElevation > 0) {
+            if (testElevation > 0) {
                 return true;
             }
         }

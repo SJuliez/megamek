@@ -165,8 +165,9 @@ public class Dropship extends SmallCraft {
     }
 
     @Override
-    public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard(getCurrentMap()).getHex(c);
+    public boolean isLocationProhibited(BoardLocation boardLocation, int testElevation) {
+        Hex hex = game.getHex(boardLocation);
+        Coords coords = boardLocation.getCoords();
         if (isAirborne()) {
             return hex.containsTerrain(Terrains.IMPASSABLE);
         }
@@ -178,7 +179,7 @@ public class Dropship extends SmallCraft {
         HashMap<Integer, Integer> elevations = new HashMap<>();
         elevations.put(hex.getLevel(), 1);
         for (int dir = 0; dir < 6; dir++) {
-            Coords secondaryCoord = c.translated(dir);
+            Coords secondaryCoord = coords.translated(dir);
             Hex secondaryHex = game.getBoard(getCurrentMap()).getHex(secondaryCoord);
             if (secondaryHex == null) {
                 // Don't allow landed dropships to hang off the board
@@ -232,7 +233,7 @@ public class Dropship extends SmallCraft {
         int numAdjacencies = 0;
         int centralElev = hex.getLevel();
         int secondElev = centralElev;
-        Hex currHex = game.getBoard(getCurrentMap()).getHex(c.translated(5));
+        Hex currHex = game.getBoard(getCurrentMap()).getHex(coords.translated(5));
         // Ensure we aren't trying to deploy off the board
         if (currHex == null) {
             return true;
@@ -241,7 +242,7 @@ public class Dropship extends SmallCraft {
             if (currHex.getLevel() != centralElev) {
                 secondElev = currHex.getLevel();
             }
-            Hex nextHex = game.getBoard(getCurrentMap()).getHex(c.translated(dir));
+            Hex nextHex = game.getBoard(getCurrentMap()).getHex(coords.translated(dir));
             // Ensure we aren't trying to deploy off the board
             if (nextHex == null) {
                 return true;

@@ -194,11 +194,11 @@ public class ArtilleryTargetingControl {
                     && !e.isOffBoard()
                     && !owner.getBehaviorSettings().getIgnoredUnitTargets().contains(e.getId())) {
 
-                targetSet.add(new HexTarget(e.getPosition(), e.getCurrentBoard(), Targetable.TYPE_HEX_ARTILLERY));
+                targetSet.add(new HexTarget(e.getPosition(), e.getCurrentBoardId(), Targetable.TYPE_HEX_ARTILLERY));
                 
                 // while we're here, consider shooting at hexes within "MAX_BLAST_RADIUS"
                 // of the entity. 
-                addHexDonuts(new BoardLocation(e.getPosition(), e.getCurrentBoard()), targetSet, game);
+                addHexDonuts(new BoardLocation(e.getPosition(), e.getCurrentBoardId()), targetSet, game);
             }
         }
         

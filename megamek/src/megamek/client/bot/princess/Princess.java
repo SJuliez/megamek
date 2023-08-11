@@ -435,7 +435,7 @@ public class Princess extends BotClient {
 
         // Compensate for hex elevation where != 0...
         deployElevation -= deployHex.getLevel();
-        deploy(entityNum, new BoardLocation(deployCoords, deployEntity.getCurrentBoard()), decentFacing, deployElevation);
+        deploy(entityNum, new BoardLocation(deployCoords, deployEntity.getCurrentBoardId()), decentFacing, deployElevation);
     }
     
     /**
@@ -1388,7 +1388,7 @@ public class Princess extends BotClient {
                 Targetable levelingTarget = null;
 
                 if (bulldozerPaths.get(0).needsLeveling()) {
-                    levelingTarget = getAppropriateTarget(bulldozerPaths.get(0).getCoordsToLevel().get(0), mover.getCurrentBoard());
+                    levelingTarget = getAppropriateTarget(bulldozerPaths.get(0).getCoordsToLevel().get(0), mover.getCurrentBoardId());
                     getFireControlState().getAdditionalTargets().add(levelingTarget);
                     sendChat("Hex " + levelingTarget.getPosition().toFriendlyString() + " impedes route to destination, targeting for clearing.", Level.INFO);
                 }

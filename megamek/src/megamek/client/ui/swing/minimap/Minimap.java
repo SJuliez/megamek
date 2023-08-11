@@ -1722,6 +1722,6 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
 
     /** @return True when the given Entity is on the board of this Minimap (it may still have a null position). */
     public boolean isOnThisBoard(@Nullable Entity entity) {
-        return (entity != null) && boardId == entity.getCurrentBoard();
+        return (entity != null) && boardId == entity.getCurrentBoardId();
     }
 }

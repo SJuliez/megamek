@@ -113,8 +113,8 @@ class LobbyMekCellFormatter {
         boolean isCarried = entity.getTransportId() != Entity.NONE; 
         boolean hasWarning = false;
         boolean hasCritical = false;
-        int mapType = lobby.mapSettings().getMedium();
-        
+        MapType mapType = entity.getCurrentMap();
+
         // First line
         if (LobbyUtility.hasYellowWarning(entity)) {
             result.append(guiScaledFontHTML(uiYellow())); 
@@ -373,12 +373,15 @@ class LobbyMekCellFormatter {
             result.append("</I></FONT>");
 
         } else { // Hide deployment info when a unit is carried
-            if (!entity.getCurrentMap().isGround()) {
+
+
+            if ((mapType == null) || !mapType.isGround()) {
+                String mapTypeString = mapType != null ? mapType.getdisplayName() : "Unknown Map";
                 firstEntry = dotSpacer(result, firstEntry);
-                result.append(entity.getCurrentMap().getdisplayName());
+                result.append(mapTypeString);
             }
 
-            if (entity.isHidden() && mapType == MapSettings.MEDIUM_GROUND) {
+            if (entity.isHidden() && ((mapType == null) || mapType.isGround())) {
                 firstEntry = dotSpacer(result, firstEntry);
                 result.append(getString("ChatLounge.compact.hidden"));
             }
@@ -431,7 +434,7 @@ class LobbyMekCellFormatter {
                 result.append(guiScaledFontHTML(uiGreen()) + "<I>"); 
                 result.append(Messages.getString("ChatLounge.compact.velocity") + ": ");
                 result.append(aero.getCurrentVelocity());
-                if (mapType != MapSettings.MEDIUM_SPACE) {
+                if (!mapType.isSpace()) {
                     result.append(", " + Messages.getString("ChatLounge.compact.altitude") + ": ");
                     result.append(aero.getAltitude());
                 } 

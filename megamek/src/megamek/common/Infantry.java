@@ -487,12 +487,12 @@ public class Infantry extends Entity {
     }
 
     @Override
-    public boolean isLocationProhibited(Coords c, int currElevation) {
+    public boolean isLocationProhibited(BoardLocation boardLocation, int testElevation) {
         // Coords off the board aren't legal
-        if (!game.getBoard(currentMap).contains(c)) {
+        if (!game.hasBoardLocation(boardLocation)) {
             return true;
         }
-        Hex hex = game.getBoard(currentMap).getHex(c);
+        Hex hex = game.getHex(boardLocation);
         // Taharqa: waiting to hear back from Welshie but I am going to assume that units pulling artillery
         // should be treated as wheeled rather than motorized because otherwise mechanized units face fewer
         // terrain restrictions when pulling field artillery
@@ -515,11 +515,11 @@ public class Infantry extends Entity {
                 return true;
             }
             // Can't deploy on a bridge
-            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == currElevation) && hex.containsTerrain(Terrains.BRIDGE)) {
+            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == testElevation) && hex.containsTerrain(Terrains.BRIDGE)) {
                 return true;
             }
             // Can't deploy on the surface of water
-            if (hex.containsTerrain(Terrains.WATER) && (currElevation == 0)) {
+            if (hex.containsTerrain(Terrains.WATER) && (testElevation == 0)) {
                 return true;
             }
         }

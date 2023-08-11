@@ -286,8 +286,8 @@ public class SuperHeavyTank extends Tank {
         // defender would choose along which hex the LOS gets drawn, and that
         // side also determines the side we hit in
         if ((fa % 30) == 0) {
-            Hex srcHex = game.getBoard(currentMap).getHex(src);
-            Hex curHex = game.getBoard(currentMap).getHex(getPosition());
+            Hex srcHex = game.getBoard(currentBoard).getHex(src);
+            Hex curHex = game.getBoard(currentBoard).getHex(getPosition());
             if ((srcHex != null) && (curHex != null)) {
                 LosEffects.AttackInfo ai = LosEffects.buildAttackInfo(src, getPosition(),
                         1, getElevation(), srcHex.floor(), curHex.floor(), getCurrentMap());

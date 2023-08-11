@@ -151,7 +151,7 @@ public class LobbyActions {
         }
         Set<Entity> updateCandidates = new HashSet<>();
         for (Entity entity : entities) {
-            if (entity.isMapTypeAllowed(mapSettings.getMapType()) && (entity.getCurrentBoard() != mapSettingsId)) {
+            if (entity.isMapTypeAllowed(mapSettings.getMapType()) && (entity.getCurrentBoardId() != mapSettingsId)) {
                 entity.setCurrentBoard(mapSettingsId);
                 updateCandidates.add(entity);
             }

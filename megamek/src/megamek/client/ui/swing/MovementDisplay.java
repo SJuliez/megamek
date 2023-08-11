@@ -4139,7 +4139,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         // Is there a building in the hex?
         Building bldg = clientgui.getClient().getGame().getBoard(ce).getBuildingAt(pos);
         if (bldg != null) {
-            targets.add(new BuildingTarget(pos, ce.getCurrentBoard(), clientgui.getClient().getGame().getBoard(ce), false));
+            targets.add(new BuildingTarget(pos, ce.getCurrentBoardId(), clientgui.getClient().getGame().getBoard(ce), false));
         }
 
         // Do we have a single choice?

@@ -571,8 +571,8 @@ public class Tank extends Entity {
      * Tanks have all sorts of prohibited terrain.
      */
     @Override
-    public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard(currentMap).getHex(c);
+    public boolean isLocationProhibited(BoardLocation boardLocation, int testElevation) {
+        Hex hex = game.getHex(boardLocation);
         if (hex.containsTerrain(Terrains.IMPASSABLE)) {
             return true;
         }
@@ -591,12 +591,12 @@ public class Tank extends Entity {
                 return true;
             }
             // Can't deploy on a bridge
-            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == currElevation)
+            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == testElevation)
                     && hex.containsTerrain(Terrains.BRIDGE)) {
                 return true;
             }
             // Can't deploy on the surface of water
-            if (hex.containsTerrain(Terrains.WATER) && (currElevation == 0)) {
+            if (hex.containsTerrain(Terrains.WATER) && (testElevation == 0)) {
                 return true;
             }
         }
@@ -702,7 +702,7 @@ public class Tank extends Entity {
             case WIGE:
                 return (hex.containsTerrain(Terrains.WOODS)
                         || hex.containsTerrain(Terrains.JUNGLE))
-                        && hex.ceiling() > currElevation;
+                        && hex.ceiling() > testElevation;
             default:
                 return false;
         }
@@ -1279,7 +1279,7 @@ public class Tank extends Entity {
         }
 
         // are we wheeled and in light snow?
-        Hex hex = game.getBoard(currentMap).getHex(getPosition());
+        Hex hex = game.getBoard(currentBoard).getHex(getPosition());
         if ((null != hex) && (getMovementMode() == EntityMovementMode.WHEELED)
                 && (hex.terrainLevel(Terrains.SNOW) == 1)) {
             prd.addModifier(1, "thin snow");
@@ -1686,7 +1686,7 @@ public class Tank extends Entity {
         // MoveStep line 2179 performs this same check
         // performing it here will allow us to disable the Hulldown button
         // if the movement is illegal
-        Hex occupiedHex = game.getBoard(currentMap).getHex(getPosition());
+        Hex occupiedHex = game.getBoard(currentBoard).getHex(getPosition());
         return occupiedHex.containsTerrain(Terrains.FORTIFIED)
                 && game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_HULL_DOWN);
     }

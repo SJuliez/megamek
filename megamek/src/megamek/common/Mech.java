@@ -1068,7 +1068,7 @@ public abstract class Mech extends Entity {
 
         if (!mpCalculationSetting.ignoreSubmergedJumpJets && hasOccupiedHex()
                 && !isJumpBooster && getElevation() < 0) {
-            int waterLevel = game.getBoard(currentMap).getHex(getPosition()).terrainLevel(Terrains.WATER);
+            int waterLevel = game.getBoard(currentBoard).getHex(getPosition()).terrainLevel(Terrains.WATER);
             if (waterLevel > 1) {
                 return 0;
             } else if (waterLevel == 1) {
@@ -1592,7 +1592,7 @@ public abstract class Mech extends Entity {
             return 0;
         }
 
-        Hex curHex = game.getBoard(currentMap).getHex(getPosition());
+        Hex curHex = game.getBoard(currentBoard).getHex(getPosition());
         // are we even in water? is it depth 1+
         if ((curHex.terrainLevel(Terrains.WATER) <= 0) || (getElevation() >= 0)) {
             return 0;
@@ -4048,8 +4048,8 @@ public abstract class Mech extends Entity {
     }
 
     @Override
-    public boolean isLocationProhibited(Coords c, int currElevation) {
-        Hex hex = game.getBoard(getCurrentMap()).getHex(c);
+    public boolean isLocationProhibited(BoardLocation boardLocation, int testElevation) {
+        Hex hex = game.getHex(boardLocation);
         if (hex.containsTerrain(Terrains.IMPASSABLE)) {
             return true;
         }
@@ -4068,7 +4068,7 @@ public abstract class Mech extends Entity {
                 return true;
             }
             // Can't deploy on a bridge
-            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == currElevation)
+            if ((hex.terrainLevel(Terrains.BRIDGE_ELEV) == testElevation)
                     && hex.containsTerrain(Terrains.BRIDGE)) {
                 return true;
             }
