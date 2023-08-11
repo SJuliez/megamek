@@ -1103,7 +1103,7 @@ public class ChatLounge extends AbstractPhaseDisplay implements
 
     public void previewGameBoard() {
         Board newBoard = getPossibleGameBoard(false);
-        boardPreviewGame.setGroundMap(newBoard);
+        boardPreviewGame.receiveBoard(0, newBoard);
         if (boardPreviewW == null) {
             initializePreviewBoardView();
         }
@@ -1116,7 +1116,7 @@ public class ChatLounge extends AbstractPhaseDisplay implements
         boardPreviewW.setLocationRelativeTo(clientgui.frame);
 
         try {
-            previewBV = new BoardView(boardPreviewGame, null, null, () -> boardPreviewGame.getBoard(MapType.GROUND));
+            previewBV = new BoardView(boardPreviewGame, null, null, 0);
             previewBV.setDisplayInvalidHexInfo(false);
             previewBV.setUseLOSTool(false);
             boardPreviewW.add(previewBV.getComponent(true));

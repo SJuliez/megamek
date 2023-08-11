@@ -42,10 +42,17 @@ public interface Targetable extends InGameObject, Serializable {
     int getTargetType();
 
     /** @return the full location containing the target */
-    MapLocation getMapLocation();
+    BoardLocation getBoardLocation();
 
-    /** @return the coordinates of the hex containing the target */
-    Coords getPosition();
+    /** @return the coordinates of the hex containing the unit, object or target on its board. */
+    default Coords getPosition() {
+        return getBoardLocation().getCoords();
+    }
+
+    /** @return the ID of the board containing the unit, object or target. */
+    default int getBoardId() {
+        return getBoardLocation().getBoardId();
+    }
     
     Map<Integer, Coords> getSecondaryPositions();
 

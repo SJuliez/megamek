@@ -325,7 +325,7 @@ public final class PhysicalCalculator {
         
         // if the object of our affections is in a building, we have to target the building instead
         if (Compute.isInBuilding(game, to) || (to instanceof GunEmplacement)) {
-            target = new BuildingTarget(to.getPosition(), game.getBoard(from.getCurrentMap()), false);
+            target = new BuildingTarget(to.getBoardLocation(), game.getBoard(from.getCurrentMap()), false);
         }
         
         double bestDmg = 0.0;
@@ -612,7 +612,7 @@ public final class PhysicalCalculator {
         
         // if the object of our affections is in a building, we have to target the building instead
         if (Compute.isInBuilding(game, to) || (to instanceof GunEmplacement)) {
-            target = new BuildingTarget(to.getPosition(), game.getBoard(from.getCurrentMap()), false);
+            target = new BuildingTarget(to.getBoardLocation(), game.getBoard(from.getCurrentMap()), false);
         }
         
         ToHitData odds = KickAttackAction.toHit(game, from.getId(), target, action);

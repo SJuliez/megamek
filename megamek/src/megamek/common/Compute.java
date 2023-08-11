@@ -6279,7 +6279,7 @@ public class Compute {
      * entity and would fall along the angle of attack
      */
     public static ArrayList<Entity> getAdjacentEntitiesAlongAttack(Coords aPos,
-                                                                   Coords tPos, Game game, MapType mapType) {
+                                                                   Coords tPos, Game game, int boardId) {
         ArrayList<Entity> entities = new ArrayList<>();
         ArrayList<Coords> coords = Coords.intervening(aPos, tPos);
         // loop through all intervening coords
@@ -6289,7 +6289,7 @@ public class Compute {
                 continue;
             }
             // now lets add all the entities here
-            entities.addAll(game.getEntitiesAt(c, mapType));
+            entities.addAll(game.getEntitiesAt(c, boardId));
         }
         return entities;
     }

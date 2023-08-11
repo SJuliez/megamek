@@ -100,7 +100,7 @@ public class Client implements IClientCommandHandler {
 
     private Set<BoardDimensions> availableSizes = new TreeSet<>();
 
-    private Vector<MapLocation> artilleryAutoHitHexes = null;
+    private Vector<BoardLocation> artilleryAutoHitHexes = null;
 
     private boolean disconnectFlag = false;
 
@@ -304,7 +304,7 @@ public class Client implements IClientCommandHandler {
     /**
      * Get hexes designated for automatic artillery hits.
      */
-    public Vector<MapLocation> getArtilleryAutoHit() {
+    public Vector<BoardLocation> getArtilleryAutoHit() {
         return artilleryAutoHitHexes;
     }
 
@@ -585,11 +585,11 @@ public class Client implements IClientCommandHandler {
      * Deploy an entity at the given location, with the given facing and elevation.
      *
      * @param id the <code>int</code> ID of the deployed entity
-     * @param mapLocation the <code>Coords</code> where the entity should be deployed
+     * @param boardLocation the <code>Coords</code> where the entity should be deployed
      * @param facing the <code>int</code> direction the entity should face
      */
-    public void deploy(int id, MapLocation mapLocation, int facing, int elevation) {
-        deploy(id, mapLocation, facing, elevation, new ArrayList<>(), false);
+    public void deploy(int id, BoardLocation boardLocation, int facing, int elevation) {
+        deploy(id, boardLocation, facing, elevation, new ArrayList<>(), false);
     }
 
     /**
@@ -597,19 +597,19 @@ public class Client implements IClientCommandHandler {
      * starting with the given units already loaded.
      *
      * @param id  the <code>int</code> ID of the deployed entity
-     * @param mapLocation the MapLocation where the entity should be deployed
+     * @param boardLocation the MapLocation where the entity should be deployed
      * @param facing the <code>int</code> direction the entity should face
      * @param loadedUnits a <code>List</code> of units that start the game being
      *            transported byt the deployed entity.
      * @param assaultDrop true if deployment is an assault drop
      */
-    public void deploy(int id, MapLocation mapLocation, int facing, int elevation,
+    public void deploy(int id, BoardLocation boardLocation, int facing, int elevation,
                        List<Entity> loadedUnits, boolean assaultDrop) {
         int packetCount = 6 + loadedUnits.size();
         int index = 0;
         Object[] data = new Object[packetCount];
         data[index++] = id;
-        data[index++] = mapLocation;
+        data[index++] = boardLocation;
         data[index++] = facing;
         data[index++] = elevation;
         data[index++] = loadedUnits.size();
@@ -786,7 +786,7 @@ public class Client implements IClientCommandHandler {
     /**
      * Sends a "set Artillery Autohit Hexes" packet
      */
-    public void sendArtyAutoHitHexes(Vector<MapLocation> hexes) {
+    public void sendArtyAutoHitHexes(Vector<BoardLocation> hexes) {
         artilleryAutoHitHexes = hexes; // save for minimap use
         send(new Packet(PacketCommand.SET_ARTILLERY_AUTOHIT_HEXES, hexes));
     }
@@ -953,13 +953,12 @@ public class Client implements IClientCommandHandler {
     /**
      * Loads the board from the data in the net command.
      */
-    protected void receiveBoard(Packet c) {
-        Board newBoard = (Board) c.getObject(0);
-        game.setGroundMap(newBoard);
-        Board lowAtmoMap = (Board) c.getObject(1);
-        game.setLowAtmoMap(lowAtmoMap);
-        Board spaceMap = (Board) c.getObject(2);
-        game.setSpaceMap(spaceMap);
+    @SuppressWarnings("unchecked")
+    protected void receiveBoards(Packet c) {
+        Map<Integer, Board> newBoards = (Map<Integer, Board>) c.getObject(0);
+        for (Map.Entry<Integer, Board> newBoard : newBoards.entrySet()) {
+            game.receiveBoard(newBoard.getKey(), newBoard.getValue());
+        }
     }
 
     /**
@@ -1317,8 +1316,8 @@ public class Client implements IClientCommandHandler {
         send(new Packet(PacketCommand.ENTITY_NOVA_NETWORK_CHANGE, id, net));
     }
 
-    public void sendSpecialHexDisplayAppend(MapLocation mapLocation, SpecialHexDisplay shd) {
-        send(new Packet(PacketCommand.SPECIAL_HEX_DISPLAY_APPEND, mapLocation, shd));
+    public void sendSpecialHexDisplayAppend(BoardLocation boardLocation, SpecialHexDisplay shd) {
+        send(new Packet(PacketCommand.SPECIAL_HEX_DISPLAY_APPEND, boardLocation, shd));
     }
 
     public void sendSpecialHexDisplayDelete(Coords c, SpecialHexDisplay shd) {
@@ -1484,8 +1483,8 @@ public class Client implements IClientCommandHandler {
                 case SENDING_TURNS:
                     receiveTurns(c);
                     break;
-                case SENDING_BOARD:
-                    receiveBoard(c);
+                case SENDING_BOARDS:
+                    receiveBoards(c);
                     break;
                 case SENDING_ENTITIES:
                     receiveEntities(c);
@@ -1605,9 +1604,9 @@ public class Client implements IClientCommandHandler {
                     }
                     break;
                 case SENDING_SPECIAL_HEX_DISPLAY:
-                    var shdTable = (Hashtable<MapLocation, Collection<SpecialHexDisplay>>) c.getObject(0);
-                    var mapType = (MapType) c.getObject(1);
-                    game.getBoard(mapType).setSpecialHexDisplayTable(shdTable);
+                    var shdTable = (Hashtable<Coords, Collection<SpecialHexDisplay>>) c.getObject(0);
+                    var boardId = (int) c.getObject(1);
+                    game.getBoard(boardId).setSpecialHexDisplayTable(shdTable);
                     game.processGameEvent(new GameBoardChangeEvent(this));
                     break;
                 case SENDING_AVAILABLE_MAP_SIZES:

@@ -436,9 +436,12 @@ final class LobbyMekPopup {
             }
             menu.add(ScalingPopup.spacer());
 
-            menu.add(menuItem("On Ground Map", LMP_MAP + "|" + MapType.GROUND.name() + eIds, enabled, listener));
-            menu.add(menuItem("On Low Atmo Map", LMP_MAP + "|" + MapType.LOW_ATMOSPHERE.name() + eIds, enabled, listener));
-            menu.add(menuItem("On Space Map", LMP_MAP + "|" + MapType.SPACE.name() + eIds, enabled, listener));
+            Game game = clientGui.getClient().getGame();
+            List<MapSettings> allMapSettings = game.getAllMapSettings();
+            for (int i = 0; i < allMapSettings.size(); i++) {
+                menu.add(menuItem("On Board #" + i + " (" + allMapSettings.get(i).getMapType() + ")",
+                        LMP_MAP + "|" + i + eIds, enabled, listener));
+            }
             menu.add(ScalingPopup.spacer());
 
             // Heat

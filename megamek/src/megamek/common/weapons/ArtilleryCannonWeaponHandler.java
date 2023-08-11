@@ -170,7 +170,7 @@ public class ArtilleryCannonWeaponHandler extends AmmoWeaponHandler {
                     ammoType.getRackSize(), ae.getId());
             return false;
         } else if (ammoType.getMunitionType() == AmmoType.M_SMOKE) {
-            gameManager.deliverArtillerySmoke(new MapLocation(targetPos, ae.getCurrentMap()), vPhaseReport);
+            gameManager.deliverArtillerySmoke(new BoardLocation(targetPos, ae.getCurrentBoard()), vPhaseReport);
             return false;
         }
 

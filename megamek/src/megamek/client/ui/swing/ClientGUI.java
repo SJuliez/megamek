@@ -239,7 +239,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     private BoardView bv;
     private BoardView bvLowAtmo;
     private BoardView bvSpace;
-    private Map<MapType, BoardView> boardViews = new HashMap<>();
+    private final Map<Integer, BoardView> boardViews = new HashMap<>();
     private final JPanel bvc = new JPanel();
     private final JTabbedPane mapTabPane = new JTabbedPane();
     private JPanel panTop;
@@ -1432,9 +1432,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         return component;
     }
 
-    protected void showBoardPopup(MapLocation mapLocation) {
-        if (fillPopup(mapLocation)) {
-            boardViews.get(mapLocation.getMapType()).showPopup(popup, mapLocation);
+    protected void showBoardPopup(BoardLocation boardLocation) {
+        if (fillPopup(boardLocation)) {
+            boardViews.get(boardLocation.getBoardId()).showPopup(popup, boardLocation);
         }
     }
 
@@ -1761,8 +1761,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         setsetDividerLocations();
     }
 
-    private boolean fillPopup(MapLocation mapLocation) {
-        popup = new MapMenu(mapLocation, client, curPanel, this);
+    private boolean fillPopup(BoardLocation boardLocation) {
+        popup = new MapMenu(boardLocation, client, curPanel, this);
         return popup.getHasMenu();
     }
 
@@ -2225,35 +2225,33 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
         @Override
         public void gameBoardNew(GameBoardNewEvent e) {
-            Board b = e.getNewBoard();
+            Board newBoard = e.getNewBoard();
+            final int boardId = e.getBoardId();
 
-            if (b != null) {
+            if (newBoard != null) {
                 try {
-                    if (b.getMapType().isLowAtmo()) {
-                        bvLowAtmo = new BoardView(client.getGame(), controller, ClientGUI.this,
-                                () -> client.getGame().getLowAtmoMap());
+                    if (newBoard.getMapType().isLowAtmo()) {
+                        bvLowAtmo = new BoardView(client.getGame(), controller, ClientGUI.this, boardId);
                         minimapLowAtmo = Minimap.createMinimap(frame, bvLowAtmo, getClient().getGame(),
-                                ClientGUI.this, MapType.LOW_ATMOSPHERE);
+                                ClientGUI.this, boardId);
                         minimapLowAtmo.setVisible(true);
-                        boardViews.put(MapType.LOW_ATMOSPHERE, bvLowAtmo);
+                        boardViews.put(boardId, bvLowAtmo);
                         bvLowAtmo.addBoardViewListener(ClientGUI.this);
                         getUnitDisplay().addMechDisplayListener(bvLowAtmo);
-                    } else if (b.getMapType().isSpace()) {
-                        bvSpace = new BoardView(client.getGame(), controller, ClientGUI.this,
-                                () -> client.getGame().getSpaceMap());
+                    } else if (newBoard.getMapType().isSpace()) {
+                        bvSpace = new BoardView(client.getGame(), controller, ClientGUI.this, boardId);
                         minimapSpace = Minimap.createMinimap(frame, bvSpace, getClient().getGame(),
-                                ClientGUI.this, MapType.SPACE);
+                                ClientGUI.this, boardId);
                         minimapSpace.setVisible(true);
-                        boardViews.put(MapType.SPACE, bvSpace);
+                        boardViews.put(boardId, bvSpace);
                         bvSpace.addBoardViewListener(ClientGUI.this);
                         getUnitDisplay().addMechDisplayListener(bvSpace);
                     } else {
-                        bv = new BoardView(client.getGame(), controller, ClientGUI.this,
-                                () -> client.getGame().getBoard(MapType.GROUND));
+                        bv = new BoardView(client.getGame(), controller, ClientGUI.this, boardId);
                         bv.setPreferredSize(getSize());
-                        boardViews.put(MapType.GROUND, bv);
+                        boardViews.put(boardId, bv);
                         minimapW = Minimap.createMinimap(frame, bv, getClient().getGame(),
-                                ClientGUI.this, MapType.GROUND);
+                                ClientGUI.this, boardId);
                         bv.addBoardViewListener(ClientGUI.this);
                         getUnitDisplay().addMechDisplayListener(bv);
                     }
@@ -2296,7 +2294,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
         @Override
         public void gamePhaseChange(GamePhaseChangeEvent e) {
-            for (BoardView bv : boardViews.values()) {
+            for (BoardView bv : boardViews()) {
                 // This is a really lame place for this, but I couldn't find a
                 // better one without making massive changes (which didn't seem
                 // worth it for one little feature).
@@ -2818,8 +2816,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     @Override
     public void hexMoused(BoardViewEvent b) {
         if (b.getType() == BoardViewEvent.BOARD_HEX_POPUP) {
-            MapLocation mapLocation = new MapLocation(b.getCoords(), ((BoardView) b.getSource()).getBoard().getMapType());
-            showBoardPopup(mapLocation);
+            showBoardPopup(b.getBoardLocation());
         }
     }
 
@@ -2995,15 +2992,15 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     }
 
     protected BoardView getBoardView(Entity entity) {
-        return getBoardView(entity.getCurrentMap());
+        return getBoardView(entity.getCurrentBoard());
     }
 
-    protected BoardView getBoardView(MapType mapType) {
-        return boardViews.get(mapType);
+    protected BoardView getBoardView(int boardId) {
+        return boardViews.get(boardId);
     }
 
-    protected BoardView getBoardView(MapLocation mapLocation) {
-        return getBoardView(mapLocation.getMapType());
+    protected BoardView getBoardView(BoardLocation boardLocation) {
+        return getBoardView(boardLocation.getBoardId());
     }
 
     public List<BoardView> boardViews() {

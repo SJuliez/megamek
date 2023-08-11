@@ -18,7 +18,6 @@ import megamek.common.event.GamePlayerChangeEvent;
 import megamek.common.icons.Camouflage;
 import megamek.common.options.OptionsConstants;
 
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Vector;
@@ -65,7 +64,7 @@ public final class Player extends TurnOrdered {
     private int numMfInferno = 0;
 
     // hexes that are automatically hit by artillery
-    private Vector<MapLocation> artyAutoHitHexes = new Vector<>();
+    private Vector<BoardLocation> artyAutoHitHexes = new Vector<>();
 
     private int initialEntityCount;
     private int initialBV;
@@ -429,15 +428,15 @@ public final class Player extends TurnOrdered {
         return votedToAllowGameMaster;
     }
 
-    public void setArtyAutoHitHexes(Vector<MapLocation> artyAutoHitHexes) {
+    public void setArtyAutoHitHexes(Vector<BoardLocation> artyAutoHitHexes) {
         this.artyAutoHitHexes = artyAutoHitHexes;
     }
 
-    public Vector<MapLocation> getArtyAutoHitHexes() {
+    public Vector<BoardLocation> getArtyAutoHitHexes() {
         return artyAutoHitHexes;
     }
 
-    public void addArtyAutoHitHex(MapLocation c) {
+    public void addArtyAutoHitHex(BoardLocation c) {
         artyAutoHitHexes.add(c);
     }
 

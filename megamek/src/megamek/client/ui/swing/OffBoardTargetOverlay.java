@@ -148,7 +148,7 @@ public class OffBoardTargetOverlay implements IDisplayable {
                 return false;
         }
 
-        Targetable checkTarget = new HexTarget(checkCoords, MapType.GROUND, Targetable.TYPE_HEX_ARTILLERY);
+        Targetable checkTarget = new HexTarget(checkCoords, 0, Targetable.TYPE_HEX_ARTILLERY);
 
         return Compute.isInArc(getCurrentGame(), artilleryWeapon.getEntity().getId(),
                 artilleryWeapon.getEntity().getEquipmentNum(artilleryWeapon), checkTarget);

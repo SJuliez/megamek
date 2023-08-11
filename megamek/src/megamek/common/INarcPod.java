@@ -153,7 +153,7 @@ public class INarcPod implements Serializable, Targetable {
     }
 
     @Override
-    public MapLocation getMapLocation() {
+    public BoardLocation getBoardLocation() {
         // Hopefully, this will **never** get called.
         throw new IllegalStateException("Never ask for the coords of an INarcPod.");
     }

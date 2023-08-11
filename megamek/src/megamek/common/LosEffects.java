@@ -44,7 +44,8 @@ public class LosEffects {
         public boolean attOffBoard;
         public Coords attackPos;
         public Coords targetPos;
-        public MapType mapType = MapType.GROUND;
+        public BoardLocation attackLocation;
+        public BoardLocation targetLocation;
         
         /**
          * The absolute elevation of the attacker, i.e. the number of levels
@@ -456,7 +457,7 @@ public class LosEffects {
         ai.targetInfantry = target instanceof Infantry;
         ai.attackHeight = attacker.getHeight();
         ai.targetHeight = target.getHeight() + targetHeightAdjustment;
-        ai.mapType = target.getMapLocation().getMapType();
+        ai.targetLocation = target.getBoardLocation();
 
         int attackerElevation = attacker.relHeight() + attackerHex.getLevel();
         // for spotting, a mast mount raises our elevation by 1
@@ -732,7 +733,7 @@ public class LosEffects {
             boolean diagramLoS, boolean partialCover) {
         ArrayList<Coords> in = Coords.intervening(ai.attackPos, ai.targetPos);
         LosEffects los = new LosEffects();
-        Board board = game.getBoard(ai.mapType);
+        Board board = game.getBoard(ai.targetLocation);
         boolean targetInBuilding = false;
         if (ai.targetEntity) {
             targetInBuilding = Compute.isInBuilding(game, ai.targetAbsHeight
@@ -795,7 +796,7 @@ public class LosEffects {
     private static LosEffects losDivided(Game game, AttackInfo ai, boolean diagramLoS,
                                          boolean partialCover) {
         ArrayList<Coords> in = Coords.intervening(ai.attackPos, ai.targetPos, true);
-        Board board = game.getBoard(ai.mapType);
+        Board board = game.getBoard(ai.targetLocation);
         LosEffects los = new LosEffects();
         boolean targetInBuilding = false;
         if (ai.targetEntity) {
@@ -1037,7 +1038,7 @@ public class LosEffects {
     private static LosEffects losForCoords(Game game, AttackInfo ai,
             Coords coords, Building thruBldg, 
             boolean diagramLoS, boolean partialCover) {
-        Board board = game.getBoard(ai.mapType);
+        Board board = game.getBoard(ai.targetLocation);
         LosEffects los = new LosEffects();
         // ignore hexes not on board
         if (!board.contains(coords)) {
@@ -1101,7 +1102,7 @@ public class LosEffects {
         Entity coveringDropship = null;
         // check for grounded dropships - treat like a building 10 elevations tall
         if (bldgEl < 10) {
-            for (Entity inHex : game.getEntitiesAt(coords, ai.mapType)) {
+            for (Entity inHex : game.getEntitiesAt(ai.targetLocation)) {
                 if (ai.attackerId == inHex.getId() || ai.targetId == inHex.getId()) {
                     continue;
                 }
@@ -1369,7 +1370,6 @@ public class LosEffects {
         ai.targetHeight = h2;
         ai.attackAbsHeight = h1Floor + h1;
         ai.targetAbsHeight = h2Floor + h2;
-        ai.mapType = mapType;
         return ai;
     }
 

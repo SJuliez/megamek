@@ -144,15 +144,15 @@ public class LobbyActions {
         if (!validateUpdate(entities)) {
             return;
         }
-        MapType targetMap = MapType.valueOf(info);
-        if (entities.stream().anyMatch(e -> !e.isMapTypeAllowed(targetMap))) {
+        int mapSettingsId = Integer.parseInt(info);
+        final MapSettings mapSettings = game().getAllMapSettings().get(mapSettingsId);
+        if (entities.stream().anyMatch(e -> !e.isMapTypeAllowed(mapSettings.getMapType()))) {
             LobbyErrors.showMapTypeNotAllowed(frame());
-            return;
         }
         Set<Entity> updateCandidates = new HashSet<>();
-        for (Entity entity: entities) {
-            if (entity.getCurrentMap() != targetMap) {
-                entity.setCurrentMap(targetMap);
+        for (Entity entity : entities) {
+            if (entity.isMapTypeAllowed(mapSettings.getMapType()) && (entity.getCurrentBoard() != mapSettingsId)) {
+                entity.setCurrentBoard(mapSettingsId);
                 updateCandidates.add(entity);
             }
         }

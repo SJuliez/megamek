@@ -20,7 +20,7 @@ import megamek.common.MapType;
 /**
  * This event is sent on the client side when one of the game's boards is replaced.
  * 
- * @see Game#setGroundMap(Board)
+ * @see Game#receiveBoard(int, Board)
  * @see GameListener
  */
 public class GameBoardNewEvent extends GameEvent {
@@ -28,7 +28,7 @@ public class GameBoardNewEvent extends GameEvent {
 
     private final Board oldBoard;
     private final Board newBoard;
-    private final MapType mapType;
+    private final int boardId;
 
     /**
      * Constructs the new event with the specified old/new board objects
@@ -37,11 +37,11 @@ public class GameBoardNewEvent extends GameEvent {
      * @param oldBoard old game board
      * @param newBoard new game board
      */
-    public GameBoardNewEvent(Object source, Board oldBoard, Board newBoard, MapType mapType) {
+    public GameBoardNewEvent(Object source, Board oldBoard, Board newBoard, int boardId) {
         super(source);
         this.oldBoard = oldBoard;
         this.newBoard = newBoard;
-        this.mapType = mapType;
+        this.boardId = boardId;
     }
 
     /** @return The new Board. */
@@ -64,8 +64,8 @@ public class GameBoardNewEvent extends GameEvent {
         return "New Board";
     }
 
-    /** @return The MapType of both the old and new Board. */
-    public MapType getMapType() {
-        return mapType;
+    /** @return The ID of both the old and new Board. */
+    public int getBoardId() {
+        return boardId;
     }
 }

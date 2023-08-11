@@ -1382,7 +1382,7 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
         // Is there a building in the hex?
         Building bldg = game.getBoard(ce().getCurrentMap()).getBuildingAt(pos);
         if (bldg != null) {
-            targets.add(new BuildingTarget(pos, game.getBoard(ce().getCurrentMap()), false));
+            targets.add(new BuildingTarget(ce().getBoardLocation(), game.getBoard(ce().getCurrentMap()), false));
         }
 
         // Is the attacker targeting its own hex?

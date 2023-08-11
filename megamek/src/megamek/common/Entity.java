@@ -17,7 +17,6 @@ package megamek.common;
 import megamek.MMConstants;
 import megamek.client.bot.princess.FireControl;
 import megamek.client.ui.swing.GUIPreferences;
-import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.client.ui.swing.calculationReport.DummyCalculationReport;
 import megamek.codeUtilities.StringUtility;
@@ -245,7 +244,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     protected int facing = 0;
     protected int sec_facing = 0;
 
-    protected MapType currentMap = isMapTypeAllowed(MapType.GROUND) ? MapType.GROUND : MapType.LOW_ATMOSPHERE;
+    protected int currentMap;
 
     protected int walkMP = 0;
     protected int jumpMP = 0;
@@ -2178,9 +2177,9 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             case AERODYNE:
             case SPHEROID:
                 assumedAlt = assumedElevation;
-                if (currentMap.isLowAtmo()) {
+                if (getCurrentMap().isLowAtmo()) {
                     minAlt = Math.max(0, hex.ceiling(true)) + 1;
-                } else if (currentMap.isGround() && isAirborne()) {
+                } else if (getCurrentMap().isGround() && isAirborne()) {
                     minAlt = 1;
                 }
                 // if sensors are damaged then, one higher
@@ -2408,7 +2407,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     public boolean isOnAtmosphericGroundMap() {
         return (getGame().getPlanetaryConditions().getAtmosphere() != PlanetaryConditions.ATMO_VACUUM) &&
                 (getGame().getPlanetaryConditions().getAtmosphere() != PlanetaryConditions.ATMO_TRACE)
-                && (currentMap.isGround() || currentMap.isLowAtmo());
+                && (getCurrentMap().isGround() || getCurrentMap().isLowAtmo());
     }
 
     /**
@@ -2416,7 +2415,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * @return True if this is an airborne aircraft on a ground map.
      */
     public boolean isAirborneAeroOnGroundMap() {
-        return isAero() && isAirborne() && currentMap.isGround();
+        return isAero() && isAirborne() && getCurrentMap().isGround();
     }
 
     /**
@@ -9922,7 +9921,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                 }
 
                 // Can the entity target *this* hex of the building?
-                final BuildingTarget target = new BuildingTarget(coords,
+                final BuildingTarget target = new BuildingTarget(coords, currentMap,
                                                                  game.getBoard(currentMap), false);
                 canHit |= Compute.canPhysicalTarget(game, getId(), target);
 
@@ -12834,20 +12833,20 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                || (getMovementMode() == EntityMovementMode.SPHEROID);
     }
 
-    /** @return True when this unit is currently on a space map. Equivalent to currentMap().isSpace(). */
+    /** @return True when this unit is currently on a space map, including atmospheric hexes of a high-altitude map. */
     public boolean isSpaceborne() {
-        return currentMap.isSpace();
+        return getCurrentMap().isSpace();
     }
 
     /**
-     * is the unit flying Nape of the Earth? (i.e. one elevation above ground)
+     * is the unit flying Nape of the Earth? (i.e. one altitude above ground)
      */
     public boolean isNOE() {
         if (!isAirborne()) {
             return false;
-        } else if (currentMap.isLowAtmo()) {
+        } else if (getCurrentMap().isLowAtmo()) {
             return (1 == (getAltitude() - game.getBoard(currentMap).getHex(getPosition()).ceiling(true)));
-        } else if (currentMap.isGround()) {
+        } else if (getCurrentMap().isGround()) {
             return 1 == getAltitude();
         } else {
             return false;
@@ -15420,12 +15419,29 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         return bvCalculator;
     }
 
+    /**
+     * Returns the MapType of this unit's current board. If this unit has no game or no board exists, returns the
+     * first MapType allowed to the unit in the order {@link MapType#GROUND}, {@link MapType#LOW_ATMOSPHERE},
+     * {@link MapType#SPACE}, i.e. GROUND for most units.
+     *
+     * @return The MapType of this unit's current board or an allowed MapType for this unit when there's no board
+     */
     public MapType getCurrentMap() {
-        return currentMap;
+        if ((game == null) || game.getBoard(currentMap) == null) {
+            if (isMapTypeAllowed(MapType.GROUND)) {
+                return MapType.GROUND;
+            } else if (isMapTypeAllowed(MapType.LOW_ATMOSPHERE)) {
+                return MapType.LOW_ATMOSPHERE;
+            } else {
+                return MapType.SPACE;
+            }
+        } else {
+            return game.getBoard(currentMap).getMapType();
+        }
     }
 
-    public void setCurrentMap(MapType mapType) {
-        currentMap = mapType;
+    public void setCurrentBoard(int boardId) {
+        currentMap = boardId;
     }
 
     /**
@@ -15440,7 +15456,15 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     }
 
     @Override
-    public MapLocation getMapLocation() {
-        return new MapLocation(getPosition(), currentMap);
+    public BoardLocation getBoardLocation() {
+        return new BoardLocation(getPosition(), currentMap);
+    }
+
+    public int getCurrentBoard() {
+        return currentMap;
+    }
+
+    public boolean isOnBoard(int boardId) {
+        return getCurrentBoard() == boardId;
     }
 }

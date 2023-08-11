@@ -17,8 +17,6 @@ import megamek.client.Client;
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.FiringDisplay.FiringCommand;
-import megamek.client.ui.swing.boardview.BoardView;
-import megamek.client.ui.swing.unitDisplay.WeaponPanel;
 import megamek.client.ui.swing.util.CommandAction;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.MegaMekController;
@@ -43,7 +41,6 @@ import java.awt.event.*;
 import java.util.*;
 
 import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
-import static megamek.client.ui.swing.util.UIUtil.uiLightViolet;
 
 /**
  * Targeting Phase Display. Breaks naming convention because TargetingDisplay is too easy to confuse
@@ -1238,9 +1235,9 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             if (shiftheld) {
                 updateFlipArms(false);
             } else if (phase.isTargeting()) {
-                target(new HexTarget(b.getMapLocation(), Targetable.TYPE_HEX_ARTILLERY));
+                target(new HexTarget(b.getBoardLocation(), Targetable.TYPE_HEX_ARTILLERY));
             } else {
-                target(chooseTarget(b.getMapLocation()));
+                target(chooseTarget(b.getBoardLocation()));
             }
         }
     }
@@ -1250,7 +1247,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
      *
      * @param pos - the <code>Coords</code> containing targets.
      */
-    private Targetable chooseTarget(MapLocation mapLocation) {
+    private Targetable chooseTarget(BoardLocation boardLocation) {
         Game game = clientgui.getClient().getGame();
         boolean friendlyFire = game.getOptions().booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE);
         // Assume that we have *no* choice.
@@ -1259,9 +1256,9 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         // Get the available choices, depending on friendly fire
         if (friendlyFire) {
-            choices = game.getEntitiesAt(mapLocation);
+            choices = game.getEntitiesAt(boardLocation);
         } else {
-            choices = game.getEnemyEntitiesAt(mapLocation, ce());
+            choices = game.getEnemyEntitiesAt(boardLocation, ce());
         }
 
         // Convert the choices into a List of targets.
@@ -1276,12 +1273,12 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         }
 
         // Is there a building in the hex?
-        Building bldg = game.getBuildingAt(mapLocation);
+        Building bldg = game.getBuildingAt(boardLocation);
         if (bldg != null) {
-            targets.add(new BuildingTarget(mapLocation.getCoords(), game.getBoard(mapLocation), Targetable.TYPE_BLDG_TAG));
+            targets.add(new BuildingTarget(boardLocation, game.getBoard(boardLocation), Targetable.TYPE_BLDG_TAG));
         }
 
-        targets.add(new HexTarget(mapLocation, Targetable.TYPE_HEX_TAG));
+        targets.add(new HexTarget(boardLocation, Targetable.TYPE_HEX_TAG));
 
         // Do we have a single choice?
         if (targets.size() == 1) {
@@ -1291,7 +1288,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             // If we have multiple choices, display a selection dialog.
             choice = TargetChoiceDialog.showSingleChoiceDialog(clientgui.getFrame(),
                     "FiringDisplay.ChooseTargetDialog.title",
-                    Messages.getString("FiringDisplay.ChooseTargetDialog.message", mapLocation.getCoords().getBoardNum()),
+                    Messages.getString("FiringDisplay.ChooseTargetDialog.message", boardLocation.getCoords().getBoardNum()),
                     targets, clientgui, ce());
         }
 

@@ -88,9 +88,9 @@ public class LRMSmokeWarheadHandler extends LRMHandler {
                 smokeType = SmokeCloud.SMOKE_HEAVY;
             }
             
-            gameManager.deliverMissileSmoke(new MapLocation(center, target.getMapLocation().getMapType()), smokeType, vPhaseReport);
+            gameManager.deliverMissileSmoke(new BoardLocation(center, target.getBoardLocation().getBoardId()), smokeType, vPhaseReport);
         } else if (atype.getMunitionType() == AmmoType.M_ANTI_TSM) {
-            gameManager.deliverMissileSmoke(new MapLocation(center, target.getMapLocation().getMapType()), SmokeCloud.SMOKE_GREEN, vPhaseReport);
+            gameManager.deliverMissileSmoke(new BoardLocation(center, target.getBoardLocation().getBoardId()), SmokeCloud.SMOKE_GREEN, vPhaseReport);
             return false;
         }
         return true;

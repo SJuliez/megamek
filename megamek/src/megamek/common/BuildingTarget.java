@@ -27,7 +27,7 @@ import java.util.Map;
 public class BuildingTarget implements Targetable {
     private static final long serialVersionUID = 6432766092407639630L;
 
-    private final MapLocation mapLocation;
+    private final BoardLocation boardLocation;
     private final int id;
 
     /**
@@ -49,6 +49,34 @@ public class BuildingTarget implements Targetable {
     /** The type of attack that is targeting this building. */
     private final int type;
 
+
+
+    /**
+     * Target a single hex of a building.
+     *
+     * @param coords - the <code>Coords</code> of the hext being targeted.
+     * @param board  - the game's <code>Board</code> object.
+     * @param ignite - a <code>boolean</code> flag that indicates whether the
+     *               player is attempting to set the building on fire, or not.
+     * @throws IllegalArgumentException will be thrown if
+     *            the given coordinates do not contain a building.
+     */
+    public BuildingTarget(Coords coords, Board board, boolean ignite) {
+        this(coords, 0, board, ignite);
+    }
+
+    public BuildingTarget(BoardLocation boardLocation, Board board, boolean ignite) {
+        this(boardLocation.getCoords(), boardLocation.getBoardId(), board, ignite);
+    }
+
+    public BuildingTarget(Coords coords, int boardId, Board board, boolean ignite) {
+        this(coords, boardId, board, ignite ? Targetable.TYPE_BLDG_IGNITE : Targetable.TYPE_BUILDING);
+    }
+
+    public BuildingTarget(BoardLocation location, Board board, int nType) {
+        this(location.getCoords(), location.getBoardId(), board, nType);
+    }
+
     /**
      * Target a single hex of a building.
      *
@@ -59,19 +87,19 @@ public class BuildingTarget implements Targetable {
      * @throws IllegalArgumentException will be thrown if
      *            the given coordinates do not contain a building.
      */
-    public BuildingTarget(Coords coords, Board board, int nType) {
-        mapLocation = new MapLocation(coords, board.getMapType());
+    public BuildingTarget(Coords coords, int boardId, Board board, int nType) {
+        boardLocation = new BoardLocation(coords, boardId);
         type = nType;
 
         // Get the building at the given coordinates.
-        Building bldg = board.getBuildingAt(mapLocation);
+        Building bldg = board.getBuildingAt(boardLocation);
         if (bldg == null) {
             throw new IllegalArgumentException("The coordinates, " + coords.getBoardNum()
                     + ", do not contain a building.");
         }
 
         // Save the building's ID.
-        id = HexTarget.locationToId(mapLocation);
+        id = HexTarget.locationToId(boardLocation);
 
         // Generate a name.
         StringBuilder sb = new StringBuilder();
@@ -103,19 +131,6 @@ public class BuildingTarget implements Targetable {
         }
     }
 
-    /**
-     * Target a single hex of a building.
-     *
-     * @param coords - the <code>Coords</code> of the hext being targeted.
-     * @param board  - the game's <code>Board</code> object.
-     * @param ignite - a <code>boolean</code> flag that indicates whether the
-     *               player is attempting to set the building on fire, or not.
-     * @throws IllegalArgumentException will be thrown if
-     *            the given coordinates do not contain a building.
-     */
-    public BuildingTarget(Coords coords, Board board, boolean ignite) {
-        this(coords, board, ignite ? Targetable.TYPE_BLDG_IGNITE : Targetable.TYPE_BUILDING);
-    }
 
     @Override
     public int getTargetType() {
@@ -139,7 +154,7 @@ public class BuildingTarget implements Targetable {
 
     @Override
     public Coords getPosition() {
-        return mapLocation.getCoords();
+        return boardLocation.getCoords();
     }
 
     @Override
@@ -172,7 +187,7 @@ public class BuildingTarget implements Targetable {
         return name;
     }
 
-    public static MapLocation idToLocation(int id) {
+    public static BoardLocation idToLocation(int id) {
         return HexTarget.idToLocation(id);
     }
 
@@ -212,7 +227,7 @@ public class BuildingTarget implements Targetable {
     }
 
     @Override
-    public MapLocation getMapLocation() {
-        return mapLocation;
+    public BoardLocation getBoardLocation() {
+        return boardLocation;
     }
 }

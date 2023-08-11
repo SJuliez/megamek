@@ -218,7 +218,6 @@ public class Aero extends Entity implements IAero, IBomber {
         super();
         // need to set altitude to something different than entity
         altitude = 5;
-        currentMap = MapType.LOW_ATMOSPHERE;
     }
 
     @Override

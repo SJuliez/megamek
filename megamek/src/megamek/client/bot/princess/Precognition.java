@@ -192,7 +192,7 @@ public class Precognition implements Runnable {
                 case SENDING_TURNS:
                     receiveTurns(c);
                     break;
-                case SENDING_BOARD:
+                case SENDING_BOARDS:
                     receiveBoard(c);
                     break;
                 case SENDING_ENTITIES:
@@ -234,9 +234,10 @@ public class Precognition implements Runnable {
                     getGame().setFlares(v2);
                     break;
                 case SENDING_SPECIAL_HEX_DISPLAY:
-                    getGame().getBoard().setSpecialHexDisplayTable(
-                            (Hashtable<MapLocation, Collection<SpecialHexDisplay>>) c.getObject(0));
-                    getGame().processGameEvent(new GameBoardChangeEvent(this));
+                    var shdTable = (Hashtable<Coords, Collection<SpecialHexDisplay>>) c.getObject(0);
+                    var boardId = (int) c.getObject(1);
+                    game.getBoard(boardId).setSpecialHexDisplayTable(shdTable);
+                    game.processGameEvent(new GameBoardChangeEvent(this));
                     break;
                 case ENTITY_NOVA_NETWORK_CHANGE:
                     receiveEntityNovaNetworkModeChange(c);
@@ -658,12 +659,10 @@ public class Precognition implements Runnable {
      * Loads the board from the data in the net command.
      */
     private void receiveBoard(Packet c) {
-        Board newBoard = (Board) c.getObject(0);
-        game.setGroundMap(newBoard);
-        Board lowAtmoMap = (Board) c.getObject(1);
-        game.setLowAtmoMap(lowAtmoMap);
-        Board spaceMap = (Board) c.getObject(2);
-        game.setSpaceMap(spaceMap);
+        Map<Integer, Board> newBoards = (Map<Integer, Board>) c.getObject(0);
+        for (Map.Entry<Integer, Board> newBoard : newBoards.entrySet()) {
+            game.receiveBoard(newBoard.getKey(), newBoard.getValue());
+        }
     }
 
     /**

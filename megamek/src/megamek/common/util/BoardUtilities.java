@@ -93,6 +93,7 @@ public class BoardUtilities {
 
         // assuming that the map setting and board types match
         result.setType(medium);
+        result.setMapType(boards[0].getMapType());
 
         return result;
     }

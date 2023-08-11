@@ -21,24 +21,22 @@ public class HexTarget implements Targetable {
     private static final long serialVersionUID = -5742445409423125942L;
 
     private final int targetType;
-    private final MapLocation mapLocation;
+    private final BoardLocation boardLocation;
 
     /**
      * Creates a new HexTarget for the given {@link Coords} on the map of the given {@link MapType} and a
      * type defined in {@link Targetable}.
      */
-    public HexTarget(Coords c, MapType mapType, int nType) {
-        this(new MapLocation(c, mapType), nType);
+    public HexTarget(Coords c, int boardId, int nType) {
+        this(new BoardLocation(c, boardId), nType);
     }
 
     /**
-     * Creates a new HexTarget for the given {@link MapLocation} and a type defined in
+     * Creates a new HexTarget for the given {@link BoardLocation} and a type defined in
      * {@link Targetable}.
      */
-    public HexTarget(MapLocation mapLocation, int nType) {
-        this.mapLocation = Objects.requireNonNull(mapLocation);
-        Objects.requireNonNull(mapLocation.getCoords());
-        Objects.requireNonNull(mapLocation.getMapType());
+    public HexTarget(BoardLocation boardLocation, int nType) {
+        this.boardLocation = Objects.requireNonNull(boardLocation);
         targetType = nType;
     }
 
@@ -49,7 +47,7 @@ public class HexTarget implements Targetable {
 
     @Override
     public int getId() {
-        return HexTarget.locationToId(mapLocation);
+        return HexTarget.locationToId(boardLocation);
     }
 
     @Override
@@ -64,7 +62,7 @@ public class HexTarget implements Targetable {
 
     @Override
     public Coords getPosition() {
-        return mapLocation.getCoords();
+        return boardLocation.getCoords();
     }
 
     @Override
@@ -128,25 +126,22 @@ public class HexTarget implements Targetable {
                 name = "";
                 break;
         }
-        return "Hex: " + mapLocation.getCoords().getBoardNum() + name;
+        return "Hex: " + boardLocation.getCoords().getBoardNum() + name;
     }
 
-    /**
-     * Could more efficiently encode this by
-     * partitioning the binary representation, but this is more human readable
-     * and still allows for a 9999x20000 hex map.
-     */
-    public static int locationToId(MapLocation mapLocation) {
-        return mapLocation.getCoords().getY() * 100000
-                + mapLocation.getCoords().getX() * 10
-                + mapLocation.getMapType().ordinal();
+    /** Allows a 9999 x 999 map and board IDs up to 200 */
+    public static int locationToId(BoardLocation boardLocation) {
+        return boardLocation.getBoardId() * 10000000
+                + boardLocation.getCoords().getY() * 10000
+                + boardLocation.getCoords().getX();
     }
 
-    public static MapLocation idToLocation(int id) {
-        int y = id / 100000;
-        int x = (id - y * 100000) / 10;
-        int ordinal = id - y * 100000 - x * 10;
-        return new MapLocation(new Coords(x, y), MapType.values()[ordinal]);
+    public static BoardLocation idToLocation(int id) {
+        int boardId = id / 10000000;
+        id -= boardId * 10000000;
+        int y = id / 10000;
+        int x = id - y * 10000;
+        return new BoardLocation(new Coords(x, y), boardId);
     }
 
     @Override
@@ -185,7 +180,7 @@ public class HexTarget implements Targetable {
     }
 
     @Override
-    public MapLocation getMapLocation() {
-        return mapLocation;
+    public BoardLocation getBoardLocation() {
+        return boardLocation;
     }
 }

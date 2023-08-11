@@ -11,7 +11,6 @@
  *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  *  for more details.
  */
-
 package megamek.common;
 
 import java.util.HashMap;
@@ -20,14 +19,14 @@ import java.util.Map;
 public class MinefieldTarget implements Targetable {
     private static final long serialVersionUID = 420672189241204590L;
 
-    private final MapLocation mapLocation;
+    private final BoardLocation boardLocation;
 
-    public MinefieldTarget(MapLocation mapLocation) {
-        this.mapLocation = mapLocation;
+    public MinefieldTarget(BoardLocation boardLocation) {
+        this.boardLocation = boardLocation;
     }
 
-    public MinefieldTarget(Coords c, MapType mapType) {
-        this(new MapLocation(c, mapType));
+    public MinefieldTarget(Coords c, int boardId) {
+        this(new BoardLocation(c, boardId));
     }
 
     @Override
@@ -37,7 +36,7 @@ public class MinefieldTarget implements Targetable {
 
     @Override
     public int getId() {
-        return locationToId(mapLocation);
+        return locationToId(boardLocation);
     }
 
     @Override
@@ -52,7 +51,7 @@ public class MinefieldTarget implements Targetable {
 
     @Override
     public Coords getPosition() {
-        return mapLocation.getCoords();
+        return boardLocation.getCoords();
     }
 
     @Override
@@ -82,14 +81,14 @@ public class MinefieldTarget implements Targetable {
 
     @Override
     public String getDisplayName() {
-        return "Clear Minefield: " + mapLocation.getBoardNum();
+        return "Clear Minefield: " + boardLocation.getBoardNum();
     }
 
-    public static int locationToId(MapLocation mapLocation) {
-        return HexTarget.locationToId(mapLocation);
+    public static int locationToId(BoardLocation boardLocation) {
+        return HexTarget.locationToId(boardLocation);
     }
 
-    public static MapLocation idToLocation(int id) {
+    public static BoardLocation idToLocation(int id) {
         return HexTarget.idToLocation(id);
     }
 
@@ -129,7 +128,7 @@ public class MinefieldTarget implements Targetable {
     }
 
     @Override
-    public MapLocation getMapLocation() {
-        return mapLocation;
+    public BoardLocation getBoardLocation() {
+        return boardLocation;
     }
 }

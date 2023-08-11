@@ -14,13 +14,12 @@
  */
 package megamek.server;
 
+import megamek.common.Coords;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import megamek.common.Coords;
-import megamek.common.MapType;
 
 public class SmokeCloud implements Serializable {
 
@@ -35,22 +34,18 @@ public class SmokeCloud implements Serializable {
     public static final int SMOKE_GREEN = 6; // Anti-TSM smoke
 
     private int smokeDuration;
-    private final MapType mapType;
+    private final int boardId;
     private final List<Coords> smokeHexList = new ArrayList<>();
     private int smokeLevel;
     private boolean didDrift = false;
     private final int roundOfGeneration;
 
-    public SmokeCloud(Coords coords, int level, int duration, int roundOfGeneration) {
-        this(List.of(coords), level, duration, roundOfGeneration, MapType.GROUND);
+    public SmokeCloud(Coords coords, int boardId, int level, int duration, int roundOfGeneration) {
+        this(List.of(coords), boardId, level, duration, roundOfGeneration);
     }
     
-    public SmokeCloud(Coords coords, int level, int duration, int roundOfGeneration, MapType mapType) {
-        this(List.of(coords), level, duration, roundOfGeneration, mapType);
-    }
-    
-    public SmokeCloud(List<Coords> coords, int level, int duration, int roundOfGeneration, MapType mapType) {
-        this.mapType = mapType;
+    public SmokeCloud(List<Coords> coords, int boardId, int level, int duration, int roundOfGeneration) {
+        this.boardId = boardId;
         smokeDuration = duration;
         smokeLevel = level;
         smokeHexList.addAll(coords);
@@ -94,8 +89,8 @@ public class SmokeCloud implements Serializable {
         return smokeLevel == SMOKE_NONE;
     }
 
-    public MapType getMapType() {
-        return mapType;
+    public int getBoardId() {
+        return boardId;
     }
     
     public List<Coords> getCoordsList() {
@@ -133,7 +128,7 @@ public class SmokeCloud implements Serializable {
         return roundOfGeneration;
     }
 
-    public boolean isOnMap(MapType mapType) {
-        return this.mapType == mapType;
+    public boolean isOnBoard(int boardId) {
+        return this.boardId == boardId;
     }
 }

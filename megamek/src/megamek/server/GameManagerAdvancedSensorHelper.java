@@ -434,13 +434,13 @@ public final class GameManagerAdvancedSensorHelper {
             return 0;
         }
         Entity te = (Entity) target;
-        for (Entity en : Compute.getAdjacentEntitiesAlongAttack(detector.getPosition(), target.getPosition(), game, MapType.SPACE)) {
+        for (Entity en : Compute.getAdjacentEntitiesAlongAttack(detector.getPosition(), target.getPosition(), game, detector.getCurrentBoard())) {
             if (!en.isEnemyOf(te) && en.isLargeCraft() && !en.equals(te) && ((en.getWeight() - te.getWeight()) >= -100000.0)) {
                 mod ++;
                 break;
             }
         }
-        for (Entity en : game.getEntitiesAt(target.getMapLocation())) {
+        for (Entity en : game.getEntitiesAt(target.getBoardLocation())) {
             if (!en.isEnemyOf(te) && en.isLargeCraft() && !en.equals(detector) && !en.equals(te)
                     && ((en.getWeight() - te.getWeight()) >= -100000.0)) {
                 mod ++;

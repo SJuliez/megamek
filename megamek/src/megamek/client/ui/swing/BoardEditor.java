@@ -336,7 +336,7 @@ public class BoardEditor extends JPanel
     public BoardEditor(MegaMekController c) {
         controller = c;
         try {
-            bv = new BoardView(game, controller, null);
+            bv = new BoardView(game, controller, null, 0);
             bvc = bv.getComponent(true);
             bv.setDisplayInvalidHexInfo(true);
         } catch (IOException e) {
@@ -1033,7 +1033,7 @@ public class BoardEditor extends JPanel
         scrCenterPanel.getVerticalScrollBar().setUnitIncrement(16);
         add(scrCenterPanel, BorderLayout.CENTER);
         add(panButtons, BorderLayout.PAGE_END);
-        minimapW = Minimap.createMinimap(frame, bv, game, null, MapType.GROUND);
+        minimapW = Minimap.createMinimap(frame, bv, game, null, 0);
         minimapW.setVisible(guip.getMinimapEnabled());
     }
     
@@ -1379,7 +1379,7 @@ public class BoardEditor extends JPanel
             board = BoardUtilities.generateRandom(mapSettings);
             // "Initialize" all hexes to add internally handled terrains
             correctExits();
-            game.setGroundMap(board);
+            game.receiveBoard(0, board);
             curBoardFile = null;
             choTheme.setSelectedItem(mapSettings.getTheme());
             setupUiFreshBoard();
@@ -1399,7 +1399,7 @@ public class BoardEditor extends JPanel
             int south = emd.getExpandSouth();
             board = implantOldBoard(game, west, north, east, south);
 
-            game.setGroundMap(board);
+            game.receiveBoard(0, board);
             curBoardFile = null;
             setupUiFreshBoard();
         }
@@ -1462,7 +1462,7 @@ public class BoardEditor extends JPanel
             // for the background image to work in the BoardEditor
             board = BoardUtilities.combine(board.getWidth(), board.getHeight(), 1, 1, 
                     new Board[]{ board }, Collections.singletonList(false), MapSettings.MEDIUM_GROUND);
-            game.setGroundMap(board);
+            game.receiveBoard(0, board);
             // BoardUtilities.combine does not preserve tags, so add them back
             for (String tag : boardTags) {
                 board.addTag(tag);

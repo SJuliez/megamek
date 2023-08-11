@@ -24,7 +24,6 @@ import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.util.KeyCommandBind;
-import megamek.client.ui.swing.util.UIUtil;
 import megamek.client.ui.swing.widget.MegamekButton;
 import megamek.common.*;
 import megamek.common.event.GamePhaseChangeEvent;
@@ -331,7 +330,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         int elevation = en.getElevation();
         // If elevation was set in lounge, try to preserve it
         // Server.processDeployment will adjust elevation, so we want to account for this
-        Hex hex = game.getHex(en.getMapLocation());
+        Hex hex = game.getHex(en.getBoardLocation());
         if ((en instanceof VTOL) && (elevation >= 1)) {
             elevation = Math.max(0, elevation - (hex.ceiling() - hex.getLevel() + 1));
         }
@@ -344,7 +343,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             elevation = Math.max(elevation, minElev);
         }
 
-        clientgui.getClient().deploy(cen, en.getMapLocation(), en.getFacing(),
+        clientgui.getClient().deploy(cen, en.getBoardLocation(), en.getFacing(),
                 elevation, en.getLoadedUnits(), assaultDropPreference);
         en.setDeployed(true);
 

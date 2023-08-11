@@ -28,6 +28,8 @@ import megamek.common.annotations.ServerUse;
 import megamek.common.enums.GamePhase;
 import megamek.common.event.*;
 import megamek.common.force.Forces;
+import megamek.common.net.enums.PacketCommand;
+import megamek.common.net.packets.Packet;
 import megamek.common.options.GameOptions;
 import megamek.common.options.OptionsConstants;
 import megamek.common.weapons.AttackHandler;
@@ -63,6 +65,7 @@ public class Game extends AbstractGame implements Serializable {
     private GameOptions options = new GameOptions();
 
     private final Map<MapType, Board> gameBoards = new HashMap<>();
+    private final Map<Integer, Board> gameBoards2 = new HashMap<>();
     private Board board = new Board();
 
     /** When true, the space map is a high atmosphere map */
@@ -71,6 +74,7 @@ public class Game extends AbstractGame implements Serializable {
     private MapSettings mapSettings = MapSettings.getInstance();
     private MapSettings lowAtmoMapSettings = MapSettings.newLowAtmoMap();
     private MapSettings spaceMapSettings = MapSettings.newSpaceMap();
+    private final List<MapSettings> allMapSettings = List.of(mapSettings, lowAtmoMapSettings, spaceMapSettings);
 
     /**
      * Track entities removed from the game (probably by death)
@@ -166,15 +170,6 @@ public class Game extends AbstractGame implements Serializable {
      */
     public Game() {
         // empty
-//        gameBoards.put(MapType.GROUND, new Board());
-//
-//        Board lowAtmoDefaultBoard = new Board();
-//        lowAtmoDefaultBoard.setMapType(MapType.LOW_ATMOSPHERE);
-//        gameBoards.put(MapType.LOW_ATMOSPHERE, lowAtmoDefaultBoard);
-//
-//        Board spaceDefaultBoard = new Board();
-//        spaceDefaultBoard.setMapType(MapType.SPACE);
-//        gameBoards.put(MapType.SPACE, spaceDefaultBoard);
     }
 
     // Added public accessors for external game id
@@ -197,27 +192,17 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public Board getBoard(MapType mapType) {
+        LogManager.getLogger().error("Dont call getboard(MapType)", new Exception());
+        new Exception().getStackTrace();
         return gameBoards.get(mapType);
     }
 
     public Board getBoard(Entity entity) {
-        return gameBoards.get(entity.getCurrentMap());
+        return gameBoards2.get(entity.getCurrentBoard());
     }
 
     public List<Board> getBoards() {
-        return new ArrayList<>(gameBoards.values());
-    }
-
-    @ClientUse
-    public void setGroundMap(Board board) {
-        Board oldBoard = this.board;
-        setGroundMapDirect(board);
-        processGameEvent(new GameBoardNewEvent(this, oldBoard, board, MapType.GROUND));
-    }
-
-    @ServerUse
-    public void setGroundMapDirect(final Board board) {
-        setMapDirect(board, MapType.GROUND);
+        return new ArrayList<>(gameBoards2.values());
     }
 
     public boolean containsMinefield(Coords coords) {
@@ -1160,7 +1145,7 @@ public class Game extends AbstractGame implements Serializable {
                 case Targetable.TYPE_BLDG_IGNITE:
                 case Targetable.TYPE_BLDG_TAG:
                     if (getBoard().getBuildingAt(BuildingTarget.idToLocation(nID)) != null) {
-                        return new BuildingTarget(BuildingTarget.idToLocation(nID).getCoords(), board, nType);
+                        return new BuildingTarget(BuildingTarget.idToLocation(nID), board, nType);
                     } else {
                         return null;
                     }
@@ -1415,6 +1400,7 @@ public class Game extends AbstractGame implements Serializable {
         victoryTeam = Player.TEAM_NONE;
         lastEntityId = 0;
         planetaryConditions = new PlanetaryConditions();
+        gameBoards2.clear();
     }
 
     private void removeArtyAutoHitHexes() {
@@ -1547,23 +1533,26 @@ public class Game extends AbstractGame implements Serializable {
         return Collections.unmodifiableList(vector);
     }
 
-    /** @return A List of units on the given map. */
+    /** @return A List of spaceborne units, including those on atmospheric hexes of a high-altitude map. */
     public List<Entity> getSpaceBorneEntities() {
         return getEntitiesVector().stream().filter(Entity::isSpaceborne).collect(toList());
     }
 
-    /** @return A List of units at the given MapLocation (coords and maptype). */
-    public List<Entity> getEntitiesAt(MapLocation mapLocation) {
-        return getEntitiesAt(mapLocation.getCoords(), mapLocation.getMapType());
+    /** @return A List of units at the given BoardLocation (coords and board id). */
+    public List<Entity> getEntitiesAt(BoardLocation boardLocation) {
+        return getEntitiesAt(boardLocation.getCoords(), boardLocation.getBoardId());
     }
 
     /** @return A List of units at the given coords on the ground map. */
+    @Deprecated
     public List<Entity> getEntitiesAt(Coords c) {
-        return getEntitiesAt(c, MapType.GROUND);
+        LogManager.getLogger().error("Dont call getEntitiesAt(c)", new Exception());
+        new Exception().getStackTrace();
+        return getEntitiesAt(c, 0);
     }
 
     /** @return A List of units at the given coords on the map corresponding to the given mapType. */
-    public List<Entity> getEntitiesAt(Coords c, MapType mapType) {
+    public List<Entity> getEntitiesAt(Coords c, int boardId) {
         // Make sure the look-up is initialized
         if (entityPosLookup.isEmpty() && !inGameTWEntities().isEmpty()) {
             resetEntityPositionLookup();
@@ -1577,7 +1566,7 @@ public class Game extends AbstractGame implements Serializable {
                 posEntities.remove(eId);
                 continue;
             }
-            if (entity.getCurrentMap() == mapType) {
+            if (entity.isOnBoard(boardId)) {
                 result.add(entity);
                 // Sanity check
                 if (!entity.getOccupiedCoords().contains(c)) {
@@ -1694,13 +1683,13 @@ public class Game extends AbstractGame implements Serializable {
     /**
      * Returns an <code>Iterator</code> of the enemy's active entities at the given coordinates.
      *
-     * @param mapLocation the <code>Coords</code> of the hex being examined.
+     * @param boardLocation the <code>Coords</code> of the hex being examined.
      * @param currentEntity the <code>Entity</code> whose enemies are needed.
      * @return an <code>Enumeration</code> of <code>Entity</code>s at the given coordinates who are
      * enemies of the given unit.
      */
-    public List<Entity> getEnemyEntitiesAt(MapLocation mapLocation, final Entity currentEntity) {
-        return getEntitiesAt(mapLocation).stream()
+    public List<Entity> getEnemyEntitiesAt(BoardLocation boardLocation, final Entity currentEntity) {
+        return getEntitiesAt(boardLocation).stream()
                 .filter(Entity::isTargetable)
                 .filter(entity -> entity.isEnemyOf(currentEntity))
                 .collect(toList());
@@ -3372,14 +3361,8 @@ public class Game extends AbstractGame implements Serializable {
         return smokeCloudList;
     }
 
-    public List<SmokeCloud> getSmokeCloudList(MapType mapType) {
-        return smokeCloudList.stream().filter(cloud -> cloud.isOnMap(mapType)).collect(toList());
-    }
-
-    public void removeSmokeClouds(List<SmokeCloud> cloudsToRemove) {
-        for (SmokeCloud cloud : cloudsToRemove) {
-            smokeCloudList.remove(cloud);
-        }
+    public List<SmokeCloud> getSmokeCloudList(int boardId) {
+        return smokeCloudList.stream().filter(cloud -> cloud.isOnBoard(boardId)).collect(toList());
     }
 
     public void removeEmptySmokeClouds() {
@@ -3595,7 +3578,7 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     private boolean usesMap(MapType mapType) {
-        return getPhase().isLounge() ? getMapSettings(mapType).isUsed() : gameBoards.containsKey(mapType);
+        return getPhase().isLounge() ? getMapSettings(mapType).isUsed() : gameBoards2.containsKey(mapType);
     }
 
     public boolean spaceMapUsesGravity() {
@@ -3606,56 +3589,16 @@ public class Game extends AbstractGame implements Serializable {
         this.spaceMapUsesGravity = spaceMapUsesGravity;
     }
 
-    public @Nullable Board getLowAtmoMap() {
-        return gameBoards.get(MapType.LOW_ATMOSPHERE);
-    }
-
-    @ClientUse
-    public void setLowAtmoMap(Board board) {
-        Board oldBoard = getLowAtmoMap();
-        setLowAtmoMapDirect(board);
-        processGameEvent(new GameBoardNewEvent(this, oldBoard, board, MapType.LOW_ATMOSPHERE));
-    }
-
-    @ServerUse
-    public void setLowAtmoMapDirect(final Board board) {
-        setMapDirect(board, MapType.LOW_ATMOSPHERE);
-    }
-
-    public @Nullable Board getSpaceMap() {
-        return gameBoards.get(MapType.SPACE);
-    }
-
-    @ClientUse
-    public void setSpaceMap(Board board) {
-        Board oldBoard = getSpaceMap();
-        setSpaceMapDirect(board);
-        processGameEvent(new GameBoardNewEvent(this, oldBoard, board, MapType.SPACE));
-    }
-
-    @ServerUse
-    public void setSpaceMapDirect(final Board board) {
-        setMapDirect(board, MapType.SPACE);
-    }
-
-    private void setMapDirect(Board board, MapType mapType) {
-        if (board == null) {
-            gameBoards.remove(mapType);
-        } else {
-            gameBoards.put(mapType, board);
-        }
-    }
-
     /**
      * Returns the hex for the given MapLocation, i.e. the hex at the coords and on the map of the given
      * type. Returns null when this game doesn't use such a board or when there is no hex at the given coords.
      *
-     * @param mapLocation The location (coords and maptype) to query
+     * @param boardLocation The location (coords and maptype) to query
      * @return The hex at the given map location
      */
-    public @Nullable Hex getHex(MapLocation mapLocation) {
-        if (gameBoards.containsKey(mapLocation.getMapType())) {
-            return getBoard(mapLocation.getMapType()).getHex(mapLocation.getCoords());
+    public @Nullable Hex getHex(BoardLocation boardLocation) {
+        if (hasBoardLocation(boardLocation)) {
+            return getBoard(boardLocation).getHex(boardLocation.getCoords());
         } else {
             return null;
         }
@@ -3665,41 +3608,80 @@ public class Game extends AbstractGame implements Serializable {
      * Returns the Building for the given MapLocation, i.e. the Building at the coords and on the map of the given
      * type. Returns null when this game doesn't use such a board or when there is no Building at the given coords.
      *
-     * @param mapLocation The location (coords and maptype) to query
+     * @param boardLocation The location (coords and maptype) to query
      * @return The Building at the given map location
      */
-    public @Nullable Building getBuildingAt(MapLocation mapLocation) {
-        if (gameBoards.containsKey(mapLocation.getMapType())) {
-            return getBoard(mapLocation.getMapType()).getBuildingAt(mapLocation.getCoords());
+    public @Nullable Building getBuildingAt(BoardLocation boardLocation) {
+        if (hasBoardLocation(boardLocation)) {
+            return getBoard(boardLocation).getBuildingAt(boardLocation.getCoords());
         } else {
             return null;
         }
     }
 
     /**
-     * Returns the Board for the given MapLocation, i.e. the map of the given type. Returns null when this game
+     * Returns the Board for the given BoardLocation, i.e. the map of the given type. Returns null when this game
      * doesn't use such a board.
      *
-     * @param mapLocation The location (coords and maptype) to query
+     * @param boardLocation The location (coords and maptype) to query
      * @return The Board of the given map type
      */
-    public @Nullable Board getBoard(MapLocation mapLocation) {
-        return getBoard(mapLocation.getMapType());
+    public @Nullable Board getBoard(BoardLocation boardLocation) {
+        return getBoard(boardLocation.getBoardId());
     }
 
-    public boolean hasMapLocation(MapLocation mapLocation) {
-        return usesBoard(mapLocation) && getBoard(mapLocation).contains(mapLocation.getCoords());
+    public boolean hasBoardLocation(BoardLocation boardLocation) {
+        return usesBoard(boardLocation) && getBoard(boardLocation).contains(boardLocation.getCoords());
     }
 
-    public boolean usesBoard(MapLocation mapLocation) {
-        return gameBoards.containsKey(mapLocation.getMapType());
+    public boolean usesBoard(BoardLocation boardLocation) {
+        return gameBoards2.containsKey(boardLocation.getBoardId());
     }
 
-    public void addSpecialHexDisplay(MapLocation mapLocation, SpecialHexDisplay shd) {
-        getBoard(mapLocation).addSpecialHexDisplay(mapLocation.getCoords(), shd);
+    public void addSpecialHexDisplay(BoardLocation boardLocation, SpecialHexDisplay shd) {
+        getBoard(boardLocation).addSpecialHexDisplay(boardLocation.getCoords(), shd);
     }
 
     public void addSpecialHexDisplay(Coords coords, MapType mapType, SpecialHexDisplay shd) {
         getBoard(mapType).addSpecialHexDisplay(coords, shd);
+    }
+
+    public void addSpecialHexDisplay(Coords coords, int boardId, SpecialHexDisplay shd) {
+        addSpecialHexDisplay(new BoardLocation(coords, boardId), shd);
+    }
+
+    @ClientUse
+    public void receiveBoard(int boardId, Board board) {
+        Board oldBoard = getBoard(boardId);
+        gameBoards2.put(boardId, board);
+        processGameEvent(new GameBoardNewEvent(this, oldBoard, board, boardId));
+    }
+
+    public Board getBoard(int boardId) {
+        return gameBoards2.get(boardId);
+    }
+
+    @ServerUse
+    public int addBoard(Board board) {
+        int boardId = nextFreeBoardId();
+        gameBoards2.put(boardId, board);
+        return boardId;
+    }
+
+    private int nextFreeBoardId() {
+        return gameBoards2.keySet().stream().max(Integer::compareTo).orElse(-1) + 1;
+    }
+
+    @ServerUse
+    public Packet createBoardsPacket() {
+        return new Packet(PacketCommand.SENDING_BOARDS, gameBoards2);
+    }
+
+    public Set<Integer> getBoardIds() {
+        return gameBoards2.keySet();
+    }
+
+    public List<MapSettings> getAllMapSettings() {
+        return allMapSettings;
     }
 }

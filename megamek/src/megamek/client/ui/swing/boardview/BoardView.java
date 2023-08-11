@@ -414,21 +414,17 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
     /** Supplies the board to display (ground, low atmo or space map). Is set during construction of this BoardView. */
     private final Supplier<Board> boardSupplier;
-
-    public BoardView(final Game game, final MegaMekController controller, ClientGUI clientgui)
-            throws java.io.IOException {
-        this(game, controller, clientgui, game::getBoard);
-    }
+    private final int boardId;
 
     /**
      * Construct a new board view for the specified game
      */
-    public BoardView(final Game game, final MegaMekController controller, ClientGUI clientgui,
-                     Supplier<Board> boardSupplier)
+    public BoardView(final Game game, final MegaMekController controller, ClientGUI clientgui, int boardId)
             throws java.io.IOException {
         this.game = game;
         this.clientgui = clientgui;
-        this.boardSupplier = boardSupplier;
+        this.boardSupplier = () -> game.getBoard(boardId);
+        this.boardId = boardId;
 
         if (GUIP == null) {
             GUIP = GUIPreferences.getInstance();
@@ -1256,9 +1252,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
     }
 
     /** @return True when the given MapLocation is of the same MapType as the board of this BoardView. */
-    public boolean isOnThisBoard(MapLocation mapLocation) {
-        return (boardSupplier.get() != null) && (mapLocation != null)
-                && boardSupplier.get().getMapType() == mapLocation.getMapType();
+    public boolean isOnThisBoard(BoardLocation boardLocation) {
+        return (boardSupplier.get() != null) && (boardLocation != null) && boardLocation.isOnBoard(boardId);
     }
 
     /**
@@ -1290,7 +1285,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
     private void renderMovementBoundingBox(Graphics2D g) {
         if (selectedEntity != null) {
             Princess princess = new Princess("test", MMConstants.LOCALHOST, 2020);
-            princess.getGame().setGroundMap(this.boardSupplier.get());
+            princess.getGame().receiveBoard(0, this.boardSupplier.get());
             PathEnumerator pathEnum = new PathEnumerator(princess, this.game);
             pathEnum.recalculateMovesFor(this.selectedEntity);
 
@@ -2032,10 +2027,10 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
         // Draw pre-designated auto-hit hexes
         if (localPlayer != null) { // Could be null, like in map-editor
-            for (MapLocation mapLocation : localPlayer.getArtyAutoHitHexes()) {
-                Coords c = mapLocation.getCoords();
+            for (BoardLocation boardLocation : localPlayer.getArtyAutoHitHexes()) {
+                Coords c = boardLocation.getCoords();
                 // Is the Coord within the viewing area?
-                if (isOnThisBoard(mapLocation) && (c.getX() >= drawX) && (c.getX() <= (drawX + drawWidth))
+                if (isOnThisBoard(boardLocation) && (c.getX() >= drawX) && (c.getX() <= (drawX + drawWidth))
                     && (c.getY() >= drawY) && (c.getY() <= (drawY + drawHeight))) {
                     Point p = getHexLocation(c);
                     artyIconImage = tileManager.getArtilleryTarget(TilesetManager.ARTILLERY_AUTOHIT);
@@ -4367,7 +4362,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 ai.attackerIsMech = mechInFirst;
                 ai.attackAbsHeight = boardSupplier.get().getHex(c1).floor() + ai.attackHeight;
                 ai.targetAbsHeight = boardSupplier.get().getHex(c2).floor() + ai.targetHeight;
-                ai.mapType = boardSupplier.get().getMapType();
+                ai.targetLocation = new BoardLocation(c2, boardId);
                 le = LosEffects.calculateLos(game, ai);
                 message.append(Messages.getString("BoardView1.Attacker",
                         mechInFirst ? Messages.getString("BoardView1.Mech")
@@ -4745,7 +4740,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             moveCursor(selectedSprite, coords);
             moveCursor(firstLOSSprite, null);
             moveCursor(secondLOSSprite, null);
-            processBoardViewEvent(new BoardViewEvent(this, getMapLocation(coords), BoardViewEvent.BOARD_HEX_SELECTED));
+            processBoardViewEvent(new BoardViewEvent(this, getBoardLocation(coords), BoardViewEvent.BOARD_HEX_SELECTED));
         }
     }
 
@@ -4771,7 +4766,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             moveCursor(highlightSprite, coords);
             moveCursor(firstLOSSprite, null);
             moveCursor(secondLOSSprite, null);
-            processBoardViewEvent(new BoardViewEvent(this, getMapLocation(coords),
+            processBoardViewEvent(new BoardViewEvent(this, getBoardLocation(coords),
                     BoardViewEvent.BOARD_HEX_HIGHLIGHTED));
         }
     }
@@ -4814,7 +4809,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 moveCursor(cursorSprite, coords);
                 moveCursor(firstLOSSprite, null);
                 moveCursor(secondLOSSprite, null);
-                processBoardViewEvent(new BoardViewEvent(this, getMapLocation(coords),
+                processBoardViewEvent(new BoardViewEvent(this, getBoardLocation(coords),
                         BoardViewEvent.BOARD_HEX_CURSOR));
             } else {
                 setLastCursor(coords);
@@ -4837,11 +4832,11 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             if (getFirstLOS() == null) {
                 setFirstLOS(c);
                 firstLOSHex(c);
-                processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
+                processBoardViewEvent(new BoardViewEvent(this, getBoardLocation(c),
                         BoardViewEvent.BOARD_FIRST_LOS_HEX));
             } else {
                 secondLOSHex(c, getFirstLOS());
-                processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
+                processBoardViewEvent(new BoardViewEvent(this, getBoardLocation(c),
                         BoardViewEvent.BOARD_SECOND_LOS_HEX));
                 setFirstLOS(null);
             }
@@ -4860,20 +4855,20 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                     if ((modifiers & java.awt.event.InputEvent.CTRL_DOWN_MASK) != 0) {
                         checkLOS(c);
                     } else {
-                        processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
+                        processBoardViewEvent(new BoardViewEvent(this, getBoardLocation(c),
                                 BoardViewEvent.BOARD_HEX_CLICKED, modifiers, mouseButton));
                     }
                     break;
                 case BOARD_HEX_DOUBLECLICK:
-                    processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
+                    processBoardViewEvent(new BoardViewEvent(this, getBoardLocation(c),
                             BoardViewEvent.BOARD_HEX_DOUBLECLICKED, modifiers, mouseButton));
                     break;
                 case BOARD_HEX_DRAG:
-                    processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
+                    processBoardViewEvent(new BoardViewEvent(this, getBoardLocation(c),
                             BoardViewEvent.BOARD_HEX_DRAGGED, modifiers, mouseButton));
                     break;
                 case BOARD_HEX_POPUP:
-                    processBoardViewEvent(new BoardViewEvent(this, getMapLocation(c),
+                    processBoardViewEvent(new BoardViewEvent(this, getBoardLocation(c),
                             BoardViewEvent.BOARD_HEX_POPUP, modifiers, mouseButton));
                     break;
             }
@@ -5953,8 +5948,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         }
     }
 
-    public void showPopup(Object popup, MapLocation mapLocation) {
-        Point p = getHexLocation(mapLocation.getCoords());
+    public void showPopup(Object popup, BoardLocation boardLocation) {
+        Point p = getHexLocation(boardLocation.getCoords());
         p.x += ((int) (HEX_WC * scale) - scrollpane.getX()) + HEX_W;
         p.y += ((int) ((HEX_H * scale) / 2) - scrollpane.getY()) + HEX_H;
         if (((JPopupMenu) popup).getParent() == null) {
@@ -6719,7 +6714,11 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         return "BoardView for " + (getBoard() != null ? getBoard() : "");
     }
 
-    public MapLocation getMapLocation(Coords c) {
-        return new MapLocation(c, getBoard().getMapType());
+    public BoardLocation getBoardLocation(Coords c) {
+        return new BoardLocation(c, boardId);
+    }
+
+    public int getBoardId() {
+        return boardId;
     }
 }

@@ -229,7 +229,7 @@ public class SupportTank extends Tank {
                 return (hex.terrainLevel(Terrains.WATER) <= 0);
             case WIGE:
                 return (hex.containsTerrain(Terrains.WOODS) || (hex.containsTerrain(Terrains.BUILDING)))
-                        && !(currElevation > hex.maxTerrainFeatureElevation(currentMap.isLowAtmo()));
+                        && !(currElevation > hex.maxTerrainFeatureElevation(getCurrentMap().isLowAtmo()));
             default:
                 return false;
         }

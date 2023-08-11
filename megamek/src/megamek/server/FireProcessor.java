@@ -36,10 +36,10 @@ public class FireProcessor extends DynamicTerrainProcessor {
     void doEndPhaseChanges(Vector<Report> vPhaseReport) {
         game = gameManager.getGame();
         this.vPhaseReport = vPhaseReport;
-        for (Board board: game.getBoards()) {
-            removeSmokeTerrainFromHexes(board);
-            resolveFire(board);
-            reapplySmokeTerrain(board);
+        for (int boardId : game.getBoardIds()) {
+            removeSmokeTerrainFromHexes(boardId);
+            resolveFire(boardId);
+            reapplySmokeTerrain(boardId);
         }
         this.vPhaseReport = null;
     }
@@ -50,7 +50,8 @@ public class FireProcessor extends DynamicTerrainProcessor {
      * longer determined by level but is rather a characteristic of the hex.
      * Level now denotes standard and inferno fires.
      */
-    private void resolveFire(Board board) {
+    private void resolveFire(int boardId) {
+        Board board = game.getBoard(boardId);
         int width = board.getWidth();
         int height = board.getHeight();
         int windDirection = game.getPlanetaryConditions().getWindDirection();
@@ -61,7 +62,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
 
         // process smoke FIRST, before any fires spread or
         // smoke is produced.
-        resolveSmoke(board);
+        resolveSmoke(boardId);
 
         // Cycle through all buildings, checking for fire.
         // ASSUMPTION: buildings don't lose 2 CF on the turn a fire starts.
@@ -161,7 +162,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
                         smokeList.add(currentCoords.translated((windDirection + 1) % 6));
                         smokeList.add(currentCoords.translated((windDirection + 5) % 6));
 
-                        addSmoke(board, smokeList, windDirection, bInferno);
+                        addSmoke(board, boardId, smokeList, windDirection, bInferno);
                         board.initializeAround(currentXCoord, currentYCoord);
                     }
 
@@ -262,7 +263,8 @@ public class FireProcessor extends DynamicTerrainProcessor {
     }
 
     /** Processes smoke drift and dissipation. */
-    private void resolveSmoke(Board board) {
+    private void resolveSmoke(int boardId) {
+        Board board = game.getBoard(boardId);
         final int windDir = game.getPlanetaryConditions().getWindDirection();
         int windStr = game.getPlanetaryConditions().getWindStrength();
 
@@ -275,7 +277,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
         HashMap<SmokeCloud, ArrayList<Coords>> allReplacementHexes = new HashMap<>();
 
         // Process smoke drifting
-        for (SmokeCloud cloud : preExistingSmokeClouds(board.getMapType())) {
+        for (SmokeCloud cloud : preExistingSmokeClouds(boardId)) {
             gameManager.getHexUpdateSet().addAll(cloud.getCoordsList());
 
             final ArrayList<Coords> replacementHexes = new ArrayList<>();
@@ -304,7 +306,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
         game.removeEmptySmokeClouds();
 
         // Process smoke dissipation
-        for (SmokeCloud cloud : preExistingSmokeClouds(board.getMapType())) {
+        for (SmokeCloud cloud : preExistingSmokeClouds(boardId)) {
             boolean dissipated = checkSmokeDissipation(cloud, windStr);
             if (dissipated || cloud.didDrift()) {
                 driftSmokeReport(cloud, dissipated);
@@ -319,8 +321,9 @@ public class FireProcessor extends DynamicTerrainProcessor {
     }
 
     /** (Re-)Applies smoke (Terrains.SMOKE) to all hexes of all smoke clouds and marks the hexes for client update. */
-    private void reapplySmokeTerrain(Board board) {
-        for (SmokeCloud cloud : game.getSmokeCloudList(board.getMapType())) {
+    private void reapplySmokeTerrain(int boardId) {
+        Board board = game.getBoard(boardId);
+        for (SmokeCloud cloud : game.getSmokeCloudList(boardId)) {
             for (Coords coords : cloud.getCoordsList()) {
                 Hex smokeHex = board.getHex(coords);
                 if (smokeHex != null) {
@@ -339,17 +342,17 @@ public class FireProcessor extends DynamicTerrainProcessor {
     }
 
     /** @return A list of the game's smoke clouds that have existed before the start of this round. */
-    private List<SmokeCloud> preExistingSmokeClouds(MapType mapType) {
+    private List<SmokeCloud> preExistingSmokeClouds(int boardId) {
         final int currentRound = game.getRoundCount();
-        return game.getSmokeCloudList(mapType).stream()
+        return game.getSmokeCloudList(boardId).stream()
                 .filter(cloud -> currentRound != cloud.getRoundOfGeneration())
                 .collect(toList());
     }
 
     /** Removes smoke (Terrains.SMOKE) from all hexes of all smoke clouds. */
-    private void removeSmokeTerrainFromHexes(Board board) {
-        for (SmokeCloud cloud : game.getSmokeCloudList(board.getMapType())) {
-            board.getHexes(cloud.getCoordsList()).forEach(h -> h.removeTerrain(Terrains.SMOKE));
+    private void removeSmokeTerrainFromHexes(int boardId) {
+        for (SmokeCloud cloud : game.getSmokeCloudList(boardId)) {
+            game.getBoard(boardId).getHexes(cloud.getCoordsList()).forEach(h -> h.removeTerrain(Terrains.SMOKE));
         }
     }
 
@@ -507,7 +510,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
      *
      * @param coords The <code>Coords</code> x-coordinate of the hex
      */
-    public void addSmoke(Board board, List<Coords> coords, int windDir, boolean bInferno) {
+    public void addSmoke(Board board, int boardId, List<Coords> coords, int windDir, boolean bInferno) {
         // if a tornado, then no smoke!
         if (game.getPlanetaryConditions().getWindStrength() > PlanetaryConditions.WI_STORM) {
             return;
@@ -556,6 +559,6 @@ public class FireProcessor extends DynamicTerrainProcessor {
                 }
             }
         }
-        gameManager.createSmoke(coords, smokeLevel, 0, board.getMapType());
+        gameManager.createSmoke(coords, boardId, smokeLevel, 0);
     }
 }

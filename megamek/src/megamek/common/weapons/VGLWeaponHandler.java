@@ -20,7 +20,6 @@ import megamek.common.*;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.enums.GamePhase;
 import megamek.server.GameManager;
-import megamek.server.Server;
 
 /**
  * Weapon handler for vehicular grenade launchers.  Rather than have a separate
@@ -86,13 +85,13 @@ public class VGLWeaponHandler extends AmmoWeaponHandler {
         for (Coords c : affectedCoords) {
             Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(c);
             if (atype.getMunitionType() == AmmoType.M_SMOKE) {
-                gameManager.deliverSmokeGrenade(new MapLocation(c, ae.getCurrentMap()), vPhaseReport);
+                gameManager.deliverSmokeGrenade(new BoardLocation(c, ae.getCurrentBoard()), vPhaseReport);
             } else if (atype.getMunitionType() == AmmoType.M_CHAFF) {
-                gameManager.deliverChaffGrenade(new MapLocation(c, ae.getCurrentMap()), vPhaseReport);
+                gameManager.deliverChaffGrenade(new BoardLocation(c, ae.getCurrentBoard()), vPhaseReport);
             } else if (atype.getMunitionType() == AmmoType.M_INCENDIARY) {
                 Vector<Report> dmgReports;
                 // Delivery an inferno to the hex
-                Targetable grenadeTarget = new HexTarget(c, ae.getCurrentMap(), Targetable.TYPE_HEX_IGNITE);
+                Targetable grenadeTarget = new HexTarget(c, ae.getCurrentBoard(), Targetable.TYPE_HEX_IGNITE);
                 dmgReports = gameManager
                         .deliverInfernoMissiles(ae, grenadeTarget, 1);
                 r = new Report(3372);
@@ -106,7 +105,7 @@ public class VGLWeaponHandler extends AmmoWeaponHandler {
                 vPhaseReport.addAll(dmgReports);
                 // If there's a building, delivery an inferno to it
                 if (bldg != null) {
-                    grenadeTarget = new BuildingTarget(c, game.getBoard(ae.getCurrentMap()),
+                    grenadeTarget = new BuildingTarget(c, ae.getCurrentBoard(), game.getBoard(ae.getCurrentMap()),
                             Targetable.TYPE_BLDG_IGNITE);
                     dmgReports = gameManager.deliverInfernoMissiles(ae,
                             grenadeTarget, 1);

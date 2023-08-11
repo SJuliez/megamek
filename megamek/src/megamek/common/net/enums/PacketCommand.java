@@ -70,7 +70,7 @@ public enum PacketCommand {
     PHASE_CHANGE,
     TURN,
     ROUND_UPDATE,
-    SENDING_BOARD,
+    SENDING_BOARDS,
     SENDING_ILLUM_HEXES,
     CLEAR_ILLUM_HEXES,
     SENDING_ENTITIES,
@@ -123,11 +123,6 @@ public enum PacketCommand {
     GAME_VICTORY_EVENT;
     //endregion Enum Declarations
 
-    //region Boolean Comparison Methods
-    public boolean isSendingBoard() {
-        return this == SENDING_BOARD;
-    }
-
     public boolean isSendingReportsTacticalGenius() {
         return this == SENDING_REPORTS_TACTICAL_GENIUS;
     }
@@ -156,13 +151,8 @@ public enum PacketCommand {
         return this == CFR_TAG_TARGET;
     }
 
-    public boolean isGameVictoryEvent() {
-        return this == GAME_VICTORY_EVENT;
-    }
-
     public boolean isCFR() {
         return isCFRDominoEffect() || isCFRAMSAssign() || isCFRAPDSAssign() || isCFRHiddenPBS()
                 || isCFRTeleguidedTarget() || isCFRTagTarget();
     }
-    //endregion Boolean Comparison Methods
 }

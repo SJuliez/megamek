@@ -2028,7 +2028,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                                     cmd.getHexesMoved());
                         } else if ((target.getTargetType() == Targetable.TYPE_FUEL_TANK)
                                    || (target.getTargetType() == Targetable.TYPE_BUILDING)) {
-                            Building bldg = clientgui.getClient().getGame().getBuildingAt(target.getMapLocation());
+                            Building bldg = clientgui.getClient().getGame().getBuildingAt(target.getBoardLocation());
                             toAttacker = ChargeAttackAction.getDamageTakenBy(ce, bldg, moveto);
                         }
                     }
@@ -2706,7 +2706,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             return;
         }
 
-        Hex currHex = clientgui.getClient().getGame().getHex(ce.getMapLocation());
+        Hex currHex = clientgui.getClient().getGame().getHex(ce.getBoardLocation());
         if (currHex.containsTerrain(Terrains.WATER) && (ce.getElevation() < 0)) {
             setModeConvertEnabled(false);
             return;
@@ -4139,7 +4139,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         // Is there a building in the hex?
         Building bldg = clientgui.getClient().getGame().getBoard(ce).getBuildingAt(pos);
         if (bldg != null) {
-            targets.add(new BuildingTarget(pos, clientgui.getClient().getGame().getBoard(ce), false));
+            targets.add(new BuildingTarget(pos, ce.getCurrentBoard(), clientgui.getClient().getGame().getBoard(ce), false));
         }
 
         // Do we have a single choice?

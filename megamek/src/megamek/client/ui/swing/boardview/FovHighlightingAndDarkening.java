@@ -330,7 +330,7 @@ class FovHighlightingAndDarkening {
         LosEffects.AttackInfo ai = new LosEffects.AttackInfo();
         ai.attackPos = src;
         ai.targetPos = dest;
-        ai.mapType = board.getMapType();
+        ai.targetLocation = new BoardLocation(dest, boardView1.getBoardId());
         // First, we check for a selected unit and use its height. If
         // there's no selected unit we use the mechInFirst GUIPref.
         if (boardView1.selectedEntity != null) {

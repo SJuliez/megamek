@@ -116,7 +116,7 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
                         + ", fired by "
                         + game.getPlayer(aaa.getPlayerId()).getName();
                 game.addSpecialHexDisplay(
-                        aaa.getTarget(game).getMapLocation(),
+                        aaa.getTarget(game).getBoardLocation(),
                         new SpecialHexDisplay(
                                 SpecialHexDisplay.Type.ARTILLERY_INCOMING, game
                                         .getRoundCount() + aaa.getTurnsTilHit(),
@@ -305,7 +305,7 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
             artyMsg = "Artillery hit here on round " + game.getRoundCount() 
                     + ", fired by " + game.getPlayer(aaa.getPlayerId()).getName()
                     + " (this hex is now an auto-hit)";
-            game.addSpecialHexDisplay(targetPos, target.getMapLocation().getMapType(),
+            game.addSpecialHexDisplay(targetPos, target.getBoardLocation().getBoardId(),
                     new SpecialHexDisplay(SpecialHexDisplay.Type.ARTILLERY_HIT,
                             game.getRoundCount(), game.getPlayer(aaa.getPlayerId()), artyMsg));
         } else {
@@ -324,7 +324,7 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
             artyMsg = "Artillery missed here on round "
                     + game.getRoundCount() + ", fired by "
                     + game.getPlayer(aaa.getPlayerId()).getName();
-            game.addSpecialHexDisplay(origPos, target.getMapLocation().getMapType(),
+            game.addSpecialHexDisplay(origPos, target.getBoardLocation().getBoardId(),
                     new SpecialHexDisplay(SpecialHexDisplay.Type.ARTILLERY_HIT, game.getRoundCount(),
                             game.getPlayer(aaa.getPlayerId()), artyMsg));
             while (nweaponsHit > 0) {
@@ -443,11 +443,11 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
         if (atype.getMunitionType() == AmmoType.M_SMOKE) {
             if (!bMissed) {
                 // If we hit, only one effect will stack in the target hex
-                gameManager.deliverArtillerySmoke(new MapLocation(targetPos, ae.getCurrentMap()), vPhaseReport);
+                gameManager.deliverArtillerySmoke(new BoardLocation(targetPos, ae.getCurrentBoard()), vPhaseReport);
             } else {
                 // Deliver a round to each target hex
                 for (Coords c : targets) {
-                    gameManager.deliverArtillerySmoke(new MapLocation(c, ae.getCurrentMap()), vPhaseReport);
+                    gameManager.deliverArtillerySmoke(new BoardLocation(c, ae.getCurrentBoard()), vPhaseReport);
                 }
             }
             return false;
@@ -455,11 +455,11 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
         if (atype.getMunitionType() == AmmoType.M_LASER_INHIB) {
             if (!bMissed) {
                 //If we hit, only one effect will stack in the target hex
-                gameManager.deliverLIsmoke(new MapLocation(targetPos, ae.getCurrentMap()), vPhaseReport);
+                gameManager.deliverLIsmoke(new BoardLocation(targetPos, ae.getCurrentBoard()), vPhaseReport);
             } else {
                 //Deliver a round to each target hex
                 for (Coords c : targets) {
-                    gameManager.deliverLIsmoke(new MapLocation(c, ae.getCurrentMap()), vPhaseReport);
+                    gameManager.deliverLIsmoke(new BoardLocation(c, ae.getCurrentBoard()), vPhaseReport);
                 }
             }
             return false;

@@ -24,7 +24,7 @@ public class TestOffBoardEntity {
     public static void main(String... args) {
         // Give the game a blank map.
         Game game = new Game();
-        game.setGroundMapDirect(new Board(16, 17));
+        game.receiveBoard(0, new Board(16, 17));
 
         // Now create an entity in the game.
         Entity entity = new BipedMech();

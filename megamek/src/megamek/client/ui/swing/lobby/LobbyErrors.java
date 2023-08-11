@@ -35,10 +35,12 @@ public final class LobbyErrors {
     private static final String TEN_UNITS = "Please select fewer than 10 units.";
     private static final String HEAT_TRACKING = "Cannot apply a heat setting to units that do not track heat.";
     private static final String ONLY_MEKS = "This setting can only be applied to Meks.";
-    private static final String NOT_THIS_MAPTYPE = "Ât least one of the selected units cannot survive on that map type.";
+    private static final String NOT_THIS_MAPTYPE = "At least one of the selected units cannot survive on that map type; " +
+            "deployment was not changed for those.";
     private static final String NO_MAP = "At least one of ground, atmosphere and space map must be used.";
     private static final String ONLY_C3M = "Only units with a C3M can be set to be Company Masters.";
-    private static final String SAME_C3 = "The C3 systems of the selected units don't match. Select only the same type of C3 units.";
+    private static final String SAME_C3 = "The C3 systems of the selected units don't match. Select only the same type " +
+            "of C3 units.";
     private static final String EXCEED_C3_CAPACITY = "Connecting the selected units exceed this C3 system's capacity.";
     private static final String LOAD_ONLY_ALLIED = "Can only load units that are allied with each other.";
     private static final String ONLY_FIGHTERS = "Only aerospace and conventional fighters can join squadrons.";
@@ -46,9 +48,11 @@ public final class LobbyErrors {
     private static final String ONLY_OWN_BOT = "Can only remove bots that were added in this lobby.";
     private static final String NO_DUAL_LOAD = "It is not possible to re-load two units to a new transport where one " +
             "unit currently carries the other. Please unload the units first.";
-    private static final String ONLY_TEAM = "Combinations like loading, C3 connections and shared forces are only valid within a team.";
+    private static final String ONLY_TEAM = "Combinations like loading, C3 connections and shared forces are only " +
+            "valid within a team.";
     private static final String ENTITY_OR_FORCE = "Please select either only forces or only units.";
-    private static final String FORCE_ASSIGN_ONLYTEAM = "Can only reassign a force to a teammate when reassigning without units.";
+    private static final String FORCE_ASSIGN_ONLYTEAM = "Can only reassign a force to a teammate when reassigning " +
+            "without units.";
     private static final String FORCE_ATTACH_TOSUB = "Cannot attach a force to its own subforce.";
     private static final String SBF_CONVERSIONERROR = "At least some of the forces you selected cannot be " +
             "converted to SBF Formations. Please select only the topmost forces to be converted, no subforces. " +

@@ -23,7 +23,6 @@ import org.apache.logging.log4j.LogManager;
 
 import java.io.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -119,7 +118,7 @@ public class Board implements Serializable {
      */
     private Hashtable<Coords, InfernoTracker> infernos = new Hashtable<>();
 
-    private Hashtable<MapLocation, Collection<SpecialHexDisplay>> specialHexes = new Hashtable<>();
+    private Hashtable<Coords, Collection<SpecialHexDisplay>> specialHexes = new Hashtable<>();
 
     /**
      * Option to turn have roads auto-exiting to pavement.
@@ -138,6 +137,22 @@ public class Board implements Serializable {
 
     /** Tags associated with this board to facilitate searching for it. */
     private Set<String> tags = new HashSet<>();
+
+    /**
+     * At each Coords, one other, lower type board can be located, e.g. a ground board can be embedded in a
+     * low atmosphere map hex or a low atmosphere board can be embedded in a ground row hex of a high
+     * atmosphere map. The map gives the board ID for each affected Coords. This and
+     * {@link #enclosingBoard} should correspond to each other across the boards of a game.
+     */
+    private final Map<Coords, Integer> embeddedBoards = new HashMap<>();
+
+    /**
+     * This board may be embedded in (= enclosed by) a higher type board, e.g. if this is a ground map,
+     * it may be embedded in one or more hexes of a low atmosphere map. This and
+     * {@link #embeddedBoards} should correspond to each other across the boards of a game.
+     */
+    private int enclosingBoard = -1;
+
     //endregion Variable Declarations
 
     //region Constructors
@@ -1303,11 +1318,11 @@ public class Board implements Serializable {
      * Returns null when there is no Building at the given coords. Note that the maptype of the
      * given MapLocation is ignored even when it does not correspond to the map type of this board!
      *
-     * @param mapLocation The location (coords and maptype) to query
+     * @param boardLocation The location (coords and maptype) to query
      * @return The Building at the given map location
      */
-    public @Nullable Building getBuildingAt(MapLocation mapLocation) {
-        return getBuildingAt(mapLocation.getCoords());
+    public @Nullable Building getBuildingAt(BoardLocation boardLocation) {
+        return getBuildingAt(boardLocation.getCoords());
     }
 
     /**
@@ -1619,13 +1634,12 @@ public class Board implements Serializable {
     }
 
     public void addSpecialHexDisplay(Coords coords, SpecialHexDisplay shd) {
-        MapLocation mapLocation = new MapLocation(coords, mapType2);
         Collection<SpecialHexDisplay> col;
-        if (!specialHexes.containsKey(mapLocation)) {
+        if (!specialHexes.containsKey(coords)) {
             col = new LinkedList<>();
-            specialHexes.put(mapLocation, col);
+            specialHexes.put(coords, col);
         } else {
-            col = specialHexes.get(mapLocation);
+            col = specialHexes.get(coords);
             // It's possible we are updating a SHD that is already entered.
             // If that is the case, we want to remove the original entry.
             col.remove(shd);
@@ -1641,11 +1655,11 @@ public class Board implements Serializable {
         }
     }
 
-    public Hashtable<MapLocation, Collection<SpecialHexDisplay>> getSpecialHexDisplayTable() {
+    public Hashtable<Coords, Collection<SpecialHexDisplay>> getSpecialHexDisplayTable() {
         return specialHexes;
     }
 
-    public void setSpecialHexDisplayTable(Hashtable<MapLocation, Collection<SpecialHexDisplay>> shd) {
+    public void setSpecialHexDisplayTable(Hashtable<Coords, Collection<SpecialHexDisplay>> shd) {
         specialHexes = shd;
     }
 

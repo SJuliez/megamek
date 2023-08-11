@@ -91,7 +91,7 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
     protected Map<ArtyAutoHitCommand,MegamekButton> buttons;
 
     private Player p;
-    private PlayerIDandList<MapLocation> artyAutoHitHexes = new PlayerIDandList<>();
+    private final PlayerIDandList<BoardLocation> artyAutoHitHexes = new PlayerIDandList<>();
 
     private int startingHexes;
 
@@ -205,22 +205,22 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
         butDone.setEnabled(false);
     }
 
-    private void addArtyAutoHitHex(MapLocation mapLocation) {
-        if (!clientgui.getClient().getGame().hasMapLocation(mapLocation)) {
+    private void addArtyAutoHitHex(BoardLocation boardLocation) {
+        if (!clientgui.getClient().getGame().hasBoardLocation(boardLocation)) {
             return;
         }
-        Coords coords = mapLocation.getCoords();
-        if (!artyAutoHitHexes.contains(mapLocation)
+        Coords coords = boardLocation.getCoords();
+        if (!artyAutoHitHexes.contains(boardLocation)
                 && (artyAutoHitHexes.size() < startingHexes)
                 && clientgui.doYesNoDialog(
                         Messages.getString("SelectArtyAutoHitHexDisplay.setArtilleryTargetDialog.title"),
                         Messages.getString("SelectArtyAutoHitHexDisplay.setArtilleryTargetDialog.message",
                                 coords.getBoardNum()))) {
-            artyAutoHitHexes.addElement(mapLocation);
+            artyAutoHitHexes.addElement(boardLocation);
             setArtyEnabled(startingHexes - artyAutoHitHexes.size());
-            p.addArtyAutoHitHex(mapLocation);
+            p.addArtyAutoHitHex(boardLocation);
             clientgui.getClient().getGame().addSpecialHexDisplay(
-                            mapLocation,
+                    boardLocation,
                             new SpecialHexDisplay(
                                     SpecialHexDisplay.Type.ARTILLERY_AUTOHIT,
                                     SpecialHexDisplay.NO_ROUND, p,
@@ -257,7 +257,7 @@ public class SelectArtyAutoHitHexDisplay extends StatusBarPhaseDisplay {
 
         // check for a deployment
         ((BoardView) b.getSource()).select(b.getCoords());
-        addArtyAutoHitHex(b.getMapLocation());
+        addArtyAutoHitHex(b.getBoardLocation());
     }
 
     //

@@ -126,7 +126,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
     private final JDialog dialog;
     private Client client;
     private final ClientGUI clientGui;
-    private final MapType mapType;
+    private final int boardId;
 
     private int margin = MARGIN;
     private int topMargin;
@@ -167,10 +167,10 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
      * @param bv Optional: A boardview showing the map
      * @param game A game containing at least the board, but not necessarily anything else
      * @param cg Optional: A ClientGUI object housing this minimap
-     * @param mapType The MapType of this minimap; determines which of the game's boards is displayed
+     * @param boardId The ID of the board of this minimap; determines which of the game's boards is displayed
      */
     public static JDialog createMinimap(JFrame parent, @Nullable BoardView bv, Game game, @Nullable ClientGUI cg,
-                                        MapType mapType) {
+                                        int boardId) {
         var result = new JDialog(parent, Messages.getString("ClientGUI.Minimap"), false);
 
         result.setLocation(GUIP.getMinimapPosX(), GUIP.getMinimapPosY());
@@ -182,7 +182,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
             }
         });
 
-        result.add(new Minimap(result, game, bv, cg, mapType));
+        result.add(new Minimap(result, game, bv, cg, boardId));
         result.pack();
         return result;
     }
@@ -196,7 +196,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
     /** Returns a minimap image of the given board at the given zoom index. */
     public static BufferedImage getMinimapImage(Board board, int zoom) {
         Game game = new Game();
-        game.setGroundMapDirect(board);
+        game.receiveBoard(0, board);
         return getMinimapImage(game, null, zoom);
     }
     
@@ -210,9 +210,8 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
             if ((zoom < MIM_ZOOM) || (zoom > MAX_ZOOM)) {
                 throw new Exception("The given zoom index is out of bounds.");
             }
-            Minimap tempMM = new Minimap(null, game, bv, null, MapType.GROUND);
+            Minimap tempMM = new Minimap(null, game, bv, null, 0);
             tempMM.zoom = zoom;
-            tempMM.board = game.getBoard(MapType.GROUND);
             tempMM.initializeMap();
             tempMM.drawMap(true);
             return ImageUtil.createAcceleratedImage(tempMM.mapImage);
@@ -229,10 +228,10 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
      * as a listener to changes. When the dialog is null, it is assumed that the minimap is only
      * used to create a snapshot image. When a boardview is given, the visible area is shown.
      */
-    private Minimap(@Nullable JDialog dlg, Game g, @Nullable BoardView bview, @Nullable ClientGUI cg, MapType mapType) {
+    private Minimap(@Nullable JDialog dlg, Game g, @Nullable BoardView bview, @Nullable ClientGUI cg, int boardId) {
         game = Objects.requireNonNull(g);
-        this.mapType = mapType;
-        board = Objects.requireNonNull(game.getBoard(mapType), "The game does not have a map of type " + mapType);
+        this.boardId = boardId;
+        board = Objects.requireNonNull(game.getBoard(boardId), "The game does not have a board with the ID  " + boardId);
         bv = bview;
         dialog = dlg;
         clientGui = cg;
@@ -664,11 +663,11 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
     }
 
     /** Draws a red crosshair for artillery autohit hexes (predesignated only). */
-    private void drawAutoHit(Graphics g, MapLocation mapLocation) {
-        if (mapType != mapLocation.getMapType()) {
+    private void drawAutoHit(Graphics g, BoardLocation boardLocation) {
+        if (!boardLocation.isOnBoard(boardId)) {
             return;
         }
-        Coords hex = mapLocation.getCoords();
+        Coords hex = boardLocation.getCoords();
         int baseX = (hex.getX() * (HEX_SIDE[zoom] + HEX_SIDE_BY_SIN30[zoom])) + leftMargin + HEX_SIDE[zoom];
         int baseY = (((2 * hex.getY()) + 1 + (hex.getX() % 2)) * HEX_SIDE_BY_COS30[zoom]) + topMargin;
         g.setColor(Color.RED);
@@ -1514,11 +1513,11 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
 
         @Override
         public void gameBoardNew(GameBoardNewEvent event) {
-            Board newBoard = event.getNewBoard();
-            Board oldBoard = event.getOldBoard();
-            if (!Objects.equals(event.getMapType(), mapType) || (newBoard == null && oldBoard == null)) {
+            if (event.getBoardId() != boardId) {
                 return; // Not this minimap's board
             }
+            Board newBoard = event.getNewBoard();
+            Board oldBoard = event.getOldBoard();
             if (oldBoard != null) {
                 oldBoard.removeBoardListener(boardListener);
             }
@@ -1721,8 +1720,8 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
         return "Minimap: " + hashCode() + " " + board.toString();
     }
 
-    /** @return True when the given Entity is currently on the board of this Minimap (it may have a null position). */
+    /** @return True when the given Entity is on the board of this Minimap (it may still have a null position). */
     public boolean isOnThisBoard(@Nullable Entity entity) {
-        return (entity != null) && mapType == entity.getCurrentMap();
+        return (entity != null) && boardId == entity.getCurrentBoard();
     }
 }

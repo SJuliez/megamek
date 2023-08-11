@@ -11,12 +11,12 @@ import java.util.Objects;
  *
  * @implNote MapLocation is immutable.
  */
-public final class MapLocation implements Serializable {
+public final class MapLocation2 implements Serializable {
 
     private final Coords coords;
     private final MapType mapType;
 
-    public MapLocation(Coords coords, MapType mapType) {
+    public MapLocation2(Coords coords, MapType mapType) {
         this.coords = coords;
         this.mapType = mapType;
     }
@@ -41,7 +41,7 @@ public final class MapLocation implements Serializable {
         } else if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        MapLocation that = (MapLocation) o;
+        MapLocation2 that = (MapLocation2) o;
         return Objects.equals(coords, that.coords) && (mapType == that.mapType);
     }
 

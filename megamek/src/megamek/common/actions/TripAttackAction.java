@@ -107,8 +107,8 @@ public class TripAttackAction extends PhysicalAttackAction {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Target is prone");
         }
 
-        Hex attHex = game.getHex(ae.getMapLocation());
-        Hex targHex = game.getHex(target.getMapLocation());
+        Hex attHex = game.getHex(ae.getBoardLocation());
+        Hex targHex = game.getHex(target.getBoardLocation());
         final int attackerElevation = ae.getElevation() + attHex.getLevel();
         final int targetElevation = target.getElevation() + targHex.getLevel();
 

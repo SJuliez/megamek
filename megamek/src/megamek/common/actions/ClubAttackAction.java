@@ -311,7 +311,7 @@ public class ClubAttackAction extends PhysicalAttackAction {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "impossible");
         }
 
-        Hex attHex = game.getHex(ae.getMapLocation());
+        Hex attHex = game.getHex(ae.getBoardLocation());
         Hex targHex = game.getBoard(ae).getHex(target.getPosition());
         final int attackerElevation = ae.getElevation() + attHex.getLevel();
         final int attackerHeight = attackerElevation + ae.height();
