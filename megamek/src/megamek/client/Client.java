@@ -1462,9 +1462,21 @@ public class Client implements IClientCommandHandler {
                     game.getBoard().setHex((Coords) c.getObject(0), (Hex) c.getObject(1));
                     break;
                 case CHANGE_HEXES:
-                    List<Coords> coords = new ArrayList<>((Set<Coords>) c.getObject(0));
-                    List<Hex> hexes = new ArrayList<>((Set<Hex>) c.getObject(1));
-                    game.getBoard().setHexes(coords, hexes);
+//                    List<BoardLocation> coords = new ArrayList<>((Set<BoardLocation>) c.getObject(0));
+//                    List<Hex> hexes = new ArrayList<>((Set<Hex>) c.getObject(1));
+                    var hexUpdates = (Map<BoardLocation, Hex>) c.getObject(0);
+                    for (Board board : game.getBoards()) {
+                        Map<Coords, Hex> mapForBoard = new HashMap<>();
+                        for (Map.Entry<BoardLocation, Hex> entry : hexUpdates.entrySet()) {
+                            if (board.contains(entry.getKey())) {
+                                mapForBoard.put(entry.getKey().getCoords(), entry.getValue());
+                            }
+                        }
+                        if (!mapForBoard.isEmpty()) {
+                            board.setHexes(mapForBoard);
+                        }
+                    }
+//                    game.getBoard().setHexes(coords, hexes);
                     break;
                 case BLDG_UPDATE:
                     receiveBuildingUpdate(c);

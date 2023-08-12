@@ -3358,7 +3358,8 @@ public class MovementDisplay extends ActionPhaseDisplay {
             ring = pos.allAtDistance(2);
         }
         // ok now we need to go through the ring and identify available Positions
-        ring = Compute.getAcceptableUnloadPositions(ring, unloaded, clientgui.getClient().getGame(), elev);
+        ring = Compute.getAcceptableUnloadPositions(ring, unloaded, clientgui.getClient().getGame(), elev,
+                clientgui.getClient().getGame().getBoard(ce));
         //If we're a train, eliminate positions held by any unit in the train.
         //You get stacking violation weirdness if this isn't done.
         Set<Coords> toRemove = new HashSet<>();
@@ -3433,7 +3434,8 @@ public class MovementDisplay extends ActionPhaseDisplay {
             ring = pos.allAtDistance(2);
         }
         // ok now we need to go through the ring and identify available Positions
-        ring = Compute.getAcceptableUnloadPositions(ring, crew, clientgui.getClient().getGame(), elev);
+        ring = Compute.getAcceptableUnloadPositions(ring, crew, clientgui.getClient().getGame(), elev,
+                clientgui.getClient().getGame().getBoard(abandoned));
         if (ring.size() < 1) {
             String title = Messages.getString("MovementDisplay.NoPlaceToEject.title");
             String body = Messages.getString("MovementDisplay.NoPlaceToEject.message");

@@ -626,6 +626,16 @@ public class Board implements Serializable {
     }
 
     /**
+     * Determines whether this Board "contains" the specified Coords.
+     *
+     * @param boardLocation the boardLocation.
+     * @return <code>true</code> if the board contains the specified coords
+     */
+    public boolean contains(@Nullable BoardLocation boardLocation) {
+        return (boardLocation != null) && (boardLocation.isOnBoard(boardId)) && contains(boardLocation.getCoords());
+    }
+
+    /**
      * Returns the Hex at the given Coords, both of which may be null.
      *
      * @param coords the Coords to look for the Hex
@@ -681,25 +691,16 @@ public class Board implements Serializable {
      *
      * The method ensures that each hex that needs to be updated is only updated once.
      *
-     * @param coords A list of coordinates to be updated
-     * @param hexes The hex to be updated for each coordinate
+     * @param hexUpdates A list of coordinates to be updated
+     * @param hexUpdates The hex to be updated for each coordinate
      */
-    public void setHexes(List<Coords> coords, List<Hex> hexes) {
+    public void setHexes(Map<Coords, Hex> hexUpdates) {
         // Keeps track of hexes that will need to be reinitialized
-        LinkedHashSet<Coords> needsUpdate = new LinkedHashSet<>((int) (coords.size() * 1.25 + 0.5));
-
-        // Sanity check
-        if (coords.size() != hexes.size()) {
-            throw new IllegalStateException("setHexes received two collections differeing size!");
-        }
-
-        // Update all input hexes, plus create a set of coords that need
-        // updating
-        Iterator<Coords> coordIter = coords.iterator();
-        Iterator<Hex> hexIter = hexes.iterator();
-        while (coordIter.hasNext() && hexIter.hasNext()) {
-            Coords currCoord = coordIter.next();
-            Hex currHex = hexIter.next();
+        LinkedHashSet<Coords> needsUpdate = new LinkedHashSet<>();
+        // Update all input hexes, plus create a set of coords that need updating
+        for (Map.Entry<Coords, Hex> entry : hexUpdates.entrySet()) {
+            Coords currCoord = entry.getKey();
+            Hex currHex = entry.getValue();
             int x = currCoord.getX();
             int y = currCoord.getY();
             data[(y * width) + x] = currHex;
@@ -713,13 +714,11 @@ public class Board implements Serializable {
                     }
                 }
             }
-
         }
 
         for (Coords coord : needsUpdate) {
             initializeHex(coord.getX(), coord.getY());
         }
-
     }
 
     /**

@@ -15505,4 +15505,9 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     public Board getBoard() {
         return game.getBoard(this);
     }
+
+    public boolean isDoomedOn(MapType mapType) {
+        return (mapType.isGround() && doomedOnGround()) || (mapType.isLowAtmo() && doomedInAtmosphere())
+                || (mapType.isSpace() && doomedInSpace());
+    }
 }

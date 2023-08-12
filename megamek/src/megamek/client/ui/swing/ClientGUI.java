@@ -1143,7 +1143,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     void switchPanel(GamePhase phase) {
         // Clear the old panel's listeners.
         if (curPanel instanceof BoardViewListener) {
-            boardViews().forEach(b -> b.removeBoardViewListener(this));
+            boardViews().forEach(b -> b.removeBoardViewListener((BoardViewListener) curPanel));
         }
 
         if (curPanel instanceof ActionListener) {

@@ -37,8 +37,6 @@ import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.util.*;
 
-import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
-
 public class DeploymentDisplay extends StatusBarPhaseDisplay {
 
     /**

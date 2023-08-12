@@ -207,12 +207,12 @@ public class PathEnumerator {
                 npf.run(new MovePath(game, mover));
                 paths.addAll(npf.getAllComputedPathsUncategorized());
             // this handles the case of the mover being an aerospace unit on a space map
-            } else if (mover.isAero() && game.getBoard().inSpace()) {
+            } else if (mover.isAero() && mover.isSpaceborne()) {
                 AeroSpacePathFinder apf = AeroSpacePathFinder.getInstance(getGame());
                 apf.run(new MovePath(game, mover));
                 paths.addAll(apf.getAllComputedPathsUncategorized());
             // this handles the case of the mover being a winged aerospace unit on a low-atmo map
-            } else if (mover.isAero() && game.getBoard().inAtmosphere() && !Compute.useSpheroidAtmosphere(game, mover)) {
+            } else if (mover.isAero() && mover.getBoard().inAtmosphere() && !Compute.useSpheroidAtmosphere(game, mover)) {
                 AeroLowAltitudePathFinder apf = AeroLowAltitudePathFinder.getInstance(getGame());
                 apf.run(new MovePath(game, mover));
                 paths.addAll(apf.getAllComputedPathsUncategorized());

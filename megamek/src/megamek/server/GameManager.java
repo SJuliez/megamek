@@ -117,7 +117,7 @@ public class GameManager implements IGameManager {
     /**
      * Stores a set of <code>Coords</code> that have changed during this phase.
      */
-    private Set<Coords> hexUpdateSet = new LinkedHashSet<>();
+    private Set<BoardLocation> hexUpdateSet = new LinkedHashSet<>();
 
     private List<DemolitionCharge> explodingCharges = new ArrayList<>();
 
@@ -13882,13 +13882,11 @@ public class GameManager implements IGameManager {
         // run through an enumeration of deployed game entities. If they are
         // large craft in space, then check the roll
         // and report it
-        if (!game.getBoard().inSpace()
-                || !game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
+        if (!game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
             return;
         }
         Report r;
-        for (Iterator<Entity> e = game.getEntities(); e.hasNext(); ) {
-            Entity ent = e.next();
+        for (Entity ent : game.getSpaceBorneEntities()) {
             if (ent.isDeployed() && ent.isLargeCraft()) {
                 r = new Report(3635);
                 r.subject = ent.getId();
@@ -18464,7 +18462,7 @@ public class GameManager implements IGameManager {
             if ((null == entity.getPosition()) && !entity.isAero()) {
                 continue;
             }
-            Hex entityHex = game.getBoard().getHex(entity.getPosition());
+            Hex entityHex = game.getHex(entity.getBoardLocation());
 
             int hotDogMod = 0;
             if (entity.hasAbility(OptionsConstants.PILOT_HOT_DOG)) {
@@ -19993,7 +19991,7 @@ public class GameManager implements IGameManager {
             if ((null == entity.getPosition()) || entity.isOffBoard()) {
                 continue;
             }
-            final Hex curHex = game.getBoard().getHex(entity.getPosition());
+            final Hex curHex = game.getHex(entity.getBoardLocation());
             if ((((entity.getElevation() < 0) && ((curHex
                     .terrainLevel(Terrains.WATER) > 1) || ((curHex
                     .terrainLevel(Terrains.WATER) == 1) && entity.isProne()))) || game
@@ -30147,19 +30145,12 @@ public class GameManager implements IGameManager {
     }
 
     /**
-     * Creates a packet containing a hex, and the coordinates it goes at.
+     * Sends notification to clients that the specified hexes have changed.
      */
-    private Packet createHexesChangePacket(Set<Coords> coords, Set<Hex> hex) {
-        return new Packet(PacketCommand.CHANGE_HEXES, coords, hex);
-    }
-
-    /**
-     * Sends notification to clients that the specified hex has changed.
-     */
-    public void sendChangedHexes(Set<Coords> coords) {
-        send(createHexesChangePacket(coords, coords.stream()
-                .map(coord -> game.getBoard().getHex(coord))
-                .collect(Collectors.toCollection(LinkedHashSet::new))));
+    public void sendChangedHexes(Set<BoardLocation> boardLocations) {
+        var updateMap = new HashMap<BoardLocation, Hex>();
+        boardLocations.forEach(b -> updateMap.put(b, game.getHex(b)));
+        send(new Packet(PacketCommand.CHANGE_HEXES, updateMap));
     }
 
     /**
@@ -34337,8 +34328,7 @@ public class GameManager implements IGameManager {
         }
     }
 
-    public Set<Coords> getHexUpdateSet() {
+    public Set<BoardLocation> getHexUpdateSet() {
         return hexUpdateSet;
-
     }
 }

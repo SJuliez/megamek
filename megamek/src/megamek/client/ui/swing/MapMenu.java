@@ -334,7 +334,7 @@ public class MapMenu extends JPopupMenu {
     private JMenu touchOffExplosivesMenu() {
         JMenu menu = new JMenu("Touch off explosives");
 
-        Building bldg = client.getBoard().getBuildingAt(coords);
+        Building bldg = board.getBuildingAt(coords);
         if ((bldg != null)) {
             for (final DemolitionCharge charge : bldg.getDemolitionCharges()) {
                 if (charge.playerId == client.getLocalPlayer().getId() && coords.equals(charge.pos)) {
@@ -355,7 +355,7 @@ public class MapMenu extends JPopupMenu {
     private JMenu createSpecialHexDisplayMenu() {
         JMenu menu = new JMenu("Special Hex Display");
 
-        final Collection<SpecialHexDisplay> shdList = game.getBoard().getSpecialHexDisplay(coords);
+        final Collection<SpecialHexDisplay> shdList = board.getSpecialHexDisplay(coords);
 
         SpecialHexDisplay note = null;
         if (shdList != null) {
@@ -561,7 +561,7 @@ public class MapMenu extends JPopupMenu {
             }
 
             if (game.getPlanetaryConditions().isRecklessConditions()
-                    && !game.getBoard().inSpace()
+                    && !board.inSpace()
                     && !game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_NO_NIGHT_MOVE_PEN)) {
                 item = new JMenuItem(Messages.getString("MovementDisplay.butReckless"));
                 item.setActionCommand(MovementDisplay.MoveCommand.MOVE_RECKLESS.getCmd());
@@ -651,7 +651,7 @@ public class MapMenu extends JPopupMenu {
             }
 
             if (game.getPlanetaryConditions().isRecklessConditions()
-                    && !game.getBoard().inSpace()
+                    && !board.inSpace()
                     && !game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_NO_NIGHT_MOVE_PEN)) {
                 item = new JMenuItem(Messages.getString("MovementDisplay.butReckless"));
                 item.setActionCommand(MovementDisplay.MoveCommand.MOVE_RECKLESS.getCmd());

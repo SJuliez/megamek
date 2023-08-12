@@ -52,9 +52,10 @@ public class ElevatorProcessor extends DynamicTerrainProcessor {
         Report r = new Report(5290, Report.PUBLIC);
         vPhaseReport.add(r);
 
-        for (Iterator<Coords> i = elevators[roll].positions.iterator(); i.hasNext();) {
-            Coords c = i.next();
-            Hex hex = gameManager.getGame().getBoard().getHex(c);
+        for (Iterator<BoardLocation> i = elevators[roll].positions.iterator(); i.hasNext();) {
+            BoardLocation boardLocation = i.next();
+            Coords c = boardLocation.getCoords();
+            Hex hex = gameManager.getGame().getHex(boardLocation);
             Terrain terr = hex.getTerrain(Terrains.ELEVATOR);
             // Swap the elevator and hex elevations
             // Entity elevations are not adjusted. This makes sense for
@@ -65,28 +66,29 @@ public class ElevatorProcessor extends DynamicTerrainProcessor {
             hex.setLevel(terr.getLevel());
             hex.removeTerrain(Terrains.ELEVATOR);
             hex.addTerrain(new Terrain(Terrains.ELEVATOR, elevation, true, terr.getExits()));
-            gameManager.getHexUpdateSet().add(c);
+            gameManager.getHexUpdateSet().add(boardLocation);
         }
     }
 
     private void findElevators() {
-        Board b = gameManager.getGame().getBoard();
-        int height = b.getHeight();
-        int width = b.getWidth();
-        int exits = 0;
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                if (b.getHex(x, y).containsTerrain(Terrains.ELEVATOR)) {
-                    exits = b.getHex(x, y).getTerrain(Terrains.ELEVATOR)
-                            .getExits();
-                    // add the elevator to each list it belongs in.
-                    // exits are abused to hold which d6 roll(s) move this
-                    // elevator
-                    for (int z = 0; z < 6; z++) {
-                        if ((exits & 1) == 1) {
-                            elevators[z].positions.add(new Coords(x, y));
+        for (Board board : gameManager.getGame().getBoards()) {
+            int height = board.getHeight();
+            int width = board.getWidth();
+            int exits = 0;
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    if (board.getHex(x, y).containsTerrain(Terrains.ELEVATOR)) {
+                        exits = board.getHex(x, y).getTerrain(Terrains.ELEVATOR)
+                                .getExits();
+                        // add the elevator to each list it belongs in.
+                        // exits are abused to hold which d6 roll(s) move this
+                        // elevator
+                        for (int z = 0; z < 6; z++) {
+                            if ((exits & 1) == 1) {
+                                elevators[z].positions.add(new BoardLocation(new Coords(x, y), board.getBoardId()));
+                            }
+                            exits >>= 1;
                         }
-                        exits >>= 1;
                     }
                 }
             }
@@ -94,6 +96,6 @@ public class ElevatorProcessor extends DynamicTerrainProcessor {
     }
 
     private static class ElevatorInfo {
-        List<Coords> positions = new ArrayList<>();
+        List<BoardLocation> positions = new ArrayList<>();
     }
 }

@@ -582,6 +582,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
             }
 
             drawDeploymentZone(g);
+            drawEmbeddedBoards(g);
 
             if (symbolsDisplayMode == SHOW_SYMBOLS) {
                 if (null != game) {
@@ -632,6 +633,16 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Draw an outline around legal deployment hexes
+     */
+    private void drawEmbeddedBoards(Graphics g) {
+        for (Coords coords : board.embeddedBoardCoords()) {
+            paintSingleCoordBorder(g, coords.getX(), coords.getY(), Color.GREEN);
+
         }
     }
     

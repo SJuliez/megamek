@@ -50,7 +50,7 @@ public class GeyserProcessor extends DynamicTerrainProcessor {
             if (g.turnsToGo > 0) {
                 g.turnsToGo--;
             } else {
-                Hex hex = gameManager.getGame().getBoard().getHex(g.position);
+                Hex hex = gameManager.getGame().getHex(g.position);
                 if (hex.terrainLevel(Terrains.GEYSER) == 2) {
                     r = new Report(5275, Report.PUBLIC);
                     r.add(g.position.getBoardNum());
@@ -67,8 +67,7 @@ public class GeyserProcessor extends DynamicTerrainProcessor {
                         hex.addTerrain(new Terrain(Terrains.MAGMA, 2));
                         gameManager.getHexUpdateSet().add(g.position);
                         gs.remove();
-                        for (Entity e : gameManager.getGame().getEntitiesVector(
-                                g.position)) {
+                        for (Entity e : gameManager.getGame().getEntitiesAt(g.position)) {
                             gameManager.doMagmaDamage(e, true);
                         }
                     } else {
@@ -86,24 +85,25 @@ public class GeyserProcessor extends DynamicTerrainProcessor {
     }
 
     private void findGeysers() {
-        Board b = gameManager.getGame().getBoard();
-        int height = b.getHeight();
-        int width = b.getWidth();
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                if (b.getHex(x, y).containsTerrain(Terrains.GEYSER)) {
-                    geysers.add(new GeyserInfo(new Coords(x, y)));
+        for (Board board : gameManager.getGame().getBoards()) {
+            int height = board.getHeight();
+            int width = board.getWidth();
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    if (board.getHex(x, y).containsTerrain(Terrains.GEYSER)) {
+                        geysers.add(new GeyserInfo(board.getBoardId(), new Coords(x, y)));
+                    }
                 }
             }
         }
     }
 
     private static class GeyserInfo {
-        Coords position;
+        BoardLocation position;
         int turnsToGo;
 
-        GeyserInfo(Coords c) {
-            position = c;
+        GeyserInfo(int boardId, Coords coords) {
+            position = new BoardLocation(coords, boardId);
             turnsToGo = 0;
         }
     }

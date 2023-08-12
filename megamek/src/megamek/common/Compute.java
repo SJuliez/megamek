@@ -2679,13 +2679,13 @@ public class Compute {
         }
 
         Entity entityTarget = null;
-        Hex hex = game.getBoard().getHex(t.getPosition());
+        Hex hex = game.getHex(t.getBoardLocation());
         if (t.getTargetType() == Targetable.TYPE_ENTITY) {
             entityTarget = (Entity) t;
             if (hex == null) {
                 entityTarget.setPosition(game.getEntity(entityTarget.getId())
                                              .getPosition());
-                hex = game.getBoard().getHex(
+                hex = game.getBoard(t).getHex(
                         game.getEntity(entityTarget.getId()).getPosition());
             }
         }
@@ -2876,7 +2876,7 @@ public class Compute {
         if (targetType == Targetable.TYPE_BUILDING) {
             // Buildings are a simple sum of their current CF and armor values.
             // the building the targeted hex belongs to. We have to get this and then get values for the specific hex internally to it.
-            final Building parentBuilding = game.getBoard().getBuildingAt(position);
+            final Building parentBuilding = game.getBoard(target).getBuildingAt(position);
             return (parentBuilding == null) ? 0
                     : parentBuilding.getCurrentCF(position) + parentBuilding.getArmor(position);
         } else if (targetType == Targetable.TYPE_ENTITY) {
@@ -2887,7 +2887,7 @@ public class Compute {
                 return 0;
             } else if (targetEntity instanceof GunEmplacement) {
                 // If this is a gun emplacement, handle it as the building hex it is in.
-                final Building parentBuilding = game.getBoard().getBuildingAt(position);
+                final Building parentBuilding = game.getBoard(target).getBuildingAt(position);
                 return (parentBuilding == null) ? 0
                         : parentBuilding.getCurrentCF(position) + parentBuilding.getArmor(position);
             } else {
@@ -2895,7 +2895,7 @@ public class Compute {
             }
         } else if (targetType == Targetable.TYPE_HEX_CLEAR) {
             // clearing a hex - the "HP" is the terrain factor of destroyable terrain on this hex
-            Hex mhex = game.getBoard().getHex(position);
+            Hex mhex = game.getBoard(target).getHex(position);
             int totalTF = 0;
             for (final int terrainType : mhex.getTerrainTypes()) {
                 totalTF += mhex.containsTerrain(terrainType) ? mhex.getTerrain(terrainType).getTerrainFactor() : 0;
@@ -3389,7 +3389,7 @@ public class Compute {
 
         // Conventional infantry take double damage in the open
         if (g.getEntity(waa.getTargetId()).isConventionalInfantry()) {
-            Hex e_hex = g.getBoard().getHex(
+            Hex e_hex = g.getBoard(target).getHex(
                     g.getEntity(waa.getTargetId()).getPosition().getX(),
                     g.getEntity(waa.getTargetId()).getPosition().getY());
             if (!e_hex.containsTerrain(Terrains.WOODS)
@@ -6417,12 +6417,12 @@ public class Compute {
     }
 
     public static ArrayList<Coords> getAcceptableUnloadPositions(
-            List<Coords> ring, Entity unit, Game game, int elev) {
+            List<Coords> ring, Entity unit, Game game, int elev, Board board) {
 
         ArrayList<Coords> acceptable = new ArrayList<>();
 
         for (Coords pos : ring) {
-            Hex hex = game.getBoard().getHex(pos);
+            Hex hex = board.getHex(pos);
             if (null == hex) {
                 continue;
             }
