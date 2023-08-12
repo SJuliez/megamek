@@ -330,7 +330,7 @@ public class ArtilleryBayWeaponIndirectFireHandler extends AmmoBayWeaponHandler 
             while (nweaponsHit > 0) {
                 //We'll generate a new report and scatter for each weapon fired
                 targetPos = Compute.scatterDirectArty(targetPos, moF);
-                if (game.getBoard(ae.getCurrentMap()).contains(targetPos)) {
+                if (game.getBoard(ae).contains(targetPos)) {
                     targets.add(targetPos);
                     // misses and scatters to another hex
                     if (!isFlak) {

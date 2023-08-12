@@ -3139,7 +3139,7 @@ public class FireControl {
             
             for (Coords intervening : Coords.intervening(shooter.getPosition(), target.getPosition())) {
                 // if it's already lit up, don't count it 
-                if (!IlluminationLevel.determineIlluminationLevel(shooter.getGame(), intervening).isNone()) {
+                if (!IlluminationLevel.determineIlluminationLevel(shooter.getGame(), intervening, shooter.getCurrentBoardId()).isNone()) {
                     continue;
                 }
                 

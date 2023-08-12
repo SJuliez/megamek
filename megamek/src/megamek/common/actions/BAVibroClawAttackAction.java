@@ -68,8 +68,8 @@ public class BAVibroClawAttackAction extends AbstractAttackAction {
             }
         }
 
-        final Hex attHex = game.getBoard(ae.getCurrentMap()).getHex(ae.getPosition());
-        final Hex targHex = game.getBoard(ae.getCurrentMap()).getHex(target.getPosition());
+        final Hex attHex = game.getBoard(ae).getHex(ae.getPosition());
+        final Hex targHex = game.getBoard(ae).getHex(target.getPosition());
         if ((attHex == null) || (targHex == null)) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "off board");
         }

@@ -63,7 +63,7 @@ public class CapitalMissileBayHandler extends AmmoBayWeaponHandler {
             ae.setLastTargetDisplayName(entityTarget.getDisplayName());
         }
         // Which building takes the damage?
-        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae).getBuildingAt(target.getPosition());
         String number = nweapons > 1 ? " (" + nweapons + ")" : "";
         for (int i = numAttacks; i > 0; i--) {
             // Report weapon attack and its to-hit value.
@@ -543,7 +543,7 @@ public class CapitalMissileBayHandler extends AmmoBayWeaponHandler {
             ae.setLastTargetDisplayName(entityTarget.getDisplayName());
         }
         // Which building takes the damage?
-        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae).getBuildingAt(target.getPosition());
         // Report weapon attack and its to-hit value.
         Report r = new Report(3115);
         r.indent();

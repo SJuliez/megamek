@@ -31,6 +31,9 @@ import static megamek.client.ui.swing.util.UIUtil.uiBlack;
 public final class HexTooltip {
 
     public static String getHexTip(Board board, Coords mcoords, @Nullable Client client) {
+        if (!board.contains(mcoords)) {
+            return "";
+        }
         StringBuilder result = new StringBuilder();
         Hex mhex = board.getHex(mcoords);
         // All of the following can be null even if there's a ClientGUI!

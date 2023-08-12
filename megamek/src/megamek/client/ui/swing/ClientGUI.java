@@ -237,7 +237,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     private ChatterBox cb;
     public ChatterBox2 cb2;
     private BoardView bv;
-    private BoardView bvLowAtmo;
     private BoardView bvSpace;
     private final Map<Integer, BoardView> boardViews = new HashMap<>();
     private final JPanel bvc = new JPanel();
@@ -577,9 +576,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 }
             }
         });
-//        cb2 = new ChatterBox2(this, bv, controller);
-//        bv.addDisplayable(cb2);
-//        bv.addKeyListener(cb2);
+        cb2 = new ChatterBox2(this, controller);
         uo = new UnitOverview(this);
         offBoardOverlay = new OffBoardTargetOverlay(this);
 
@@ -610,8 +607,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 //        setMiniMapDialog(Minimap.createMinimap(frame, getBoardView(), getClient().getGame(), this, MapType.GROUND));
 
         cb = new ChatterBox(this);
-//        cb.setChatterBox2(cb2);
-//        cb2.setChatterBox(cb);
+        cb.setChatterBox2(cb2);
+        cb2.setChatterBox(cb);
         client.changePhase(GamePhase.UNKNOWN);
         UnitLoadingDialog unitLoadingDialog = new UnitLoadingDialog(frame);
         if (!MechSummaryCache.getInstance().isInitialized()) {
@@ -2206,7 +2203,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         } else if (boardViews.size() == 1) {
             // Avoid having a tab for only a single map
             String name = boardViews().get(0).getBoard().getMapType().getdisplayName() + " Map";
-            bvc.add(name, bv.getComponent(true));
+            bvc.add(name, boardViews().get(0).getComponent(true));
 
         }
         bvc.validate();
@@ -2221,22 +2218,16 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
             if (newBoard != null) {
                 try {
-                    if (newBoard.getMapType().isLowAtmo()) {
-                        bvLowAtmo = new BoardView(client.getGame(), controller, ClientGUI.this, boardId);
-                        minimapLowAtmo = Minimap.createMinimap(frame, bvLowAtmo, getClient().getGame(),
+                    if (newBoard.getMapType().isLowAtmo() || newBoard.getMapType().isSpace()) {
+                        BoardView boardView = new BoardView(client.getGame(), controller, ClientGUI.this, boardId);
+                        minimapLowAtmo = Minimap.createMinimap(frame, boardView, getClient().getGame(),
                                 ClientGUI.this, boardId);
                         minimapLowAtmo.setVisible(true);
-                        boardViews.put(boardId, bvLowAtmo);
-                        bvLowAtmo.addBoardViewListener(ClientGUI.this);
-                        getUnitDisplay().addMechDisplayListener(bvLowAtmo);
-                    } else if (newBoard.getMapType().isSpace()) {
-                        bvSpace = new BoardView(client.getGame(), controller, ClientGUI.this, boardId);
-                        minimapSpace = Minimap.createMinimap(frame, bvSpace, getClient().getGame(),
-                                ClientGUI.this, boardId);
-                        minimapSpace.setVisible(true);
-                        boardViews.put(boardId, bvSpace);
-                        bvSpace.addBoardViewListener(ClientGUI.this);
-                        getUnitDisplay().addMechDisplayListener(bvSpace);
+                        boardViews.put(boardId, boardView);
+                        boardView.addBoardViewListener(ClientGUI.this);
+                        getUnitDisplay().addMechDisplayListener(boardView);
+                        boardView.addDisplayable(cb2);
+                        boardView.addKeyListener(cb2);
                     } else {
                         bv = new BoardView(client.getGame(), controller, ClientGUI.this, boardId);
                         bv.setPreferredSize(getSize());
@@ -2245,6 +2236,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                                 ClientGUI.this, boardId);
                         bv.addBoardViewListener(ClientGUI.this);
                         getUnitDisplay().addMechDisplayListener(bv);
+                        bv.addDisplayable(cb2);
+                        bv.addKeyListener(cb2);
                     }
                     updateMapTabs();
                 } catch (IOException ex) {
@@ -2999,7 +2992,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     }
 
     public boolean isChatterBoxActive() {
-        return boardViews().stream().anyMatch(BoardView::getChatterBoxActive);
+        return cb2.isActive();
+//        return boardViews().stream().anyMatch(BoardView::getChatterBoxActive);
     }
 
     public boolean isMovingUnits() {
@@ -3040,5 +3034,25 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
     public void removeKeyListenerFromBoardViews(KeyListener listener) {
         boardViews().forEach(bv -> bv.removeKeyListener(listener));
+    }
+
+    public void refreshDisplayablesOnBoardViews() {
+        boardViews().forEach(BoardView::refreshDisplayables);
+    }
+
+    public void repaintBoardViews() {
+        boardViews().forEach(BoardView::repaint);
+    }
+
+    public void showBoardView(int boardId) {
+        if (boardViews.size() > 1) {
+            String componentName = String.valueOf(boardId);
+            for (int i = 0; i < mapTabPane.getTabCount(); i++) {
+                if (componentName.equals(mapTabPane.getComponentAt(i).getName())) {
+                    mapTabPane.setSelectedIndex(i);
+                    return;
+                }
+            }
+        }
     }
 }

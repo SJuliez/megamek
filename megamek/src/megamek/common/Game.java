@@ -22,9 +22,7 @@ import megamek.common.GameTurn.SpecificEntityTurn;
 import megamek.common.actions.ArtilleryAttackAction;
 import megamek.common.actions.AttackAction;
 import megamek.common.actions.EntityAction;
-import megamek.common.annotations.ClientUse;
 import megamek.common.annotations.Nullable;
-import megamek.common.annotations.ServerUse;
 import megamek.common.enums.GamePhase;
 import megamek.common.event.*;
 import megamek.common.force.Forces;
@@ -64,8 +62,7 @@ public class Game extends AbstractGame implements Serializable {
 
     private GameOptions options = new GameOptions();
 
-    private final Map<MapType, Board> gameBoards = new HashMap<>();
-    private final Map<Integer, Board> gameBoards2 = new HashMap<>();
+    private final Map<Integer, Board> gameBoards = new HashMap<>();
     private Board board = new Board();
 
     /** When true, the space map is a high atmosphere map */
@@ -74,7 +71,7 @@ public class Game extends AbstractGame implements Serializable {
     private MapSettings mapSettings = MapSettings.getInstance();
     private MapSettings lowAtmoMapSettings = MapSettings.newLowAtmoMap();
     private MapSettings spaceMapSettings = MapSettings.newSpaceMap();
-    private final List<MapSettings> allMapSettings = List.of(mapSettings, lowAtmoMapSettings, spaceMapSettings);
+    private final List<MapSettings> allMapSettings = new ArrayList<>();
 
     /**
      * Track entities removed from the game (probably by death)
@@ -170,6 +167,9 @@ public class Game extends AbstractGame implements Serializable {
      */
     public Game() {
         // empty
+        allMapSettings.add(mapSettings);
+        allMapSettings.add(lowAtmoMapSettings);
+        allMapSettings.add(spaceMapSettings);
     }
 
     // Added public accessors for external game id
@@ -194,15 +194,15 @@ public class Game extends AbstractGame implements Serializable {
     public Board getBoard(MapType mapType) {
         LogManager.getLogger().error("Dont call getboard(MapType)", new Exception());
         new Exception().getStackTrace();
-        return gameBoards.get(mapType);
+        return new Board();
     }
 
     public Board getBoard(Entity entity) {
-        return gameBoards2.get(entity.getCurrentBoardId());
+        return gameBoards.get(entity.getCurrentBoardId());
     }
 
     public List<Board> getBoards() {
-        return new ArrayList<>(gameBoards2.values());
+        return new ArrayList<>(gameBoards.values());
     }
 
     public boolean containsMinefield(Coords coords) {
@@ -1400,7 +1400,7 @@ public class Game extends AbstractGame implements Serializable {
         victoryTeam = Player.TEAM_NONE;
         lastEntityId = 0;
         planetaryConditions = new PlanetaryConditions();
-        gameBoards2.clear();
+        gameBoards.clear();
     }
 
     private void removeArtyAutoHitHexes() {
@@ -1621,23 +1621,16 @@ public class Game extends AbstractGame implements Serializable {
 
     /**
      * Determine if the given set of coordinates has a gun emplacement on the roof of a building.
-     * @param c The coordinates to check
+     * @param boardLocation The location to check
      */
-    public boolean hasRooftopGunEmplacement(Coords c) {
-        Building building = getBoard().getBuildingAt(c);
-        if (building == null) {
+    public boolean hasRooftopGunEmplacement(BoardLocation boardLocation) {
+        if (!hasBuildingAt(boardLocation)) {
             return false;
         }
-
-        Hex hex = getBoard().getHex(c);
-
-        for (Entity entity : getEntitiesVector(c, true)) {
-            if (entity.hasETypeFlag(Entity.ETYPE_GUN_EMPLACEMENT) && entity.getElevation() == hex.ceiling()) {
-                return true;
-            }
-        }
-
-        return false;
+        final Hex hex = getHex(boardLocation);
+        return getEntitiesAt(boardLocation).stream()
+                .filter(e -> e instanceof GunEmplacement)
+                .anyMatch(e -> e.getElevation() == hex.ceiling());
     }
 
     /**
@@ -3583,7 +3576,7 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     private boolean usesMap(MapType mapType) {
-        return getPhase().isLounge() ? getMapSettings(mapType).isUsed() : gameBoards2.containsKey(mapType);
+        return getPhase().isLounge() ? getMapSettings(mapType).isUsed() : gameBoards.containsKey(mapType);
     }
 
     public boolean spaceMapUsesGravity() {
@@ -3640,7 +3633,7 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public boolean usesBoard(BoardLocation boardLocation) {
-        return gameBoards2.containsKey(boardLocation.getBoardId());
+        return (boardLocation != null) && gameBoards.containsKey(boardLocation.getBoardId());
     }
 
     public void addSpecialHexDisplay(BoardLocation boardLocation, SpecialHexDisplay shd) {
@@ -3655,38 +3648,50 @@ public class Game extends AbstractGame implements Serializable {
         addSpecialHexDisplay(new BoardLocation(coords, boardId), shd);
     }
 
-    @ClientUse
     public void receiveBoard(int boardId, Board board) {
         Board oldBoard = getBoard(boardId);
-        gameBoards2.put(boardId, board);
+        gameBoards.put(boardId, board);
         processGameEvent(new GameBoardNewEvent(this, oldBoard, board, boardId));
     }
 
     public Board getBoard(int boardId) {
-        return gameBoards2.get(boardId);
+        return gameBoards.get(boardId);
     }
 
-    @ServerUse
-    public int addBoard(Board board) {
-        int boardId = nextFreeBoardId();
-        gameBoards2.put(boardId, board);
-        return boardId;
+    public void addBoard(Board board) {
+        gameBoards.put(board.getBoardId(), board);
     }
 
     private int nextFreeBoardId() {
-        return gameBoards2.keySet().stream().max(Integer::compareTo).orElse(-1) + 1;
+        return gameBoards.keySet().stream().max(Integer::compareTo).orElse(-1) + 1;
     }
 
-    @ServerUse
     public Packet createBoardsPacket() {
-        return new Packet(PacketCommand.SENDING_BOARDS, gameBoards2);
+        return new Packet(PacketCommand.SENDING_BOARDS, gameBoards);
     }
 
     public Set<Integer> getBoardIds() {
-        return gameBoards2.keySet();
+        return gameBoards.keySet();
     }
 
     public List<MapSettings> getAllMapSettings() {
         return allMapSettings;
     }
+
+    public boolean inSpace(BoardLocation boardLocation) {
+        return getBoard(boardLocation).inSpace();
+    }
+
+    public boolean inLowAtmosphere(BoardLocation boardLocation) {
+        return getBoard(boardLocation).inAtmosphere();
+    }
+
+    public boolean hasBuildingAt(BoardLocation boardLocation) {
+        return getBuildingAt(boardLocation) != null;
+    }
+
+    public List<Board> getGroundBoards() {
+        return getBoards().stream().filter(Board::onGround).collect(toList());
+    }
+
 }

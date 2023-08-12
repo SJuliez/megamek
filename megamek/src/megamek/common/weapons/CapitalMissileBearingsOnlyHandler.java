@@ -356,7 +356,7 @@ public class CapitalMissileBearingsOnlyHandler extends AmmoBayWeaponHandler {
         
         // Bearings-only missiles shouldn't be able to target buildings, being space-only weapons
         // but if these two things aren't defined, handleEntityDamage() doesn't work.
-        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae).getBuildingAt(target.getPosition());
         int bldgAbsorbs = 0;
 
         // We have to adjust the reports on a miss, so they line up

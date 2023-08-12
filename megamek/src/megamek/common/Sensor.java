@@ -161,7 +161,7 @@ public class Sensor implements Serializable {
         }
     }
 
-    public int adjustRange(int range, Game game, LosEffects los) {
+    public int adjustRange(int range, Game game, LosEffects los, boolean inSpace) {
 
         if (((type == TYPE_MEK_RADAR) || (type == TYPE_VEE_RADAR)
                 || (type == TYPE_VEE_MAGSCAN) || (type == TYPE_MEK_MAGSCAN))
@@ -199,7 +199,7 @@ public class Sensor implements Serializable {
         }
         
         //Most spacecraft sensors only work in space...
-        if (!game.getBoard().inSpace() && 
+        if (!inSpace &&
                 (type == TYPE_SPACECRAFT_ESM 
                 || type == TYPE_SPACECRAFT_THERMAL 
                 || type == TYPE_AERO_THERMAL)) {
@@ -207,12 +207,12 @@ public class Sensor implements Serializable {
         }
         
         //Aero/Small Craft Active Sensors have longer range in space
-        if (game.getBoard().inSpace() && type == TYPE_AERO_SENSOR) {
+        if (inSpace && type == TYPE_AERO_SENSOR) {
             range = ASF_RADAR_MAX_RANGE;
         }
         
         //DropShip radar has reduced range when not in space
-        if (!game.getBoard().inSpace() && type == TYPE_SPACECRAFT_RADAR) {
+        if (!inSpace && type == TYPE_SPACECRAFT_RADAR) {
             range = LC_RADAR_GROUND_RANGE;
         }
 
@@ -491,8 +491,8 @@ public class Sensor implements Serializable {
 
             range += target.heat / 5;
 
-            if ((null != game.getBoard().getHex(target.getPosition()))
-                    && game.getBoard().getHex(target.getPosition()).containsTerrain(Terrains.FIRE)) {
+            if ((null != game.getHex(target.getBoardLocation()))
+                    && game.getHex(target.getBoardLocation()).containsTerrain(Terrains.FIRE)) {
                 range += 1;
             }
         }
@@ -508,8 +508,8 @@ public class Sensor implements Serializable {
                 range = 0;
             }
 
-            if ((null != game.getBoard().getHex(target.getPosition()))
-                    && game.getBoard().getHex(target.getPosition()).containsTerrain(Terrains.INDUSTRIAL)) {
+            if ((null != game.getHex(target.getBoardLocation()))
+                    && game.getHex(target.getBoardLocation()).containsTerrain(Terrains.INDUSTRIAL)) {
                 return 0;
             }
         }

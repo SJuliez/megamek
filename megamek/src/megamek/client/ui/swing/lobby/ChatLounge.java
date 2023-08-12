@@ -43,7 +43,6 @@ import megamek.client.ui.swing.util.ScalingPopup;
 import megamek.client.ui.swing.util.UIUtil;
 import megamek.client.ui.swing.widget.SkinSpecification;
 import megamek.common.*;
-import megamek.common.annotations.ClientUse;
 import megamek.common.annotations.Nullable;
 import megamek.common.event.*;
 import megamek.common.force.Force;
@@ -3538,14 +3537,12 @@ public class ChatLounge extends AbstractPhaseDisplay implements
         }
     }
 
-    @ClientUse
     void spaceMapUpdate() {
         client().sendMapSettings(game().getMapSettings(MapType.SPACE));
         String msg = client().getLocalPlayer() + " changed the Space map.";
         client().sendServerChat(Player.PLAYER_NONE, msg);
     }
 
-    @ClientUse
     void lowAtmoMapUpdate() {
         client().sendMapSettings(game().getMapSettings(MapType.LOW_ATMOSPHERE));
         String msg = client().getLocalPlayer() + " changed the Low-Atmosphere map.";

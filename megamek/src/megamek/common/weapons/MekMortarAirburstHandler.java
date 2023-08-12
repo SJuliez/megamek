@@ -125,7 +125,7 @@ public class MekMortarAirburstHandler extends AmmoWeaponHandler {
         Vector<Report> newReports;
         int numRounds = wtype.getRackSize();
         // Damage building directly
-        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(targetPos);
+        Building bldg = game.getBoard(ae).getBuildingAt(targetPos);
         if (bldg != null) {
             newReports = gameManager.damageBuilding(bldg, numRounds, " receives ", targetPos);
             adjustReports(newReports);
@@ -133,7 +133,7 @@ public class MekMortarAirburstHandler extends AmmoWeaponHandler {
         }
         
         // Damage Terrain if applicable
-        Hex h = game.getBoard(ae.getCurrentMap()).getHex(targetPos);
+        Hex h = game.getBoard(ae).getHex(targetPos);
         newReports = new Vector<>();
         if ((h != null) && h.hasTerrainFactor()) {
             r = new Report(3384);

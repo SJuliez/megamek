@@ -451,7 +451,7 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
                 moF = Math.max(moF + 2, 0);
             }
             targetPos = Compute.scatterDirectArty(targetPos, moF);
-            if (game.getBoard(ae.getCurrentMap()).contains(targetPos)) {
+            if (game.getBoard(ae).contains(targetPos)) {
                 // misses and scatters to another hex
                 if (!isFlak) {
                     r = new Report(3195);
@@ -502,7 +502,7 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
         // if the round landed on the board, and the attacker is an off-board artillery piece
         // then check to see if the hex where it landed can be seen by anyone on an opposing team
         // if so, mark the attacker so that it can be targeted by counter-battery fire
-        if (game.getBoard(ae.getCurrentMap()).contains(targetPos)) {
+        if (game.getBoard(ae).contains(targetPos)) {
             HexTarget hexTarget = new HexTarget(targetPos, ae.getCurrentBoardId(), Targetable.TYPE_HEX_ARTILLERY);
             
             for (Entity entity : game.getEntitiesVector()) {

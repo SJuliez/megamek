@@ -115,7 +115,7 @@ public class ArtilleryBayWeaponIndirectHomingHandler extends ArtilleryBayWeaponI
                 && ae.getPosition().distance(target.getPosition()) <= 1;
 
         // Which building takes the damage?
-        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae).getBuildingAt(target.getPosition());
         
         //Determine what ammo we're firing for reporting and (later) damage
         Mounted ammoUsed = ae.getEquipment(aaa.getAmmoId());
@@ -303,7 +303,7 @@ public class ArtilleryBayWeaponIndirectHomingHandler extends ArtilleryBayWeaponI
             }
 
             bldg = null;
-            bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(coords);
+            bldg = game.getBoard(ae).getBuildingAt(coords);
             bldgAbsorbs = (bldg != null) ? bldg.getAbsorbtion(coords) : 0;
             bldgAbsorbs = Math.min(bldgAbsorbs, ratedDamage);
             // assumption: homing artillery splash damage is area effect.

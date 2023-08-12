@@ -261,7 +261,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || display.isIgnoringEvents()
                                 || !display.isVisible()) {
                             return false;
@@ -283,7 +283,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -306,7 +306,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -329,7 +329,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()
                                 || !buttons.get(FiringCommand.FIRE_FIRE).isEnabled()) {
@@ -352,7 +352,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -374,7 +374,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -396,7 +396,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -419,7 +419,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -442,7 +442,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -464,7 +464,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -486,7 +486,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -508,7 +508,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -530,7 +530,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -552,7 +552,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -574,7 +574,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -596,7 +596,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -618,7 +618,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;
@@ -648,7 +648,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || display.isIgnoringEvents()
                                 || !display.isVisible()) {
                             return false;
@@ -670,7 +670,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     @Override
                     public boolean shouldPerformAction() {
                         if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
+                                || clientgui.isChatterBoxActive()
                                 || display.isIgnoringEvents()
                                 || !display.isVisible()) {
                             return false;
@@ -691,7 +691,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
 
                     @Override
                     public boolean shouldPerformAction() {
-                        if (clientgui.getBoardView().getChatterBoxActive()
+                        if (clientgui.isChatterBoxActive()
                                 || !display.isVisible()
                                 || display.isIgnoringEvents()) {
                             return false;

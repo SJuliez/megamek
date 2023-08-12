@@ -25,6 +25,7 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import megamek.common.Coords;
+import megamek.common.MapSettings;
 
 /**
  * Class that off-loads serialization related code from Server.java
@@ -67,6 +68,7 @@ public class SerializationHelper {
                 megamek.server.SmokeCloud.class,
                 megamek.common.EntityFluff.class,
                 megamek.common.NarcPod.class,
+                megamek.common.MapSettings.class,
                 megamek.common.INarcPod.class
         });
         xStream.allowTypeHierarchy(megamek.common.BTObject.class);

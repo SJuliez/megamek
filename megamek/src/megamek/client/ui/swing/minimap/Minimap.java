@@ -1456,6 +1456,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
 
     /** Centers the BoardView connected to the Minimap on x, y in the Minimap's pixel coordinates. */
     private void centerOnPos(double x, double y) {
+        clientGui.showBoardView(boardId);
         bv.centerOnPointRel(
                 ((x - leftMargin)) / ((HEX_SIDE_BY_SIN30[zoom] + HEX_SIDE[zoom]) * board.getWidth()),
                 ((y - topMargin)) / (2 * HEX_SIDE_BY_COS30[zoom] * board.getHeight()));

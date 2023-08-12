@@ -35,6 +35,10 @@ public class BoardUtilities {
         return 3 + elevationGenerators.size();
     }
 
+    public static Board combine(int width, int height, int sheetWidth, int sheetHeight,
+                                Board[] boards, List<Boolean> isRotated, int medium) {
+        return combine(width, height, sheetWidth, sheetHeight, boards, isRotated, medium, -1);
+    }
     /**
      * Combines one or more boards into one huge megaboard!
      *
@@ -47,7 +51,7 @@ public class BoardUtilities {
      * @param medium Sets the medium the map is in (ie., ground, atmo, space)
      */
     public static Board combine(int width, int height, int sheetWidth, int sheetHeight,
-                                Board[] boards, List<Boolean> isRotated, int medium) {
+                                Board[] boards, List<Boolean> isRotated, int medium, int boardId) {
 
         int resultWidth = width * sheetWidth;
         int resultHeight = height * sheetHeight;
@@ -75,7 +79,7 @@ public class BoardUtilities {
             }
         }
 
-        Board result = new Board();
+        Board result = new Board(boardId);
         result.setRoadsAutoExit(roadsAutoExit);
         // Initialize all hexes - buildings, exits, etc
         result.newData(resultWidth, resultHeight, resultData, null);
@@ -116,6 +120,15 @@ public class BoardUtilities {
      * @param mapSettings The parameters for random board creation.
      */
     public static Board generateRandom(MapSettings mapSettings) {
+        return generateRandom(mapSettings, -1);
+    }
+
+    /**
+     * Generates a Random Board
+     *
+     * @param mapSettings The parameters for random board creation.
+     */
+    public static Board generateRandom(MapSettings mapSettings, int boardId) {
         int[][] elevationMap = new int[mapSettings.getBoardWidth()][mapSettings.getBoardHeight()];
         double sizeScale = (double) (mapSettings.getBoardWidth() * mapSettings.getBoardHeight())
                 / (16d * 17d);
@@ -140,7 +153,7 @@ public class BoardUtilities {
             }
         }
 
-        Board result = new Board(mapSettings.getBoardWidth(), mapSettings.getBoardHeight(), nb);
+        Board result = new Board(mapSettings.getBoardWidth(), mapSettings.getBoardHeight(), boardId, nb);
 
         if (mapSettings.getMedium() == MapSettings.MEDIUM_SPACE) {
             result.setType(Board.T_SPACE);

@@ -1141,7 +1141,8 @@ public class Client implements IClientCommandHandler {
 
     @SuppressWarnings("unchecked")
     protected void receiveBuildingUpdate(Packet packet) {
-        game.getBoard().updateBuildings((Vector<Building>) packet.getObject(0));
+        var updatedBuildings = (Vector<Building>) packet.getObject(0);
+        game.getGroundBoards().forEach(board -> board.updateBuildings(updatedBuildings));
     }
 
     @SuppressWarnings("unchecked")

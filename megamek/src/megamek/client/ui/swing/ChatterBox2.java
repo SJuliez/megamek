@@ -110,9 +110,10 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
     private Point lastScrollPoint;
 
     private Vector<String> messages = new Vector<>();
+    private boolean isActive = false;
 
     private Client client;
-    private BoardView bv;
+    private final ClientGUI clientGUI;
 
     private Image upbutton;
     private Image downbutton;
@@ -122,9 +123,10 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
 
     private FontMetrics fm;
 
-    public ChatterBox2(ClientGUI client, BoardView boardview, MegaMekController controller) {
-        this.client = client.getClient();
-        client.getClient().getGame().addGameListener(new GameListenerAdapter() {
+    public ChatterBox2(ClientGUI clientGUI, MegaMekController controller) {
+        client = clientGUI.getClient();
+        this.clientGUI = clientGUI;
+        client.getGame().addGameListener(new GameListenerAdapter() {
             @Override
             public void gamePlayerChat(GamePlayerChatEvent e) {
                 addChatMessage(e.getMessage());
@@ -146,25 +148,24 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
             }
         });
 
-        bv = boardview;
         adaptToGUIScale();
 
-        Toolkit toolkit = bv.getToolkit();
+        Toolkit toolkit = clientGUI.getToolkit();
         upbutton = toolkit.getImage(new MegaMekFile(Configuration.widgetsDir(), 
                 FILENAME_BUTTON_UP).toString());
-        PMUtil.setImage(upbutton, client);
+        PMUtil.setImage(upbutton, clientGUI);
         downbutton = toolkit.getImage(new MegaMekFile(Configuration.widgetsDir(), 
                 FILENAME_BUTTON_DOWN).toString());
-        PMUtil.setImage(downbutton, client);
+        PMUtil.setImage(downbutton, clientGUI);
         minbutton = toolkit.getImage(new MegaMekFile(Configuration.widgetsDir(), 
                 FILENAME_BUTTON_MINIMISE).toString());
-        PMUtil.setImage(minbutton, client);
+        PMUtil.setImage(minbutton, clientGUI);
         maxbutton = toolkit.getImage(new MegaMekFile(Configuration.widgetsDir(), 
                 FILENAME_BUTTON_MAXIMISE).toString());
-        PMUtil.setImage(maxbutton, client);
+        PMUtil.setImage(maxbutton, clientGUI);
         resizebutton = toolkit.getImage(new MegaMekFile(Configuration.widgetsDir(), 
                 FILENAME_BUTTON_RESIZE).toString());
-        PMUtil.setImage(resizebutton, client);
+        PMUtil.setImage(resizebutton, clientGUI);
 
         registerKeyboardCommands(controller);
 
@@ -182,7 +183,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
 
                     @Override
                     public boolean shouldPerformAction() {
-                        return bv.getChatterBoxActive();
+                        return isActive;
                     }
 
                     @Override
@@ -228,7 +229,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
         setIdleTime(0, false);
         slidingUp = false;
         slidingDown = true;
-        bv.setChatterBoxActive(false);
+        isActive = false;
     }
 
     private void stopSliding() {
@@ -307,7 +308,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
         lastScrollPoint = null;
         scrolling = false;
         computeScrollBarOffset();
-        bv.refreshDisplayables();
+        clientGUI.refreshDisplayablesOnBoardViews();
         increasedChatScroll = false;
         decreasedChatScroll = false;
     }
@@ -372,7 +373,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
         }
 
         if (message != null) {
-            bv.refreshDisplayables();
+            clientGUI.refreshDisplayablesOnBoardViews();
         }
 
         int x = p.x;
@@ -381,7 +382,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
 
         if ((x < DIST_SIDE) || (x > (DIST_SIDE + width)) || (y < yOffset)
                 || (y > (yOffset + height))) {
-            bv.setChatterBoxActive(false);
+            isActive = false;
             return false;
         }
         isHit = true;
@@ -392,7 +393,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
             return true;
         }
         
-        bv.setChatterBoxActive(true);
+        isActive = true;
         if (isDown()) {
             slideUp();
         }
@@ -401,7 +402,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
         if ((x > (width - 17)) && (x < (width - 1)) && (y > (yOffset + 2 + 14))
                 && (y < (yOffset + 32))) {
             scrollUp();
-            bv.refreshDisplayables();
+            clientGUI.refreshDisplayablesOnBoardViews();
             return true;
         }
         // resize
@@ -417,7 +418,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
         if ((x > (width - 17)) && (x < (width - 1)) && (y > (yOffset + 31))
                 && (y < ((yOffset + 18 + scrollBarOffset) - 1))) {
             pageUp();
-            bv.refreshDisplayables();
+            clientGUI.refreshDisplayablesOnBoardViews();
             return true;
         }
         // Scroll bar
@@ -433,20 +434,20 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
                 && (y > (yOffset + 18 + scrollBarOffset + scrollBarHeight))
                 && (y < (yOffset + 18 + getScrollbarOuterHeight()))) {
             pageDown();
-            bv.refreshDisplayables();
+            clientGUI.refreshDisplayablesOnBoardViews();
             return true;
         }
         // Scroll down
         if ((x > (width - 17)) && (x < (width - 1)) && (y > ((size.height) - 25))
                 && (y < ((size.height) - 11))) {
             scrollDown();
-            bv.refreshDisplayables();
+            clientGUI.refreshDisplayablesOnBoardViews();
             return true;
         }
         // Message box
         if ((x > 10) && (x < (width - 40)) && (y > ((size.height) - 25))
                 && (y < ((size.height) - 11))) {
-            bv.refreshDisplayables();
+            clientGUI.refreshDisplayablesOnBoardViews();
             return true;
         }
         return true;
@@ -469,19 +470,19 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
 
         // Min/max button
         if (slideOffset == getMaxSlideOffset()) {
-            graph.drawImage(maxbutton, 10 + clipBounds.x, yOffset + 3, bv);
+            graph.drawImage(maxbutton, 10 + clipBounds.x, yOffset + 3, null);
         } else {
-            graph.drawImage(minbutton, 10 + clipBounds.x, yOffset + 3, bv);
+            graph.drawImage(minbutton, 10 + clipBounds.x, yOffset + 3, null);
         }
 
         // Title
         printLine(graph, "Incoming messages...", 29 + clipBounds.x, yOffset + h);
 
         // resize button
-        graph.drawImage(resizebutton, (width - 16) + clipBounds.x, yOffset + 3, bv);
+        graph.drawImage(resizebutton, (width - 16) + clipBounds.x, yOffset + 3, null);
 
         // Scroll up button
-        graph.drawImage(upbutton, (width - 16) + clipBounds.x, yOffset + 16, bv);
+        graph.drawImage(upbutton, (width - 16) + clipBounds.x, yOffset + 16, null);
 
         // Scroll bar outer
         graph.drawRect((width - 16) + clipBounds.x, yOffset + 30, 13, getScrollbarOuterHeight());
@@ -490,11 +491,11 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
         graph.drawRect((width - 14) + clipBounds.x, yOffset + 31 + scrollBarOffset, 9, scrollBarHeight);
 
         // Scroll down button
-        graph.drawImage(downbutton, (width - 16) + clipBounds.x, (yOffset + height) - 20, bv);
+        graph.drawImage(downbutton, (width - 16) + clipBounds.x, (yOffset + height) - 20, null);
 
         // Message box
         graph.drawRect(10 + clipBounds.x, (yOffset + height) - 21, width - 50, 17);
-        if (message != null && bv.getChatterBoxActive()) {
+        if (message != null && isActive) {
             printLine(graph, visibleMessage + "_", 13 + clipBounds.x, (yOffset + height) - 7);
         }
 
@@ -548,7 +549,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
         if (stringWidth <= lineWidth) {
             messages.addElement(line);
             computeScrollBarHeight();
-            bv.refreshDisplayables();
+            clientGUI.refreshDisplayablesOnBoardViews();
             return;
         }
 
@@ -566,7 +567,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
         }
         messages.addElement(nextLine);
         computeScrollBarHeight();
-        bv.refreshDisplayables();
+        clientGUI.refreshDisplayablesOnBoardViews();
     }
 
     /**
@@ -716,7 +717,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
     //
     @Override
     public void keyPressed(KeyEvent ke) {
-        if (!bv.getChatterBoxActive()) {
+        if (!isActive) {
             return;
         }
         
@@ -744,12 +745,12 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
             case KeyEvent.VK_UP:
                 cb.historyBookmark++;
                 cb.fetchHistory();
-                bv.repaint();
+                clientGUI.repaintBoardViews();
                 return;
             case KeyEvent.VK_DOWN:
                 cb.historyBookmark--;
                 cb.fetchHistory();
-                bv.repaint();
+                clientGUI.repaintBoardViews();
                 return;
             case KeyEvent.VK_ALT:
             case KeyEvent.VK_SHIFT:
@@ -804,11 +805,11 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
                     clearMessage();
                     cb.setMessage("");
                 }
-                bv.setChatterBoxActive(false);
+                isActive = false;
                 break;
             case KeyEvent.VK_ESCAPE:
                 clearMessage();
-                bv.setChatterBoxActive(false);
+                isActive = false;
                 slideDown();
                 break;
             case KeyEvent.VK_BACK_SPACE:
@@ -847,7 +848,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
                 }
                 visibleMessage = message.substring(i);
         }
-        bv.refreshDisplayables();
+        clientGUI.refreshDisplayablesOnBoardViews();
     }
 
     @Override
@@ -899,9 +900,9 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
 
     private void adaptToGUIScale() {
         FONT_CHAT = FONT_CHAT.deriveFont((float) UIUtil.scaleForGUI(UIUtil.FONT_SCALE1));
-        fm = bv.getFontMetrics(FONT_CHAT);
+        fm = clientGUI.getFontMetrics(FONT_CHAT);
         max_nbr_rows = (height / fm.getHeight()) - 2;
-        bv.refreshDisplayables();
+        clientGUI.refreshDisplayablesOnBoardViews();
     }
 
     @Override
@@ -916,5 +917,9 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
                 break;
 
         }
+    }
+
+    public boolean isActive() {
+        return isActive;
     }
 }

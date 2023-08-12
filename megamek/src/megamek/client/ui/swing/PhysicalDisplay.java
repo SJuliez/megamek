@@ -1380,9 +1380,9 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
         });
 
         // Is there a building in the hex?
-        Building bldg = game.getBoard(ce().getCurrentMap()).getBuildingAt(pos);
+        Building bldg = game.getBoard(ce()).getBuildingAt(pos);
         if (bldg != null) {
-            targets.add(new BuildingTarget(ce().getBoardLocation(), game.getBoard(ce().getCurrentMap()), false));
+            targets.add(new BuildingTarget(ce().getBoardLocation(), game.getBoard(ce()), false));
         }
 
         // Is the attacker targeting its own hex?
@@ -1686,10 +1686,10 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
             if (canAim) {
 
                 final int attackerElevation = ce().getElevation()
-                        + ce().getGame().getBoard(ce().getCurrentMap()).getHex(ce().getPosition())
+                        + ce().getBoard().getHex(ce().getPosition())
                                 .getLevel();
                 final int targetElevation = target.getElevation()
-                        + ce().getGame().getBoard(ce().getCurrentMap())
+                        + ce().getBoard()
                                 .getHex(target.getPosition()).getLevel();
 
                 if ((target instanceof Mech) && (ce() instanceof Mech)

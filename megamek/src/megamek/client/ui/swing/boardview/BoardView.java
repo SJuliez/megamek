@@ -74,9 +74,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static megamek.client.ui.swing.tooltip.TipUtil.*;
-import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
-import static megamek.client.ui.swing.util.UIUtil.uiBlack;
-import static megamek.client.ui.swing.util.UIUtil.uiWhite;
+import static megamek.client.ui.swing.util.UIUtil.*;
 
 /**
  * Displays the board; lets the user scroll around and select points on it.
@@ -1247,8 +1245,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
     /** @return True when the given Entity is currently on the board of this BoardView (it may have a null position). */
     public boolean isOnThisBoard(@Nullable Entity entity) {
-        return (boardSupplier.get() != null) && (entity != null)
-                && boardSupplier.get().getMapType() == entity.getCurrentMap();
+        return (entity != null) && entity.isOnBoard(boardId);
     }
 
     /** @return True when the given MapLocation is of the same MapType as the board of this BoardView. */
@@ -2623,7 +2620,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
         // Darken the hex for nighttime, if applicable
         if (GUIP.getDarkenMapAtNight()
-                && IlluminationLevel.determineIlluminationLevel(game, c).isNone()
+                && IlluminationLevel.determineIlluminationLevel(game, c, boardId).isNone()
                 && (game.getPlanetaryConditions().getLight() > PlanetaryConditions.L_DAY)) {
             for (int x = 0; x < hexImage.getWidth(); ++x) {
                 for (int y = 0; y < hexImage.getHeight(); ++y) {
@@ -2838,7 +2835,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
                 // Darken the hex for nighttime, if applicable
                 if (GUIP.getDarkenMapAtNight()
-                        && IlluminationLevel.determineIlluminationLevel(game, c).isNone()
+                        && IlluminationLevel.determineIlluminationLevel(game, c, boardId).isNone()
                         && (game.getPlanetaryConditions().getLight() > PlanetaryConditions.L_DAY)) {
                     for (int x = 0; x < scaledImage.getWidth(null); ++x) {
                         for (int y = 0; y < scaledImage.getHeight(); ++y) {
@@ -5197,13 +5194,15 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         Map<Coords, Color> newECCMHexes = new HashMap<>();
         Map<Coords, Color> newECCMCenters = new HashMap<>();
 
+        List<Entity> unitsOnThisBoard = game.getEntitiesOn(boardId);
+
         // Compute info about all E(C)CM on the board
-        final List<ECMInfo> allEcmInfo = ComputeECM.computeAllEntitiesECMInfo(game.getEntitiesVector());
+        final List<ECMInfo> allEcmInfo = ComputeECM.computeAllEntitiesECMInfo(unitsOnThisBoard);
 
         // First, mark the sources of E(C)CM
         // Used for highlighting hexes and tooltips
-        for (Entity e : game.getEntitiesVector()) {
-            if (e.getPosition() == null || !isOnThisBoard(e)) {
+        for (Entity e : unitsOnThisBoard) {
+            if (e.getPosition() == null) {
                 continue;
             }
 
@@ -5259,11 +5258,11 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             }
 
             // hidden enemy entities don't show their ECM bubble
-                if (ecmInfo.getEntity() != null
-                        && ecmInfo.getEntity().getOwner().isEnemyOf(localPlayer)
-                        && ecmInfo.getEntity().isHidden()) {
-                    continue;
-                }
+            if (ecmInfo.getEntity() != null
+                    && ecmInfo.getEntity().getOwner().isEnemyOf(localPlayer)
+                    && ecmInfo.getEntity().isHidden()) {
+                continue;
+            }
 
 
             final Coords ecmPos = ecmInfo.getPos();
@@ -5901,6 +5900,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 g.drawImage(scrollPaneBgBuffer, 0, 0, null);
             }
         };
+        scrollpane.setName(String.valueOf(boardId));
         scrollpane.setBorder(new MegamekBorder(bvSkinSpec));
         scrollpane.setLayout(new ScrollPaneLayout());
         // we need to use the simple scroll mode because otherwise the

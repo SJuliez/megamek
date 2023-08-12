@@ -182,7 +182,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         if (null != ce()) {
             setTurnEnabled(true);
             butDone.setEnabled(false);
-            clientgui.boardViews().forEach(b -> b.markDeploymentHexesFor(ce()));
+            clientgui.getBoardView(ce()).markDeploymentHexesFor(ce());
             // set facing according to starting position
             switch (ce().getStartingPos()) {
                 case Board.START_W:
@@ -229,7 +229,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             clientgui.getUnitDisplay().showPanel("movement");
             clientgui.boardViews().forEach(b -> b.setWeaponFieldOfFire(ce().getFacing(), ce().getPosition()));
             clientgui.boardViews().forEach(b -> b.setSensorRange(ce(), ce().getPosition()));
-
+            clientgui.showBoardView(ce().getCurrentBoardId());
         } else {
             disableButtons();
             setNextEnabled(true);

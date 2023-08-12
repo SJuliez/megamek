@@ -206,8 +206,8 @@ public class LargeSupportTank extends SupportTank {
         // defender would choose along which hex the LOS gets drawn, and that
         // side also determines the side we hit in
         if ((fa % 30) == 0) {
-            Hex srcHex = game.getBoard(getCurrentMap()).getHex(src);
-            Hex curHex = game.getBoard(getCurrentMap()).getHex(getPosition());
+            Hex srcHex = getBoard().getHex(src);
+            Hex curHex = getBoard().getHex(getPosition());
             if ((srcHex != null) && (curHex != null)) {
                 LosEffects.AttackInfo ai = LosEffects.buildAttackInfo(src,
                         getPosition(), 1, getElevation(), srcHex.floor(),

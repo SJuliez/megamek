@@ -71,6 +71,8 @@ public class Board implements Serializable {
     private int minElevation = UNDEFINED_MIN_ELEV;
     private int maxElevation = UNDEFINED_MAX_ELEV;
 
+    private final int boardId;
+
     private int mapType = T_GROUND;
     private MapType mapType2 = MapType.GROUND;
     private MapTypeFlag mapTypeFlag = MapTypeFlag.NONE;
@@ -163,6 +165,10 @@ public class Board implements Serializable {
         this(0, 0);
     }
 
+    public Board(int boardId) {
+        this(0, 0, boardId);
+    }
+
     /**
      * Creates a new board of the specified dimensions. All hexes in the board
      * will be null until otherwise set.
@@ -173,9 +179,7 @@ public class Board implements Serializable {
      *            the height dimension.
      */
     public Board(int width, int height) {
-        this.width = width;
-        this.height = height;
-        data = new Hex[width * height];
+        this(width, height, -1);
     }
 
     /**
@@ -188,6 +192,26 @@ public class Board implements Serializable {
      * @param data
      */
     public Board(int width, int height, Hex... data) {
+        this(width, height, -1, data);
+    }
+
+    public Board(int width, int height, int boardId) {
+        this.width = width;
+        this.height = height;
+        data = new Hex[width * height];
+        this.boardId = boardId;
+    }
+
+    /**
+     * Creates a new board of the specified dimensions and specified hex data.
+     *
+     * @param width
+     *            the width dimension.
+     * @param height
+     *            the height dimension.
+     * @param data
+     */
+    public Board(int width, int height, int boardId, Hex... data) {
         this.width = width;
         this.height = height;
         this.data = new Hex[width * height];
@@ -196,39 +220,9 @@ public class Board implements Serializable {
                 this.data[(y * width) + x] = data[(y * width) + x];
             }
         }
+        this.boardId = boardId;
     }
 
-    /**
-     * Creates a new board of the specified dimensions, hexes, buildings, and
-     * inferno trackers. Do *not* use this method unless you have carefully
-     * examined this class.
-     *
-     * @param width
-     *            The <code>int</code> width dimension in hexes.
-     * @param height
-     *            The <code>int</code> height dimension in hexes.
-     * @param hexes
-     *            The array of <code>Hex</code>es for this board. This object is
-     *            used directly without being copied. This value should only be
-     *            <code>null</code> if either <code>width</code> or
-     *            <code>height</code> is zero.
-     * @param bldgs
-     *            The <code>Vector</code> of <code>Building</code>s for this
-     *            board. This object is used directly without being copied.
-     * @param infMap
-     *            The <code>Hashtable</code> that map <code>Coords</code> to
-     *            <code>InfernoTracker</code>s for this board. This object is
-     *            used directly without being copied.
-     */
-    public Board(int width, int height, Hex[] hexes, Vector<Building> bldgs,
-            Hashtable<Coords, InfernoTracker> infMap) {
-        this.width = width;
-        this.height = height;
-        data = hexes;
-        buildings = bldgs;
-        infernos = infMap;
-        createBldgByCoords();
-    }
     //endregion Constructors
 
     /**
@@ -1455,32 +1449,28 @@ public class Board implements Serializable {
      * @param bldgs the <code>Vector</code> of <code>Building</code> objects to be updated.
      */
     public void updateBuildings(Vector<Building> bldgs) {
+        bldgs.forEach(this::updateBuilding);
+    }
 
-        // Walk through the vector of buildings.
-        Enumeration<Building> loop = bldgs.elements();
-        while (loop.hasMoreElements()) {
-            final Building other = loop.nextElement();
-
-            // Find the local object for the given building.
-            Building bldg = getLocalBuilding(other);
-
-            // Handle garbage input.
-            if (bldg == null) {
-                LogManager.getLogger().error("Could not find a match for " + other + " to update.");
-                continue;
-            }
-            Enumeration<Coords> coordsEnum = bldg.getCoords();
-            while (coordsEnum.hasMoreElements()) {
-                // Set the current and phase CFs of the building hexes.
-                final Coords coords = coordsEnum.nextElement();
-                bldg.setCurrentCF(other.getCurrentCF(coords), coords);
-                bldg.setPhaseCF(other.getPhaseCF(coords), coords);
-                bldg.setArmor(other.getArmor(coords), coords);
-                bldg.setBasement(coords,
-                        BasementType.getType(getHex(coords).terrainLevel(Terrains.BLDG_BASEMENT_TYPE)));
-                bldg.setBasementCollapsed(coords, other.getBasementCollapsed(coords));
-                bldg.setDemolitionCharges(other.getDemolitionCharges());
-            }
+    public void updateBuilding(Building receivedBuilding) {
+        if (boardId != receivedBuilding.getBoardId()) {
+            return;
+        }
+        // Find the local object for the given building.
+        Building bldg = getLocalBuilding(receivedBuilding);
+        if (bldg == null) {
+            LogManager.getLogger().error("Could not find a match for " + receivedBuilding + " to update.");
+            return;
+        }
+        for (Coords coords : bldg.getCoordsList()) {
+            // Set the current and phase CFs of the building hexes.
+            bldg.setCurrentCF(receivedBuilding.getCurrentCF(coords), coords);
+            bldg.setPhaseCF(receivedBuilding.getPhaseCF(coords), coords);
+            bldg.setArmor(receivedBuilding.getArmor(coords), coords);
+            bldg.setBasement(coords,
+                    BasementType.getType(getHex(coords).terrainLevel(Terrains.BLDG_BASEMENT_TYPE)));
+            bldg.setBasementCollapsed(coords, receivedBuilding.getBasementCollapsed(coords));
+            bldg.setDemolitionCharges(receivedBuilding.getDemolitionCharges());
         }
     }
 
@@ -1958,5 +1948,9 @@ public class Board implements Serializable {
     @Override
     public String toString() {
         return "Board: " + width + "x" + height + "; " + mapType2 + "; " + (tags.isEmpty() ? "" : tags);
+    }
+
+    public int getBoardId() {
+        return boardId;
     }
 }

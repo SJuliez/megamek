@@ -360,7 +360,7 @@ public class GunEmplacement extends Tank {
             return 1.0;
         }
         
-        Building occupiedStructure = getGame().getBoard(MapType.GROUND).getBuildingAt(getPosition());
+        Building occupiedStructure = getBoard().getBuildingAt(getPosition());
         
         // we'll consider undeployed emplacements to be fully intact
         if ((occupiedStructure == null) || (initialBuildingCF + initialBuildingArmor == 0)) {

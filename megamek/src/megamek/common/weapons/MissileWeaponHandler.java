@@ -614,7 +614,7 @@ public class MissileWeaponHandler extends AmmoWeaponHandler {
         }
 
         // Which building takes the damage?
-        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae).getBuildingAt(target.getPosition());
         String number = nweapons > 1 ? " (" + nweapons + ")" : "";
         // Report weapon attack and its to-hit value.
         Report r = new Report(3115);

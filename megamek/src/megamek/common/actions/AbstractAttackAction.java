@@ -105,7 +105,7 @@ public abstract class AbstractAttackAction extends AbstractEntityAction implemen
 
         // The base night penalty
         final IlluminationLevel hexIllumLvl = IlluminationLevel.determineIlluminationLevel(game,
-                target.getPosition());
+                target.getBoardLocation());
         int night_modifier = game.getPlanetaryConditions().getLightHitPenalty(isWeapon);
         toHit.addModifier(night_modifier, game.getPlanetaryConditions().getLightDisplayableName());
 

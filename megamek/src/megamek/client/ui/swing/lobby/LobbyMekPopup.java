@@ -436,11 +436,14 @@ final class LobbyMekPopup {
             }
             menu.add(ScalingPopup.spacer());
 
+            // Map choice
             Game game = clientGui.getClient().getGame();
             List<MapSettings> allMapSettings = game.getAllMapSettings();
             for (int i = 0; i < allMapSettings.size(); i++) {
-                menu.add(menuItem("On Board #" + i + " (" + allMapSettings.get(i).getMapType() + ")",
-                        LMP_MAP + "|" + i + eIds, enabled, listener));
+                if (allMapSettings.get(i).isUsed()) {
+                    menu.add(menuItem("On Board #" + i + " (" + allMapSettings.get(i).getMapType() + ")",
+                            LMP_MAP + "|" + i + eIds, enabled, listener));
+                }
             }
             menu.add(ScalingPopup.spacer());
 

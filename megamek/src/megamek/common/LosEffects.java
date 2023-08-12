@@ -428,8 +428,8 @@ public class LosEffects {
             return los;
         }
 
-        final Hex attackerHex = game.getBoard().getHex(attackerPosition);
-        final Hex targetHex = game.getBoard().getHex(targetPosition);
+        final Hex attackerHex = game.getBoard(attacker.getBoardLocation()).getHex(attackerPosition);
+        final Hex targetHex = game.getBoard(target.getBoardLocation()).getHex(targetPosition);
         if ((attackerHex == null) || (targetHex == null)) {
             LosEffects los = new LosEffects();
             los.blocked = true; // TODO: come up with a better "impossible"
@@ -439,7 +439,7 @@ public class LosEffects {
         }
 
         // this will adjust the effective height of a building target by 1 if the hex contains a rooftop gun emplacement
-        final int targetHeightAdjustment = game.hasRooftopGunEmplacement(targetHex.getCoords()) ? 1 : 0;
+        final int targetHeightAdjustment = game.hasRooftopGunEmplacement(target.getBoardLocation()) ? 1 : 0;
         
         final AttackInfo ai = new AttackInfo();
         ai.attackerIsMech = attacker instanceof Mech;
@@ -488,7 +488,7 @@ public class LosEffects {
         final boolean targetUnderWater;
         final boolean targetInWater;
         final boolean targetOnLand;
-        if (game.getBoard().contains(targetPosition)) {
+        if (game.getBoard(target.getBoardLocation()).contains(targetPosition)) {
             targetUnderWater = targetHex.containsTerrain(Terrains.WATER)
                     && (targetHex.depth() > 0) && (targetElevation < targetHex.getLevel());
             targetInWater = targetHex.containsTerrain(Terrains.WATER)
@@ -737,14 +737,14 @@ public class LosEffects {
         boolean targetInBuilding = false;
         if (ai.targetEntity) {
             targetInBuilding = Compute.isInBuilding(game, ai.targetAbsHeight
-                    - board.getHex(ai.targetPos).getLevel(), ai.targetPos);
+                    - board.getHex(ai.targetPos).getLevel(), ai.targetPos, ai.targetLocation.getBoardId());
         }
 
         // If the target and attacker are both in a
         // building, set that as the first LOS effect.
         if (targetInBuilding
                 && Compute.isInBuilding(game, ai.attackAbsHeight
-                        - board.getHex(ai.attackPos).getLevel(), ai.attackPos)) {
+                        - board.getHex(ai.attackPos).getLevel(), ai.attackPos, ai.targetLocation.getBoardId())) {
             los.setThruBldg(board.getBuildingAt(in.get(0)));
             // elevation differences count as building hexes passed through
             los.buildingLevelsOrHexes += (Math.abs((ai.attackAbsHeight-ai.attackHeight) - (ai.targetAbsHeight-ai.targetHeight)));
@@ -801,15 +801,15 @@ public class LosEffects {
         boolean targetInBuilding = false;
         if (ai.targetEntity) {
             targetInBuilding = Compute.isInBuilding(game, ai.targetAbsHeight
-                    - board.getHex(ai.targetPos).getLevel(), ai.targetPos);
+                    - board.getHex(ai.targetPos).getLevel(), ai.targetPos, ai.targetLocation.getBoardId());
         }
 
         // If the target and attacker are both in a
         // building, set that as the first LOS effect.
         if (targetInBuilding
                 && Compute.isInBuilding(game, ai.attackAbsHeight
-                        - board.getHex(ai.attackPos).getLevel(), ai.attackPos)) {
-            los.setThruBldg(game.getBoard().getBuildingAt(in.get(0)));
+                        - board.getHex(ai.attackPos).getLevel(), ai.attackPos, ai.targetLocation.getBoardId())) {
+            los.setThruBldg(game.getBoard(ai.targetLocation.getBoardId()).getBuildingAt(in.get(0)));
             // elevation differences count as building hexes passed through
             los.buildingLevelsOrHexes += (Math
                     .abs((ai.attackAbsHeight - ai.attackHeight)

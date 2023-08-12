@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - The MegaMek Team. All Rights Reserved.
+ * Copyright (c) 2021, 2023 - The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MegaMek.
  *
@@ -18,10 +18,7 @@
  */
 package megamek.common.enums;
 
-import megamek.common.Coords;
-import megamek.common.Game;
-import megamek.common.Hex;
-import megamek.common.Terrains;
+import megamek.common.*;
 
 import java.util.Objects;
 
@@ -51,6 +48,10 @@ public enum IlluminationLevel {
     }
     //endregion Boolean Comparison Methods
 
+    public static IlluminationLevel determineIlluminationLevel(final Game game, Coords coords, int boardId) {
+        return determineIlluminationLevel(game, new BoardLocation(coords, boardId));
+    }
+
     /**
      * @return the level of illumination for a given coords. Different light sources affect how much
      * the nighttime penalties are reduced.
@@ -58,9 +59,10 @@ public enum IlluminationLevel {
      * Game::getIlluminatedPositions, as that just returns the hexes that are effected by
      * searchlights, whereas this one considers searchlights as well as other light sources.
      */
-    public static IlluminationLevel determineIlluminationLevel(final Game game, final Coords coords) {
+    public static IlluminationLevel determineIlluminationLevel(final Game game, BoardLocation boardLocation) {
+        final Coords coords = boardLocation.getCoords();
         // fix for NPE when recovering spacecraft while in visual range of enemy
-        if (game.getBoard().inSpace()) {
+        if (game.getBoard(boardLocation).inSpace()) {
             return IlluminationLevel.NONE;
         }
 
@@ -75,14 +77,14 @@ public enum IlluminationLevel {
         }
 
         // Fires can reduce nighttime penalties by up to 2 points.
-        final Hex hex = game.getBoard().getHex(coords);
+        final Hex hex = game.getHex(boardLocation);
         if ((hex != null) && hex.containsTerrain(Terrains.FIRE)) {
             return IlluminationLevel.FIRE;
         }
 
         // If we are adjacent to a burning hex, we are also illuminated
         final boolean neighbouringFire = coords.allAdjacent().stream()
-                .map(adjacent -> game.getBoard().getHex(adjacent))
+                .map(adjacent -> game.getBoard(boardLocation).getHex(adjacent))
                 .filter(Objects::nonNull)
                 .anyMatch(adjacent -> adjacent.containsTerrain(Terrains.FIRE));
 

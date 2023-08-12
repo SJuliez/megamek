@@ -86,7 +86,7 @@ class EntitySprite extends Sprite {
         this.entity = entity;
         this.radarBlipImage = radarBlipImage;
         this.secondaryPos = secondaryPos;
-        if (bv.game.getBoard().inSpace()) {
+        if (bv.game.getBoard(entity).inSpace()) {
             LABEL_BACK = LABEL_SPACE_BACK;
         } else {
             LABEL_BACK = LABEL_GROUND_BACK;
@@ -393,7 +393,7 @@ class EntitySprite extends Sprite {
      */
     @Override
     public void prepare() {
-        final Board board = bv.game.getBoard();
+        final Board board = bv.game.getBoard(entity);
         // recalculate bounds & label
         getBounds();
 

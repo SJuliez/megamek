@@ -70,6 +70,9 @@ public class Building implements Serializable {
      */
     private int id = Building.UNKNOWN;
 
+    /** The ID of the board this building is on */
+    private final int boardId;
+
     /**
      * The coordinates of every hex of this building.
      */
@@ -248,6 +251,7 @@ public class Building implements Serializable {
         // ASSUMPTION: this will be unique ID across ALL the building's
         // hexes for ALL the clients of this board.
         id = coords.getX() * 10000 + coords.getY();
+        boardId = board.getBoardId();
 
         // The building occupies the given coords, at least.
         coordinates.addElement(coords);
@@ -797,5 +801,9 @@ public class Building implements Serializable {
 
     public void setBasementCollapsed(Coords coords, boolean collapsed) {
         basementCollapsed.put(coords, collapsed);
+    }
+
+    public int getBoardId() {
+        return boardId;
     }
 }

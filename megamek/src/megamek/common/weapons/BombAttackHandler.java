@@ -212,7 +212,7 @@ public class BombAttackHandler extends WeaponHandler {
                         drop = Compute.scatterDiveBombs(coords, moF);
                     }
 
-                    if (game.getBoard(ae.getCurrentMap()).contains(drop)) {
+                    if (game.getBoard(ae).contains(drop)) {
                         // misses and scatters to another hex
                         r = new Report(6698);
                         r.indent(1);

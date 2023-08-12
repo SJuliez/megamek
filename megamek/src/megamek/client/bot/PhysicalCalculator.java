@@ -325,7 +325,7 @@ public final class PhysicalCalculator {
         
         // if the object of our affections is in a building, we have to target the building instead
         if (Compute.isInBuilding(game, to) || (to instanceof GunEmplacement)) {
-            target = new BuildingTarget(to.getBoardLocation(), game.getBoard(from.getCurrentMap()), false);
+            target = new BuildingTarget(to.getBoardLocation(), game.getBoard(from), false);
         }
         
         double bestDmg = 0.0;
@@ -493,20 +493,20 @@ public final class PhysicalCalculator {
                                             disp_c)) {
                 // If the displacement hex is not on the map, credit damage
                 // against full target armor
-                if (!game.getBoard(from.getCurrentMap()).contains(disp_c)) {
+                if (!game.getBoard(from).contains(disp_c)) {
                     dmg = (to.getTotalArmor()
                            * Compute.oddsAbove(odds.getValue(), toAptPiloting)) / 100.0;
                 }
-                if (game.getBoard(from.getCurrentMap()).contains(disp_c)) {
+                if (game.getBoard(from).contains(disp_c)) {
                     // Find the elevation difference
-                    elev_diff = game.getBoard(from.getCurrentMap()).getHex(to.getPosition())
+                    elev_diff = game.getBoard(from).getHex(to.getPosition())
                                     .getLevel();
-                    elev_diff -= game.getBoard(from.getCurrentMap()).getHex(disp_c).getLevel();
+                    elev_diff -= game.getBoard(from).getHex(disp_c).getLevel();
                     if (elev_diff < 0) {
                         elev_diff = 0;
                     }
                     // Set a flag if the displacement hex has water
-                    if (game.getBoard(from.getCurrentMap()).getHex(disp_c).containsTerrain(
+                    if (game.getBoard(from).getHex(disp_c).containsTerrain(
                             Terrains.WATER)) {
                         water_landing = true;
                     }
@@ -538,7 +538,7 @@ public final class PhysicalCalculator {
             if (!Compute.isValidDisplacement(game, to.getId(),
                                              to.getPosition(), disp_c)) {
                 // Set a flag if the displacement hex has water
-                if (game.getBoard(from.getCurrentMap()).getHex(to.getPosition()).containsTerrain(
+                if (game.getBoard(from).getHex(to.getPosition()).containsTerrain(
                         Terrains.WATER)) {
                     water_landing = true;
                 }
@@ -571,7 +571,7 @@ public final class PhysicalCalculator {
 
         // Conventional infantry in the open suffer double damage.
         if (to.isConventionalInfantry()) {
-            Hex e_hex = game.getBoard(from.getCurrentMap()).getHex(to.getPosition());
+            Hex e_hex = game.getBoard(from).getHex(to.getPosition());
             if (!e_hex.containsTerrain(Terrains.WOODS)
                     && !e_hex.containsTerrain(Terrains.BUILDING)) {
                 bestDmg *= 2.0;
@@ -612,7 +612,7 @@ public final class PhysicalCalculator {
         
         // if the object of our affections is in a building, we have to target the building instead
         if (Compute.isInBuilding(game, to) || (to instanceof GunEmplacement)) {
-            target = new BuildingTarget(to.getBoardLocation(), game.getBoard(from.getCurrentMap()), false);
+            target = new BuildingTarget(to.getBoardLocation(), game.getBoard(from), false);
         }
         
         ToHitData odds = KickAttackAction.toHit(game, from.getId(), target, action);

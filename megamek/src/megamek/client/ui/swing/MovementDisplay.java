@@ -1872,6 +1872,10 @@ public class MovementDisplay extends ActionPhaseDisplay {
             return;
         }
 
+        if (!((BoardView) b.getSource()).isOnThisBoard(ce())) {
+            return;
+        }
+
         final Entity ce = ce();
 
         // Are we ignoring events?

@@ -68,7 +68,7 @@ public class SRMInfernoHandler extends SRMHandler {
                 && ae.getPosition().distance(target.getPosition()) <= 1;
 
         // Which building takes the damage?
-        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae).getBuildingAt(target.getPosition());
 
         // Report weapon attack and its to-hit value.
         Report r = new Report(3115);

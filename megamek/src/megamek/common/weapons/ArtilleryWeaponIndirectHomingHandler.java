@@ -98,7 +98,7 @@ public class ArtilleryWeaponIndirectHomingHandler extends ArtilleryWeaponIndirec
                 && ae.getPosition().distance(target.getPosition()) <= 1;
 
         // Which building takes the damage?
-        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae).getBuildingAt(target.getPosition());
 
         // Report weapon attack and its to-hit value.
         Report r = new Report(3115);
@@ -276,7 +276,7 @@ public class ArtilleryWeaponIndirectHomingHandler extends ArtilleryWeaponIndirec
         // on the other hand, if the hex *is* the target, do full damage
         int hexDamage = targetingHex ? wtype.getRackSize() : ratedDamage * 2;
         
-        bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(coords);
+        bldg = game.getBoard(ae).getBuildingAt(coords);
         bldgAbsorbs = (bldg != null) ? bldg.getAbsorbtion(coords) : 0;
         bldgAbsorbs = Math.min(bldgAbsorbs, ratedDamage);
         handleClearDamage(vPhaseReport, bldg, hexDamage, false);

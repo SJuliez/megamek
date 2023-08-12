@@ -142,7 +142,7 @@ public class BayWeaponHandler extends WeaponHandler {
         }
 
         // Which building takes the damage?
-        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae).getBuildingAt(target.getPosition());
         String number = nweapons > 1 ? " (" + nweapons + ")" : "";
 
         // Report weapon attack and its to-hit value.
@@ -355,7 +355,7 @@ public class BayWeaponHandler extends WeaponHandler {
             ae.setLastTargetDisplayName(entityTarget.getDisplayName());
         }
         // Which building takes the damage?
-        Building bldg = game.getBoard(ae.getCurrentMap()).getBuildingAt(target.getPosition());
+        Building bldg = game.getBoard(ae).getBuildingAt(target.getPosition());
         // Report weapon attack and its to-hit value.
         Report r = new Report(3115);
         r.indent();

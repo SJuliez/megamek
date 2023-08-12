@@ -77,7 +77,7 @@ class MovementSprite extends Sprite {
          * | (transparency << 24), true); }
          */
         // red if offboard
-        if (!this.bv.game.getBoard().contains(end)) {
+        if (!this.bv.game.getBoard(en).contains(end)) {
             int colour = 0xff0000; // red
             int transparency = GUIP.getAttachArrowTransparency();
             moveColor = new Color(colour | (transparency << 24), true);

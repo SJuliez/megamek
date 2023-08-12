@@ -1038,7 +1038,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
         }
         Coords position = entity.getPosition();
         if (!en.isOffBoard() && (position != null)) {
-            Hex hex = game.getBoard(en.getCurrentMap()).getHex(position);
+            Hex hex = game.getBoard(en.getCurrentBoardId()).getHex(position);
             if (hex.containsTerrain(Terrains.FIRE)
                 && (hex.getFireTurn() > 0)) {
                 // standing in fire
