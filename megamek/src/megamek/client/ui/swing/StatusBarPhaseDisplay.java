@@ -19,24 +19,25 @@
  */
 package megamek.client.ui.swing;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.swing.*;
-
 import megamek.client.ui.GBC;
 import megamek.client.ui.Messages;
-import megamek.client.ui.swing.util.CommandAction;
-import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.TurnTimer;
 import megamek.client.ui.swing.util.UIUtil;
-import megamek.client.ui.swing.widget.*;
+import megamek.client.ui.swing.widget.MegamekButton;
+import megamek.client.ui.swing.widget.SkinSpecification;
+import megamek.client.ui.swing.widget.SkinXMLHandler;
 import megamek.common.*;
 import megamek.common.enums.GamePhase;
-import megamek.common.preference.*;
+import megamek.common.preference.IPreferenceChangeListener;
+import megamek.common.preference.PreferenceChangeEvent;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
 import static megamek.client.ui.swing.util.UIUtil.uiLightViolet;
@@ -109,7 +110,7 @@ public abstract class StatusBarPhaseDisplay extends AbstractPhaseDisplay
                 }
                 if (clientgui.isChatterBoxActive()) {
                     clientgui.boardViews().forEach(bv -> bv.setChatterBoxActive(false));
-//                    clientgui.cb2.clearMessage();
+                    clientgui.cb2.clearMessage();
                 } else if (clientgui.getClient().isMyTurn() || (e.getSource() instanceof MovementDisplay)) {
                     // Users can draw movement envelope during the movement phase
                     // even if it's not their turn, so we always want to be able

@@ -2910,6 +2910,18 @@ public class GameManager implements IGameManager {
         To have them deploy to the board that corresponds to a mapsetting, the board IDs must reflect the
         mapsetting IDs. Therefore the fixed order of board IDs here.
          */
+
+        /*
+        Board connections are simplified here as for now there is no UI to generate a more complicated setup.
+         */
+        if (game.boardExists(0) && game.boardExists(1)) {
+            game.connectBoards(0, 1, game.getBoard(1).getCenter());
+        }
+        if (game.boardExists(1) && game.boardExists(2)) {
+            Board spaceBoard = game.getBoard(2);
+            Coords groundCenter = new Coords(0, spaceBoard.getHeight() / 2);
+            game.connectBoards(1, 2, groundCenter);
+        }
     }
 
     /**
@@ -6591,9 +6603,10 @@ public class GameManager implements IGameManager {
                 if (step.getType() == MovePath.MoveStepType.OFF) {
                     a.setCurrentVelocity(md.getFinalVelocity());
                     entity.setAltitude(curAltitude);
-                    if (entity.getCurrentMap().isGround() && game.usesLowAtmoMap()) {
-                        entity.setCurrentBoard(-1);
-                        entity.setPosition(game.getBoard(MapType.LOW_ATMOSPHERE).getCenter());
+                    if (game.hasEnclosingBoard(entity.getBoardId())) {
+                        Board enclosingBoard = game.getBoard(entity.getBoard().getEnclosingBoard());
+                        entity.setCurrentBoard(enclosingBoard.getBoardId());
+                        entity.setPosition(enclosingBoard.getCenter());
                     } else {
                         processLeaveMap(md, true, -1);
                     }

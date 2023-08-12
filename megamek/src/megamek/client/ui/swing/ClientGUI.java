@@ -2993,7 +2993,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
     public boolean isChatterBoxActive() {
         return cb2.isActive();
-//        return boardViews().stream().anyMatch(BoardView::getChatterBoxActive);
     }
 
     public boolean isMovingUnits() {

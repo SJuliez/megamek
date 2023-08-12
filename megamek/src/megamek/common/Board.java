@@ -622,7 +622,7 @@ public class Board implements Serializable {
      * @return <code>true</code> if the board contains the specified coords
      */
     public boolean contains(@Nullable Coords coords) {
-        return coords != null && contains(coords.getX(), coords.getY());
+        return (coords != null) && contains(coords.getX(), coords.getY());
     }
 
     /**
@@ -1952,5 +1952,23 @@ public class Board implements Serializable {
 
     public int getBoardId() {
         return boardId;
+    }
+
+    public void setEnclosingBoard(int enclosingBoardId) {
+        enclosingBoard = enclosingBoardId;
+    }
+
+    public int getEnclosingBoard() {
+        return enclosingBoard;
+    }
+
+    public void setEmbeddedBoard(int boardId, Coords coords) {
+        if (contains(coords)) {
+            embeddedBoards.put(coords, boardId);
+        }
+    }
+
+    public Set<Coords> embeddedBoardCoords() {
+        return embeddedBoards.keySet();
     }
 }

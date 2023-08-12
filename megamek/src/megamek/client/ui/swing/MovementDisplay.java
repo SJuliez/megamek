@@ -779,6 +779,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         }
         clientgui.boardViews().forEach(BoardView::clearFieldOfFire);
         clientgui.boardViews().forEach(BoardView::clearSensorsRanges);
+        clientgui.showBoardView(ce().getCurrentBoardId());
         computeMovementEnvelope(ce);
     }
 

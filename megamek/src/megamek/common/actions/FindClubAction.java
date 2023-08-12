@@ -45,10 +45,10 @@ public class FindClubAction extends AbstractEntityAction {
      */
     public static boolean canMechFindClub(Game game, int entityId) {
         final Entity entity = game.getEntity(entityId);
-        if ((null == entity) || null == (entity.getPosition())) {
+        if ((null == entity) || !game.hasBoardLocation(entity.getBoardLocation())) {
             return false;
         }
-        final Hex hex = game.getBoard().getHex(entity.getPosition());
+        final Hex hex = game.getHex(entity.getBoardLocation());
 
         // Only biped and tripod 'Mechs qualify at all.
         if (!(entity instanceof BipedMech || entity instanceof TripodMech)) {

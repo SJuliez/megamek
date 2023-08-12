@@ -1145,6 +1145,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             drawAllDeployment(g);
         }
 
+        drawEmbeddedBoards(g);
+
         // draw Flare Sprites
         drawSprites(g, flareSprites);
 
@@ -1836,6 +1838,26 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                         !en_Deployer.isLocationProhibited(c)) {
                     drawHexBorder(g, getHexLocation(c), Color.yellow);
                 }
+            }
+        }
+    }
+
+    /**
+     * Draw an outline around legal deployment hexes
+     */
+    private void drawEmbeddedBoards(Graphics g) {
+        Rectangle view = g.getClipBounds();
+        // only update visible hexes
+        int drawX = (view.x / (int) (HEX_WC * scale)) - 1;
+        int drawY = (view.y / (int) (HEX_H * scale)) - 1;
+
+        int drawWidth = (view.width / (int) (HEX_WC * scale)) + 3;
+        int drawHeight = (view.height / (int) (HEX_H * scale)) + 3;
+
+        for (Coords coords : getBoard().embeddedBoardCoords()) {
+            if ((coords.getX() >= drawX) && (coords.getX() <= drawX + drawWidth)
+                    && (coords.getY() >= drawY) && (coords.getY() <= drawY + drawHeight)) {
+                drawHexBorder(g, getHexLocation(coords), Color.GREEN);
             }
         }
     }

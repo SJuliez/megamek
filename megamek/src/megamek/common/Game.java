@@ -197,8 +197,8 @@ public class Game extends AbstractGame implements Serializable {
         return new Board();
     }
 
-    public Board getBoard(Entity entity) {
-        return gameBoards.get(entity.getCurrentBoardId());
+    public Board getBoard(Targetable entity) {
+        return gameBoards.get(entity.getBoardId());
     }
 
     public List<Board> getBoards() {
@@ -3628,11 +3628,11 @@ public class Game extends AbstractGame implements Serializable {
         return getBoard(boardLocation.getBoardId());
     }
 
-    public boolean hasBoardLocation(BoardLocation boardLocation) {
+    public boolean hasBoardLocation(@Nullable BoardLocation boardLocation) {
         return usesBoard(boardLocation) && getBoard(boardLocation).contains(boardLocation.getCoords());
     }
 
-    public boolean usesBoard(BoardLocation boardLocation) {
+    public boolean usesBoard(@Nullable BoardLocation boardLocation) {
         return (boardLocation != null) && gameBoards.containsKey(boardLocation.getBoardId());
     }
 
@@ -3692,6 +3692,41 @@ public class Game extends AbstractGame implements Serializable {
 
     public List<Board> getGroundBoards() {
         return getBoards().stream().filter(Board::onGround).collect(toList());
+    }
+
+    /**
+     * Returns true when the given Board has an (existing) enclosing Board, i.e. when there's an atmospheric map
+     * for a ground map or a space map for an atmospheric map.
+     *
+     * @param boardId
+     * @return
+     */
+    public boolean hasEnclosingBoard(int boardId) {
+        return boardExists(getBoard(boardId).getEnclosingBoard());
+    }
+
+    public boolean boardExists(int boardId) {
+        return gameBoards.containsKey(boardId);
+    }
+
+    public void connectBoards(int lowerBoardId, int higherBoardId, Coords coords) {
+        if (!boardExists(lowerBoardId) || !boardExists(higherBoardId)) {
+            LogManager.getLogger().error("Can't set an enclosing board for non-existent boards.");
+            return;
+        }
+        Board lowerBoard = getBoard(lowerBoardId);
+        Board higherBoard = getBoard(higherBoardId);
+        if ((lowerBoard.inAtmosphere() && !higherBoard.inSpace()) || (lowerBoard.onGround() && !higherBoard.inAtmosphere())
+                || lowerBoard.inSpace() || higherBoard.onGround()) {
+            LogManager.getLogger().error("Can only enclose a ground map in an atmo map or an atmo map in a space map.");
+            return;
+        }
+        if (!higherBoard.contains(coords)) {
+            LogManager.getLogger().error("Higher map doesn't contain the given coords.");
+            return;
+        }
+        lowerBoard.setEnclosingBoard(higherBoardId);
+        higherBoard.setEmbeddedBoard(lowerBoardId, coords);
     }
 
 }
