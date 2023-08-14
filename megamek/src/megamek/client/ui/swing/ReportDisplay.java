@@ -203,7 +203,7 @@ public class ReportDisplay extends StatusBarPhaseDisplay  {
     }
 
     private void resetButtons() {
-        butDone.setEnabled(true);
+        butDone.setEnabled(!clientgui.getClient().getLocalPlayer().isDone());
         setReportEnabled(true);
         setPlayerListEnabled(true);
 

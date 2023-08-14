@@ -295,7 +295,6 @@ public class GameManager implements IGameManager {
 
         // reset all players
         resetPlayersDone();
-        transmitAllPlayerDones();
 
         // Write end of game to stdout so controlling scripts can rotate logs.
         LogManager.getLogger().info(LocalDateTime.now() + " END OF GAME");
@@ -662,7 +661,8 @@ public class GameManager implements IGameManager {
                 } else {
                     send(connId, createFullEntitiesPacket());
                 }
-                player.setDone(getGame().getEntitiesOwnedBy(player) <= 0);
+
+                setPlayerDone(player, getGame().getEntitiesOwnedBy(player) <= 0);
                 send(connId, new Packet(PacketCommand.PHASE_CHANGE, getGame().getPhase()));
             }
 
@@ -815,7 +815,6 @@ public class GameManager implements IGameManager {
             case ENTITY_LOAD:
                 receiveEntityLoad(packet, connId);
                 resetPlayersDone();
-                transmitAllPlayerDones();
                 break;
             case ENTITY_MODECHANGE:
                 receiveEntityModeChange(packet, connId);
@@ -867,7 +866,6 @@ public class GameManager implements IGameManager {
             case SENDING_GAME_SETTINGS:
                 if (receiveGameOptions(packet, connId)) {
                     resetPlayersDone();
-                    transmitAllPlayerDones();
                     send(createGameSettingsPacket());
                     receiveGameOptionsAux(packet, connId);
                 }
@@ -885,9 +883,8 @@ public class GameManager implements IGameManager {
                     }
                     game.setMapSettings(newSettings);
                     resetPlayersDone();
-                    transmitAllPlayerDones();
                     send(createMapSettingsPacket(newSettings.getMapType()));
-                }
+
                 break;
             case SENDING_MAP_DIMENSIONS:
                 if (game.getPhase().isBefore(GamePhase.DEPLOYMENT)) {
@@ -900,7 +897,6 @@ public class GameManager implements IGameManager {
                     newSettings.setNullBoards(DEFAULT_BOARD);
                     game.setMapSettings(newSettings);
                     resetPlayersDone();
-                    transmitAllPlayerDones();
                     send(createMapSettingsPacket());
                 }
                 break;
@@ -910,7 +906,6 @@ public class GameManager implements IGameManager {
                     sendServerChat(player + " changed planetary conditions");
                     game.setPlanetaryConditions(conditions);
                     resetPlayersDone();
-                    transmitAllPlayerDones();
                     send(createPlanetaryConditionsPacket());
                 }
                 break;
@@ -923,12 +918,10 @@ public class GameManager implements IGameManager {
             case CUSTOM_INITIATIVE:
                 receiveCustomInit(packet, connId);
                 resetPlayersDone();
-                transmitAllPlayerDones();
                 break;
             case SQUADRON_ADD:
                 receiveSquadronAdd(packet, connId);
                 resetPlayersDone();
-                transmitAllPlayerDones();
                 break;
             case RESET_ROUND_DEPLOYMENT:
                 game.setupRoundDeployment();
@@ -1134,6 +1127,20 @@ public class GameManager implements IGameManager {
         }
     }
 
+    private void setPlayerDone(Player player, boolean normalDone) {
+        if (getGame().getPhase().isReport()
+                && getGame().getOptions().booleanOption(OptionsConstants.BASE_GM_CONTROLS_DONE_REPORT_PHASE)
+                && getGame().getPlayersList().stream().filter(p -> p.isGameMaster()).count() > 0) {
+            if (player.isGameMaster()) {
+                player.setDone(false);
+            } else {
+                player.setDone(true);
+            }
+        } else {
+            player.setDone(normalDone);
+        }
+    }
+
     /**
      * Called at the beginning of certain phases to make every player not ready.
      */
@@ -1142,10 +1149,10 @@ public class GameManager implements IGameManager {
             return;
         }
 
-        for (Enumeration<Player> i = game.getPlayers(); i.hasMoreElements(); ) {
-            final Player player = i.nextElement();
-            player.setDone(false);
+        for (Player player : game.getPlayersList()) {
+            setPlayerDone(player, false);
         }
+
         transmitAllPlayerDones();
     }
 
@@ -1154,10 +1161,10 @@ public class GameManager implements IGameManager {
      * ready.
      */
     private void resetActivePlayersDone() {
-        for (Enumeration<Player> i = game.getPlayers(); i.hasMoreElements(); ) {
-            final Player player = i.nextElement();
-            player.setDone(game.getEntitiesOwnedBy(player) <= 0);
+        for (Player player : game.getPlayersList()) {
+            setPlayerDone(player, getGame().getEntitiesOwnedBy(player) <= 0);
         }
+
         transmitAllPlayerDones();
     }
 
@@ -1347,8 +1354,7 @@ public class GameManager implements IGameManager {
      */
     private void checkReady() {
         // check if all active players are done
-        for (Enumeration<Player> i = game.getPlayers(); i.hasMoreElements(); ) {
-            final Player player = i.nextElement();
+        for (Player player : game.getPlayersList()) {
             if (!player.isGhost() && !player.isObserver() && !player.isDone()) {
                 return;
             }
@@ -29848,6 +29854,7 @@ public class GameManager implements IGameManager {
         if (null != player) {
             player.setDone(true);
         }
+
         checkReady();
     }
 
@@ -30167,8 +30174,7 @@ public class GameManager implements IGameManager {
      * Sends out the player ready stats for all players to all connections
      */
     private void transmitAllPlayerDones() {
-        for (Enumeration<Player> i = getGame().getPlayers(); i.hasMoreElements(); ) {
-            final Player player = i.nextElement();
+        for (Player player : getGame().getPlayersList()) {
             send(createPlayerDonePacket(player.getId()));
         }
     }
