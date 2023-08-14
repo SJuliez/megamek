@@ -884,7 +884,7 @@ public class GameManager implements IGameManager {
                     game.setMapSettings(newSettings);
                     resetPlayersDone();
                     send(createMapSettingsPacket(newSettings.getMapType()));
-
+                }
                 break;
             case SENDING_MAP_DIMENSIONS:
                 if (game.getPhase().isBefore(GamePhase.DEPLOYMENT)) {
@@ -942,6 +942,7 @@ public class GameManager implements IGameManager {
                 break;
         }
     }
+
 
     /**
      * Check a list of entity Ids for doomed entities and destroy those.
