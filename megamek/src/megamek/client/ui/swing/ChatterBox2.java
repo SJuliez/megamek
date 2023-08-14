@@ -367,7 +367,7 @@ public class ChatterBox2 implements KeyListener, IDisplayable, IPreferenceChange
     }
 
     @Override
-    public boolean isHit(Point p, Dimension size) {
+    public boolean isHit(Point p, Dimension size, BoardView boardView) {
         if (isSliding()) {
             return false;
         }

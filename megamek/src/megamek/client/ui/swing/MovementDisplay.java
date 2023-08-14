@@ -4662,7 +4662,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             }
 
             // need to choose a mine
-            List<Minefield> mfs = clientgui.getClient().getGame().getMinefields(ce.getPosition());
+            List<Minefield> mfs = clientgui.getClient().getGame().getMinefields(ce.getBoardLocation());
             String[] choices = new String[mfs.size()];
             for (int loop = 0; loop < choices.length; loop++) {
                 choices[loop] = Minefield.getDisplayableName(mfs.get(loop).getType());

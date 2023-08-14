@@ -121,7 +121,7 @@ public class MissileMineClearanceHandler extends AmmoWeaponHandler {
         int missileDamage = (wtype instanceof LRMWeapon) ? 1 : 2;
         int mineDamage = wtype.getRackSize() * missileDamage;
         boolean updateMinefields = false;
-        for (Minefield mf : game.getMinefields(targetPos)) {
+        for (Minefield mf : game.getMinefields(target.getBoardLocation())) {
             int density = mf.getDensity() - mineDamage;
             if (density > 0) {
                 mf.setDensity(density);
@@ -145,7 +145,7 @@ public class MissileMineClearanceHandler extends AmmoWeaponHandler {
             gameManager.removeMinefield(mf);
         }
         if (updateMinefields) {
-            gameManager.sendChangedMines(targetPos);
+            gameManager.sendChangedMines(target.getBoardLocation());
         }
 
         // Report amount of damage
@@ -181,7 +181,7 @@ public class MissileMineClearanceHandler extends AmmoWeaponHandler {
         }
 
         // Update hex and report any changes
-        newReports.addAll(gameManager.tryClearHex(targetPos, damage, subjectId));
+        newReports.addAll(gameManager.tryClearHex(target.getBoardLocation(), damage, subjectId));
         adjustReports(newReports);
         vPhaseReport.addAll(newReports);
 

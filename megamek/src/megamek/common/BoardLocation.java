@@ -1,7 +1,10 @@
 package megamek.common;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Represents a location (i.e. Coords) on the game board of a specific ID.
@@ -34,6 +37,37 @@ public class BoardLocation implements Serializable {
 
     public boolean isAtCoords(Coords coords) {
         return this.coords.equals(coords);
+    }
+
+    /**
+     * Returns a list of all six adjacent coordinates (distance = 1). Does not check if those are on the board or
+     * if the board of the present boardId exists. This is equivalent to {@link Coords#allAdjacent()} with
+     * the boardId of the present BoardLocation added in. This is also equivalent to calling 
+     * allAtDistance(1). 
+     *
+     * @return A list of adjacent BoardLocations
+     */
+    public List<BoardLocation> allAdjacent() {
+        return allAtDistance(1);
+    }
+
+    /**
+     * Returns a list of all coordinates at the given distance dist. Does not check if those are on the board or
+     * if the board of the present boardId exists. Returns an empty list for dist of less than 0 and the calling 
+     * BoardLocation itself for dist == 0. This is equivalent to {@link Coords#allAtDistance(int)} with
+     * the boardId of the present BoardLocation added in. 
+     * 
+     * @return A list of BoardLocations centered on this BoardLocation and at the given distance
+     */
+    public List<BoardLocation> allAtDistance(final int dist) {
+        return coords.allAtDistance(dist).stream().map(c -> new BoardLocation(c, boardId)).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the coordinate 1 unit in the specified direction dir.
+     */
+    public BoardLocation translated(int dir) {
+        return new BoardLocation(coords.translated(dir, 1), boardId);
     }
 
     @Override

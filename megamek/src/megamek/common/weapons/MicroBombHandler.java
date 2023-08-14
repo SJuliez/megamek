@@ -15,14 +15,7 @@ package megamek.common.weapons;
 
 import java.util.Vector;
 
-import megamek.common.AmmoType;
-import megamek.common.Compute;
-import megamek.common.Coords;
-import megamek.common.Entity;
-import megamek.common.Game;
-import megamek.common.Infantry;
-import megamek.common.Report;
-import megamek.common.ToHitData;
+import megamek.common.*;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.options.OptionsConstants;
 import megamek.server.GameManager;
@@ -84,7 +77,7 @@ public class MicroBombHandler extends AmmoWeaponHandler {
         }
         Infantry ba = (Infantry) ae;
         int ratedDamage = ba.getShootingStrength();
-        gameManager.artilleryDamageArea(coords, ae.getPosition(),
+        gameManager.artilleryDamageArea(new BoardLocation(coords, ae.getBoardId()), ae.getPosition(),
                 (AmmoType) ammo.getType(), subjectId, ae, ratedDamage * 2,
                 ratedDamage, false, 0, vPhaseReport, false);
         return true;

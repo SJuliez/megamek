@@ -290,7 +290,7 @@ public class PlasmaCannonHandler extends AmmoWeaponHandler {
         TargetRoll tn = new TargetRoll(wtype.getFireTN(), wtype.getName());
         if (tn.getValue() != TargetRoll.IMPOSSIBLE) {
             Report.addNewline(vPhaseReport);
-            gameManager.tryIgniteHex(target.getPosition(), subjectId, true, false,
+            gameManager.tryIgniteHex(target.getBoardLocation(), subjectId, true, false,
                     tn, true, -1, vPhaseReport);
         }
     }
@@ -320,13 +320,13 @@ public class PlasmaCannonHandler extends AmmoWeaponHandler {
         // a 5 or less
         // you do a normal ignition as though for intentional fires
         if ((bldg != null)
-                && gameManager.tryIgniteHex(target.getPosition(), subjectId, true,
+                && gameManager.tryIgniteHex(target.getBoardLocation(), subjectId, true,
                         false,
                         new TargetRoll(wtype.getFireTN(), wtype.getName()), 5,
                         vPhaseReport)) {
             return;
         }
-        Vector<Report> clearReports = gameManager.tryClearHex(target.getPosition(), nDamage, subjectId);
+        Vector<Report> clearReports = gameManager.tryClearHex(target.getBoardLocation(), nDamage, subjectId);
         if (!clearReports.isEmpty()) {
             vPhaseReport.lastElement().newlines = 0;
         }

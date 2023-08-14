@@ -15,7 +15,7 @@ package megamek.client.ui.swing;
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
-import megamek.client.ui.swing.util.KeyCommandBind;
+import megamek.client.ui.swing.lobby.LobbyErrors;
 import megamek.client.ui.swing.widget.MegamekButton;
 import megamek.common.*;
 import megamek.common.event.GamePhaseChangeEvent;
@@ -24,9 +24,6 @@ import megamek.common.event.GameTurnChangeEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.util.*;
-
-import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
-import static megamek.client.ui.swing.util.UIUtil.uiLightViolet;
 
 public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
     private static final long serialVersionUID = -1243277953037374936L;
@@ -160,10 +157,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
     private void endMyTurn() {
         // end my turn, then.
         disableButtons();
-        clientgui.getBoardView().select(null);
-        clientgui.getBoardView().highlight(null);
-        clientgui.getBoardView().cursor(null);
-
+        clientgui.removeAllCoordMarkings();
     }
 
     /**
@@ -180,23 +174,26 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
         butDone.setEnabled(false);
     }
 
-    private void deployMinefield(Coords coords) {
-        if (!clientgui.getClient().getGame().getBoard().contains(coords)) {
+    private void deployMinefield(BoardLocation boardLocation) {
+        Game game = clientgui.getClient().getGame();
+        if (!game.hasBoardLocation(boardLocation)) {
+            return;
+        }
+        if (!game.isOnGround(boardLocation) && !remove) {
+            LobbyErrors.showErrorDialog(clientgui.getFrame(),
+                    "Minefields may not be deployed into low atmosphere or space hexes.",
+                    "Minefield Deployment: Not allowed");
             return;
         }
 
-        // check if this is a water hex
-        boolean sea = false;
-        Hex hex = clientgui.getClient().getGame().getBoard().getHex(coords);
-        if (hex.containsTerrain(Terrains.WATER)) {
-            sea = true;
-        }
+        Hex hex = game.getHex(boardLocation);
+        boolean isWaterHex = hex.containsTerrain(Terrains.WATER);
 
         if (remove) {
-            if (!clientgui.getClient().getGame().containsMinefield(coords)) {
+            if (!game.hasMinefieldAt(boardLocation)) {
                 return;
             }
-            Enumeration<?> mfs = clientgui.getClient().getGame().getMinefields(coords).elements();
+            Enumeration<?> mfs = game.getMinefields(boardLocation).elements();
             ArrayList<Minefield> mfRemoved = new ArrayList<>();
             while (mfs.hasMoreElements()) {
                 Minefield mf = (Minefield) mfs.nextElement();
@@ -218,12 +215,12 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
             }
 
             for (Minefield mf : mfRemoved) {
-                clientgui.getClient().getGame().removeMinefield(mf);
+                game.removeMinefield(mf);
             }
         } else {
             // first check that there is not already a mine of this type
             // deployed
-            Enumeration<?> mfs = clientgui.getClient().getGame().getMinefields(coords).elements();
+            Enumeration<?> mfs = game.getMinefields(boardLocation).elements();
             while (mfs.hasMoreElements()) {
                 Minefield mf = (Minefield) mfs.nextElement();
                 if ((deployM && (mf.getType() == Minefield.TYPE_CONVENTIONAL))
@@ -238,14 +235,14 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
             }
 
             Minefield mf = null;
-            if (sea && !(deployM || deployI)) {
+            if (isWaterHex && !(deployM || deployI)) {
                 clientgui.doAlertDialog(Messages.getString("DeployMinefieldDisplay.IllegalPlacement"),
                         Messages.getString("DeployMinefieldDisplay.WaterPlacement"));
                 return;
             }
             int depth = 0;
             if (deployM) {
-                if (sea) {
+                if (isWaterHex) {
                     SeaMineDepthDialog smd = new SeaMineDepthDialog(
                             clientgui.frame, hex.depth());
                     smd.setVisible(true);
@@ -256,8 +253,8 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 mfd.setVisible(true);
 
                 if (mfd.getDensity() > 0) {
-                    mf = Minefield.createMinefield(coords, p.getId(),
-                            Minefield.TYPE_CONVENTIONAL, mfd.getDensity(), sea,
+                    mf = Minefield.createMinefield(boardLocation, p.getId(),
+                            Minefield.TYPE_CONVENTIONAL, mfd.getDensity(), isWaterHex,
                             depth);
                     p.setNbrMFConventional(p.getNbrMFConventional() - 1);
                 }
@@ -266,9 +263,9 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 mfd.setVisible(true);
 
                 if (mfd.getDensity() > 0) {
-                    mf = Minefield.createMinefield(coords, p.getId(),
+                    mf = Minefield.createMinefield(boardLocation, p.getId(),
                             Minefield.TYPE_COMMAND_DETONATED, mfd.getDensity(),
-                            sea, depth);
+                            isWaterHex, depth);
                     p.setNbrMFCommand(p.getNbrMFCommand() - 1);
                 }
             } else if (deployA) {
@@ -276,7 +273,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 mfd.setVisible(true);
 
                 if (mfd.getDensity() > 0) {
-                    mf = Minefield.createMinefield(coords, p.getId(),
+                    mf = Minefield.createMinefield(boardLocation, p.getId(),
                             Minefield.TYPE_ACTIVE, mfd.getDensity());
                     p.setNbrMFActive(p.getNbrMFActive() - 1);
                 }
@@ -285,8 +282,8 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 mfd.setVisible(true);
 
                 if (mfd.getDensity() > 0) {
-                    mf = Minefield.createMinefield(coords, p.getId(),
-                            Minefield.TYPE_INFERNO, mfd.getDensity(), sea,
+                    mf = Minefield.createMinefield(boardLocation, p.getId(),
+                            Minefield.TYPE_INFERNO, mfd.getDensity(), isWaterHex,
                             depth);
                     p.setNbrMFInferno(p.getNbrMFInferno() - 1);
                 }
@@ -299,7 +296,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
                 vsd.setVisible(true);
 
                 if (mfd.getDensity() > 0) {
-                    mf = Minefield.createMinefield(coords, p.getId(),
+                    mf = Minefield.createMinefield(boardLocation, p.getId(),
                             Minefield.TYPE_VIBRABOMB, mfd.getDensity(),
                             vsd.getSetting());
                     p.setNbrMFVibra(p.getNbrMFVibra() - 1);
@@ -309,10 +306,10 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
             }
             if (mf != null) {
                 mf.setWeaponDelivered(false);
-                clientgui.getClient().getGame().addMinefield(mf);
+                game.addMinefield(mf);
                 deployedMinefields.addElement(mf);
             }
-            clientgui.getBoardView().refreshDisplayables();
+            clientgui.refreshDisplayablesOnBoardViews();
         }
 
         setConventionalEnabled(p.getNbrMFConventional());
@@ -336,7 +333,6 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
         if (p.getNbrMFInferno() == 0) {
             deployI = false;
         }
-
     }
 
     @Override
@@ -366,8 +362,8 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
         }
 
         // check for a deployment
-        clientgui.getBoardView().select(b.getCoords());
-        deployMinefield(b.getCoords());
+        b.getBoardView().select(b.getCoords());
+        deployMinefield(b.getBoardLocation());
     }
 
     //
@@ -520,6 +516,6 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
     @Override
     public void removeAllListeners() {
         clientgui.getClient().getGame().removeGameListener(this);
-        clientgui.getBoardView().removeBoardViewListener(this);
+        clientgui.removeListenerFromBoardViews(this);
     }
 }

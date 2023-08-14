@@ -15,13 +15,7 @@
 
 package megamek.client.bot.princess;
 
-import megamek.common.Compute;
-import megamek.common.Entity;
-import megamek.common.EntityMovementMode;
-import megamek.common.Mech;
-import megamek.common.Minefield;
-import megamek.common.MovePath;
-import megamek.common.MoveStep;
+import megamek.common.*;
 import megamek.common.annotations.Nullable;
 
 /**
@@ -71,7 +65,7 @@ public class MinefieldUtil {
         // only mechs interact with vibrabombs
         boolean unitIsMech = movingUnit instanceof Mech;
         
-        for (Minefield minefield : movingUnit.getGame().getMinefields(step.getPosition())) {
+        for (Minefield minefield : movingUnit.getGame().getMinefields(new BoardLocation(step.getPosition(), movingUnit.getBoardId()))) {
             switch (minefield.getType()) {
                 case Minefield.TYPE_CONVENTIONAL:
                 case Minefield.TYPE_INFERNO:

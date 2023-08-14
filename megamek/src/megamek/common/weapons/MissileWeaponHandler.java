@@ -379,13 +379,13 @@ public class MissileWeaponHandler extends AmmoWeaponHandler {
                 && !entityTarget.isAirborne()
                 && !entityTarget.isAirborneVTOLorWIGE()
                 && ((bldg == null) && (wtype.getFireTN() != TargetRoll.IMPOSSIBLE))) {
-            gameManager.tryIgniteHex(target.getPosition(), subjectId, false, false,
+            gameManager.tryIgniteHex(target.getBoardLocation(), subjectId, false, false,
                     new TargetRoll(wtype.getFireTN(), wtype.getName()), 3, vPhaseReport);
         }
 
         // shots that miss an entity can also potential cause explosions in a
         // heavy industrial hex
-        gameManager.checkExplodeIndustrialZone(target.getPosition(), vPhaseReport);
+        gameManager.checkExplodeIndustrialZone(target.getPosition(), target.getBoardId(), vPhaseReport);
 
         // Report any AMS action.
         if (amsEngaged) {

@@ -16,6 +16,7 @@ package megamek.client.ui.swing;
 import megamek.client.ui.IDisplayable;
 import megamek.client.ui.Messages;
 import megamek.client.ui.SharedUtility;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.common.*;
 import megamek.common.actions.ArtilleryAttackAction;
 import megamek.common.actions.WeaponAttackAction;
@@ -155,9 +156,9 @@ public class OffBoardTargetOverlay implements IDisplayable {
     }
 
     @Override
-    public boolean isHit(Point point, Dimension size) {
-        point.x = (int) (point.getX() + clientgui.getBoardView().getDisplayablesRect().getX());
-        point.y = (int) (point.getY() + clientgui.getBoardView().getDisplayablesRect().getY());
+    public boolean isHit(Point point, Dimension size, BoardView boardView) {
+        point.x = (int) (point.getX() + boardView.getDisplayablesRect().getX());
+        point.y = (int) (point.getY() + boardView.getDisplayablesRect().getY());
 
         for (OffBoardDirection direction : OffBoardDirection.values()) {
             if (direction != OffBoardDirection.NONE) {

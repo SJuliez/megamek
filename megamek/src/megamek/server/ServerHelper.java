@@ -539,7 +539,7 @@ public class ServerHelper {
         }
         
         // can't detect minefields if there aren't any to detect
-        if (!game.getMinedCoords().hasMoreElements()) {
+        if (game.minedLocations().isEmpty()) {
             return false;
         }
         
@@ -550,9 +550,10 @@ public class ServerHelper {
         }
         
         boolean minefieldDetected = false;
+        BoardLocation center = new BoardLocation(coords, entity.getBoardId());
         
         for (int distance = 1; distance <= probeRange; distance++) {
-            for (Coords potentialMineCoords : coords.allAtDistance(distance)) {
+            for (BoardLocation potentialMineCoords : center.allAtDistance(distance)) {
                 if (!game.getBoard(entity).contains(potentialMineCoords)) {
                     continue;
                 }

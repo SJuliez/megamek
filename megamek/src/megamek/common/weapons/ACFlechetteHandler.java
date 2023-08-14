@@ -13,18 +13,12 @@
  */
 package megamek.common.weapons;
 
-import java.util.Vector;
-
-import megamek.common.Building;
-import megamek.common.Game;
-import megamek.common.RangeType;
-import megamek.common.Report;
-import megamek.common.TargetRoll;
-import megamek.common.ToHitData;
+import megamek.common.*;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.options.OptionsConstants;
 import megamek.server.GameManager;
-import megamek.server.Server;
+
+import java.util.Vector;
 
 /**
  * @author Andrew Hunter
@@ -94,12 +88,12 @@ public class ACFlechetteHandler extends AmmoWeaponHandler {
         // weapons that can't normally start fires. that's weird.
         // Buildings can't be accidentally ignited.
         if ((bldg != null)
-                && gameManager.tryIgniteHex(target.getPosition(), subjectId, false, false,
+                && gameManager.tryIgniteHex(target.getBoardLocation(), subjectId, false, false,
                         new TargetRoll(wtype.getFireTN(), wtype.getName()), 5, vPhaseReport)) {
             return;
         }
 
-        Vector<Report> clearReports = gameManager.tryClearHex(target.getPosition(), nDamage, subjectId);
+        Vector<Report> clearReports = gameManager.tryClearHex(target.getBoardLocation(), nDamage, subjectId);
         if (!clearReports.isEmpty()) {
             vPhaseReport.lastElement().newlines = 0;
         }

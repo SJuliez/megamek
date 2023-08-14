@@ -110,7 +110,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
                         if ((currentHex.containsTerrain(Terrains.WOODS)
                                 || currentHex.containsTerrain(Terrains.JUNGLE))
                                 && game.getOptions().booleanOption(OptionsConstants.ADVANCED_WOODS_BURN_DOWN)) {
-                            burnReports = burnDownWoods(currentCoords);
+                            burnReports = burnDownWoods(new BoardLocation(currentCoords, boardId));
                         }
                         //report and check for fire spread
                         boolean isInferno = (currentHex.terrainLevel(Terrains.FIRE) == Terrains.FIRE_LVL_INFERNO)
@@ -147,7 +147,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
                     }
 
                     // Check for any explosions
-                    gameManager.checkExplodeIndustrialZone(currentCoords, vPhaseReport);
+                    gameManager.checkExplodeIndustrialZone(currentCoords, boardId, vPhaseReport);
 
                     // Add smoke, unless tornado or optional rules
                     boolean containsForest = (currentHex.containsTerrain(Terrains.WOODS)
@@ -174,7 +174,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
         }
     }
 
-    public Vector<Report> burnDownWoods(Coords coords) {
+    public Vector<Report> burnDownWoods(BoardLocation boardLocation) {
         Vector<Report> burnReports = new Vector<>();
         int burnDamage = 5;
         try {
@@ -186,7 +186,7 @@ public class FireProcessor extends DynamicTerrainProcessor {
         // Report that damage applied to terrain
         burnReports.addElement(Report.publicReport(3383).indent().add(burnDamage));
 
-        Vector<Report> newReports = gameManager.tryClearHex(coords, burnDamage, Entity.NONE);
+        Vector<Report> newReports = gameManager.tryClearHex(boardLocation, burnDamage, Entity.NONE);
         for (Report nr : newReports) {
             nr.indent(2);
         }
@@ -257,7 +257,8 @@ public class FireProcessor extends DynamicTerrainProcessor {
             return;
         }
 
-        if (!(hex.containsTerrain(Terrains.FIRE)) && gameManager.checkIgnition(coords, roll)) {
+        BoardLocation spreadTo = new BoardLocation(coords, board.getBoardId());
+        if (!(hex.containsTerrain(Terrains.FIRE)) && gameManager.checkIgnition(spreadTo, roll)) {
             vPhaseReport.addElement(Report.publicReport(5150).add(coords.getBoardNum()).add(origin.getBoardNum()));
         }
     }

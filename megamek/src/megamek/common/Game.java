@@ -131,7 +131,7 @@ public class Game extends AbstractGame implements Serializable {
     private Hashtable<Integer, Vector<Entity>> deploymentTable = new Hashtable<>();
     private int lastDeploymentRound = 0;
 
-    private Hashtable<Coords, Vector<Minefield>> minefields = new Hashtable<>();
+    private final Hashtable<BoardLocation, Vector<Minefield>> minefields = new Hashtable<>();
     private Vector<Minefield> vibrabombs = new Vector<>();
     private Vector<AttackHandler> attacks = new Vector<>();
     private Vector<ArtilleryAttackAction> offboardArtilleryAttacks = new Vector<>();
@@ -185,12 +185,14 @@ public class Game extends AbstractGame implements Serializable {
         return version;
     }
 
+    // @@MultiBoardTODO:
     public Board getBoard() {
         LogManager.getLogger().error("Dont call getboard()", new Exception());
         new Exception().getStackTrace();
         return board;
     }
 
+    // @@MultiBoardTODO:
     public Board getBoard(MapType mapType) {
         LogManager.getLogger().error("Dont call getboard(MapType)", new Exception());
         new Exception().getStackTrace();
@@ -205,17 +207,23 @@ public class Game extends AbstractGame implements Serializable {
         return new ArrayList<>(gameBoards.values());
     }
 
+    @Deprecated
+    // @@MultiBoardTODO:
     public boolean containsMinefield(Coords coords) {
         return minefields.containsKey(coords);
     }
 
-    public Vector<Minefield> getMinefields(Coords coords) {
-        Vector<Minefield> mfs = minefields.get(coords);
+    public boolean hasMinefieldAt(BoardLocation boardLocation) {
+        return minefields.containsKey(boardLocation);
+    }
+
+    public Vector<Minefield> getMinefields(BoardLocation boardLocation) {
+        Vector<Minefield> mfs = minefields.get(boardLocation);
         return (mfs == null) ? new Vector<>() : mfs;
     }
 
-    public int getNbrMinefields(Coords coords) {
-        Vector<Minefield> mfs = minefields.get(coords);
+    public int minefieldCountAt(BoardLocation boardLocation) {
+        Vector<Minefield> mfs = minefields.get(boardLocation);
         return (mfs == null) ? 0 : mfs.size();
     }
 
@@ -225,8 +233,8 @@ public class Game extends AbstractGame implements Serializable {
      * @return an <code>Enumeration</code> of the <code>Coords</code> containing
      * minefields. This will not be <code>null</code>.
      */
-    public Enumeration<Coords> getMinedCoords() {
-        return minefields.keys();
+    public Set<BoardLocation> minedLocations() {
+        return minefields.keySet();
     }
 
     public void addMinefield(Minefield mf) {
@@ -255,7 +263,7 @@ public class Game extends AbstractGame implements Serializable {
         if (newMinefields.size() < 1) {
             return;
         }
-        Vector<Minefield> mfs = minefields.get(newMinefields.firstElement().getCoords());
+        Vector<Minefield> mfs = minefields.get(newMinefields.firstElement().getBoardLocation());
         mfs.clear();
         for (int i = 0; i < newMinefields.size(); i++) {
             Minefield mf = newMinefields.elementAt(i);
@@ -265,11 +273,11 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     protected void addMinefieldHelper(Minefield mf) {
-        Vector<Minefield> mfs = minefields.get(mf.getCoords());
+        Vector<Minefield> mfs = minefields.get(mf.getBoardLocation());
         if (mfs == null) {
             mfs = new Vector<>();
             mfs.addElement(mf);
-            minefields.put(mf.getCoords(), mfs);
+            minefields.put(mf.getBoardLocation(), mfs);
             return;
         }
         mfs.addElement(mf);
@@ -281,7 +289,7 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public void removeMinefieldHelper(Minefield mf) {
-        Vector<Minefield> mfs = minefields.get(mf.getCoords());
+        Vector<Minefield> mfs = minefields.get(mf.getBoardLocation());
         if (mfs == null) {
             return;
         }
@@ -295,7 +303,7 @@ public class Game extends AbstractGame implements Serializable {
             }
         }
         if (mfs.isEmpty()) {
-            minefields.remove(mf.getCoords());
+            minefields.remove(mf.getBoardLocation());
         }
     }
 
@@ -3546,6 +3554,10 @@ public class Game extends AbstractGame implements Serializable {
         } else {
             this.mapSettings = mapSettings;
         }
+        allMapSettings.clear();
+        allMapSettings.add(this.mapSettings);
+        allMapSettings.add(lowAtmoMapSettings);
+        allMapSettings.add(spaceMapSettings);
     }
 
     public MapSettings getMapSettings(MapType mapType) {
@@ -3576,7 +3588,11 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     private boolean usesMap(MapType mapType) {
-        return getPhase().isLounge() ? getMapSettings(mapType).isUsed() : gameBoards.containsKey(mapType);
+        if (getPhase().isLounge()) {
+            return getMapSettings(mapType).isUsed();
+        } else {
+            return !getGroundBoards().isEmpty();
+        }
     }
 
     public boolean spaceMapUsesGravity() {
@@ -3727,6 +3743,15 @@ public class Game extends AbstractGame implements Serializable {
         }
         lowerBoard.setEnclosingBoard(higherBoardId);
         higherBoard.setEmbeddedBoard(lowerBoardId, coords);
+    }
+
+    /** @return True when both given units are not null and reside on the same board. */
+    public boolean onTheSameBoard(@Nullable Entity entity1, @Nullable Entity entity2) {
+        return (entity1 != null) && (entity2 != null) && (entity1.getCurrentBoardId() == entity2.getCurrentBoardId());
+    }
+
+    public boolean isOnGround(BoardLocation boardLocation) {
+        return getBoard(boardLocation).onGround();
     }
 
 }

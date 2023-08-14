@@ -16,6 +16,7 @@ package megamek.client.ui.swing;
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.util.CommandAction;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.MegaMekController;
@@ -37,8 +38,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.event.*;
 import java.util.*;
-
-import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
 
 public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, ListSelectionListener {
     private static final long serialVersionUID = -5586388490027013723L;
@@ -199,18 +198,15 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         super(clientgui);
         clientgui.getClient().getGame().addGameListener(this);
 
-        clientgui.getBoardView().addBoardViewListener(this);
-
         shiftheld = false;
 
         setupStatusBar(Messages.getString("FiringDisplay.waitingForFiringPhase"));
 
         setButtons();
         setButtonsTooltips();
-
         setupButtonPanel();
 
-        clientgui.getBoardView().addKeyListener(this);
+        clientgui.addKeyListenerToBoardViews(this);
 
         // mech display.
         clientgui.getUnitDisplay().wPan.weaponList.addListSelectionListener(this);
@@ -807,17 +803,16 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                 target(t);
             }
 
+            clientgui.removeAllCoordMarkings();
             if (!ce().isOffBoard()) {
-                clientgui.getBoardView().highlight(ce().getPosition());
+                clientgui.getBoardView(ce()).highlight(ce().getPosition());
             }
-            clientgui.getBoardView().select(null);
-            clientgui.getBoardView().cursor(null);
 
             refreshAll();
             cacheVisibleTargets();
 
             if (!ce().isOffBoard()) {
-                clientgui.getBoardView().centerOnHex(ce().getPosition());
+                clientgui.getBoardView(ce()).centerOnHex(ce().getPosition());
             }
 
             // only twist if crew conscious
@@ -846,8 +841,9 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         if (GUIP.getFiringSolutions()) {
             setFiringSolutions();
         } else {
-            clientgui.getBoardView().clearFiringSolutionData();
+            clientgui.boardViews().forEach(BoardView::clearFiringSolutionData);
         }
+        clientgui.showBoardView(ce().getCurrentBoardId());
     }
 
     public void setFiringSolutions() {
@@ -875,9 +871,11 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         for (Entity target : game.getEntitiesVector()) {
             boolean friendlyFire = game.getOptions().booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE);
             boolean enemyTarget = target.getOwner().isEnemyOf(ce().getOwner());
+            boolean sameBoard = game.onTheSameBoard(target, ce());
             if ((target.getId() != cen)
                     && (friendlyFire || enemyTarget)
                     && (!enemyTarget || EntityVisibilityUtils.detectedOrHasVisual(localPlayer, game, target))
+                    && sameBoard // || canHitAcrossBoards() -> allow O2S fire and such
                     && target.isTargetable()) {
                 ToHitData thd = WeaponAttackAction.toHit(game, cen, target);
                 thd.setLocation(target.getPosition());
@@ -885,7 +883,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                 fs.put(target.getId(), new FiringSolution(thd, spottedEntities.contains(target.getId())));
             }
         }
-        clientgui.getBoardView().setFiringSolutions(ce(), fs);
+        clientgui.getBoardView(ce()).setFiringSolutions(ce(), fs);
     }
 
     /**
@@ -894,11 +892,11 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
     protected void beginMyTurn() {
         target = null;
 
-        if (!clientgui.getBoardView().isMovingUnits()) {
+        if (!clientgui.isMovingUnits()) {
             clientgui.maybeShowUnitDisplay();
         }
-        clientgui.getBoardView().clearFieldOfFire();
-        clientgui.getBoardView().clearSensorsRanges();
+        clientgui.boardViews().forEach(BoardView::clearFieldOfFire);
+        clientgui.boardViews().forEach(BoardView::clearSensorsRanges);
 
         selectEntity(clientgui.getClient().getFirstEntityNum());
 
@@ -932,7 +930,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             }
             setFireCalledEnabled(clientgui.getClient().getGame().getOptions()
                     .booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_CALLED_SHOTS));
-            clientgui.getBoardView().select(null);
+            clientgui.removeAllCoordMarkings();
             initDonePanelForNewTurn();
         }
 
@@ -955,14 +953,12 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         }
         cen = Entity.NONE;
         target(null);
-        clientgui.getBoardView().select(null);
-        clientgui.getBoardView().highlight(null);
-        clientgui.getBoardView().cursor(null);
-        clientgui.getBoardView().clearMovementData();
-        clientgui.getBoardView().clearFiringSolutionData();
-        clientgui.getBoardView().clearStrafingCoords();
-        clientgui.getBoardView().clearFieldOfFire();
-        clientgui.getBoardView().clearSensorsRanges();
+        clientgui.removeAllCoordMarkings();
+        clientgui.boardViews().forEach(BoardView::clearMovementData);
+        clientgui.boardViews().forEach(BoardView::clearFiringSolutionData);
+        clientgui.boardViews().forEach(BoardView::clearStrafingCoords);
+        clientgui.boardViews().forEach(BoardView::clearFieldOfFire);
+        clientgui.boardViews().forEach(BoardView::clearSensorsRanges);
         clientgui.setSelectedEntityNum(Entity.NONE);
         disableButtons();
 
@@ -1173,8 +1169,8 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         // HACK : don't show the choice dialog.
         showTargetChoice = false;
 
-        clientgui.getBoardView().centerOnHex(targ.getPosition());
-        clientgui.getBoardView().select(targ.getPosition());
+        clientgui.getBoardView(targ).centerOnHex(targ.getPosition());
+        clientgui.getBoardView(targ).select(targ.getPosition());
 
         // HACK : show the choice dialog again.
         showTargetChoice = true;
@@ -1425,7 +1421,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
 
         // and add it into the game, temporarily
         clientgui.getClient().getGame().addAction(saa);
-        clientgui.getBoardView().addAttack(saa);
+        clientgui.getBoardView(target.getBoardId()).addAttack(saa);
 
         // refresh weapon panel, as bth will have changed
         updateTarget();
@@ -1783,7 +1779,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
     protected void clearAttacks() {
         isStrafing = false;
         strafingCoords.clear();
-        clientgui.getBoardView().clearStrafingCoords();
+        clientgui.boardViews().forEach(BoardView::clearStrafingCoords);
 
         // We may not have an entity selected yet (race condition).
         if (ce() == null) {
@@ -1813,7 +1809,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
     protected void removeTempAttacks() {
         // remove temporary attacks from game & board
         clientgui.getClient().getGame().removeActionsFor(cen);
-        clientgui.getBoardView().removeAttacksFor(ce());
+        clientgui.getBoardView(ce()).removeAttacksFor(ce());
     }
 
     /**
@@ -1828,7 +1824,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                 removeAttack(o);
                 clientgui.getUnitDisplay().wPan.displayMech(ce());
                 clientgui.getClient().getGame().removeAction(o);
-                clientgui.getBoardView().refreshAttacks();
+                clientgui.boardViews().forEach(BoardView::refreshAttacks);
             }
         }
     }
@@ -1840,7 +1836,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         if (ce() == null) {
             return;
         }
-        clientgui.getBoardView().redrawEntity(ce());
+        clientgui.getBoardView(ce()).redrawEntity(ce());
         clientgui.getUnitDisplay().displayEntity(ce());
         clientgui.getUnitDisplay().showPanel("weapons");
         clientgui.getUnitDisplay().wPan.selectFirstWeapon();
@@ -1865,7 +1861,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             Targetable hexTarget = VehicularGrenadeLauncherWeapon.getTargetHex(weapon, weaponId);
             // Ignore events that will be generated by the select/cursor calls
             setIgnoringEvents(true);
-            clientgui.getBoardView().select(hexTarget.getPosition());
+            clientgui.getBoardView(ce()).select(hexTarget.getPosition());
             setIgnoringEvents(false);
             target = hexTarget;
         } else {
@@ -1882,7 +1878,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         }
         if ((target instanceof Entity) && Compute.isGroundToAir(ce(), target)) {
             Coords targetPos = Compute.getClosestFlightPath(cen, ce().getPosition(), (Entity) target);
-            clientgui.getBoardView().cursor(targetPos);
+            clientgui.getBoardView(ce()).cursor(targetPos);
         }
         ash.setAimingMode();
         updateTarget();
@@ -2010,16 +2006,16 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
      * during the movement phase.
      */
     void updateVTOLGroundTarget() {
-        clientgui.getBoardView().clearStrafingCoords();
+        clientgui.boardViews().forEach(BoardView::clearStrafingCoords);
         target(null);
         isStrafing = false;
         strafingCoords.clear();
         if (ce().isBomber() && ((IBomber) ce()).isVTOLBombing()) {
             target(((IBomber) ce()).getVTOLBombTarget());
-            clientgui.getBoardView().addStrafingCoords(target.getPosition());
+            clientgui.getBoardView(ce()).addStrafingCoords(target.getPosition());
         } else if ((ce() instanceof VTOL) && !((VTOL) ce()).getStrafingCoords().isEmpty()) {
             strafingCoords.addAll(((VTOL) ce()).getStrafingCoords());
-            strafingCoords.forEach(c -> clientgui.getBoardView().addStrafingCoords(c));
+            strafingCoords.forEach(c -> clientgui.getBoardView(ce()).addStrafingCoords(c));
             isStrafing = true;
         }
     }
@@ -2105,11 +2101,11 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                 updateFlipArms(false);
                 torsoTwist(b.getCoords());
             }
-            clientgui.getBoardView().cursor(b.getCoords());
+            b.getBoardView().cursor(b.getCoords());
         } else if (b.getType() == BoardViewEvent.BOARD_HEX_CLICKED) {
             twisting = false;
             if (!shiftheld) {
-                clientgui.getBoardView().select(b.getCoords());
+                b.getBoardView().select(b.getCoords());
             }
         }
     }
@@ -2128,7 +2124,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             if (isStrafing) {
                 if (validStrafingCoord(evtCoords)) {
                     strafingCoords.add(evtCoords);
-                    clientgui.getBoardView().addStrafingCoords(evtCoords);
+                    clientgui.getBoardView(b.getBoardLocation()).addStrafingCoords(evtCoords);
                     updateStrafingTargets();
                 }
             } else if (!evtCoords.equals(ce().getPosition())) {
@@ -2443,8 +2439,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             ce().setBloodStalkerTarget(Entity.NONE);
         }
         clearAttacks();
-        clientgui.getBoardView().select(null);
-        clientgui.getBoardView().cursor(null);
+        clientgui.removeAllCoordMarkings();
         refreshAll();
     }
 
@@ -2466,7 +2461,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
 
         if (clientgui.getClient().isMyTurn() && (ce() != null)) {
             clientgui.maybeShowUnitDisplay();
-            clientgui.getBoardView().centerOnHex(ce().getPosition());
+            b.getBoardView().centerOnHex(ce().getPosition());
         }
     }
 
@@ -2486,7 +2481,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             clientgui.maybeShowUnitDisplay();
             clientgui.getUnitDisplay().displayEntity(e);
             if (e.isDeployed()) {
-                clientgui.getBoardView().centerOnHex(e.getPosition());
+                b.getBoardView().centerOnHex(e.getPosition());
             }
         }
     }
@@ -2512,7 +2507,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
     @Override
     public void removeAllListeners() {
         clientgui.getClient().getGame().removeGameListener(this);
-        clientgui.getBoardView().removeBoardViewListener(this);
+        clientgui.removeListenerFromBoardViews(this);
         clientgui.getUnitDisplay().wPan.weaponList.removeListSelectionListener(this);
     }
 

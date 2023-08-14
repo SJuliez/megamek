@@ -154,13 +154,23 @@ public final class LobbyErrors {
     public static void showMustUseMap(JFrame owner) {
         showErrorDialog(owner, NO_MAP);
     }
-    
-    private static void showErrorDialog(JFrame owner, String message) {
-        JOptionPane pane = new JOptionPane(message, JOptionPane.ERROR_MESSAGE);
-        JDialog dialog = pane.createDialog(owner, "Error");
-        UIUtil.adjustDialog(dialog,  UIUtil.FONT_SCALE1);
-        dialog.pack();
-        dialog.setVisible(true);
+
+    public static void showErrorDialog(JFrame owner, String message, String title) {
+        try {
+            // Tooltips stay on top and obscure such dialogs and they don't go away, therefore deactivate them first
+            ToolTipManager.sharedInstance().setEnabled(false);
+            JOptionPane pane = new JOptionPane(message, JOptionPane.ERROR_MESSAGE);
+            JDialog dialog = pane.createDialog(owner, title);
+            UIUtil.adjustDialog(dialog,  UIUtil.FONT_SCALE1);
+            dialog.pack();
+            dialog.setVisible(true);
+        } finally {
+            ToolTipManager.sharedInstance().setEnabled(true);
+        }
+    }
+
+    public static void showErrorDialog(JFrame owner, String message) {
+        showErrorDialog(owner, message, "Error");
     }
 
     private LobbyErrors() { }

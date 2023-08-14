@@ -14,6 +14,7 @@
 
 package megamek.client.event;
 
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.common.Coords;
 import megamek.common.Entity;
 import megamek.common.BoardLocation;
@@ -128,5 +129,9 @@ public class BoardViewEvent extends java.util.EventObject {
 
     public BoardLocation getBoardLocation() {
         return boardLocation;
+    }
+
+    public BoardView getBoardView() {
+        return (BoardView) getSource();
     }
 }

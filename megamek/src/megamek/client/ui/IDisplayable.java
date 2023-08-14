@@ -16,6 +16,8 @@
  */
 package megamek.client.ui;
 
+import megamek.client.ui.swing.boardview.BoardView;
+
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Point;
@@ -55,7 +57,7 @@ public interface IDisplayable {
      * this IDisplayable. This is called when a mouse button is pressed.
      * The default for this method will always return false.
      */
-    default boolean isHit(Point point, Dimension size) {
+    default boolean isHit(Point point, Dimension size, BoardView boardView) {
         return false;
     }
 

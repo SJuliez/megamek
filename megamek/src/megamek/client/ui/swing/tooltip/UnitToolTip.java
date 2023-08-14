@@ -168,12 +168,14 @@ public final class UnitToolTip {
 
     public static String getTargetTipDetail(Targetable target, @Nullable Client client) {
         if (target instanceof Entity) {
-            return UnitToolTip.getEntityTipAsTarget((Entity) target, (client != null) ? client.getLocalPlayer() : null).toString();
+            return UnitToolTip.getEntityTipAsTarget((Entity) target,
+                    (client != null) ? client.getLocalPlayer() : null).toString();
         } else if (target instanceof BuildingTarget) {
-            return HexTooltip.getBuildingTargetTip((BuildingTarget) target, (client != null) ? client.getBoard() : null);
+            return HexTooltip.getBuildingTargetTip((BuildingTarget) target,
+                    (client != null) ? client.getGame().getBoard(target) : null);
         } else if (target instanceof Hex) {
             if (client != null) {
-                return HexTooltip.getHexTip(client.getGame().getBoard(target.getBoardLocation()),
+                return HexTooltip.getHexTip(client.getGame().getBoard(target),
                         target.getBoardLocation().getCoords(), client);
             } else {
                 return "?";

@@ -348,9 +348,8 @@ public class ATMHandler extends MissileWeaponHandler {
             r.indent(1);
             r.subject = subjectId;
             vPhaseReport.addElement(r);
-            Coords coords = target.getPosition();
 
-            Enumeration<Minefield> minefields = game.getMinefields(coords).elements();
+            Enumeration<Minefield> minefields = game.getMinefields(target.getBoardLocation()).elements();
             ArrayList<Minefield> mfRemoved = new ArrayList<>();
             while (minefields.hasMoreElements()) {
                 Minefield mf = minefields.nextElement();

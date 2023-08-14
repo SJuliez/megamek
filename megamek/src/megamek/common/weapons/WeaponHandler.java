@@ -444,14 +444,14 @@ public class WeaponHandler implements AttackHandler, Serializable {
                 && !entityTarget.isAirborne()
                 && !entityTarget.isAirborneVTOLorWIGE()
                 && ((bldg == null) && (wtype.getFireTN() != TargetRoll.IMPOSSIBLE))) {
-            gameManager.tryIgniteHex(target.getPosition(), subjectId, false, false,
+            gameManager.tryIgniteHex(target.getBoardLocation(), subjectId, false, false,
                     new TargetRoll(wtype.getFireTN(), wtype.getName()), 3,
                     vPhaseReport);
         }
 
         // shots that miss an entity can also potential cause explosions in a
         // heavy industrial hex
-        gameManager.checkExplodeIndustrialZone(target.getPosition(), vPhaseReport);
+        gameManager.checkExplodeIndustrialZone(target.getPosition(), target.getBoardId(), vPhaseReport);
 
         // TW, pg. 171 - shots that miss a target in a building don't damage the
         // building, unless the attacker is adjacent
@@ -1634,7 +1634,7 @@ public class WeaponHandler implements AttackHandler, Serializable {
         TargetRoll tn = new TargetRoll(wtype.getFireTN(), wtype.getName());
         if (tn.getValue() != TargetRoll.IMPOSSIBLE) {
             Report.addNewline(vPhaseReport);
-            gameManager.tryIgniteHex(target.getPosition(), subjectId, false, false,
+            gameManager.tryIgniteHex(target.getBoardLocation(), subjectId, false, false,
                     tn, true, -1, vPhaseReport);
         }
     }
@@ -1665,11 +1665,11 @@ public class WeaponHandler implements AttackHandler, Serializable {
         // a 5 or less
         // you do a normal ignition as though for intentional fires
         if ((bldg != null)
-                && gameManager.tryIgniteHex(target.getPosition(), subjectId, false, false,
+                && gameManager.tryIgniteHex(target.getBoardLocation(), subjectId, false, false,
                         new TargetRoll(wtype.getFireTN(), wtype.getName()), 5, vPhaseReport)) {
             return;
         }
-        Vector<Report> clearReports = gameManager.tryClearHex(target.getPosition(), nDamage, subjectId);
+        Vector<Report> clearReports = gameManager.tryClearHex(target.getBoardLocation(), nDamage, subjectId);
         if (!clearReports.isEmpty()) {
             vPhaseReport.lastElement().newlines = 0;
         }
@@ -1906,7 +1906,7 @@ public class WeaponHandler implements AttackHandler, Serializable {
             treeAbsorbs = Math.min(nDamage, treeAbsorbs);
 
             nDamage = Math.max(0, nDamage - treeAbsorbs);
-            gameManager.tryClearHex(entityTarget.getPosition(), treeAbsorbs, ae.getId());
+            gameManager.tryClearHex(entityTarget.getBoardLocation(), treeAbsorbs, ae.getId());
             Report.addNewline(vPhaseReport);
             Report terrainReport = new Report(6427);
             terrainReport.subject = entityTarget.getId();

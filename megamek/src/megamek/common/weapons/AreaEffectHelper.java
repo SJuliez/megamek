@@ -174,7 +174,7 @@ public class AreaEffectHelper {
     /**
      * Helper function that processes damage for fuel-air explosives.
      */
-    public static void processFuelAirDamage(Coords center, EquipmentType ordnanceType, Entity attacker,
+    public static void processFuelAirDamage(BoardLocation center, EquipmentType ordnanceType, Entity attacker,
                                             Vector<Report> vPhaseReport, GameManager gameManager) {
         Game game = attacker.getGame();
         // sanity check: if this attack is happening in vacuum through very thin atmo, add that to the phase report and terminate early 
@@ -212,22 +212,21 @@ public class AreaEffectHelper {
         //      not here, but in artilleryDamageHex, make sure to .5x damage for "castle brian" or "armored" building
         // if any attacked unit is infantry or BA, roll 2d6 + current distance. Inf dies on 9-, BA dies on 7-
         for (int damageBracket = blastRadius, distFromCenter = 0; damageBracket >= 0; damageBracket--, distFromCenter++) {
-            List<Coords> donut = center.allAtDistance(distFromCenter);
-            for (Coords coords : donut) {
+            for (BoardLocation location : center.allAtDistance(distFromCenter)) {
                 int damage = AreaEffectHelper.fuelAirDamage[damageBracket];
                 if (thinAtmo) {
                     damage = (int) Math.ceil(damage / 2.0);
                 }
                 
-                checkInfantryDestruction(coords, distFromCenter, attacker, entitiesToExclude, vPhaseReport, game, gameManager);
+                checkInfantryDestruction(location, distFromCenter, attacker, entitiesToExclude, vPhaseReport, game, gameManager);
                 
-                gameManager.artilleryDamageHex(coords, center, damage, (AmmoType) ordnanceType, attacker.getId(), attacker, null, false, 0, vPhaseReport, false,
+                gameManager.artilleryDamageHex(location, center.getCoords(), damage, (AmmoType) ordnanceType, attacker.getId(), attacker, null, false, 0, vPhaseReport, false,
                         entitiesToExclude, false);
                 
                 TargetRoll fireRoll = new TargetRoll(7, "fuel-air ordnance");
-                gameManager.tryIgniteHex(coords, attacker.getId(), false, false, fireRoll, true, -1, vPhaseReport);
+                gameManager.tryIgniteHex(location, attacker.getId(), false, false, fireRoll, true, -1, vPhaseReport);
                 
-                clearMineFields(coords, Minefield.CLEAR_NUMBER_WEAPON_ACCIDENT, attacker, vPhaseReport, game, gameManager);
+                clearMineFields(location, Minefield.CLEAR_NUMBER_WEAPON_ACCIDENT, attacker, vPhaseReport, game, gameManager);
             }
         }
     }
@@ -236,9 +235,9 @@ public class AreaEffectHelper {
      * Worker function that checks for and implements instant infantry destruction due to fuel air ordnance, if necessary.
      * Checks all units at given coords.
      */
-    public static void checkInfantryDestruction(Coords coords, int distFromCenter, Entity attacker, Vector<Integer> alreadyHit,
+    public static void checkInfantryDestruction(BoardLocation boardLocation, int distFromCenter, Entity attacker, Vector<Integer> alreadyHit,
             Vector<Report> vPhaseReport, Game game, GameManager gameManager) {
-        for (Entity entity : game.getEntitiesVector(coords)) {
+        for (Entity entity : game.getEntitiesAt(boardLocation)) {
             checkInfantryDestruction(entity, distFromCenter, attacker, alreadyHit, vPhaseReport, game, gameManager);
         }
     }
@@ -282,9 +281,9 @@ public class AreaEffectHelper {
     /**
      * Worker function that clears minefields.
      */
-    public static void clearMineFields(Coords targetPos, int targetNum, Entity ae, Vector<Report> vPhaseReport,
+    public static void clearMineFields(BoardLocation boardLocation, int targetNum, Entity ae, Vector<Report> vPhaseReport,
                                        Game game, GameManager gameManager) {
-        Enumeration<Minefield> minefields = game.getMinefields(targetPos).elements();
+        Enumeration<Minefield> minefields = game.getMinefields(boardLocation).elements();
         ArrayList<Minefield> mfRemoved = new ArrayList<>();
         while (minefields.hasMoreElements()) {
             Minefield mf = minefields.nextElement();

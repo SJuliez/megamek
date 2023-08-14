@@ -18,6 +18,7 @@ import megamek.MMConstants;
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.IDisplayable;
 import megamek.client.ui.Messages;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.widget.PMUtil;
 import megamek.common.*;
 import megamek.common.options.OptionsConstants;
@@ -144,7 +145,7 @@ public class UnitOverview implements IDisplayable {
             Entity e = v.get(i);
             unitIds[i] = e.getId();
             String name = getIconName(e, fm);
-            Image i1 = clientgui.getBoardView().getTilesetManager().iconFor(e);
+            Image i1 = clientgui.getBoardView(e).getTilesetManager().iconFor(e);
 
             graph.drawImage(i1, x, y, null);
             printLine(graph, x + 3, y + 46, name);
@@ -195,7 +196,7 @@ public class UnitOverview implements IDisplayable {
     }
 
     @Override
-    public boolean isHit(Point p, Dimension size) {
+    public boolean isHit(Point p, Dimension size, BoardView boardView) {
         if (!visible) {
             return false;
         }
@@ -228,8 +229,8 @@ public class UnitOverview implements IDisplayable {
         for (int i = scrollOffset; (i < unitIds.length)
                 && (i < actUnits + scrollOffset); i++) {
             if ((y > yOffset) && (y < yOffset + ICON_HEIGHT)) {
-                clientgui.getBoardView().processBoardViewEvent(new BoardViewEvent(
-                        clientgui.getBoardView(), BoardViewEvent.SELECT_UNIT, unitIds[i]));
+                boardView.processBoardViewEvent(new BoardViewEvent(
+                        boardView, BoardViewEvent.SELECT_UNIT, unitIds[i]));
                 isHit = true;
                 return true;
             }

@@ -1899,7 +1899,7 @@ public class GameManager implements IGameManager {
                 Vector<GameTurn> turns = new Vector<>();
                 while (e.hasMoreElements()) {
                     Player p = e.nextElement();
-                    if (p.hasMinefields() && game.getBoard().onGround()) {
+                    if (p.hasMinefields() && game.usesGroundMap()) {
                         GameTurn gt = new GameTurn(p.getId());
                         turns.addElement(gt);
                     }
@@ -2922,6 +2922,25 @@ public class GameManager implements IGameManager {
             Coords groundCenter = new Coords(0, spaceBoard.getHeight() / 2);
             game.connectBoards(1, 2, groundCenter);
         }
+
+
+        ////////////////////////// TEST SETUP
+        if (true) {
+            if (game.boardExists(1)) {
+                Board secondBoard = new Board(4);
+                secondBoard.load(new MegaMekFile(Configuration.boardsDir(), "GrassLands/16x17 Grasslands 1.board").getFile());
+                if (game.getPlanetaryConditions().isTerrainAffected()) {
+                    BoardUtilities.addWeatherConditions(secondBoard, game.getPlanetaryConditions().getWeather(),
+                            game.getPlanetaryConditions().getWindStrength());
+                }
+                game.addBoard(secondBoard);
+                game.connectBoards(4, 1, new Coords(2, 2));
+            }
+
+
+        }
+
+
     }
 
     /**
@@ -3608,8 +3627,8 @@ public class GameManager implements IGameManager {
                 if (rearArc && !Compute.isInArc(centralPos, facing, pos, Compute.ARC_AFT)) {
                     continue;
                 }
-
-                alreadyHit = artilleryDamageHex(pos, centralPos, damageDice, null, killer.getId(),
+                BoardLocation currentLocation = new BoardLocation(pos, killer.getBoardId());
+                alreadyHit = artilleryDamageHex(currentLocation, centralPos, damageDice, null, killer.getId(),
                         killer, null, false, 0, vPhaseReport, false,
                         alreadyHit, true);
             }
@@ -4511,7 +4530,8 @@ public class GameManager implements IGameManager {
                                 EntityMovementType moveType, boolean flip) {
         Coords nextPos = start;
         Coords curPos = nextPos;
-        Hex curHex = game.getBoard().getHex(start);
+        Hex curHex = game.getBoard(entity).getHex(start);
+        BoardLocation curLocation = new BoardLocation(curPos, entity.getBoardId());
         Report r;
         int skidDistance = 0; // actual distance moved
         // Flipping vehicles take tonnage/10 points of damage for every hex they enter.
@@ -4718,7 +4738,7 @@ public class GameManager implements IGameManager {
                     elevation = nextElevation;
                     if (entity instanceof Tank) {
                         addReport(crashVTOLorWiGE((Tank) entity, false, true,
-                                distance, curPos, elevation, table));
+                                distance, curLocation, elevation, table));
                     }
 
                     if ((nextHex.containsTerrain(Terrains.WATER) && !nextHex
@@ -4809,7 +4829,7 @@ public class GameManager implements IGameManager {
                     }
                     elevation = nextElevation;
                     addReport(crashVTOLorWiGE((VTOL) entity, false, true,
-                            distance, curPos, elevation, table));
+                            distance, new BoardLocation(curPos, entity.getBoardId()), elevation, table));
                     break;
                 }
                 if (!crashDropShip.isDoomed() && !crashDropShip.isDestroyed()
@@ -6957,7 +6977,7 @@ public class GameManager implements IGameManager {
             }
 
             if (step.getType() == MovePath.MoveStepType.LAY_MINE) {
-                layMine(entity, step.getMineToLay(), step.getPosition());
+                layMine(entity, step.getMineToLay(), new BoardLocation(step.getPosition(), entity.getBoardId()));
                 continue;
             }
 
@@ -7728,12 +7748,13 @@ public class GameManager implements IGameManager {
                 if (isOnGround) {
                     boom = checkVibrabombs(entity, curPos, false, lastPos, curPos, vPhaseReport);
                 }
-                if (game.containsMinefield(curPos)) {
+                BoardLocation curLocation = new BoardLocation(curPos, entity.getBoardId());
+                if (game.hasMinefieldAt(curLocation)) {
                     // set the new position temporarily, because
                     // infantry otherwise would get double damage
                     // when moving from clear into mined woods
                     entity.setPosition(curPos);
-                    if (enterMinefield(entity, curPos, step.getElevation(),
+                    if (enterMinefield(entity, curLocation, step.getElevation(),
                             isOnGround, vPhaseReport)) {
                         // resolve any piloting rolls from damage unless unit
                         // was jumping
@@ -7765,10 +7786,11 @@ public class GameManager implements IGameManager {
 
             // infantry discovers minefields if they end their move
             // in a minefield.
+            BoardLocation curLocation = new BoardLocation(curPos, entity.getBoardId());
             if (!lastPos.equals(curPos) && !i.hasMoreElements() && isInfantry) {
-                if (game.containsMinefield(curPos)) {
+                if (game.hasMinefieldAt(curLocation)) {
                     Player owner = entity.getOwner();
-                    for (Minefield mf : game.getMinefields(curPos)) {
+                    for (Minefield mf : game.getMinefields(curLocation)) {
                         if (!owner.containsMinefield(mf)) {
                             r = new Report(2120);
                             r.subject = entity.getId();
@@ -7843,7 +7865,7 @@ public class GameManager implements IGameManager {
                 r = new Report(2410);
                 r.addDesc(entity);
                 addReport(r);
-                addReport(resolveIceBroken(lastPos));
+                addReport(resolveIceBroken(new BoardLocation(lastPos, entity.getBoardId())));
                 // ok now set back
                 entity.setPosition(lastPos);
             }
@@ -7862,7 +7884,7 @@ public class GameManager implements IGameManager {
                     addReport(r);
                     if (roll == 6) {
                         entity.setPosition(curPos);
-                        addReport(resolveIceBroken(curPos));
+                        addReport(resolveIceBroken(new BoardLocation(curPos, entity.getBoardId())));
                         curPos = entity.getPosition();
                     }
                 }
@@ -7871,7 +7893,7 @@ public class GameManager implements IGameManager {
                     r = new Report(2410);
                     r.addDesc(entity);
                     addReport(r);
-                    addReport(resolveIceBroken(curPos));
+                    addReport(resolveIceBroken(new BoardLocation(curPos, entity.getBoardId())));
                 }
             }
 
@@ -8694,7 +8716,7 @@ public class GameManager implements IGameManager {
                     if (roll >= 4) {
                         // oops!
                         entity.setPosition(curPos);
-                        addReport(resolveIceBroken(curPos));
+                        addReport(resolveIceBroken(new BoardLocation(curPos, entity.getBoardId())));
                         curPos = entity.getPosition();
                     } else {
                         // TacOps: immediate PSR with +4 for terrain. If you
@@ -8712,7 +8734,7 @@ public class GameManager implements IGameManager {
                             addReport(r);
                             if (roll == 6) {
                                 entity.setPosition(curPos);
-                                addReport(resolveIceBroken(curPos));
+                                addReport(resolveIceBroken(new BoardLocation(curPos, entity.getBoardId())));
                                 curPos = entity.getPosition();
                             }
                         }
@@ -9723,19 +9745,19 @@ public class GameManager implements IGameManager {
      *            final value with any modifiers (such as halving and rounding
      *            just for <em>being</em> T-Aug) already applied.
      */
-    public void deliverThunderAugMinefield(Coords coords, int playerId, int damage, int entityId) {
-        Coords mfCoord;
+    public void deliverThunderAugMinefield(BoardLocation boardLocation, int playerId, int damage, int entityId) {
+        BoardLocation mfCoord;
         for (int dir = 0; dir < 7; dir++) {
             // May need to reset here for each new hex.
             int hexDamage = damage;
             if (dir == 6) {// The targeted hex.
-                mfCoord = coords;
+                mfCoord = boardLocation;
             } else {// The hex in the dir direction from the targeted hex.
-                mfCoord = coords.translated(dir);
+                mfCoord = boardLocation.translated(dir);
             }
 
             // Only if this is on the board...
-            if (game.getBoard().contains(mfCoord)) {
+            if (game.hasBoardLocation(mfCoord)) {
                 Minefield minefield = null;
                 Enumeration<Minefield> minefields = game.getMinefields(mfCoord).elements();
                 // Check if there already are Thunder minefields in the hex.
@@ -9776,14 +9798,14 @@ public class GameManager implements IGameManager {
     /**
      * Adds a Thunder minefield to the hex.
      *
-     * @param coords   the minefield's coordinates
+     * @param boardLocation   the minefield's coordinates
      * @param playerId the deploying player's id
      * @param damage   the amount of damage the minefield does
      * @param entityId an entity that might spot the minefield
      */
-    public void deliverThunderMinefield(Coords coords, int playerId, int damage, int entityId) {
+    public void deliverThunderMinefield(BoardLocation boardLocation, int playerId, int damage, int entityId) {
         Minefield minefield = null;
-        Enumeration<Minefield> minefields = game.getMinefields(coords).elements();
+        Enumeration<Minefield> minefields = game.getMinefields(boardLocation).elements();
         // Check if there already are Thunder minefields in the hex.
         while (minefields.hasMoreElements()) {
             Minefield mf = minefields.nextElement();
@@ -9795,7 +9817,7 @@ public class GameManager implements IGameManager {
 
         // Create a new Thunder minefield
         if (minefield == null) {
-            minefield = Minefield.createMinefield(coords, playerId, Minefield.TYPE_CONVENTIONAL, damage);
+            minefield = Minefield.createMinefield(boardLocation, playerId, Minefield.TYPE_CONVENTIONAL, damage);
             game.addMinefield(minefield);
             checkForRevealMinefield(minefield, game.getEntity(entityId));
         } else if (minefield.getDensity() < Minefield.MAX_DAMAGE) {
@@ -9813,14 +9835,14 @@ public class GameManager implements IGameManager {
     /**
      * Adds a Thunder Inferno minefield to the hex.
      *
-     * @param coords   the minefield's coordinates
+     * @param boardLocation   the minefield's coordinates
      * @param playerId the deploying player's id
      * @param damage   the amount of damage the minefield does
      * @param entityId an entity that might spot the minefield
      */
-    public void deliverThunderInfernoMinefield(Coords coords, int playerId, int damage, int entityId) {
+    public void deliverThunderInfernoMinefield(BoardLocation boardLocation, int playerId, int damage, int entityId) {
         Minefield minefield = null;
-        Enumeration<Minefield> minefields = game.getMinefields(coords).elements();
+        Enumeration<Minefield> minefields = game.getMinefields(boardLocation).elements();
         // Check if there already are Thunder minefields in the hex.
         while (minefields.hasMoreElements()) {
             Minefield mf = minefields.nextElement();
@@ -9832,7 +9854,7 @@ public class GameManager implements IGameManager {
 
         // Create a new Thunder Inferno minefield
         if (minefield == null) {
-            minefield = Minefield.createMinefield(coords, playerId, Minefield.TYPE_INFERNO, damage);
+            minefield = Minefield.createMinefield(boardLocation, playerId, Minefield.TYPE_INFERNO, damage);
             game.addMinefield(minefield);
             checkForRevealMinefield(minefield, game.getEntity(entityId));
         } else if (minefield.getDensity() < Minefield.MAX_DAMAGE) {
@@ -9850,11 +9872,11 @@ public class GameManager implements IGameManager {
     /**
      * Delivers an artillery FASCAM shot to the targeted hex area.
      */
-    public void deliverFASCAMMinefield(Coords coords, int playerId, int damage, int entityId) {
+    public void deliverFASCAMMinefield(BoardLocation boardLocation, int playerId, int damage, int entityId) {
         // Only if this is on the board...
-        if (game.getBoard().contains(coords)) {
+        if (game.hasBoardLocation(boardLocation)) {
             Minefield minefield = null;
-            Enumeration<Minefield> minefields = game.getMinefields(coords).elements();
+            Enumeration<Minefield> minefields = game.getMinefields(boardLocation).elements();
             // Check if there already are Thunder minefields in the hex.
             while (minefields.hasMoreElements()) {
                 Minefield mf = minefields.nextElement();
@@ -9865,7 +9887,7 @@ public class GameManager implements IGameManager {
             }
             // Did we find a Thunder minefield in the hex?
             if (minefield == null) {
-                minefield = Minefield.createMinefield(coords, playerId,
+                minefield = Minefield.createMinefield(boardLocation, playerId,
                         Minefield.TYPE_CONVENTIONAL, damage);
                 game.addMinefield(minefield);
                 checkForRevealMinefield(minefield, game.getEntity(entityId));
@@ -9884,14 +9906,14 @@ public class GameManager implements IGameManager {
 
     /**
      * Adds a Thunder-Active minefield to the hex.
-     * @param coords   the minefield's coordinates
+     * @param boardLocation   the minefield's coordinates
      * @param playerId the deploying player's id
      * @param damage   the amount of damage the minefield does
      * @param entityId an entity that might spot the minefield
      */
-    public void deliverThunderActiveMinefield(Coords coords, int playerId, int damage, int entityId) {
+    public void deliverThunderActiveMinefield(BoardLocation boardLocation, int playerId, int damage, int entityId) {
         Minefield minefield = null;
-        Enumeration<Minefield> minefields = game.getMinefields(coords).elements();
+        Enumeration<Minefield> minefields = game.getMinefields(boardLocation).elements();
         // Check if there already are Thunder minefields in the hex.
         while (minefields.hasMoreElements()) {
             Minefield mf = minefields.nextElement();
@@ -9903,7 +9925,7 @@ public class GameManager implements IGameManager {
 
         // Create a new Thunder-Active minefield
         if (minefield == null) {
-            minefield = Minefield.createMinefield(coords, playerId, Minefield.TYPE_ACTIVE, damage);
+            minefield = Minefield.createMinefield(boardLocation, playerId, Minefield.TYPE_ACTIVE, damage);
             game.addMinefield(minefield);
             checkForRevealMinefield(minefield, game.getEntity(entityId));
         } else if (minefield.getDensity() < Minefield.MAX_DAMAGE) {
@@ -9921,10 +9943,10 @@ public class GameManager implements IGameManager {
     /**
      * Adds a Thunder-Vibrabomb minefield to the hex.
      */
-    public void deliverThunderVibraMinefield(Coords coords, int playerId,
+    public void deliverThunderVibraMinefield(BoardLocation boardLocation, int playerId,
                                              int damage, int sensitivity, int entityId) {
         Minefield minefield = null;
-        Enumeration<Minefield> minefields = game.getMinefields(coords).elements();
+        Enumeration<Minefield> minefields = game.getMinefields(boardLocation).elements();
         // Check if there already are Thunder minefields in the hex.
         while (minefields.hasMoreElements()) {
             Minefield mf = minefields.nextElement();
@@ -9936,7 +9958,7 @@ public class GameManager implements IGameManager {
 
         // Create a new Thunder-Vibra minefield
         if (minefield == null) {
-            minefield = Minefield.createMinefield(coords, playerId,
+            minefield = Minefield.createMinefield(boardLocation, playerId,
                     Minefield.TYPE_VIBRABOMB, damage, sensitivity);
             game.addMinefield(minefield);
             game.addVibrabomb(minefield);
@@ -9987,7 +10009,7 @@ public class GameManager implements IGameManager {
         createSmoke(boardLocation, smokeType, 3);
         Hex hex = game.getHex(boardLocation);
         hex.addTerrain(new Terrain(Terrains.SMOKE, smokeType));
-        sendChangedHex(boardLocation.getCoords());
+        sendChangedHex(boardLocation);
     }
 
     public void deliverSmokeGrenade(BoardLocation boardLocation, Vector<Report> vPhaseReport) {
@@ -9999,7 +10021,7 @@ public class GameManager implements IGameManager {
         createSmoke(boardLocation, SmokeCloud.SMOKE_LIGHT, 3);
         Hex hex = game.getBoard().getHex(coords);
         hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_LIGHT));
-        sendChangedHex(coords);
+        sendChangedHex(boardLocation);
     }
 
     public void deliverSmokeMortar(BoardLocation boardLocation, Vector<Report> vPhaseReport, int duration) {
@@ -10007,7 +10029,7 @@ public class GameManager implements IGameManager {
         vPhaseReport.add(Report.publicReport(5185).indent(2).add(coords.getBoardNum()));
         createSmoke(boardLocation, SmokeCloud.SMOKE_HEAVY, duration);
         game.getHex(boardLocation).addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_HEAVY));
-        sendChangedHex(coords);
+        sendChangedHex(boardLocation);
     }
 
     public void deliverChaffGrenade(BoardLocation boardLocation, Vector<Report> vPhaseReport) {
@@ -10019,7 +10041,7 @@ public class GameManager implements IGameManager {
         createSmoke(boardLocation, SmokeCloud.SMOKE_CHAFF_LIGHT, 1);
         Hex hex = game.getBoard().getHex(coords);
         hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_CHAFF_LIGHT));
-        sendChangedHex(coords);
+        sendChangedHex(boardLocation);
     }
 
     /**
@@ -10034,25 +10056,23 @@ public class GameManager implements IGameManager {
         r.add(coords.getBoardNum());
         vPhaseReport.add(r);
         createSmoke(boardLocation, SmokeCloud.SMOKE_HEAVY, 3);
-        Hex hex = game.getBoard().getHex(coords);
+        Hex hex = game.getHex(boardLocation);
         hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_HEAVY));
-        sendChangedHex(coords);
-        for (int dir = 0; dir <= 5; dir++) {
-            Coords tempcoords = coords.translated(dir);
-            if (!game.getBoard().contains(tempcoords)) {
+        sendChangedHex(boardLocation);
+        Board board = game.getBoard(boardLocation);
+        for (Coords adjacent : coords.allAdjacent()) {
+            if (!board.contains(adjacent)) {
                 continue;
             }
-            if (coords.equals(tempcoords)) {
-                continue;
-            }
+            BoardLocation adjacentLocation = new BoardLocation(adjacent, board.getBoardId());
             r = new Report(5185, Report.PUBLIC);
             r.indent(2);
-            r.add(tempcoords.getBoardNum());
+            r.add(adjacent.getBoardNum());
             vPhaseReport.add(r);
-            createSmoke(tempcoords, boardLocation.getBoardId(), SmokeCloud.SMOKE_HEAVY, 3);
-            hex = game.getBoard().getHex(tempcoords);
+            createSmoke(adjacentLocation, SmokeCloud.SMOKE_HEAVY, 3);
+            hex = game.getHex(adjacentLocation);
             hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_HEAVY));
-            sendChangedHex(tempcoords);
+            sendChangedHex(adjacentLocation);
         }
     }
 
@@ -10067,49 +10087,47 @@ public class GameManager implements IGameManager {
         r.indent(2);
         r.add(coords.getBoardNum());
         vPhaseReport.add(r);
-        createSmoke(coords, boardLocation.getBoardId(), SmokeCloud.SMOKE_LI_HEAVY, 2);
-        Hex hex = game.getBoard().getHex(coords);
+        createSmoke(boardLocation, SmokeCloud.SMOKE_LI_HEAVY, 2);
+        Hex hex = game.getHex(boardLocation);
         hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_LI_HEAVY));
-        sendChangedHex(coords);
-        for (int dir = 0; dir <= 5; dir++) {
-            Coords tempcoords = coords.translated(dir);
-            if (!game.getBoard().contains(tempcoords)) {
+        sendChangedHex(boardLocation);
+        Board board = game.getBoard(boardLocation);
+        for (Coords adjacent : coords.allAdjacent()) {
+            if (!board.contains(adjacent)) {
                 continue;
             }
-            if (coords.equals(tempcoords)) {
-                continue;
-            }
+            BoardLocation adjacentLocation = new BoardLocation(adjacent, board.getBoardId());
             r = new Report(5186, Report.PUBLIC);
             r.indent(2);
-            r.add(tempcoords.getBoardNum());
+            r.add(adjacent.getBoardNum());
             vPhaseReport.add(r);
-            createSmoke(tempcoords, boardLocation.getBoardId(), SmokeCloud.SMOKE_LI_HEAVY, 2);
-            hex = game.getBoard().getHex(tempcoords);
+            createSmoke(adjacentLocation, SmokeCloud.SMOKE_LI_HEAVY, 2);
+            hex = game.getHex(adjacentLocation);
             hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_LI_HEAVY));
-            sendChangedHex(tempcoords);
+            sendChangedHex(adjacentLocation);
         }
     }
 
     /**
      * deliver artillery inferno
      *
-     * @param coords    the <code>Coords</code> where to deliver
+     * @param boardLocation    the <code>Coords</code> where to deliver
      * @param ae        the attacking <code>entity</code>
      * @param subjectId the <code>int</code> id of the target
      */
-    public void deliverArtilleryInferno(Coords coords, Entity ae,
+    public void deliverArtilleryInferno(BoardLocation boardLocation, Entity ae,
                                         int subjectId, Vector<Report> vPhaseReport) {
-        Hex h = game.getBoard().getHex(coords);
+        Hex h = game.getHex(boardLocation);
         Report r;
         // Unless there is a fire in the hex already, start one.
         if (h.terrainLevel(Terrains.FIRE) < Terrains.FIRE_LVL_INFERNO_IV) {
-            ignite(coords, Terrains.FIRE_LVL_INFERNO_IV, vPhaseReport);
+            ignite(boardLocation, Terrains.FIRE_LVL_INFERNO_IV, vPhaseReport);
         }
         // possibly melt ice and snow
         if (h.containsTerrain(Terrains.ICE) || h.containsTerrain(Terrains.SNOW)) {
-            vPhaseReport.addAll(meltIceAndSnow(coords, subjectId));
+            vPhaseReport.addAll(meltIceAndSnow(boardLocation, subjectId));
         }
-        for (Entity entity : game.getEntitiesVector(coords)) {
+        for (Entity entity : game.getEntitiesAt(boardLocation)) {
             // TacOps, p. 356 - treat as if hit by 5 inferno missiles
             r = new Report(6695);
             r.indent(3);
@@ -10124,24 +10142,20 @@ public class GameManager implements IGameManager {
             Report.indentAll(vDamageReport, 2);
             vPhaseReport.addAll(vDamageReport);
         }
-        for (int dir = 0; dir <= 5; dir++) {
-            Coords tempcoords = coords.translated(dir);
-            if (!game.getBoard().contains(tempcoords)) {
+        for (BoardLocation adjacent : boardLocation.allAdjacent()) {
+            if (!game.getBoard().contains(adjacent)) {
                 continue;
             }
-            if (coords.equals(tempcoords)) {
-                continue;
-            }
-            h = game.getBoard().getHex(tempcoords);
+            h = game.getHex(adjacent);
             // Unless there is a fire in the hex already, start one.
             if (h.terrainLevel(Terrains.FIRE) < Terrains.FIRE_LVL_INFERNO_IV) {
-                ignite(tempcoords, Terrains.FIRE_LVL_INFERNO_IV, vPhaseReport);
+                ignite(adjacent, Terrains.FIRE_LVL_INFERNO_IV, vPhaseReport);
             }
             // possibly melt ice and snow
             if (h.containsTerrain(Terrains.ICE) || h.containsTerrain(Terrains.SNOW)) {
-                vPhaseReport.addAll(meltIceAndSnow(tempcoords, subjectId));
+                vPhaseReport.addAll(meltIceAndSnow(adjacent, subjectId));
             }
-            for (Entity entity : game.getEntitiesVector(tempcoords)) {
+            for (Entity entity : game.getEntitiesAt(adjacent)) {
                 r = new Report(6695);
                 r.indent(3);
                 r.add(entity.getDisplayName());
@@ -10329,8 +10343,8 @@ public class GameManager implements IGameManager {
                     r.add(missiles * 4);
                     vPhaseReport.addElement(r);
                 }
-                vPhaseReport.addAll(tryClearHex(t.getPosition(), missiles * 4, attId));
-                tryIgniteHex(t.getPosition(), attId, false, true,
+                vPhaseReport.addAll(tryClearHex(t.getBoardLocation(), missiles * 4, attId));
+                tryIgniteHex(t.getBoardLocation(), attId, false, true,
                         new TargetRoll(0, "inferno"), -1, vPhaseReport);
                 break;
             case Targetable.TYPE_BLDG_IGNITE:
@@ -10656,7 +10670,7 @@ public class GameManager implements IGameManager {
      */
     private boolean enterMinefield(Entity entity, Coords c, int curElev, boolean isOnGround,
                                    Vector<Report> vMineReport) {
-        return enterMinefield(entity, c, curElev, isOnGround, vMineReport, -1);
+        return enterMinefield(entity, new BoardLocation(c, entity.getBoardId()), curElev, isOnGround, vMineReport, -1);
     }
 
     /**
@@ -10665,7 +10679,30 @@ public class GameManager implements IGameManager {
      *
      * @param entity
      *            - the <code>entity</code> who entered the minefield
-     * @param c
+     * @param boardLocation
+     *            - the <code>Coords</code> of the minefield
+     * @param curElev
+     *            - an <code>int</code> for the elevation of the entity entering
+     *            the minefield (used for underwater sea mines)
+     * @param isOnGround
+     *            - <code>true</code> if the entity is not in the middle of a
+     *            jump
+     * @param vMineReport
+     *            - the {@link Report} <code>Vector</code> that reports will be added to
+     * @return - <code>true</code> if the entity set off any mines
+     */
+    private boolean enterMinefield(Entity entity, BoardLocation boardLocation, int curElev, boolean isOnGround,
+                                   Vector<Report> vMineReport) {
+        return enterMinefield(entity, boardLocation, curElev, isOnGround, vMineReport, -1);
+    }
+
+    /**
+     * Check for any detonations when an entity enters a minefield, except a
+     * vibrabomb.
+     *
+     * @param entity
+     *            - the <code>entity</code> who entered the minefield
+     * @param boardLocation
      *            - the <code>Coords</code> of the minefield
      * @param curElev
      *            - an <code>int</code> for the elevation of the entity entering
@@ -10680,7 +10717,7 @@ public class GameManager implements IGameManager {
      *            will be determined by density, it should be -1
      * @return - <code>true</code> if the entity set off any mines
      */
-    private boolean enterMinefield(Entity entity, Coords c, int curElev, boolean isOnGround,
+    private boolean enterMinefield(Entity entity, BoardLocation boardLocation, int curElev, boolean isOnGround,
                                    Vector<Report> vMineReport, int target) {
         Report r;
         boolean trippedMine = false;
@@ -10700,7 +10737,7 @@ public class GameManager implements IGameManager {
 
         Vector<Minefield> fieldsToRemove = new Vector<>();
         // loop through mines in this hex
-        for (Minefield mf : game.getMinefields(c)) {
+        for (Minefield mf : game.getMinefields(boardLocation)) {
             // vibrabombs are handled differently
             if (mf.getType() == Minefield.TYPE_VIBRABOMB) {
                 continue;
@@ -10708,7 +10745,7 @@ public class GameManager implements IGameManager {
 
             // if we are in the water, then the sea mine will only blow up if at
             // the right depth
-            if (game.getBoard().getHex(mf.getCoords()).containsTerrain(Terrains.WATER)) {
+            if (game.getHex(mf.getBoardLocation()).containsTerrain(Terrains.WATER)) {
                 if ((Math.abs(curElev) != mf.getDepth())
                         && (Math.abs(curElev + entity.getHeight()) != mf.getDepth())) {
                     continue;
@@ -10915,15 +10952,13 @@ public class GameManager implements IGameManager {
      * false, and removes any mines whose density has been reduced to zero.
      */
     private void resetMines() {
-        Enumeration<Coords> mineLoc = game.getMinedCoords();
-        while (mineLoc.hasMoreElements()) {
-            Coords c = mineLoc.nextElement();
-            Enumeration<Minefield> minefields = game.getMinefields(c).elements();
+        for (BoardLocation location : game.minedLocations()) {
+            Enumeration<Minefield> minefields = game.getMinefields(location).elements();
             while (minefields.hasMoreElements()) {
                 Minefield minefield = minefields.nextElement();
                 if (minefield.hasDetonated()) {
                     minefield.setDetonated(false);
-                    Enumeration<Minefield> otherMines = game.getMinefields(c).elements();
+                    Enumeration<Minefield> otherMines = game.getMinefields(location).elements();
                     while (otherMines.hasMoreElements()) {
                         Minefield otherMine = otherMines.nextElement();
                         if (otherMine.equals(minefield)) {
@@ -10943,7 +10978,7 @@ public class GameManager implements IGameManager {
             // cycle through a second time to see if any mines at these coords
             // need to be removed
             List<Minefield> mfRemoved = new ArrayList<>();
-            Enumeration<Minefield> mines = game.getMinefields(c).elements();
+            Enumeration<Minefield> mines = game.getMinefields(location).elements();
             while (mines.hasMoreElements()) {
                 Minefield mine = mines.nextElement();
                 if (mine.getDensity() < 5) {
@@ -10955,7 +10990,7 @@ public class GameManager implements IGameManager {
                 removeMinefield(mf);
             }
             // update the mines at these coords
-            sendChangedMines(c);
+            sendChangedMines(location);
         }
     }
 
@@ -11060,8 +11095,8 @@ public class GameManager implements IGameManager {
     /**
      * Clear any detonated mines at these coords
      */
-    private void clearDetonatedMines(Coords c, int target) {
-        Enumeration<Minefield> minefields = game.getMinefields(c).elements();
+    private void clearDetonatedMines(BoardLocation boardLocation, int target) {
+        Enumeration<Minefield> minefields = game.getMinefields(boardLocation).elements();
         List<Minefield> mfRemoved = new ArrayList<>();
         while (minefields.hasMoreElements()) {
             Minefield minefield = minefields.nextElement();
@@ -11509,7 +11544,7 @@ public class GameManager implements IGameManager {
         r.addDesc(entity);
         if (!hex.containsTerrain(Terrains.FIRE)) {
             r.messageId = 2175;
-            ignite(coords, Terrains.FIRE_LVL_INFERNO, null);
+            ignite(new BoardLocation(coords, entity.getBoardId()), Terrains.FIRE_LVL_INFERNO, null);
         }
         addReport(r);
     }
@@ -12423,7 +12458,7 @@ public class GameManager implements IGameManager {
                 vPhaseReport.add(r);
 
                 if (d6 == 6) {
-                    vPhaseReport.addAll(resolveIceBroken(dest));
+                    vPhaseReport.addAll(resolveIceBroken(new BoardLocation(dest, entity.getBoardId())));
                 }
             }
         }
@@ -13833,7 +13868,7 @@ public class GameManager implements IGameManager {
                         }
                     }
                     e.setSelfDestructedThisTurn(true);
-                    doFusionEngineExplosion(engineRating, e.getPosition(),
+                    doFusionEngineExplosion(engineRating, e.getBoardLocation(),
                             vDesc, null);
                     Report.addNewline(vDesc);
                     r = new Report(5410, Report.PUBLIC);
@@ -14299,7 +14334,7 @@ public class GameManager implements IGameManager {
      * Try to ignite the hex, taking into account existing fires and the
      * effects of Inferno rounds.
      *
-     * @param c
+     * @param boardLocation
      *            - the <code>Coords</code> of the hex being lit.
      * @param entityId
      *            - the <code>int</code> id of the entity involved.
@@ -14320,11 +14355,11 @@ public class GameManager implements IGameManager {
      *            be made in order to try igniting a hex accidentally. -1 for
      *            intentional
      */
-    public boolean tryIgniteHex(Coords c, int entityId, boolean bHotGun,
+    public boolean tryIgniteHex(BoardLocation boardLocation, int entityId, boolean bHotGun,
                                 boolean bInferno, TargetRoll nTargetRoll, boolean bReportAttempt,
                                 int accidentTarget, Vector<Report> vPhaseReport) {
 
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getHex(boardLocation);
         Report r;
 
         // Ignore bad coordinates.
@@ -14371,7 +14406,7 @@ public class GameManager implements IGameManager {
         }
 
         // building modifiers
-        Building bldg = game.getBoard().getBuildingAt(c);
+        Building bldg = game.getBuildingAt(boardLocation);
         if (null != bldg) {
             nTargetRoll.addModifier(bldg.getType() - 3, "building");
         }
@@ -14399,7 +14434,7 @@ public class GameManager implements IGameManager {
                 melted = true;
             }
             if (melted) {
-                vPhaseReport.addAll(meltIceAndSnow(c, entityId));
+                vPhaseReport.addAll(meltIceAndSnow(boardLocation, entityId));
                 return false;
             }
 
@@ -14424,7 +14459,7 @@ public class GameManager implements IGameManager {
                 r.subject = entityId;
                 vPhaseReport.add(r);
             }
-        } else if (checkIgnition(c, nTargetRoll, bInferno, entityId,
+        } else if (checkIgnition(boardLocation, nTargetRoll, bInferno, entityId,
                 vPhaseReport)) {
             return true;
         }
@@ -14436,7 +14471,7 @@ public class GameManager implements IGameManager {
      * effects of Inferno rounds. This version of the method will not report the
      * attempt roll.
      *
-     * @param c
+     * @param boardLocation
      *            - the <code>Coords</code> of the hex being lit.
      * @param entityId
      *            - the <code>int</code> id of the entity involved.
@@ -14447,16 +14482,21 @@ public class GameManager implements IGameManager {
      * @param nTargetRoll
      *            - the <code>int</code> roll target for the attempt.
      */
-    public boolean tryIgniteHex(Coords c, int entityId, boolean bHotGun, boolean bInferno,
+    public boolean tryIgniteHex(BoardLocation boardLocation, int entityId, boolean bHotGun, boolean bInferno,
                                 TargetRoll nTargetRoll, int accidentTarget,
                                 Vector<Report> vPhaseReport) {
-        return tryIgniteHex(c, entityId, bHotGun, bInferno, nTargetRoll, false,
+        return tryIgniteHex(boardLocation, entityId, bHotGun, bInferno, nTargetRoll, false,
                 accidentTarget, vPhaseReport);
     }
 
-    public Vector<Report> tryClearHex(Coords c, int nDamage, int entityId) {
+    public Vector<Report> tryClearHex(BoardLocation boardLocation, int nDamage, int entityId) {
+        return tryClearHex(boardLocation.getCoords(), boardLocation.getBoardId(), nDamage, entityId);
+    }
+
+    public Vector<Report> tryClearHex(Coords c, int boardId, int nDamage, int entityId) {
         Vector<Report> vPhaseReport = new Vector<>();
-        Hex h = game.getBoard().getHex(c);
+        BoardLocation boardLocation = new BoardLocation(c, boardId);
+        Hex h = game.getHex(boardLocation);
         if (h == null) {
             return vPhaseReport;
         }
@@ -14550,7 +14590,7 @@ public class GameManager implements IGameManager {
                 r = new Report(3092, reportType);
                 r.subject = entityId;
                 vPhaseReport.add(r);
-                vPhaseReport.addAll(resolveIceBroken(c));
+                vPhaseReport.addAll(resolveIceBroken(boardLocation));
             } else {
                 ice.setTerrainFactor(tf);
             }
@@ -14574,7 +14614,7 @@ public class GameManager implements IGameManager {
         sendChangedHex(c);
 
         // any attempt to clear an heavy industrial hex may cause an explosion
-        checkExplodeIndustrialZone(c, vPhaseReport);
+        checkExplodeIndustrialZone(c, boardId, vPhaseReport);
 
         return vPhaseReport;
     }
@@ -22915,7 +22955,7 @@ public class GameManager implements IGameManager {
             vDesc.add(r);
             int[] damages = {(int) Math.floor(damage_orig / 10.0),
                     (int) Math.floor(damage_orig / 20.0)};
-            doExplosion(damages, false, te.getPosition(), true, vDesc, null, 5,
+            doExplosion(damages, false, te.getBoardLocation(), true, vDesc, null, 5,
                     te.getId(), false);
             Report.addNewline(vDesc);
             r = new Report(5410, Report.PUBLIC);
@@ -23178,7 +23218,7 @@ public class GameManager implements IGameManager {
                     vDesc.addAll(ejectEntity(en, true));
                 }
 
-                doFusionEngineExplosion(engineRating, en.getPosition(), vDesc, null);
+                doFusionEngineExplosion(engineRating, en.getBoardLocation(), vDesc, null);
                 Report.addNewline(vDesc);
                 r = new Report(5410, Report.PUBLIC);
                 r.subject = en.getId();
@@ -23194,18 +23234,18 @@ public class GameManager implements IGameManager {
     /**
      * Extract explosion functionality for generalized explosions in areas.
      */
-    public void doFusionEngineExplosion(int engineRating, Coords position, Vector<Report> vDesc,
+    public void doFusionEngineExplosion(int engineRating, BoardLocation boardLocation, Vector<Report> vDesc,
                                         Vector<Integer> vUnits) {
         int[] myDamages = { engineRating, (engineRating / 10), (engineRating / 20),
                 (engineRating / 40) };
-        doExplosion(myDamages, true, position, false, vDesc, vUnits, 5, -1, true);
+        doExplosion(myDamages, true, boardLocation, false, vDesc, vUnits, 5, -1, true);
     }
 
     /**
      * General function to cause explosions in areas.
      */
     public void doExplosion(int damage, int degradation, boolean autoDestroyInSameHex,
-                            Coords position, boolean allowShelter, Vector<Report> vDesc,
+                            BoardLocation boardLocation, boolean allowShelter, Vector<Report> vDesc,
                             Vector<Integer> vUnits, int excludedUnitId) {
         if (degradation < 1) {
             return;
@@ -23221,14 +23261,14 @@ public class GameManager implements IGameManager {
         for (int x = 1; x < myDamages.length; x++) {
             myDamages[x] = myDamages[x - 1] - degradation;
         }
-        doExplosion(myDamages, autoDestroyInSameHex, position, allowShelter, vDesc, vUnits,
+        doExplosion(myDamages, autoDestroyInSameHex, boardLocation, allowShelter, vDesc, vUnits,
                 5, excludedUnitId, false);
     }
 
     /**
      * General function to cause explosions in areas.
      */
-    public void doExplosion(int[] damages, boolean autoDestroyInSameHex, Coords position,
+    public void doExplosion(int[] damages, boolean autoDestroyInSameHex, BoardLocation boardLocation,
                             boolean allowShelter, Vector<Report> vDesc, Vector<Integer> vUnits,
                             int clusterAmt, int excludedUnitId, boolean engineExplosion) {
         if (vDesc == null) {
@@ -23239,11 +23279,13 @@ public class GameManager implements IGameManager {
             vUnits = new Vector<>();
         }
 
+        Coords position = boardLocation.getCoords();
+
         Report r;
         HashSet<Entity> entitiesHit = new HashSet<>();
 
         // We need to damage buildings.
-        Enumeration<Building> buildings = game.getBoard().getBuildings();
+        Enumeration<Building> buildings = game.getBoard(boardLocation).getBuildings();
         while (buildings.hasMoreElements()) {
             final Building bldg = buildings.nextElement();
 
@@ -23265,7 +23307,7 @@ public class GameManager implements IGameManager {
 
         // We need to damage terrain
         int maxDist = damages.length;
-        Hex hex = game.getBoard().getHex(position);
+        Hex hex = game.getHex(boardLocation);
         // Center hex starts on fire for engine explosions
         if (engineExplosion && (hex != null) && !hex.containsTerrain(Terrains.FIRE)) {
             r = new Report(5136);
@@ -23274,7 +23316,7 @@ public class GameManager implements IGameManager {
             r.add(position.getBoardNum());
             vDesc.add(r);
             Vector<Report> reports = new Vector<>();
-            ignite(position, Terrains.FIRE_LVL_NORMAL, reports);
+            ignite(boardLocation, Terrains.FIRE_LVL_NORMAL, reports);
             for (Report report : reports) {
                 report.indent();
             }
@@ -23288,7 +23330,7 @@ public class GameManager implements IGameManager {
             r.add(damages[0]);
             vDesc.add(r);
         }
-        Vector<Report> reports = tryClearHex(position, damages[0], Entity.NONE);
+        Vector<Report> reports = tryClearHex(boardLocation, damages[0], Entity.NONE);
         for (Report report : reports) {
             report.indent(3);
         }
@@ -23298,7 +23340,7 @@ public class GameManager implements IGameManager {
         for (int dist = 1; dist < maxDist; dist++) {
             List<Coords> coords = position.allAtDistance(dist);
             for (Coords c : coords) {
-                hex = game.getBoard().getHex(c);
+                hex = game.getBoard(boardLocation).getHex(c);
                 if ((hex != null) && hex.hasTerrainFactor()) {
                     r = new Report(3384);
                     r.indent(2);
@@ -23307,7 +23349,7 @@ public class GameManager implements IGameManager {
                     r.add(damages[dist]);
                     vDesc.add(r);
                 }
-                reports = tryClearHex(c, damages[dist], Entity.NONE);
+                reports = tryClearHex(c, boardLocation.getBoardId(), damages[dist], Entity.NONE);
                 for (Report report : reports) {
                     report.indent(3);
                 }
@@ -23511,9 +23553,10 @@ public class GameManager implements IGameManager {
      * add a nuke to be exploded in the next weapons attack phase
      *
      * @param nuke this is an int[] with i=0 and i=1 being X and Y coordinates respectively,
-     *             If the input array is length 3, then i=2 is NukeType (from HS:3070)
-     *             If the input array is length 6, then i=2 is the base damage dealt,
-     *             i=3 is the degradation, i=4 is the secondary radius, and i=5 is the crater depth
+     *             and the board ID at i=2
+     *             If the input array is length 4, then i=3 is NukeType (from HS:3070)
+     *             If the input array is length 7, then i=3 is the base damage dealt,
+     *             i=4 is the degradation, i=5 is the secondary radius, and i=6 is the crater depth
      */
     public void addScheduledNuke(int[] nuke) {
         scheduledNukes.add(nuke);
@@ -23524,13 +23567,13 @@ public class GameManager implements IGameManager {
      */
     private void resolveScheduledNukes() {
         for (int[] nuke : scheduledNukes) {
-            if (nuke.length == 3) {
-                doNuclearExplosion(new Coords(nuke[0] - 1, nuke[1] - 1), nuke[2],
-                        vPhaseReport);
+            Coords coords = new Coords(nuke[0] - 1, nuke[1] - 1);
+            BoardLocation nukeLocation = new BoardLocation(coords, nuke[2]);
+            if (nuke.length == 4) {
+                doNuclearExplosion(nukeLocation, nuke[3], vPhaseReport);
             }
-            if (nuke.length == 6) {
-                doNuclearExplosion(new Coords(nuke[0] - 1, nuke[1] - 1), nuke[2], nuke[3],
-                        nuke[4], nuke[5], vPhaseReport);
+            if (nuke.length == 7) {
+                doNuclearExplosion(nukeLocation, nuke[3], nuke[4], nuke[5], nuke[6], vPhaseReport);
             }
         }
         scheduledNukes.clear();
@@ -23539,37 +23582,39 @@ public class GameManager implements IGameManager {
     /**
      * do a nuclear explosion
      *
-     * @param position the position that will be hit by the nuke
+     * @param boardLocation the position that will be hit by the nuke
      * @param nukeType the type of nuke
      * @param vDesc    a vector that contains the output report
      */
-    public void doNuclearExplosion(Coords position, int nukeType, Vector<Report> vDesc) {
+    public void doNuclearExplosion(BoardLocation boardLocation, int nukeType, Vector<Report> vDesc) {
         AreaEffectHelper.NukeStats nukeStats = AreaEffectHelper.getNukeStats(nukeType);
 
         if (nukeStats == null) {
             LogManager.getLogger().error("Illegal nuke not listed in HS:3070");
+            return;
         }
 
-        doNuclearExplosion(position, nukeStats.baseDamage, nukeStats.degradation, nukeStats.secondaryRadius,
+        doNuclearExplosion(boardLocation, nukeStats.baseDamage, nukeStats.degradation, nukeStats.secondaryRadius,
                 nukeStats.craterDepth, vDesc);
     }
 
     /**
      * explode a nuke
      *
-     * @param position          the position that will be hit by the nuke
+     * @param boardLocation          the position that will be hit by the nuke
      * @param baseDamage        the base damage from the blast
      * @param degradation       how fast the blast's power degrades
      * @param secondaryRadius   the secondary blast radius
      * @param craterDepth       the depth of the crater created by the blast
      * @param vDesc             a vector that contains the output report
      */
-    public void doNuclearExplosion(Coords position, int baseDamage, int degradation,
+    public void doNuclearExplosion(BoardLocation boardLocation, int baseDamage, int degradation,
                                    int secondaryRadius, int craterDepth, Vector<Report> vDesc) {
         // Just in case.
         if (vDesc == null) {
             vDesc = new Vector<>();
         }
+        Coords position = boardLocation.getCoords();
 
         // First, crater the terrain.
         // All terrain, units, buildings... EVERYTHING in here is just gone.
@@ -23648,7 +23693,7 @@ public class GameManager implements IGameManager {
         // Use the standard blast function for this.
         Vector<Report> tmpV = new Vector<>();
         Vector<Integer> blastedUnitsVec = new Vector<>();
-        doExplosion(baseDamage, degradation, true, position, true, tmpV,
+        doExplosion(baseDamage, degradation, true, boardLocation, true, tmpV,
                 blastedUnitsVec, -1);
         Report.indentAll(tmpV, 2);
         vDesc.addAll(tmpV);
@@ -25817,7 +25862,7 @@ public class GameManager implements IGameManager {
      * @return the <code>Vector<Report></code> containing phase reports
      */
     private Vector<Report> crashVTOLorWiGE(Tank en) {
-        return crashVTOLorWiGE(en, false, false, 0, en.getPosition(),
+        return crashVTOLorWiGE(en, false, false, 0, en.getBoardLocation(),
                 en.getElevation(), 0);
     }
 
@@ -25830,7 +25875,7 @@ public class GameManager implements IGameManager {
      * @return The {@code Vector<Report>} of resulting reports.
      */
     private Vector<Report> crashVTOLorWiGE(Tank en, boolean rerollRotorHits) {
-        return crashVTOLorWiGE(en, rerollRotorHits, false, 0, en.getPosition(),
+        return crashVTOLorWiGE(en, rerollRotorHits, false, 0, en.getBoardLocation(),
                 en.getElevation(), 0);
     }
 
@@ -25851,13 +25896,13 @@ public class GameManager implements IGameManager {
      */
 
     private Vector<Report> crashVTOLorWiGE(Tank en, boolean rerollRotorHits,
-                                           boolean sideSlipCrash, int hexesMoved, Coords crashPos,
+                                           boolean sideSlipCrash, int hexesMoved, BoardLocation crashPos,
                                            int crashElevation, int impactSide) {
         Vector<Report> vDesc = new Vector<>();
         Report r;
 
         // we might be off the board after a DFA, so return then
-        if (!game.getBoard().contains(crashPos)) {
+        if (!game.hasBoardLocation(crashPos)) {
             return vDesc;
         }
 
@@ -25869,7 +25914,7 @@ public class GameManager implements IGameManager {
             r.addDesc(en);
             vDesc.addElement(r);
             int newElevation = 0;
-            Hex fallHex = game.getBoard().getHex(crashPos);
+            Hex fallHex = game.getHex(crashPos);
 
             // May land on roof of building or bridge
             if (fallHex.containsTerrain(Terrains.BLDG_ELEV)) {
@@ -26038,7 +26083,7 @@ public class GameManager implements IGameManager {
 
         }
 
-        if (game.containsMinefield(crashPos)) {
+        if (game.hasMinefieldAt(crashPos)) {
             // may set off any minefields in the hex
             enterMinefield(en, crashPos, 0, true, vDesc, 7);
             // it may also clear any minefields that it detonated
@@ -26066,12 +26111,12 @@ public class GameManager implements IGameManager {
             r.subject = en.getId();
             vDesc.addElement(r);
         } else {
-            Coords pos = en.getPosition();
-            Hex hex = game.getBoard().getHex(pos);
+            BoardLocation boardLocation = en.getBoardLocation();
+            Hex hex = game.getHex(boardLocation);
             if (hex.containsTerrain(Terrains.WOODS) || hex.containsTerrain(Terrains.JUNGLE)) {
-                ignite(pos, Terrains.FIRE_LVL_NORMAL, vDesc);
+                ignite(boardLocation, Terrains.FIRE_LVL_NORMAL, vDesc);
             } else {
-                ignite(pos, Terrains.FIRE_LVL_INFERNO, vDesc);
+                ignite(boardLocation, Terrains.FIRE_LVL_INFERNO, vDesc);
             }
             vDesc.addAll(destroyEntity(en, "crashed and burned", false, false));
         }
@@ -27562,7 +27607,7 @@ public class GameManager implements IGameManager {
         Vector<Report> vPhaseReport = new Vector<>();
         Report r;
 
-        Hex fallHex = game.getBoard().getHex(fallPos);
+        Hex fallHex = game.getBoard(entity).getHex(fallPos);
 
         boolean handlingBasement = false;
         int damageTable = ToHitData.HIT_NORMAL;
@@ -27912,9 +27957,11 @@ public class GameManager implements IGameManager {
         // fallen, it'd be cruel to make it fail some more!
         game.resetPSRs(entity);
 
+        BoardLocation fallLocation = new BoardLocation(fallPos, entity.getBoardId());
+
         // if there is a minefield in this hex, then the mech may set it off
-        if (game.containsMinefield(fallPos)
-                && enterMinefield(entity, fallPos, newElevation, true,
+        if (game.hasMinefieldAt(fallLocation)
+                && enterMinefield(entity, fallLocation, newElevation, true,
                 vPhaseReport, 12)) {
             resetMines();
         }
@@ -28129,7 +28176,7 @@ public class GameManager implements IGameManager {
      * lights a fire also checks to see that fire is possible in the specified
      * hex.
      *
-     * @param c        - the <code>Coords</code> to be lit.
+     * @param boardLocation        - the <code>Coords</code> to be lit.
      * @param roll     - the <code>TargetRoll</code> for the ignition roll
      * @param bInferno - <code>true</code> if the fire is an inferno fire. If this
      *                 value is <code>false</code> the hex will be lit only if it
@@ -28138,10 +28185,10 @@ public class GameManager implements IGameManager {
      *                 value is Entity.NONE, then the roll attempt will not be
      *                 included in the report.
      */
-    public boolean checkIgnition(Coords c, TargetRoll roll, boolean bInferno, int entityId,
+    public boolean checkIgnition(BoardLocation boardLocation, TargetRoll roll, boolean bInferno, int entityId,
                                  Vector<Report> vPhaseReport) {
 
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getHex(boardLocation);
 
         // The hex might be null due to spreadFire translation
         // goes outside of the board limit.
@@ -28170,7 +28217,7 @@ public class GameManager implements IGameManager {
             vPhaseReport.add(r);
         }
         if (fireRoll >= roll.getValue()) {
-            ignite(c, Terrains.FIRE_LVL_NORMAL, vPhaseReport);
+            ignite(boardLocation, Terrains.FIRE_LVL_NORMAL, vPhaseReport);
             return true;
         }
         return false;
@@ -28181,14 +28228,14 @@ public class GameManager implements IGameManager {
      * course, also checks to see that fire is possible in the specified hex.
      * This version of the method will not report the attempt roll.
      *
-     * @param c        - the <code>Coords</code> to be lit.
+     * @param boardLocation        - the <code>Coords</code> to be lit.
      * @param roll     - the <code>int</code> target number for the ignition roll
      * @param bInferno - <code>true</code> if the fire can be lit in any terrain. If
      *                 this value is <code>false</code> the hex will be lit only if
      *                 it contains Woods, jungle or a Building.
      */
-    public boolean checkIgnition(Coords c, TargetRoll roll, boolean bInferno) {
-        return checkIgnition(c, roll, bInferno, Entity.NONE, null);
+    public boolean checkIgnition(BoardLocation boardLocation, TargetRoll roll, boolean bInferno) {
+        return checkIgnition(boardLocation, roll, bInferno, Entity.NONE, null);
     }
 
     /**
@@ -28196,21 +28243,21 @@ public class GameManager implements IGameManager {
      * course, also checks to see that fire is possible in the specified hex.
      * This version of the method will not report the attempt roll.
      *
-     * @param c    - the <code>Coords</code> to be lit.
+     * @param boardLocation    - the <code>Coords</code> to be lit.
      * @param roll - the <code>int</code> target number for the ignition roll
      */
-    public boolean checkIgnition(Coords c, TargetRoll roll) {
+    public boolean checkIgnition(BoardLocation boardLocation, TargetRoll roll) {
         // default signature, assuming only woods can burn
-        return checkIgnition(c, roll, false, Entity.NONE, null);
+        return checkIgnition(boardLocation, roll, false, Entity.NONE, null);
     }
 
     /**
      * add fire to a hex
      *
-     * @param c         - the <code>Coords</code> of the hex to be set on fire
+     * @param boardLocation         - the <code>Coords</code> of the hex to be set on fire
      * @param fireLevel - The level of fire, see Terrains
      */
-    public void ignite(Coords c, int fireLevel, Vector<Report> vReport) {
+    public void ignite(BoardLocation boardLocation, int fireLevel, Vector<Report> vReport) {
         // you can't start fires in some planetary conditions!
         if (null != game.getPlanetaryConditions().cannotStartFire()) {
             if (null != vReport) {
@@ -28233,14 +28280,14 @@ public class GameManager implements IGameManager {
             return;
         }
 
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getHex(boardLocation);
         if (null == hex) {
             return;
         }
 
         Report r = new Report(3005);
         r.indent(2);
-        r.add(c.getBoardNum());
+        r.add(boardLocation.getCoords().getBoardNum());
         r.type = Report.PUBLIC;
 
         // Adjust report message for inferno types
@@ -28261,7 +28308,7 @@ public class GameManager implements IGameManager {
             vReport.add(r);
         }
         hex.addTerrain(new Terrain(Terrains.FIRE, fireLevel));
-        sendChangedHex(c);
+        sendChangedHex(boardLocation);
     }
 
     /**
@@ -30133,6 +30180,10 @@ public class GameManager implements IGameManager {
         return new Packet(PacketCommand.CHANGE_HEX, coords, hex);
     }
 
+    private Packet createHexChangePacket(BoardLocation boardLocation, Hex hex) {
+        return new Packet(PacketCommand.CHANGE_HEX, boardLocation, hex);
+    }
+
     public void sendSmokeCloudAdded(SmokeCloud cloud) {
         send(new Packet(PacketCommand.ADD_SMOKE_CLOUD, cloud));
     }
@@ -30142,6 +30193,10 @@ public class GameManager implements IGameManager {
      */
     public void sendChangedHex(Coords coords) {
         send(createHexChangePacket(coords, game.getBoard().getHex(coords)));
+    }
+
+    public void sendChangedHex(BoardLocation boardLocation) {
+        send(createHexChangePacket(boardLocation, game.getHex(boardLocation)));
     }
 
     /**
@@ -30156,15 +30211,15 @@ public class GameManager implements IGameManager {
     /**
      * Creates a packet containing a vector of mines.
      */
-    private Packet createMineChangePacket(Coords coords) {
-        return new Packet(PacketCommand.UPDATE_MINEFIELDS, getGame().getMinefields(coords));
+    private Packet createMineChangePacket(BoardLocation boardLocation) {
+        return new Packet(PacketCommand.UPDATE_MINEFIELDS, getGame().getMinefields(boardLocation));
     }
 
     /**
      * Sends notification to clients that the specified hex has changed.
      */
-    public void sendChangedMines(Coords coords) {
-        send(createMineChangePacket(coords));
+    public void sendChangedMines(BoardLocation boardLocation) {
+        send(createMineChangePacket(boardLocation));
     }
 
     public void sendVisibilityIndicator(Entity e) {
@@ -30385,9 +30440,10 @@ public class GameManager implements IGameManager {
      * checks for unintended explosion of heavy industrial zone hex and applies
      * damage to entities occupying the hex
      */
-    public void checkExplodeIndustrialZone(Coords c, Vector<Report> vDesc) {
+    public void checkExplodeIndustrialZone(Coords c, int boardId, Vector<Report> vDesc) {
         Report r;
-        Hex hex = game.getBoard().getHex(c);
+        BoardLocation boardLocation = new BoardLocation(c, boardId);
+        Hex hex = game.getHex(boardLocation);
         if (null == hex) {
             return;
         }
@@ -30442,7 +30498,7 @@ public class GameManager implements IGameManager {
             // apply damage here
             if (powerLine || minorExp || elecExp || majorExp) {
                 // cycle through the entities in the hex and apply damage
-                for (Entity en : game.getEntitiesVector(c)) {
+                for (Entity en : game.getEntitiesAt(boardLocation)) {
                     int damage = 3;
                     if (minorExp) {
                         damage = 5;
@@ -30476,7 +30532,7 @@ public class GameManager implements IGameManager {
             }
             Report.addNewline(vDesc);
             if (onFire && !hex.containsTerrain(Terrains.FIRE)) {
-                ignite(c, Terrains.FIRE_LVL_NORMAL, vDesc);
+                ignite(boardLocation, Terrains.FIRE_LVL_NORMAL, vDesc);
             }
         } else {
             // report no explosion
@@ -31400,7 +31456,7 @@ public class GameManager implements IGameManager {
                         vPhaseReport.add(r);
                         Vector<Report> vRep = new Vector<>();
                         doExplosion(((FuelTank) bldg).getMagnitude(), 10,
-                                false, bldg.getCoords().nextElement(), true,
+                                false, new BoardLocation(bldg.getCoords().nextElement(), bldg.getBoardId()), true,
                                 vRep, null, -1);
                         Report.indentAll(vRep, 2);
                         vPhaseReport.addAll(vRep);
@@ -31597,7 +31653,7 @@ public class GameManager implements IGameManager {
                     vDesc.add(r);
                     Vector<Report> vRep = new Vector<>();
                     doExplosion(((FuelTank) bldg).getMagnitude(), 10, false,
-                            bldg.getCoords().nextElement(), true, vRep, null,
+                            new BoardLocation(bldg.getCoords().nextElement(), bldg.getBoardId()), true, vRep, null,
                             -1);
                     Report.indentAll(vRep, 2);
                     vDesc.addAll(vRep);
@@ -33205,18 +33261,18 @@ public class GameManager implements IGameManager {
      * remove Ice in the hex that's at the passed coords, and let entities fall
      * into water below it, if there is water
      *
-     * @param c the <code>Coords</code> of the hex where ice should be removed
+     * @param boardLocation the <code>Coords</code> of the hex where ice should be removed
      * @return a <code>Vector<Report></code> for the phase report
      */
-    private Vector<Report> resolveIceBroken(Coords c) {
+    private Vector<Report> resolveIceBroken(BoardLocation boardLocation) {
         Vector<Report> vPhaseReport = new Vector<>();
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getHex(boardLocation);
         hex.removeTerrain(Terrains.ICE);
-        sendChangedHex(c);
+        sendChangedHex(boardLocation);
         // if there is water below the ice
         if (hex.terrainLevel(Terrains.WATER) > 0) {
             // drop entities on the surface into the water
-            for (Entity e : game.getEntitiesVector(c)) {
+            for (Entity e : game.getEntitiesAt(boardLocation)) {
                 // If the unit is on the surface, and is no longer allowed in
                 // the hex
                 boolean isHoverOrWiGE = (e.getMovementMode() == EntityMovementMode.HOVER)
@@ -33227,7 +33283,7 @@ public class GameManager implements IGameManager {
                         && (e.getMovementMode() != EntityMovementMode.INF_UMU)
                         && !e.hasUMU()
                         && !(e instanceof QuadVee && e.getConversionMode() == QuadVee.CONV_MODE_VEHICLE)) {
-                    vPhaseReport.addAll(doEntityFallsInto(e, c,
+                    vPhaseReport.addAll(doEntityFallsInto(e, boardLocation.getCoords(),
                             new PilotingRollData(TargetRoll.AUTOMATIC_FAIL),
                             true));
                 }
@@ -33240,25 +33296,25 @@ public class GameManager implements IGameManager {
      * melt any snow or ice in a hex, including checking for the effects of
      * breaking through ice
      */
-    private Vector<Report> meltIceAndSnow(Coords c, int entityId) {
+    private Vector<Report> meltIceAndSnow(BoardLocation boardLocation, int entityId) {
         Vector<Report> vDesc = new Vector<>();
         Report r;
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getHex(boardLocation);
         r = new Report(3069);
         r.indent(2);
         r.subject = entityId;
         vDesc.add(r);
         if (hex.containsTerrain(Terrains.SNOW)) {
             hex.removeTerrain(Terrains.SNOW);
-            sendChangedHex(c);
+            sendChangedHex(boardLocation);
         }
         if (hex.containsTerrain(Terrains.ICE)) {
-            vDesc.addAll(resolveIceBroken(c));
+            vDesc.addAll(resolveIceBroken(boardLocation));
         }
         // if we were not in water, then add mud
         if (!hex.containsTerrain(Terrains.MUD) && !hex.containsTerrain(Terrains.WATER)) {
             hex.addTerrain(new Terrain(Terrains.MUD, 1));
-            sendChangedHex(c);
+            sendChangedHex(boardLocation);
         }
         return vDesc;
     }
@@ -33765,7 +33821,7 @@ public class GameManager implements IGameManager {
     /**
      * deal area saturation damage to an individual hex
      *
-     * @param coords         The hex being hit
+     * @param targetLocation         The hex being hit
      * @param attackSource   The location the attack came from. For hit table resolution
      * @param damage         Amount of damage to deal to each entity
      * @param ammo           The ammo type being used
@@ -33780,24 +33836,24 @@ public class GameManager implements IGameManager {
      *                       will be ignored
      * @param variableDamage if true, treat damage as the number of six-sided dice to roll
      */
-    public Vector<Integer> artilleryDamageHex(Coords coords,
+    public Vector<Integer> artilleryDamageHex(BoardLocation targetLocation,
                                               Coords attackSource, int damage, AmmoType ammo, int subjectId,
                                               Entity killer, Entity exclude, boolean flak, int altitude,
                                               Vector<Report> vPhaseReport, boolean asfFlak,
                                               Vector<Integer> alreadyHit, boolean variableDamage) {
 
-        Hex hex = game.getBoard().getHex(coords);
+        Hex hex = game.getHex(targetLocation);
         if (hex == null) {
             return alreadyHit; // not on board.
         }
+        Coords coords = targetLocation.getCoords();
 
         Report r;
 
         // Non-flak artillery damages terrain
         if (!flak) {
             // Report that damage applied to terrain, if there's TF to damage
-            Hex h = game.getBoard().getHex(coords);
-            if ((h != null) && h.hasTerrainFactor()) {
+            if (hex.hasTerrainFactor()) {
                 r = new Report(3384);
                 r.indent(2);
                 r.subject = subjectId;
@@ -33806,7 +33862,7 @@ public class GameManager implements IGameManager {
                 vPhaseReport.addElement(r);
             }
             // Update hex and report any changes
-            Vector<Report> newReports = tryClearHex(coords, damage * 2, subjectId);
+            Vector<Report> newReports = tryClearHex(targetLocation, damage * 2, subjectId);
             for (Report nr : newReports) {
                 nr.indent(3);
             }
@@ -33818,7 +33874,7 @@ public class GameManager implements IGameManager {
                         (BombType.getBombTypeFromInternalName(ammo.getInternalName()) == BombType.B_FAE_SMALL ||
                                 BombType.getBombTypeFromInternalName(ammo.getInternalName()) == BombType.B_FAE_LARGE);
 
-        Building bldg = game.getBoard().getBuildingAt(coords);
+        Building bldg = game.getBuildingAt(targetLocation);
         int bldgAbsorbs = 0;
         if ((bldg != null)
                 && !(flak && (((altitude > hex.terrainLevel(Terrains.BLDG_ELEV))
@@ -33871,7 +33927,7 @@ public class GameManager implements IGameManager {
         }
 
         // get units in hex
-        for (Entity entity : game.getEntitiesVector(coords)) {
+        for (Entity entity : game.getEntitiesAt(targetLocation)) {
             // Check: is entity excluded?
             if ((entity == exclude) || alreadyHit.contains(entity.getId())) {
                 continue;
@@ -33904,7 +33960,7 @@ public class GameManager implements IGameManager {
      * @param attackingBA  How many BA suits are in the squad if this is a BA Tube arty
      *                     attack, -1 otherwise
      */
-    public void artilleryDamageArea(Coords centre, Coords attackSource,
+    public void artilleryDamageArea(BoardLocation centre, Coords attackSource,
                                     AmmoType ammo, int subjectId, Entity killer, boolean flak,
                                     int altitude, boolean mineClear, Vector<Report> vPhaseReport,
                                     boolean asfFlak, int attackingBA) {
@@ -33913,7 +33969,7 @@ public class GameManager implements IGameManager {
         int damage = damageFalloff.damage;
         int falloff = damageFalloff.falloff;
         if (damageFalloff.clusterMunitionsFlag) {
-            attackSource = centre;
+            attackSource = centre.getCoords();
         }
 
         artilleryDamageArea(centre, attackSource, ammo, subjectId, killer,
@@ -33947,22 +34003,22 @@ public class GameManager implements IGameManager {
      * @param asfFlak
      *            Is this flak against ASF?
      */
-    public void artilleryDamageArea(Coords centre, Coords attackSource, AmmoType ammo, int subjectId,
+    public void artilleryDamageArea(BoardLocation centre, Coords attackSource, AmmoType ammo, int subjectId,
                                     Entity killer, int damage, int falloff, boolean flak, int altitude,
                                     Vector<Report> vPhaseReport, boolean asfFlak) {
         Vector<Integer> alreadyHit = new Vector<>();
         for (int ring = 0; damage > 0; ring++, damage -= falloff) {
-            List<Coords> hexes = centre.allAtDistance(ring);
-            for (Coords c : hexes) {
+            List<BoardLocation> hexes = centre.allAtDistance(ring);
+            for (BoardLocation c : hexes) {
                 alreadyHit = artilleryDamageHex(c, attackSource, damage, ammo,
                         subjectId, killer, null, flak, altitude, vPhaseReport,
                         asfFlak, alreadyHit, false);
             }
-            attackSource = centre; // all splash comes from ground zero
+            attackSource = centre.getCoords(); // all splash comes from ground zero
         }
     }
 
-    public void deliverBombDamage(Coords centre, int type, int subjectId, Entity killer,
+    public void deliverBombDamage(BoardLocation centre, int type, int subjectId, Entity killer,
                                   Vector<Report> vPhaseReport) {
         int range = 0;
         int damage = 10;
@@ -33972,13 +34028,13 @@ public class GameManager implements IGameManager {
         }
         Vector<Integer> alreadyHit = new Vector<>();
 
-        alreadyHit = artilleryDamageHex(centre, centre, damage, null,
+        alreadyHit = artilleryDamageHex(centre, centre.getCoords(), damage, null,
                 subjectId, killer, null, false, 0, vPhaseReport, false,
                 alreadyHit, false);
         if (range > 0) {
-            List<Coords> hexes = centre.allAtDistance(range);
-            for (Coords c : hexes) {
-                alreadyHit = artilleryDamageHex(c, centre, damage, null,
+            List<BoardLocation> hexes = centre.allAtDistance(range);
+            for (BoardLocation c : hexes) {
+                alreadyHit = artilleryDamageHex(c, centre.getCoords(), damage, null,
                         subjectId, killer, null, false, 0, vPhaseReport, false,
                         alreadyHit, false);
             }
@@ -33988,23 +34044,23 @@ public class GameManager implements IGameManager {
     /**
      * deliver inferno bomb
      *
-     * @param coords    the <code>Coords</code> where to deliver
+     * @param boardLocation    the <code>Coords</code> where to deliver
      * @param ae        the attacking <code>entity</code>
      * @param subjectId the <code>int</code> id of the target
      */
-    public void deliverBombInferno(Coords coords, Entity ae, int subjectId,
+    public void deliverBombInferno(BoardLocation boardLocation, Entity ae, int subjectId,
                                    Vector<Report> vPhaseReport) {
-        Hex h = game.getBoard().getHex(coords);
+        Hex h = game.getHex(boardLocation);
         Report r;
         // Unless there is a fire in the hex already, start one.
         if (h.terrainLevel(Terrains.FIRE) < Terrains.FIRE_LVL_INFERNO_BOMB) {
-            ignite(coords, Terrains.FIRE_LVL_INFERNO_BOMB, vPhaseReport);
+            ignite(boardLocation, Terrains.FIRE_LVL_INFERNO_BOMB, vPhaseReport);
         }
         // possibly melt ice and snow
         if (h.containsTerrain(Terrains.ICE) || h.containsTerrain(Terrains.SNOW)) {
-            vPhaseReport.addAll(meltIceAndSnow(coords, subjectId));
+            vPhaseReport.addAll(meltIceAndSnow(boardLocation, subjectId));
         }
-        for (Entity entity : game.getEntitiesVector(coords)) {
+        for (Entity entity : game.getEntitiesAt(boardLocation)) {
             if (entity.isAirborne() || entity.isAirborneVTOLorWIGE()) {
                 continue;
             }
@@ -34286,29 +34342,29 @@ public class GameManager implements IGameManager {
      * @param entity the <code>Entity</code> that should lay a mine
      * @param mineId an <code>int</code> pointing to the mine
      */
-    private void layMine(Entity entity, int mineId, Coords coords) {
+    private void layMine(Entity entity, int mineId, BoardLocation boardLocation) {
         Mounted mine = entity.getEquipment(mineId);
         Report r;
         if (!mine.isMissing()) {
             int reportId = 0;
             switch (mine.getMineType()) {
                 case Mounted.MINE_CONVENTIONAL:
-                    deliverThunderMinefield(coords, entity.getOwnerId(), 10,
+                    deliverThunderMinefield(boardLocation, entity.getOwnerId(), 10,
                             entity.getId());
                     reportId = 3500;
                     break;
                 case Mounted.MINE_VIBRABOMB:
-                    deliverThunderVibraMinefield(coords, entity.getOwnerId(), 10,
+                    deliverThunderVibraMinefield(boardLocation, entity.getOwnerId(), 10,
                             mine.getVibraSetting(), entity.getId());
                     reportId = 3505;
                     break;
                 case Mounted.MINE_ACTIVE:
-                    deliverThunderActiveMinefield(coords, entity.getOwnerId(), 10,
+                    deliverThunderActiveMinefield(boardLocation, entity.getOwnerId(), 10,
                             entity.getId());
                     reportId = 3510;
                     break;
                 case Mounted.MINE_INFERNO:
-                    deliverThunderInfernoMinefield(coords, entity.getOwnerId(), 10,
+                    deliverThunderInfernoMinefield(boardLocation, entity.getOwnerId(), 10,
                             entity.getId());
                     reportId = 3515;
                     break;
@@ -34322,7 +34378,7 @@ public class GameManager implements IGameManager {
             r = new Report(reportId);
             r.subject = entity.getId();
             r.addDesc(entity);
-            r.add(coords.getBoardNum());
+            r.add(boardLocation.getCoords().getBoardNum());
             addReport(r);
             entity.setLayingMines(true);
         }

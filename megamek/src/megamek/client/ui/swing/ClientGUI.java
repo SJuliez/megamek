@@ -249,8 +249,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     public UnitDisplay unitDisplay;
     private UnitDisplayDialog unitDisplayDialog;
     public JDialog minimapW;
-    public JDialog minimapLowAtmo;
-    public JDialog minimapSpace;
     private MapMenu popup;
     private UnitOverview uo;
     private Ruler ruler;
@@ -918,7 +916,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 break;
             case VIEW_TOGGLE_FOV_HIGHLIGHT:
                 GUIP.setFovHighlight(!GUIP.getFovHighlight());
-                bv.refreshDisplayables();
+                refreshDisplayablesOnBoardViews();
                 if (client.getGame().getPhase().isMovement()) {
                     bv.clearHexImageCache();
                 }
@@ -932,7 +930,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 break;
             case VIEW_TOGGLE_FOV_DARKEN:
                 GUIP.setFovDarken(!GUIP.getFovDarken());
-                bv.refreshDisplayables();
+                refreshDisplayablesOnBoardViews();
                 if (client.getGame().getPhase().isMovement()) {
                     bv.clearHexImageCache();
                 }
@@ -946,7 +944,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                         ((FiringDisplay) curPanel).setFiringSolutions();
                     }
                 }
-                bv.refreshDisplayables();
+                refreshDisplayablesOnBoardViews();
                 break;
             case VIEW_MOVE_ENV:
                 if (curPanel instanceof MovementDisplay) {
@@ -1457,7 +1455,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     private void toggleUnitOverview() {
         uo.setVisible(!uo.isVisible());
         GUIP.setShowUnitOverview(uo.isVisible());
-        bv.refreshDisplayables();
+        refreshDisplayablesOnBoardViews();
     }
 
     /**
@@ -2218,36 +2216,22 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
             if (newBoard != null) {
                 try {
-                    if (newBoard.getMapType().isLowAtmo() || newBoard.getMapType().isSpace()) {
-                        BoardView boardView = new BoardView(client.getGame(), controller, ClientGUI.this, boardId);
-                        minimapLowAtmo = Minimap.createMinimap(frame, boardView, getClient().getGame(),
-                                ClientGUI.this, boardId);
-                        minimapLowAtmo.setVisible(true);
-                        boardViews.put(boardId, boardView);
-                        boardView.addBoardViewListener(ClientGUI.this);
-                        getUnitDisplay().addMechDisplayListener(boardView);
-                        boardView.addDisplayable(cb2);
-                        boardView.addKeyListener(cb2);
-                    } else {
-                        bv = new BoardView(client.getGame(), controller, ClientGUI.this, boardId);
-                        bv.setPreferredSize(getSize());
-                        boardViews.put(boardId, bv);
-                        minimapW = Minimap.createMinimap(frame, bv, getClient().getGame(),
-                                ClientGUI.this, boardId);
-                        bv.addBoardViewListener(ClientGUI.this);
-                        getUnitDisplay().addMechDisplayListener(bv);
-                        bv.addDisplayable(cb2);
-                        bv.addKeyListener(cb2);
-                    }
+                    BoardView boardView = new BoardView(client.getGame(), controller, ClientGUI.this, boardId);
+                    JDialog newMinimap = Minimap.createMinimap(frame, boardView, getClient().getGame(),
+                            ClientGUI.this, boardId);
+                    newMinimap.setVisible(true);
+                    boardViews.put(boardId, boardView);
+                    boardView.setPreferredSize(getSize());
+                    boardView.addBoardViewListener(ClientGUI.this);
+                    getUnitDisplay().addMechDisplayListener(boardView);
+                    boardView.addDisplayable(cb2);
+                    boardView.addKeyListener(cb2);
+                    boardView.addDisplayable(uo);
+                    boardView.addDisplayable(offBoardOverlay);
                     updateMapTabs();
                 } catch (IOException ex) {
                     // this is likely fatal anyway
                     throw new RuntimeException(ex);
-                }
-            } else {
-                Board oldBoard = e.getOldBoard();
-                if (oldBoard != null) {
-                    boardViews.remove(oldBoard.getMapType());
                 }
             }
         }

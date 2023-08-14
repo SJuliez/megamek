@@ -13,6 +13,8 @@
  */
 package megamek.server.commands;
 
+import megamek.common.BoardLocation;
+import megamek.common.Coords;
 import megamek.common.options.OptionsConstants;
 import megamek.server.GameManager;
 import megamek.server.Server;
@@ -52,12 +54,15 @@ public class NukeCommand extends ServerCommand {
         if (args.length == 4) {
             // Check command type 1
             try {
-                int[] nuke = new int[3];
-                for (int i = 1; i < 4; i++) {
+                int[] nuke = new int[4];
+                for (int i = 1; i < 5; i++) {
                     nuke[i - 1] = Integer.parseInt(args[i]);
                 }
+
                 // is the hex on the board?
-                if (!gameManager.getGame().getBoard().contains(nuke[0] - 1, nuke[1] - 1)) {
+                Coords coords = new Coords(nuke[0] - 1, nuke[1] - 1);
+                BoardLocation nukeLocation = new BoardLocation(coords, nuke[2]);
+                if (!gameManager.getGame().hasBoardLocation(nukeLocation)) {
                     server.sendServerChat(connId, "Specified hex is not on the board.");
                     return;
                 }
@@ -69,12 +74,14 @@ public class NukeCommand extends ServerCommand {
         } else if (args.length == 7) {
             // Check command type 2.
             try {
-                int[] nuke = new int[6];
-                for (int i = 1; i < 7; i++) {
+                int[] nuke = new int[7];
+                for (int i = 1; i < 8; i++) {
                     nuke[i-1] = Integer.parseInt(args[i]);
                 }
                 // is the hex on the board?
-                if (!gameManager.getGame().getBoard().contains(nuke[0] - 1, nuke[1] - 1)) {
+                Coords coords = new Coords(nuke[0] - 1, nuke[1] - 1);
+                BoardLocation nukeLocation = new BoardLocation(coords, nuke[2]);
+                if (!gameManager.getGame().hasBoardLocation(nukeLocation)) {
                     server.sendServerChat(connId, "Specified hex is not on the board.");
                     return;
                 }

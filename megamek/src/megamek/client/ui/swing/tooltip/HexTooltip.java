@@ -36,6 +36,7 @@ public final class HexTooltip {
         }
         StringBuilder result = new StringBuilder();
         Hex mhex = board.getHex(mcoords);
+        BoardLocation boardLocation = new BoardLocation(mcoords, board.getBoardId());
         // All of the following can be null even if there's a ClientGUI!
         Game game = (client != null) ? client.getGame() : null;
         Player localPlayer = (client != null) ? client.getLocalPlayer() : null;
@@ -128,8 +129,8 @@ public final class HexTooltip {
             result.append(table);
         }
 
-        if ((game != null) && game.containsMinefield(mcoords)) {
-            Vector<Minefield> minefields = game.getMinefields(mcoords);
+        if ((game != null) && game.hasMinefieldAt(boardLocation)) {
+            Vector<Minefield> minefields = game.getMinefields(boardLocation);
             for (int i = 0; i < minefields.size(); i++) {
                 Minefield mf = minefields.elementAt(i);
                 String owner = " (" + game.getPlayer(mf.getPlayerId()).getName() + ')';

@@ -56,7 +56,7 @@ public class Minefield implements Serializable, Cloneable {
     
     public static int TYPE_SIZE = names.length;
 
-    private Coords coords = null;
+    private BoardLocation boardLocation;
     private int playerId = Player.PLAYER_NONE;
     //private int damage = 0;
     //private int secondaryDamage = 0;
@@ -72,33 +72,33 @@ public class Minefield implements Serializable, Cloneable {
     private Minefield() {
         //Creates a minefield
     }
-    
-    public static Minefield createMinefield(Coords coords, int playerId, int type, int density) {
-        return createMinefield(coords, playerId, type, density, 0);
+
+    public static Minefield createMinefield(BoardLocation boardLocation, int playerId, int type, int density) {
+        return createMinefield(boardLocation, playerId, type, density, 0);
     }
     
-    public static Minefield createMinefield(Coords coords, int playerId, int type, int density, boolean sea, int depth) {
-        return createMinefield(coords, playerId, type, density, 0, sea, depth);
+    public static Minefield createMinefield(BoardLocation boardLocation, int playerId, int type, int density, boolean sea, int depth) {
+        return createMinefield(boardLocation, playerId, type, density, 0, sea, depth);
     }
     
-    public static Minefield createMinefield(Coords coords, int playerId, int type, int density, int setting) {
-        return createMinefield(coords, playerId, type, density, setting, false, 0);
+    public static Minefield createMinefield(BoardLocation boardLocation, int playerId, int type, int density, int setting) {
+        return createMinefield(boardLocation, playerId, type, density, setting, false, 0);
     }
 
-    public static Minefield createMinefield(Coords coords, int playerId, int type, int density, int setting, boolean sea, int depth) {
+    public static Minefield createMinefield(BoardLocation boardLocation, int playerId, int type, int density,
+                                            int setting, boolean sea, int depth) {
         Minefield mf = new Minefield();
-        
+
         mf.type = type;
         mf.density = density;
-        mf.coords = coords;
+        mf.boardLocation = boardLocation;
         mf.playerId = playerId;
         mf.setting = setting;
         mf.sea = sea;
         mf.depth = depth;
         return mf;
     }
-    
-    
+
     public static String getDisplayableName(int type) {
         if (type >= 0 && type < TYPE_SIZE) {
             return names[type];
@@ -111,7 +111,7 @@ public class Minefield implements Serializable, Cloneable {
         Minefield mf = new Minefield();
 
         mf.playerId = playerId;
-        mf.coords = coords;
+        mf.boardLocation = boardLocation;
         mf.density = density;
         mf.oneUse = oneUse;
         mf.type = type;
@@ -131,13 +131,13 @@ public class Minefield implements Serializable, Cloneable {
             return false;
         }
         final Minefield other = (Minefield) obj;
-        return (playerId == other.playerId) && Objects.equals(coords, other.coords) && 
+        return (playerId == other.playerId) && Objects.equals(boardLocation, other.boardLocation) &&
                 (type == other.type);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(playerId, coords, type);
+        return Objects.hash(playerId, boardLocation, type);
     }
 
     public void setDensity(int density) {
@@ -145,7 +145,11 @@ public class Minefield implements Serializable, Cloneable {
     }
 
     public Coords getCoords() {
-        return coords;
+        return boardLocation.getCoords();
+    }
+
+    public BoardLocation getBoardLocation() {
+        return boardLocation;
     }
 
     public int getDensity() {

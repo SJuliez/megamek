@@ -17,6 +17,7 @@ import megamek.client.Client;
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.FiringDisplay.FiringCommand;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.util.CommandAction;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.MegaMekController;
@@ -480,11 +481,8 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
      */
     public void initializeListeners() {
         clientgui.getClient().getGame().addGameListener(this);
-        clientgui.getBoardView().addBoardViewListener(this);
-
-        clientgui.getBoardView().addKeyListener(this);
-
-        // mech display.
+        clientgui.addListenerToBoardViews(this);
+        clientgui.addKeyListenerToBoardViews(this);
         clientgui.getUnitDisplay().wPan.weaponList.addListSelectionListener(this);
         clientgui.getUnitDisplay().wPan.weaponList.addKeyListener(this);
     }
@@ -550,15 +548,14 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             }
 
             target(null);
-            clientgui.getBoardView().highlight(ce().getPosition());
-            clientgui.getBoardView().select(null);
-            clientgui.getBoardView().cursor(null);
+            clientgui.removeAllCoordMarkings();
+            clientgui.getBoardView(ce()).highlight(ce().getPosition());
 
             refreshAll();
             cacheVisibleTargets();
 
-            if (!clientgui.getBoardView().isMovingUnits() && !ce().isOffBoard()) {
-                clientgui.getBoardView().centerOnHex(ce().getPosition());
+            if (!clientgui.isMovingUnits() && !ce().isOffBoard()) {
+                clientgui.getBoardView(ce()).centerOnHex(ce().getPosition());
             }
 
             setFlipArmsEnabled(ce().canFlipArms() && ce().getCrew().isActive());
@@ -569,7 +566,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             if (GUIP.getFiringSolutions() && !ce().isOffBoard()) {
                 setFiringSolutions();
             } else {
-                clientgui.getBoardView().clearFiringSolutionData();
+                clientgui.boardViews().forEach(BoardView::clearFiringSolutionData);
             }
         } else {
             LogManager.getLogger().error("Tried to select non-existent entity: " + en);
@@ -612,7 +609,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
                 fs.put(target.getId(), new FiringSolution(thd, spottedEntities.contains(target.getId())));
             }
         }
-        clientgui.getBoardView().setFiringSolutions(ce(), fs);
+        clientgui.getBoardView(ce()).setFiringSolutions(ce(), fs);
     }
 
     /**
@@ -621,11 +618,11 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
     private void beginMyTurn() {
         target = null;
 
-        if (!clientgui.getBoardView().isMovingUnits()) {
+        if (!clientgui.isMovingUnits()) {
             clientgui.maybeShowUnitDisplay();
         }
-        clientgui.getBoardView().clearFieldOfFire();
-        clientgui.getBoardView().clearSensorsRanges();
+        clientgui.boardViews().forEach(BoardView::clearFieldOfFire);
+        clientgui.boardViews().forEach(BoardView::clearSensorsRanges);
 
         selectEntity(clientgui.getClient().getFirstEntityNum());
         setDisengageEnabled((ce() != null) && attacks.isEmpty() && ce().canFlee());
@@ -656,7 +653,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         } else {
             setNextEnabled(true);
             butDone.setEnabled(true);
-            clientgui.getBoardView().select(null);
+            clientgui.boardViews().forEach(bv -> bv.select(null));
             initDonePanelForNewTurn();
         }
         setupButtonPanel();
@@ -676,13 +673,11 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         }
         cen = Entity.NONE;
         target(null);
-        clientgui.getBoardView().select(null);
-        clientgui.getBoardView().highlight(null);
-        clientgui.getBoardView().cursor(null);
-        clientgui.getBoardView().clearFiringSolutionData();
-        clientgui.getBoardView().clearMovementData();
-        clientgui.getBoardView().clearFieldOfFire();
-        clientgui.getBoardView().clearSensorsRanges();
+        clientgui.removeAllCoordMarkings();
+        clientgui.boardViews().forEach(BoardView::clearFieldOfFire);
+        clientgui.boardViews().forEach(BoardView::clearSensorsRanges);
+        clientgui.boardViews().forEach(BoardView::clearFiringSolutionData);
+        clientgui.boardViews().forEach(BoardView::clearMovementData);
         clientgui.setSelectedEntityNum(Entity.NONE);
         disableButtons();
     }
@@ -798,7 +793,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         // and add it into the game, temporarily
         clientgui.getClient().getGame().addAction(saa);
-        clientgui.getBoardView().addAttack(saa);
+        clientgui.getBoardView(cen).addAttack(saa);
 
         // refresh weapon panel, as bth will have changed
         updateTarget();
@@ -967,7 +962,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
     private void removeTempAttacks() {
         // remove temporary attacks from game & board
         clientgui.getClient().getGame().removeActionsFor(cen);
-        clientgui.getBoardView().removeAttacksFor(ce());
+        clientgui.getBoardView(ce()).removeAttacksFor(ce());
     }
 
     /**
@@ -983,7 +978,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
                 setDisengageEnabled(attacks.isEmpty() && ce().isOffBoard() && ce().canFlee());
                 clientgui.getUnitDisplay().wPan.displayMech(ce());
                 clientgui.getClient().getGame().removeAction(o);
-                clientgui.getBoardView().refreshAttacks();
+                clientgui.getBoardView(ce()).refreshAttacks();
             }
         }
     }
@@ -995,7 +990,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         if (ce() == null) {
             return;
         }
-        clientgui.getBoardView().redrawEntity(ce());
+        clientgui.getBoardView(ce()).redrawEntity(ce());
         clientgui.getUnitDisplay().displayEntity(ce());
         clientgui.getUnitDisplay().showPanel("weapons");
         clientgui.getUnitDisplay().wPan.selectFirstWeapon();
@@ -1141,8 +1136,8 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             return;
         }
 
-        clientgui.getBoardView().centerOnHex(targ.getPosition());
-        clientgui.getBoardView().select(targ.getPosition());
+        clientgui.getBoardView(targ).centerOnHex(targ.getPosition());
+        clientgui.getBoardView(targ).select(targ.getPosition());
 
         target(targ);
     }
@@ -1174,8 +1169,8 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             return;
         }
 
-        clientgui.getBoardView().centerOnHex(targ.getPosition());
-        clientgui.getBoardView().select(targ.getPosition());
+        clientgui.getBoardView(targ).centerOnHex(targ.getPosition());
+        clientgui.getBoardView(targ).select(targ.getPosition());
 
         target(targ);
     }
@@ -1217,9 +1212,9 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             if (shiftheld) {
                 updateFlipArms(false);
             }
-            clientgui.getBoardView().cursor(b.getCoords());
+            b.getBoardView().cursor(b.getCoords());
         } else if (b.getType() == BoardViewEvent.BOARD_HEX_CLICKED) {
-            clientgui.getBoardView().select(b.getCoords());
+            b.getBoardView().select(b.getCoords());
         }
     }
 
@@ -1245,7 +1240,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
     /**
      * Have the player select a target from the entities at the given coords.
      *
-     * @param pos - the <code>Coords</code> containing targets.
+     * @param boardLocation - the <code>Coords</code> containing targets.
      */
     private Targetable chooseTarget(BoardLocation boardLocation) {
         Game game = clientgui.getClient().getGame();
@@ -1460,8 +1455,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
     @Override
     public void clear() {
         clearAttacks();
-        clientgui.getBoardView().select(null);
-        clientgui.getBoardView().cursor(null);
+        clientgui.removeAllCoordMarkings();
         refreshAll();
     }
 
@@ -1483,7 +1477,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         if (clientgui.getClient().isMyTurn() && (ce() != null)) {
             clientgui.maybeShowUnitDisplay();
-            clientgui.getBoardView().centerOnHex(ce().getPosition());
+            clientgui.getBoardView(ce()).centerOnHex(ce().getPosition());
         }
     }
 
@@ -1504,7 +1498,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             clientgui.maybeShowUnitDisplay();
             clientgui.getUnitDisplay().displayEntity(e);
             if (e.isDeployed()) {
-                clientgui.getBoardView().centerOnHex(e.getPosition());
+                clientgui.getBoardView(e).centerOnHex(e.getPosition());
             }
         }
     }
@@ -1515,7 +1509,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
     @Override
     public void removeAllListeners() {
         clientgui.getClient().getGame().removeGameListener(this);
-        clientgui.getBoardView().removeBoardViewListener(this);
+        clientgui.removeListenerFromBoardViews(this);
         clientgui.getUnitDisplay().wPan.weaponList.removeListSelectionListener(this);
     }
 

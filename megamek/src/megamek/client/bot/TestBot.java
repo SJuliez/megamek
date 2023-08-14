@@ -1935,7 +1935,7 @@ public class TestBot extends BotClient {
             );
 
             if (game.containsMinefield(coords)) {
-                Minefield mf = game.getMinefields(coords).get(0);
+                Minefield mf = game.getMinefields(new BoardLocation(coords, 0)).get(0);
                 if (mf.getPlayerId() == getLocalPlayer().getId()) {
                     i--;
                     continue;
@@ -1944,13 +1944,13 @@ public class TestBot extends BotClient {
                 Minefield mf = null;
 
                 if (type == 0) {
-                    mf = Minefield.createMinefield(coords, getLocalPlayer()
+                    mf = Minefield.createMinefield(new BoardLocation(coords, 0), getLocalPlayer()
                             .getId(), Minefield.TYPE_CONVENTIONAL, 10);
                 } else if (type == 1) {
-                    mf = Minefield.createMinefield(coords, getLocalPlayer()
+                    mf = Minefield.createMinefield(new BoardLocation(coords, 0), getLocalPlayer()
                             .getId(), Minefield.TYPE_COMMAND_DETONATED, 10);
                 } else if (type == 2) {
-                    mf = Minefield.createMinefield(coords, getLocalPlayer()
+                    mf = Minefield.createMinefield(new BoardLocation(coords, 0), getLocalPlayer()
                             .getId(), Minefield.TYPE_VIBRABOMB, 20);
                 }
                 deployedMinefields.add(mf);

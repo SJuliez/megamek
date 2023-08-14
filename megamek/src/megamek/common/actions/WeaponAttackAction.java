@@ -4680,7 +4680,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
 
         Entity targetEntity = (Entity) target;
 
-        Hex targetHex = targetEntity.getGame().getBoard().getHex(target.getPosition());
+        Hex targetHex = targetEntity.getBoard().getHex(target.getPosition());
         if (targetHex == null) {
             return false;
         }

@@ -44,7 +44,7 @@ public class LosEffects {
         public boolean attOffBoard;
         public Coords attackPos;
         public Coords targetPos;
-        public BoardLocation attackLocation;
+        public BoardLocation attackerLocation;
         public BoardLocation targetLocation;
         
         /**
@@ -1370,6 +1370,54 @@ public class LosEffects {
         ai.targetHeight = h2;
         ai.attackAbsHeight = h1Floor + h1;
         ai.targetAbsHeight = h2Floor + h2;
+        return ai;
+    }
+
+    /**
+     * Build line of sight effects between coordinates c1 and c2 at height h1
+     * and h2 respectively.
+     *
+     * @param c1 the source coordinates.
+     * @param c2 the target coordinates.
+     * @param h1 the height in the source tile that is being shot from.
+     * @param h2 the height of the target tile to shoot for.
+     * @return an attackInfo object that describes the applicable modifiers.
+     */
+    public static LosEffects.AttackInfo buildAttackInfo(Coords c1, Coords c2, int h1,
+                                                        int h2, int h1Floor, int h2Floor, int boardId) {
+        LosEffects.AttackInfo ai = new LosEffects.AttackInfo();
+        ai.attackPos = c1;
+        ai.targetPos = c2;
+        ai.attackHeight = h1;
+        ai.targetHeight = h2;
+        ai.attackAbsHeight = h1Floor + h1;
+        ai.targetAbsHeight = h2Floor + h2;
+        ai.targetLocation = new BoardLocation(c1, boardId);
+        ai.attackerLocation = new BoardLocation(c2, boardId);
+        return ai;
+    }
+
+    /**
+     * Builds an AttackInfo object. This uses BoardLocations for both attacker and target and can
+     * be used to build an AttackInfo for attacks from one board to another (e.g. surface to orbit).
+     *
+     * @param c1 the source location including the board from which the attack comes
+     * @param c2 the target location including the board on which it resides
+     * @param h1 the height in the source tile that is being shot from.
+     * @param h2 the height of the target tile to shoot for.
+     * @return an AttackInfo object that describes the applicable modifiers.
+     */
+    public static LosEffects.AttackInfo buildAttackInfo(BoardLocation c1, BoardLocation c2, int h1,
+                                                        int h2, int h1Floor, int h2Floor) {
+        LosEffects.AttackInfo ai = new LosEffects.AttackInfo();
+        ai.attackPos = c1.getCoords();
+        ai.targetPos = c2.getCoords();
+        ai.attackHeight = h1;
+        ai.targetHeight = h2;
+        ai.attackAbsHeight = h1Floor + h1;
+        ai.targetAbsHeight = h2Floor + h2;
+        ai.targetLocation = c1;
+        ai.attackerLocation = c2;
         return ai;
     }
 

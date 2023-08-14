@@ -1419,7 +1419,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         }
 
         Board board = boardSupplier.get();
-        if ((board == null) || board.inSpace()) {
+        if ((board == null) || board.inSpace() || (board.inAtmosphere() && board.getMapTypeFlag() == MapTypeFlag.SKY)) {
             return;
         }
 
@@ -2107,12 +2107,14 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         int maxY = drawY + drawHeight;
 
         Board board = boardSupplier.get();
-        for (Enumeration<Coords> minedCoords = game.getMinedCoords();
-             minedCoords.hasMoreElements(); ) {
-            Coords c = minedCoords.nextElement();
+        for (BoardLocation location : game.minedLocations()) {
+            if (!isOnThisBoard(location)) {
+                continue;
+            }
+            Coords c = location.getCoords();
             // If the coords aren't visible, skip
             if ((c.getX() < drawX) || (c.getX() > maxX) || (c.getY() < drawY) || (c.getY() > maxY)
-                || !board.contains(c)) {
+                    || !board.contains(c)) {
                 continue;
             }
 
@@ -2121,12 +2123,12 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             g.drawImage(mineImg, p.x + (int) (13 * scale), p.y + (int) (13 * scale), this);
 
             g.setColor(Color.black);
-            int nbrMfs = game.getNbrMinefields(c);
+            int nbrMfs = game.minefieldCountAt(getBoardLocation(c));
             if (nbrMfs > 1) {
                 drawCenteredString(Messages.getString("BoardView1.Multiple"),
                         p.x, p.y + (int) (51 * scale), font_minefield, g);
             } else if (nbrMfs == 1) {
-                Minefield mf = game.getMinefields(c).get(0);
+                Minefield mf = game.getMinefields(location).get(0);
 
                 switch (mf.getType()) {
                     case Minefield.TYPE_CONVENTIONAL:
@@ -4596,7 +4598,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             // displayable dimension
             Point dispPoint = new Point();
             dispPoint.setLocation(point.x + getBounds().x, point.y + getBounds().y);
-            if (disp.isHit(dispPoint, dispDimension)) {
+            if (disp.isHit(dispPoint, dispDimension, this)) {
                 return;
             }
         }

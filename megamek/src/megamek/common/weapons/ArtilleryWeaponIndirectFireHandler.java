@@ -291,7 +291,7 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
         }
         
         if (atype.getMunitionType() == AmmoType.M_FAE) {
-            AreaEffectHelper.processFuelAirDamage(targetPos, 
+            AreaEffectHelper.processFuelAirDamage(target.getBoardLocation(),
                     atype, aaa.getEntity(game), vPhaseReport, gameManager);
                         
             return false;
@@ -316,22 +316,22 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
             if (target.isOffBoard()) {
                 AreaEffectHelper.doNuclearExplosion((Entity) aaa.getTarget(game), targetPos, 1, vPhaseReport, gameManager);
             } else {
-                gameManager.doNuclearExplosion(targetPos, 1, vPhaseReport);
+                gameManager.doNuclearExplosion(target.getBoardLocation(), 1, vPhaseReport);
             }
             return false;
         }
         if (atype.getMunitionType() == AmmoType.M_FASCAM) {
             // Arrow IVs deliver fixed 30-point minefields.
             int rackSize = (atype.getAmmoType() == AmmoType.T_ARROW_IV) ? 30 : atype.getRackSize();
-            gameManager.deliverFASCAMMinefield(targetPos, ae.getOwner().getId(), rackSize, ae.getId());
+            gameManager.deliverFASCAMMinefield(target.getBoardLocation(), ae.getOwner().getId(), rackSize, ae.getId());
             return false;
         }
         if (atype.getMunitionType() == AmmoType.M_INFERNO_IV) {
-            gameManager.deliverArtilleryInferno(targetPos, ae, subjectId, vPhaseReport);
+            gameManager.deliverArtilleryInferno(target.getBoardLocation(), ae, subjectId, vPhaseReport);
             return false;
         }
         if (atype.getMunitionType() == AmmoType.M_VIBRABOMB_IV) {
-            gameManager.deliverThunderVibraMinefield(targetPos, ae.getOwner().getId(), 30,
+            gameManager.deliverThunderVibraMinefield(target.getBoardLocation(), ae.getOwner().getId(), 30,
                     waa.getOtherAttackInfo(), ae.getId());
             return false;
         }
@@ -359,7 +359,7 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
             r.subject = subjectId;
             vPhaseReport.addElement(r);
 
-            AreaEffectHelper.clearMineFields(targetPos, Minefield.CLEAR_NUMBER_WEAPON, ae, vPhaseReport, game, gameManager);
+            AreaEffectHelper.clearMineFields(target.getBoardLocation(), Minefield.CLEAR_NUMBER_WEAPON, ae, vPhaseReport, game, gameManager);
         }
 
         Targetable updatedTarget = aaa.getTarget(game);
@@ -382,14 +382,14 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
                         vPhaseReport, gameManager);
             }
         } else {
-            gameManager.artilleryDamageArea(targetPos, aaa.getCoords(), atype,
+            gameManager.artilleryDamageArea(target.getBoardLocation(), aaa.getCoords(), atype,
                     subjectId, ae, isFlak, altitude, mineClear, vPhaseReport,
                     asfFlak, shootingBA);
         }
 
         // artillery may unintentionally clear minefields, but only if it wasn't trying to
         if (!mineClear) {
-            AreaEffectHelper.clearMineFields(targetPos, Minefield.CLEAR_NUMBER_WEAPON_ACCIDENT, ae, vPhaseReport, game, gameManager);
+            AreaEffectHelper.clearMineFields(target.getBoardLocation(), Minefield.CLEAR_NUMBER_WEAPON_ACCIDENT, ae, vPhaseReport, game, gameManager);
         }
 
         return false;

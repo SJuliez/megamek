@@ -163,10 +163,10 @@ public class ArtilleryCannonWeaponHandler extends AmmoWeaponHandler {
             return false;
         } else if (ammoType.getMunitionType() == AmmoType.M_DAVY_CROCKETT_M) {
             // The appropriate term here is "Bwahahahahaha..."
-            gameManager.doNuclearExplosion(targetPos, 1, vPhaseReport);
+            gameManager.doNuclearExplosion(target.getBoardLocation(), 1, vPhaseReport);
             return false;
         } else if (ammoType.getMunitionType() == AmmoType.M_FASCAM) {
-            gameManager.deliverFASCAMMinefield(targetPos, ae.getOwner().getId(),
+            gameManager.deliverFASCAMMinefield(target.getBoardLocation(), ae.getOwner().getId(),
                     ammoType.getRackSize(), ae.getId());
             return false;
         } else if (ammoType.getMunitionType() == AmmoType.M_SMOKE) {
@@ -190,17 +190,17 @@ public class ArtilleryCannonWeaponHandler extends AmmoWeaponHandler {
             r.subject = subjectId;
             vPhaseReport.addElement(r);
 
-            AreaEffectHelper.clearMineFields(targetPos, Minefield.CLEAR_NUMBER_WEAPON, ae, vPhaseReport, game, gameManager);
+            AreaEffectHelper.clearMineFields(target.getBoardLocation(), Minefield.CLEAR_NUMBER_WEAPON, ae, vPhaseReport, game, gameManager);
         }
 
-        gameManager.artilleryDamageArea(targetPos, ae.getPosition(), ammoType,
+        gameManager.artilleryDamageArea(target.getBoardLocation(), ae.getPosition(), ammoType,
             subjectId, ae, isFlak, altitude, mineClear, vPhaseReport,
             asfFlak, -1);
 
         // artillery may unintentionally clear minefields, but only if it wasn't trying to
         // TODO : Does this apply to arty cannons?
         if (!mineClear) {
-            AreaEffectHelper.clearMineFields(targetPos, Minefield.CLEAR_NUMBER_WEAPON_ACCIDENT, ae, vPhaseReport, game, gameManager);
+            AreaEffectHelper.clearMineFields(target.getBoardLocation(), Minefield.CLEAR_NUMBER_WEAPON_ACCIDENT, ae, vPhaseReport, game, gameManager);
         }
 
         return false;

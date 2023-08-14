@@ -10846,7 +10846,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             if ((srcHex != null) && (curHex != null)) {
                 LosEffects.AttackInfo ai = LosEffects.buildAttackInfo(src,
                                                                       getPosition(), 1, getElevation(), srcHex.floor(),
-                                                                      curHex.floor(), getCurrentMap());
+                                                                      curHex.floor(), getCurrentBoardId());
                 ArrayList<Coords> in = Coords.intervening(ai.attackPos,
                                                           ai.targetPos, true);
                 leftBetter = LosEffects.dividedLeftBetter(in, game, ai,
@@ -12832,7 +12832,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
 
     @Override
     public boolean isAirborne() {
-        return !isSpaceborne() && ((getAltitude() > 0) || getMovementMode().isAerodyne() || getMovementMode().isSpheroid());
+        return (getAltitude() > 0) || getMovementMode().isAerodyne() || getMovementMode().isSpheroid();
     }
 
     /** @return True when this unit is currently on a space map, including atmospheric hexes of a high-altitude map. */

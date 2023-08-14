@@ -448,8 +448,9 @@ public class MapMenu extends JPopupMenu {
         JMenu menu = new JMenu("Select");
         // add select options
         if (canSelectEntities()) {
-            for (Entity entity : client.getGame().getEntitiesVector(coords, canTargetEntities())) {
-                if (client.getMyTurn().isValidEntity(entity, client.getGame())) {
+            for (Entity entity : game.getEntitiesAt(boardLocation)) {
+                if (client.getMyTurn().isValidEntity(entity, client.getGame())
+                        && (entity.isTargetable() || canTargetEntities())) {
                     menu.add(selectJMenuItem(entity));
                 }
             }
@@ -1053,7 +1054,7 @@ public class MapMenu extends JPopupMenu {
         Player localPlayer = client.getLocalPlayer();
 
         // Add menu item to target each entity in the coords
-        for (Entity entity : client.getGame().getEntitiesVector(coords)) {
+        for (Entity entity : client.getGame().getEntitiesAt(boardLocation)) {
             // Only add the unit if it's actually visible
             //  With double blind on, the game may have unseen units
             if (!entity.isSensorReturn(localPlayer)

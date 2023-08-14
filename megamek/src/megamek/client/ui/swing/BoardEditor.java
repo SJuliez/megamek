@@ -205,7 +205,7 @@ public class BoardEditor extends JPanel
     // Components
     private final JFrame frame = new JFrame();
     private final Game game = new Game();
-    private Board board = game.getBoard();
+    private Board board = new Board(16, 17, 0);
     private BoardView bv;
     public static final int[] allDirections = { 0, 1, 2, 3, 4, 5 };
     boolean isDragging = false;
@@ -335,6 +335,7 @@ public class BoardEditor extends JPanel
      */
     public BoardEditor(MegaMekController c) {
         controller = c;
+        game.receiveBoard(0, board);
         try {
             bv = new BoardView(game, controller, null, 0);
             bvc = bv.getComponent(true);
@@ -380,6 +381,9 @@ public class BoardEditor extends JPanel
         bv.addBoardViewListener(new BoardViewListenerAdapter() {
             @Override
             public void hexMoused(BoardViewEvent b) {
+                if (!b.hasLocation()) {
+                    return;
+                }
                 Coords c = b.getCoords();
                 // return if there are no or no valid coords or if we click the same hex again
                 // unless Raise/Lower Terrain is active which should let us click the same hex 

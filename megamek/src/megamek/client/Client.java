@@ -1459,11 +1459,15 @@ public class Client implements IClientCommandHandler {
                     game.addSmokeCloud(cloud);
                     break;
                 case CHANGE_HEX:
-                    game.getBoard().setHex((Coords) c.getObject(0), (Hex) c.getObject(1));
+                    Hex hex = (Hex) c.getObject(1);
+                    if (c.getObject(0) instanceof BoardLocation) {
+                        BoardLocation boardLocation = (BoardLocation) c.getObject(0);
+                        game.getBoard(boardLocation).setHex(boardLocation.getCoords(), hex);
+                    } else {
+                        // Deprecated
+                    }
                     break;
                 case CHANGE_HEXES:
-//                    List<BoardLocation> coords = new ArrayList<>((Set<BoardLocation>) c.getObject(0));
-//                    List<Hex> hexes = new ArrayList<>((Set<Hex>) c.getObject(1));
                     var hexUpdates = (Map<BoardLocation, Hex>) c.getObject(0);
                     for (Board board : game.getBoards()) {
                         Map<Coords, Hex> mapForBoard = new HashMap<>();
@@ -1476,7 +1480,6 @@ public class Client implements IClientCommandHandler {
                             board.setHexes(mapForBoard);
                         }
                     }
-//                    game.getBoard().setHexes(coords, hexes);
                     break;
                 case BLDG_UPDATE:
                     receiveBuildingUpdate(c);

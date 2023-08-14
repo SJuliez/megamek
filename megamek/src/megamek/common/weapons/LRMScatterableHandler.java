@@ -115,19 +115,19 @@ public class LRMScatterableHandler extends MissileWeaponHandler {
 
         // Handle the thunder munitions.
         if (atype.getMunitionType() == AmmoType.M_THUNDER_AUGMENTED) {
-            gameManager.deliverThunderAugMinefield(coords, ae.getOwner().getId(),
+            gameManager.deliverThunderAugMinefield(target.getBoardLocation(), ae.getOwner().getId(),
                     density, ae.getId());
         } else if (atype.getMunitionType() == AmmoType.M_THUNDER) {
-            gameManager.deliverThunderMinefield(coords, ae.getOwner().getId(),
+            gameManager.deliverThunderMinefield(target.getBoardLocation(), ae.getOwner().getId(),
                     density, ae.getId());
         } else if (atype.getMunitionType() == AmmoType.M_THUNDER_INFERNO) {
-            gameManager.deliverThunderInfernoMinefield(coords, ae.getOwner().getId(),
+            gameManager.deliverThunderInfernoMinefield(target.getBoardLocation(), ae.getOwner().getId(),
                     density, ae.getId());
         } else if (atype.getMunitionType() == AmmoType.M_THUNDER_VIBRABOMB) {
-            gameManager.deliverThunderVibraMinefield(coords, ae.getOwner().getId(),
+            gameManager.deliverThunderVibraMinefield(target.getBoardLocation(), ae.getOwner().getId(),
                     density, waa.getOtherAttackInfo(), ae.getId());
         } else if (atype.getMunitionType() == AmmoType.M_THUNDER_ACTIVE) {
-            gameManager.deliverThunderActiveMinefield(coords, ae.getOwner().getId(),
+            gameManager.deliverThunderActiveMinefield(target.getBoardLocation(), ae.getOwner().getId(),
                     density, ae.getId());
         }
         return true;
