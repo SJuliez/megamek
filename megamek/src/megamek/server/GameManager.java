@@ -1099,6 +1099,23 @@ public class GameManager implements IGameManager {
         send(new Packet(PacketCommand.CLEAR_ILLUM_HEXES));
     }
 
+    private void resolveMapChanges() {
+        for (Entity entity : game.getEntitiesVector()) {
+            if ((entity instanceof Aero) && (entity.getAltitude() == 11) && entity.getCurrentMapType().isLowAtmo()
+                    && game.hasEnclosingBoard(entity.getBoardId())) {
+                // Rise to the space map, TW p.78
+                int oldBoard = entity.getCurrentBoardId();
+                entity.setCurrentBoard(entity.getBoard().getEnclosingBoard());
+                entity.setPosition(entity.getBoard().embeddedBoardPosition(oldBoard));
+                int atmoVelocity = ((Aero) entity).getNextVelocity();
+                // No rule in TW; the map scale factor is 36/1 but the turn scale is 1/6, so a factor of 6 between speeds
+                int spaceVelocity = (int) Math.round(atmoVelocity / 6.0);
+                ((Aero) entity).setNextVelocity(spaceVelocity);
+                addReport(new Report(5570).subject(entity.getId()).addDesc(entity));
+            }
+        }
+    }
+
     /**
      * Called during the end phase. Checks each entity for ASEW effects counters and decrements them by 1 if greater than 0
      */
@@ -2018,6 +2035,7 @@ public class GameManager implements IGameManager {
                 resolveMechWarriorPickUp();
                 resolveVeeINarcPodRemoval();
                 resolveFortify();
+                resolveMapChanges();
 
                 entityStatusReport();
 
@@ -2201,7 +2219,7 @@ public class GameManager implements IGameManager {
                     a.liftOff(0);
                 } else {
                     // check for grounding
-                    if (entity.getCurrentMap().isLowAtmo() && !entity.isAirborne()) {
+                    if (entity.getCurrentMapType().isLowAtmo() && !entity.isAirborne()) {
                         // you have to be airborne on the atmospheric map
                         a.liftOff(entity.getAltitude());
                     }
@@ -5637,7 +5655,7 @@ public class GameManager implements IGameManager {
             return false;
         }
         // if aero on the ground map, then only crash if elevation is zero
-        else if (entity.getCurrentMap().isGround()) {
+        else if (entity.getCurrentMapType().isGround()) {
             return altitude <= 0;
         }
         // we must be in atmosphere
@@ -6640,6 +6658,9 @@ public class GameManager implements IGameManager {
                     return;
                 }
 
+                // @@MultiBoardTODO:
+//                if (step.getType()==ENTER)
+
                 rollTarget = a.checkRolls(step, overallMoveType);
                 if (rollTarget.getValue() != TargetRoll.CHECK_FALSE) {
                     game.addControlRoll(new PilotingRollData(entity.getId(), 0, "excess roll"));
@@ -6706,7 +6727,7 @@ public class GameManager implements IGameManager {
                                 Entity ce = game.getEntity(id);
                                 // if we are in atmosphere and not the same altitude
                                 // then skip
-                                if (!entity.getCurrentMap().isSpace() && (ce.getAltitude() != curAltitude)) {
+                                if (!entity.getCurrentMapType().isSpace() && (ce.getAltitude() != curAltitude)) {
                                     continue;
                                 }
                                 // you can't collide with yourself
@@ -8524,7 +8545,7 @@ public class GameManager implements IGameManager {
                         "Thrust spent during turn exceeds SI"));
             }
 
-            if (!entity.getCurrentMap().isSpace()) {
+            if (!entity.getCurrentMapType().isSpace()) {
                 rollTarget = a.checkVelocityDouble(md.getFinalVelocity(),
                         overallMoveType);
                 if (rollTarget.getValue() != TargetRoll.CHECK_FALSE) {
@@ -9066,7 +9087,7 @@ public class GameManager implements IGameManager {
 
                     entity.setElevation(Math.min(entity.getElevation(),
                             1 + hex.maxTerrainFeatureElevation(
-                                    entity.getCurrentMap().isLowAtmo())));
+                                    entity.getCurrentMapType().isLowAtmo())));
                 }
             }
 
@@ -19922,7 +19943,7 @@ public class GameManager implements IGameManager {
                 // example...
                 continue;
             }
-            if (entity.doomedInAtmosphere() && (entity.getAltitude() == 0) && entity.getCurrentMap().isLowAtmo()) {
+            if (entity.doomedInAtmosphere() && (entity.getAltitude() == 0) && entity.getCurrentMapType().isLowAtmo()) {
                 r = new Report(6016);
                 r.subject = entity.getId();
                 r.addDesc(entity);
@@ -20017,7 +20038,7 @@ public class GameManager implements IGameManager {
                 // example...
                 continue;
             }
-            if (entity.doomedInSpace() && entity.getCurrentMap().isSpace()) {
+            if (entity.doomedInSpace() && entity.getCurrentMapType().isSpace()) {
                 r = new Report(6017);
                 r.subject = entity.getId();
                 r.addDesc(entity);
@@ -33163,7 +33184,7 @@ public class GameManager implements IGameManager {
                     || !(entity instanceof Tank)) {
                 return false;
             }
-            final Hex hex = game.getBoard().getHex(entity.getPosition());
+            final Hex hex = game.getHex(entity.getBoardLocation());
             final boolean onBridge = (hex.terrainLevel(Terrains.BRIDGE) > 0)
                     && (entity.getElevation() == hex.terrainLevel(Terrains.BRIDGE_ELEV));
             return ((entity.getMovementMode() == EntityMovementMode.TRACKED)

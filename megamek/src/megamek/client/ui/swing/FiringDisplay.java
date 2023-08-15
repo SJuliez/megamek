@@ -875,7 +875,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             if ((target.getId() != cen)
                     && (friendlyFire || enemyTarget)
                     && (!enemyTarget || EntityVisibilityUtils.detectedOrHasVisual(localPlayer, game, target))
-                    && sameBoard // || canHitAcrossBoards() -> allow O2S fire and such
+                    && (sameBoard || CrossBoardAttackHelper.isCrossBoardAttackPossible(ce(), target, game))
                     && target.isTargetable()) {
                 ToHitData thd = WeaponAttackAction.toHit(game, cen, target);
                 thd.setLocation(target.getPosition());

@@ -466,7 +466,7 @@ public class UnitOverview implements IDisplayable {
             if (scrollOffset < 0) {
                 scrollOffset = 0;
             }
-            clientgui.getBoardView().refreshDisplayables();
+            clientgui.refreshDisplayablesOnBoardViews();
         }
     }
 
@@ -476,21 +476,21 @@ public class UnitOverview implements IDisplayable {
             if (scrollOffset > unitIds.length - actUnitsPerPage) {
                 scrollOffset = unitIds.length - actUnitsPerPage;
             }
-            clientgui.getBoardView().refreshDisplayables();
+            clientgui.refreshDisplayablesOnBoardViews();
         }
     }
 
     private void scrollUp() {
         if (scrollOffset > 0) {
             scrollOffset--;
-            clientgui.getBoardView().refreshDisplayables();
+            clientgui.refreshDisplayablesOnBoardViews();
         }
     }
 
     private void scrollDown() {
         if (scrollOffset < unitIds.length - actUnitsPerPage) {
             scrollOffset++;
-            clientgui.getBoardView().refreshDisplayables();
+            clientgui.refreshDisplayablesOnBoardViews();
         }
     }
 

@@ -705,7 +705,7 @@ public class CLIATMHandler extends ATMHandler {
 
             // Now I need to adjust this for attacks on aeros because they use
             // attack values and different rules
-            if (target.isAirborne() || ae.getCurrentMap().isSpace()) {
+            if (target.isAirborne() || ae.getCurrentMapType().isSpace()) {
                 // this will work differently for cluster and non-cluster
                 // weapons, and differently for capital fighter/fighter
                 // squadrons

@@ -26,6 +26,7 @@ import megamek.client.ui.baseComponents.AbstractButtonDialog;
 import megamek.client.ui.baseComponents.MMButton;
 import megamek.client.ui.baseComponents.MMComboBox;
 import megamek.client.ui.swing.StatusBarPhaseDisplay.PhaseCommand;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.unitDisplay.UnitDisplay;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.PlayerColour;
@@ -2001,8 +2002,8 @@ public class CommonSettingsDialog extends AbstractButtonDialog implements ItemLi
         CP.setUseAverageSkills(useAverageSkills.isSelected());
         CP.setGenerateNames(generateNames.isSelected());
         CP.setShowUnitId(showUnitId.isSelected());
-        if ((clientgui != null) && (clientgui.getBoardView() != null)) {
-            clientgui.getBoardView().updateEntityLabels();
+        if (clientgui != null) {
+            clientgui.boardViews().forEach(BoardView::updateEntityLabels);
         }
 
         CP.setLocale(CommonSettingsDialog.LOCALE_CHOICES[displayLocale.getSelectedIndex()]);
@@ -2040,9 +2041,8 @@ public class CommonSettingsDialog extends AbstractButtonDialog implements ItemLi
 
         if (tileSetChoice.getSelectedIndex() >= 0) {
             String tileSetFileName = tileSets.get(tileSetChoice.getSelectedIndex());
-            if (!CP.getMapTileset().equals(tileSetFileName) &&
-                    (clientgui != null) && (clientgui.getBoardView() != null))  {
-                clientgui.getBoardView().clearShadowMap();
+            if (!CP.getMapTileset().equals(tileSetFileName) && (clientgui != null)) {
+                clientgui.boardViews().forEach(BoardView::clearShadowMap);
             }
             CP.setMapTileset(tileSetFileName);
         }

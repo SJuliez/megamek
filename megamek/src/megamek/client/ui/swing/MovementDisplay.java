@@ -163,6 +163,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         MOVE_MANEUVER("MoveManeuver", CMD_AERO_BOTH),
         MOVE_JOIN("MoveJoin", CMD_AERO_BOTH),
         MOVE_FLY_OFF("MoveOff", CMD_AERO_BOTH),
+        MOVE_TO_GROUNDMAP("MoveToGroundMap", CMD_AERO_BOTH),
         MOVE_TAKE_OFF("MoveTakeOff", CMD_TANK),
         MOVE_VERT_TAKE_OFF("MoveVertTakeOff", CMD_TANK),
         MOVE_LAND("MoveLand", CMD_AERO_BOTH),
@@ -855,6 +856,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         updateSpeedButtons();
         updateThrustButton();
         updateRollButton();
+        updateMapChangeButtons();
         checkFuel();
         checkOOC();
         checkAtmosphere();
@@ -1337,6 +1339,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         updateSpeedButtons();
         updateThrustButton();
         updateRollButton();
+        updateMapChangeButtons();
         checkFuel();
         checkOOC();
         checkAtmosphere();
@@ -1846,7 +1849,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
             LongestPathFinder lpf;
             if (ce().isAero()) {
-                lpf = LongestPathFinder.newInstanceOfAeroPath(maxMp, ce().getGame(), ce().getCurrentMap().isSpace());
+                lpf = LongestPathFinder.newInstanceOfAeroPath(maxMp, ce().getGame(), ce().getCurrentMapType().isSpace());
             } else {
                 lpf = LongestPathFinder.newInstanceOfLongestPath(maxMp, stepType, ce().getGame());
             }
@@ -2128,6 +2131,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             updateSpeedButtons();
             updateThrustButton();
             updateRollButton();
+            updateMapChangeButtons();
             updateTurnButton();
             updateTakeCoverButton();
             updateLayMineButton();
@@ -2332,7 +2336,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         }
 
         // only allow landing on the ground map not atmosphere or space map
-        if (!ce.getCurrentMap().isGround()) {
+        if (!ce.getCurrentMapType().isGround()) {
             return;
         }
 
@@ -2360,6 +2364,15 @@ public class MovementDisplay extends ActionPhaseDisplay {
         if (cmd.contains(MoveStepType.ROLL)) {
             setRollEnabled(false);
         }
+    }
+
+    private void updateMapChangeButtons() {
+        final Entity ce = ce();
+        if ((ce == null) || !ce.isAero()) {
+            return;
+        }
+        boolean aboveGroundMap = ce.getBoard().embeddedBoardCoords().contains(ce.getPosition());
+        getBtn(MoveCommand.MOVE_TO_GROUNDMAP).setEnabled(aboveGroundMap);
     }
 
     private void updateHoverButton() {
@@ -4263,7 +4276,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             case ManeuverType.MAN_SIDE_SLIP_LEFT:
                 // If we are on a ground map, slide slip works slightly differently
                 // See Total Warfare pg 85
-                if (ce().getCurrentMap().isGround()) {
+                if (ce().getCurrentMapType().isGround()) {
                     for (int i = 0; i < 8; i++) {
                         addStepToMovePath(MoveStepType.LATERAL_LEFT, true, true);
                     }
@@ -4277,7 +4290,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             case ManeuverType.MAN_SIDE_SLIP_RIGHT:
                 // If we are on a ground map, slide slip works slightly differently
                 // See Total Warfare pg 85
-                if (ce().getCurrentMap().isGround()) {
+                if (ce().getCurrentMapType().isGround()) {
                     for (int i = 0; i < 8; i++) {
                         addStepToMovePath(MoveStepType.LATERAL_RIGHT, true, true);
                     }
@@ -5212,6 +5225,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         updateSpeedButtons();
         updateThrustButton();
         updateRollButton();
+        updateMapChangeButtons();
         updateTakeCoverButton();
         updateLayMineButton();
         updateBraceButton();

@@ -1957,6 +1957,7 @@ public class Board implements Serializable {
         enclosingBoard = enclosingBoardId;
     }
 
+    /** @return The ID of the enclosing board of this board, or -1 if it has no enclosing board. */
     public int getEnclosingBoard() {
         return enclosingBoard;
     }
@@ -1969,5 +1970,18 @@ public class Board implements Serializable {
 
     public Set<Coords> embeddedBoardCoords() {
         return embeddedBoards.keySet();
+    }
+
+    public @Nullable Coords embeddedBoardPosition(int boardId) {
+        for (Map.Entry<Coords, Integer> entry : embeddedBoards.entrySet()) {
+            if (entry.getValue() == boardId) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    public int getEmbeddedBoardAt(Coords coords) {
+        return embeddedBoards.getOrDefault(coords, -1);
     }
 }

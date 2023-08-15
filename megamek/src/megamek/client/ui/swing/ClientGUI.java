@@ -2937,8 +2937,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         }
     }
 
-    protected BoardView getBoardView(Entity entity) {
-        return getBoardView(entity.getCurrentBoardId());
+    public BoardView getBoardView(Targetable entity) {
+        return getBoardView(entity.getBoardId());
     }
 
     protected BoardView getBoardView(int boardId) {
@@ -3015,5 +3015,26 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 }
             }
         }
+    }
+
+    public @Nullable BoardView getActiveBoardView() {
+        if (boardViews.size() == 1) {
+            return boardViews().get(0);
+        } else if (boardViews.size() > 1) {
+            int selectedIndex = mapTabPane.getSelectedIndex();
+            String boardIdName = mapTabPane.getComponentAt(selectedIndex).getName();
+            try {
+                return boardViews.get(Integer.parseInt(boardIdName));
+            } catch (Exception ex) {
+                LogManager.getLogger().error("Could not find the active BoardView from the name " + boardIdName, ex);
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
+
+    public void setBoardViewsShouldIgnoreKeys(boolean shouldIgnoreKeys) {
+        boardViews().forEach(bv -> bv.setShouldIgnoreKeys(shouldIgnoreKeys));
     }
 }

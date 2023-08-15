@@ -281,14 +281,14 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
     }
 
     public int getAirMechCruiseMP(MPCalculationSetting mpCalculationSetting) {
-        if (getCurrentMap().isLowAtmo() && (isLocationBad(Mech.LOC_LT) || isLocationBad(Mech.LOC_RT))) {
+        if (getCurrentMapType().isLowAtmo() && (isLocationBad(Mech.LOC_LT) || isLocationBad(Mech.LOC_RT))) {
             return 0;
         }
         return getJumpMP(mpCalculationSetting) * 3;
     }
 
     public int getAirMechFlankMP(MPCalculationSetting mpCalculationSetting) {
-        if (getCurrentMap().isLowAtmo() && (isLocationBad(Mech.LOC_LT) || isLocationBad(Mech.LOC_RT))) {
+        if (getCurrentMapType().isLowAtmo() && (isLocationBad(Mech.LOC_LT) || isLocationBad(Mech.LOC_RT))) {
             return 0;
         }
         return (int) Math.ceil(getAirMechCruiseMP(mpCalculationSetting) * 1.5);

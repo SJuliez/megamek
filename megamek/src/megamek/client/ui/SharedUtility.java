@@ -20,7 +20,6 @@ import megamek.common.MovePath.MoveStepType;
 import megamek.common.annotations.Nullable;
 import megamek.common.options.OptionsConstants;
 import megamek.server.GameManager;
-import megamek.server.Server;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -710,7 +709,7 @@ public class SharedUtility {
             while (vel > 0) {
                 int steps = 1;
                 // if moving on the ground map, then 16 hexes forward
-                if (entity.getCurrentMap().isGround()) {
+                if (entity.getCurrentMapType().isGround()) {
                     steps = 16;
                 }
                 while (steps > 0 &&

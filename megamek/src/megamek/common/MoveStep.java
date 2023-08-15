@@ -504,7 +504,7 @@ public class MoveStep implements Serializable {
         // nTurns)
         // this is handled differently by aerospace units operating on the
         // ground map and by spheroids in atmosphere
-        if (entity.isAirborne() && entity.getCurrentMap().isGround()) {
+        if (entity.isAirborne() && entity.getCurrentMapType().isGround()) {
             setNMoved(getNMoved() + 1);
             if ((entity.getMovementMode() != EntityMovementMode.SPHEROID)
                     && (getNMoved() >= 16)) {
@@ -522,7 +522,7 @@ public class MoveStep implements Serializable {
         // if in atmosphere, then I need to know if this move qualifies the unit
         // for a free turn
         if (useAeroAtmosphere(game, entity)) {
-            if (entity.getCurrentMap().isGround() && (getNStraight() > 7)) {
+            if (entity.getCurrentMapType().isGround() && (getNStraight() > 7)) {
                 // if flying on ground map, then you have to fly at least 8
                 // straight hexes between turns (free or not)
                 // http://www.classicbattletech.com/forums/index.php/topic,37171.new.html#new
@@ -641,7 +641,7 @@ public class MoveStep implements Serializable {
             // if this is a spheroid in atmosphere then the cost is always one
             // if it is the very first step, we prepend the cost of hovering for convenience
             if (useSpheroidAtmosphere(game, entity)) {
-                if (entity.getCurrentMap().isGround()) {
+                if (entity.getCurrentMapType().isGround()) {
                     if ((distance % 8) == 1) {
                         setMp(1);
                     }
@@ -1246,7 +1246,7 @@ public class MoveStep implements Serializable {
             velocity = a.getCurrentVelocity();
             velocityN = a.getNextVelocity();
             velocityLeft = a.getCurrentVelocity() - entity.delta_distance;
-            if (entity.getCurrentMap().isGround()) {
+            if (entity.getCurrentMapType().isGround()) {
                 velocityLeft = a.getCurrentVelocity() - (entity.delta_distance / 16);
             }
             isRolled = false;// a.isRolled();
@@ -1955,13 +1955,13 @@ public class MoveStep implements Serializable {
             // unless they're out of control, in which case, well...
             if (useSpheroidAtmosphere(game, entity) &&
                     (((IAero) entity).isOutControlTotal() ||
-                    (!entity.getCurrentMap().isGround() && (this.getDistance() > 1) ||
-                            (entity.getCurrentMap().isGround() && (getDistance() > 8))))) {
+                    (!entity.getCurrentMapType().isGround() && (this.getDistance() > 1) ||
+                            (entity.getCurrentMapType().isGround() && (getDistance() > 8))))) {
                 return;
             }
 
             if ((type == MoveStepType.FORWARDS)
-                    && entity.getCurrentMap().isLowAtmo() && !a.isOutControl()) {
+                    && entity.getCurrentMapType().isLowAtmo() && !a.isOutControl()) {
                 Hex desth = game.getBoard(entity).getHex(getPosition());
                 if (altitude <= desth.ceiling(true)) {
                     return; // can't fly into a cliff face or woods (unless out
@@ -2037,7 +2037,7 @@ public class MoveStep implements Serializable {
                 // because velocityLeft is only decremented at intervals of 16
                 // hexes
                 if (useAeroAtmosphere(game, entity)
-                        && entity.getCurrentMap().isGround()
+                        && entity.getCurrentMapType().isGround()
                         && (getVelocityLeft() == 0) && (getNMoved() > 0)) {
                     return;
                 }
@@ -3910,7 +3910,7 @@ public class MoveStep implements Serializable {
         }
 
         // Can't use thrust turns in the first hex of movement (or first 8 if ground)
-        if (en.getCurrentMap().isGround()) {
+        if (en.getCurrentMapType().isGround()) {
             // if flying on the ground map then they need to move 8 hexes first
             if (distance < 8) {
                 return false;
@@ -3969,7 +3969,7 @@ public class MoveStep implements Serializable {
         }
 
         // different rules if flying on the ground map
-        if (en.getCurrentMap().isGround() && (getElevation() > 0)) {
+        if (en.getCurrentMapType().isGround() && (getElevation() > 0)) {
             if (en instanceof Dropship) {
                 thresh = vel * 8;
             } else if (en instanceof SmallCraft) {

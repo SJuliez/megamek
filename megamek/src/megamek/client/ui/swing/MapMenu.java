@@ -374,9 +374,9 @@ public class MapMenu extends JPopupMenu {
         JMenuItem item = new JMenuItem(Messages.getString("NoteDialog.action"));
         item.addActionListener(evt -> {
             NoteDialog nd = new NoteDialog(gui.frame, finalNote);
-            gui.getBoardView().setShouldIgnoreKeys(true);
+            gui.setBoardViewsShouldIgnoreKeys(true);
             nd.setVisible(true);
-            gui.getBoardView().setShouldIgnoreKeys(false);
+            gui.setBoardViewsShouldIgnoreKeys(false);
             if (nd.isAccepted()) {
                 client.sendSpecialHexDisplayAppend(boardLocation, finalNote);
             }
@@ -424,10 +424,10 @@ public class MapMenu extends JPopupMenu {
         JMenuItem item = new JMenuItem(entity.getDisplayName());
         item.addActionListener(evt -> {
             CustomMechDialog med = new CustomMechDialog(gui, client, Collections.singletonList(entity), true, false);
-            gui.getBoardView().setShouldIgnoreKeys(true);
+            gui.setBoardViewsShouldIgnoreKeys(true);
             med.setVisible(true);
             client.sendUpdateEntity(entity);
-            gui.getBoardView().setShouldIgnoreKeys(false);
+            gui.setBoardViewsShouldIgnoreKeys(false);
         });
         return item;
     }
@@ -436,10 +436,10 @@ public class MapMenu extends JPopupMenu {
         JMenuItem item = new JMenuItem(entity.getDisplayName());
         item.addActionListener(evt -> {
             UnitEditorDialog med = new UnitEditorDialog(gui.getFrame(), entity);
-            gui.getBoardView().setShouldIgnoreKeys(true);
+            gui.setBoardViewsShouldIgnoreKeys(true);
             med.setVisible(true);
             client.sendUpdateEntity(entity);
-            gui.getBoardView().setShouldIgnoreKeys(false);
+            gui.setBoardViewsShouldIgnoreKeys(false);
         });
         return item;
     }
@@ -1179,9 +1179,9 @@ public class MapMenu extends JPopupMenu {
         ((MovementDisplay) currentPanel).actionPerformed(e);
 
         // Cursor over the hex.
-        gui.getBoardView().mouseAction(coords, BoardViewEvent.BOARD_HEX_CURSOR, InputEvent.BUTTON1_DOWN_MASK, MouseEvent.BUTTON1);
+        gui.getActiveBoardView().mouseAction(coords, BoardViewEvent.BOARD_HEX_CURSOR, InputEvent.BUTTON1_DOWN_MASK, MouseEvent.BUTTON1);
         // Click
-        gui.getBoardView().mouseAction(coords, BoardViewEvent.BOARD_HEX_CLICKED, InputEvent.BUTTON1_DOWN_MASK, MouseEvent.BUTTON1);
+        gui.getActiveBoardView().mouseAction(coords, BoardViewEvent.BOARD_HEX_CLICKED, InputEvent.BUTTON1_DOWN_MASK, MouseEvent.BUTTON1);
     }
 
     Targetable decodeTargetInfo(String info) {

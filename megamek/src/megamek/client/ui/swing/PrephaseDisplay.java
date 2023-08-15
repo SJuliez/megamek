@@ -404,9 +404,9 @@ public class PrephaseDisplay extends StatusBarPhaseDisplay implements
         }
 
         if (b.getType() == BoardViewEvent.BOARD_HEX_DRAGGED) {
-            clientgui.getBoardView().cursor(b.getCoords());
+            b.getBoardView().cursor(b.getCoords());
         } else if (b.getType() == BoardViewEvent.BOARD_HEX_CLICKED) {
-            clientgui.getBoardView().select(b.getCoords());
+            b.getBoardView().select(b.getCoords());
         }
     }
 
@@ -547,7 +547,7 @@ public class PrephaseDisplay extends StatusBarPhaseDisplay implements
 
         if (clientgui.getClient().isMyTurn() && (ce() != null)) {
             clientgui.maybeShowUnitDisplay();
-            clientgui.getBoardView().centerOnHex(ce().getPosition());
+            b.getBoardView().centerOnHex(ce().getPosition());
         }
     }
 
@@ -568,7 +568,7 @@ public class PrephaseDisplay extends StatusBarPhaseDisplay implements
             clientgui.maybeShowUnitDisplay();
             clientgui.getUnitDisplay().displayEntity(e);
             if (e.isDeployed()) {
-                clientgui.getBoardView().centerOnHex(e.getPosition());
+                b.getBoardView().centerOnHex(e.getPosition());
             }
         }
     }

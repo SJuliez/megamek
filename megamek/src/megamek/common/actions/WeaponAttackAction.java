@@ -1514,7 +1514,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
         // TW errata 2.1
         
         if ((Compute.useSpheroidAtmosphere(game, ae) ||
-                (ae.isAero() && ((IAero) ae).isSpheroid() && (ae.getAltitude() == 0) && ae.getCurrentMap().isGround()))
+                (ae.isAero() && ((IAero) ae).isSpheroid() && (ae.getAltitude() == 0) && ae.getCurrentMapType().isGround()))
                 && (weapon != null)) {
             int range = Compute.effectiveDistance(game, ae, target, false);
             // Only aft-mounted weapons can be fired at range 0 (targets directly underneath)

@@ -36,7 +36,6 @@ import megamek.common.actions.WeaponAttackAction;
 import megamek.common.enums.GamePhase;
 import megamek.common.options.OptionsConstants;
 import megamek.server.GameManager;
-import megamek.server.Server;
 
 /**
  * @author Jay Lawson
@@ -251,7 +250,7 @@ public class CapitalMissileHandler extends AmmoWeaponHandler {
         int id = vPhaseReport.size();
         int hits = calcHits(vPhaseReport);
 
-        if (target.isAirborne() || ae.getCurrentMap().isSpace() || ae.usesWeaponBays()) {
+        if (target.isAirborne() || ae.getCurrentMapType().isSpace() || ae.usesWeaponBays()) {
             // if we added a line to the phase report for calc hits, remove
             // it now
             while (vPhaseReport.size() > id) {

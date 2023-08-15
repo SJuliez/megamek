@@ -290,7 +290,7 @@ public class SuperHeavyTank extends Tank {
             Hex curHex = game.getBoard(currentBoard).getHex(getPosition());
             if ((srcHex != null) && (curHex != null)) {
                 LosEffects.AttackInfo ai = LosEffects.buildAttackInfo(src, getPosition(),
-                        1, getElevation(), srcHex.floor(), curHex.floor(), getCurrentMap());
+                        1, getElevation(), srcHex.floor(), curHex.floor(), getCurrentMapType());
                 ArrayList<Coords> in = Coords.intervening(ai.attackPos, ai.targetPos,
                         true);
                 leftBetter = LosEffects.dividedLeftBetter(in, game, ai,

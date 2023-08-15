@@ -2177,9 +2177,9 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             case AERODYNE:
             case SPHEROID:
                 assumedAlt = assumedElevation;
-                if (getCurrentMap().isLowAtmo()) {
+                if (getCurrentMapType().isLowAtmo()) {
                     minAlt = Math.max(0, hex.ceiling(true)) + 1;
-                } else if (getCurrentMap().isGround() && isAirborne()) {
+                } else if (getCurrentMapType().isGround() && isAirborne()) {
                     minAlt = 1;
                 }
                 // if sensors are damaged then, one higher
@@ -2246,7 +2246,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             case SPHEROID:
                 if (!isSpaceborne()) {
                     assumedAlt = assumedElevation;
-                    maxAlt = 10;
+                    maxAlt = game.hasEnclosingBoard(getBoardId()) ? 11 : 10;
                 }
                 break;
             case SUBMARINE:
@@ -2407,7 +2407,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     public boolean isOnAtmosphericGroundMap() {
         return (getGame().getPlanetaryConditions().getAtmosphere() != PlanetaryConditions.ATMO_VACUUM) &&
                 (getGame().getPlanetaryConditions().getAtmosphere() != PlanetaryConditions.ATMO_TRACE)
-                && (getCurrentMap().isGround() || getCurrentMap().isLowAtmo());
+                && (getCurrentMapType().isGround() || getCurrentMapType().isLowAtmo());
     }
 
     /**
@@ -2415,7 +2415,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * @return True if this is an airborne aircraft on a ground map.
      */
     public boolean isAirborneAeroOnGroundMap() {
-        return isAero() && isAirborne() && getCurrentMap().isGround();
+        return isAero() && isAirborne() && getCurrentMapType().isGround();
     }
 
     /**
@@ -12837,7 +12837,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
 
     /** @return True when this unit is currently on a space map, including atmospheric hexes of a high-altitude map. */
     public boolean isSpaceborne() {
-        return getCurrentMap().isSpace();
+        return getCurrentMapType().isSpace();
     }
 
     /**
@@ -12846,9 +12846,9 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     public boolean isNOE() {
         if (!isAirborne()) {
             return false;
-        } else if (getCurrentMap().isLowAtmo()) {
+        } else if (getCurrentMapType().isLowAtmo()) {
             return (1 == (getAltitude() - game.getBoard(currentBoard).getHex(getPosition()).ceiling(true)));
-        } else if (getCurrentMap().isGround()) {
+        } else if (getCurrentMapType().isGround()) {
             return 1 == getAltitude();
         } else {
             return false;
@@ -15428,7 +15428,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      *
      * @return The MapType of this unit's current board or an allowed MapType for this unit when there's no board
      */
-    public MapType getCurrentMap() {
+    public MapType getCurrentMapType() {
         MapType mapType = getCurrentMapFromBoard();
         if (mapType == null) {
             mapType = getCurrentMapFromMapSettings();

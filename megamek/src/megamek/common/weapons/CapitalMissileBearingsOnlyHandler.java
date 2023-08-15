@@ -339,7 +339,7 @@ public class CapitalMissileBearingsOnlyHandler extends AmmoBayWeaponHandler {
                 toHit.setSideTable(entityTarget.sideTable(aaa.getOldTargetCoords()));
             }    
         }
-        if (target.isAirborne() || ae.getCurrentMap().isSpace() || ae.usesWeaponBays()) {
+        if (target.isAirborne() || ae.getCurrentMapType().isSpace() || ae.usesWeaponBays()) {
             // if we added a line to the phase report for calc hits, remove
             // it now
             while (vPhaseReport.size() > id) {
@@ -606,7 +606,7 @@ public class CapitalMissileBearingsOnlyHandler extends AmmoBayWeaponHandler {
         }
     
         // is the target at zero velocity
-        if ((targetship.getCurrentVelocity() == 0) && !(targetship.isSpheroid() && !ae.getCurrentMap().isSpace())) {
+        if ((targetship.getCurrentVelocity() == 0) && !(targetship.isSpheroid() && !ae.getCurrentMapType().isSpace())) {
             toHit.addModifier(-2, "target is not moving");
         }
     
@@ -619,7 +619,7 @@ public class CapitalMissileBearingsOnlyHandler extends AmmoBayWeaponHandler {
         }
    
         if (target.isAirborne() && target.isAero()) {
-            if (!(((IAero) target).isSpheroid() && !ae.getCurrentMap().isSpace())) {
+            if (!(((IAero) target).isSpheroid() && !ae.getCurrentMapType().isSpace())) {
                 // get mods for direction of attack
                 int side = toHit.getSideTable();
                 // if this is an aero attack using advanced movement rules then
@@ -638,7 +638,7 @@ public class CapitalMissileBearingsOnlyHandler extends AmmoBayWeaponHandler {
         }
             
         // Space ECM
-        if (ae.getCurrentMap().isSpace() && game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
+        if (ae.getCurrentMapType().isSpace() && game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
             int ecm = ComputeECM.getLargeCraftECM(ae, targetCoords, target.getPosition());
             ecm = Math.min(4, ecm);
             if (ecm > 0) {

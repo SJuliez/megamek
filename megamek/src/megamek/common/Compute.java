@@ -29,7 +29,6 @@ import megamek.common.weapons.bayweapons.BayWeapon;
 import megamek.common.weapons.gaussrifles.HAGWeapon;
 import megamek.common.weapons.infantry.InfantryWeapon;
 import megamek.common.weapons.mgs.MGWeapon;
-import megamek.common.weapons.mortars.MekMortarWeapon;
 import megamek.server.Server;
 import megamek.server.SmokeCloud;
 import org.apache.logging.log4j.LogManager;
@@ -376,7 +375,7 @@ public class Compute {
     public static Entity stackingViolation(Game game, Entity entering,
             Coords origPosition, int elevation, Coords dest, Entity transport, boolean climbMode) {
         // no stacking violations on the low-atmosphere and space maps
-        if (!entering.getCurrentMap().isGround()) {
+        if (!entering.getCurrentMapType().isGround()) {
             return null;
         }
 
@@ -1727,14 +1726,14 @@ public class Compute {
             // This is totally crazy, but I don't see how else to do it. Use
             // the unofficial
             // "grounded dropships use individual weapons" for sanity.
-            if (attacker.usesWeaponBays() && attacker.getCurrentMap().isGround()) {
+            if (attacker.usesWeaponBays() && attacker.getCurrentMapType().isGround()) {
                 distance = (int) Math.ceil(distance / 16.0);
             }
         }
 
         // if this is an air-to-air attack on the ground map, then divide
         // distance by 16
-        if (Compute.isAirToAir(attacker, target) && attacker.getCurrentMap().isGround() && !useGroundDistance) {
+        if (Compute.isAirToAir(attacker, target) && attacker.getCurrentMapType().isGround() && !useGroundDistance) {
             distance = (int) Math.ceil(distance / 16.0);
         }
 
@@ -1758,7 +1757,7 @@ public class Compute {
         }
 
         if (Compute.isGroundToAir(attacker, target)) {
-            if (attacker.usesWeaponBays() && attacker.getCurrentMap().isGround()) {
+            if (attacker.usesWeaponBays() && attacker.getCurrentMapType().isGround()) {
                 distance += (target.getAltitude());
             } else {
                 distance += (2 * target.getAltitude());
@@ -4414,7 +4413,7 @@ public class Compute {
         // I purposely left this calculation out of visual spotting, so we should do some testing with this and
         // see if it's errata-worthy. The idea is that you'll boost sensor range to help find an enemy aero on the map
         // but still won't be able to see it and shoot at it beyond normal visual conditions.
-        if (isAirToAir(ae, target) && ae.getCurrentMap().isGround()) {
+        if (isAirToAir(ae, target) && ae.getCurrentMapType().isGround()) {
             distance = (int) Math.ceil(distance / 16.0);
         }
         return (distance > minSensorRange) && (distance <= maxSensorRange);
@@ -4567,7 +4566,7 @@ public class Compute {
         int range = sensor.getRangeByBracket();
 
         // adjust the range based on LOS and planetary conditions
-        range = sensor.adjustRange(range, game, los, ae.getCurrentMap().isSpace());
+        range = sensor.adjustRange(range, game, los, ae.getCurrentMapType().isSpace());
 
         //If we're an airborne aero, sensor range is limited to within a few hexes of the flightline against ground targets
         //TO Dec 2017 Errata p17
@@ -6837,7 +6836,7 @@ public class Compute {
      * Worker function that checks if an indirect attack is impossible for the given passed-in arguments
      */
     public static boolean indirectAttackImpossible(Game game, Entity ae, Targetable target, WeaponType wtype, Mounted weapon) {        
-        boolean isLandedSpheroid = ae.isAero() && ((IAero) ae).isSpheroid() && (ae.getAltitude() == 0) && ae.getCurrentMap().isGround();
+        boolean isLandedSpheroid = ae.isAero() && ((IAero) ae).isSpheroid() && (ae.getAltitude() == 0) && ae.getCurrentMapType().isGround();
         int altDif = target.getAltitude() - ae.getAltitude();
         boolean noseWeaponAimedAtGroundTarget = (weapon != null) && (weapon.getLocation() == Aero.LOC_NOSE) && (altDif < 1);
         

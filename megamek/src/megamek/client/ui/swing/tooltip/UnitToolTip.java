@@ -1192,7 +1192,7 @@ public final class UnitToolTip {
             return Messages.getString("NONE");
         }
 
-        if (e.isAirborne() && e.getCurrentMap().isGround()) {
+        if (e.isAirborne() && e.getCurrentMapType().isGround()) {
             return e.getActiveSensor().getDisplayName() + " (" + srh.minSensorRange + "-"
                     + srh.maxSensorRange + ")" + " {" + Messages.getString("BoardView1.Tooltip.sensor_range_vs_ground_target")
                     + " (" + srh.minGroundSensorRange + "-" + srh.maxGroundSensorRange + ")}";
@@ -1747,27 +1747,27 @@ public final class UnitToolTip {
             sWarnings += "<BR>" + msg_cannotsurvive + " " + entity.getGame().getPlanetaryConditions().whyDoomed(entity, entity.getGame());
         }
 
-        if (entity.getCurrentMap().isLowAtmo() && entity.doomedInAtmosphere()) {
+        if (entity.getCurrentMapType().isLowAtmo() && entity.doomedInAtmosphere()) {
             String msg_cannotsurviveatmo = Messages.getString("BoardView1.Tooltip.CannotSurviveAtmo");
             sWarnings += "<BR>" + msg_cannotsurviveatmo;
         }
-        if (entity.getCurrentMap().isLowAtmo() && !entity.getGame().usesLowAtmoMap()) {
+        if (entity.getCurrentMapType().isLowAtmo() && !entity.getGame().usesLowAtmoMap()) {
             String msg_cannotsurviveatmo = Messages.getString("BoardView1.Tooltip.NoAtmoMap");
             sWarnings += "<BR>" + msg_cannotsurviveatmo;
         }
-        if (entity.getCurrentMap().isGround() && entity.doomedOnGround()) {
+        if (entity.getCurrentMapType().isGround() && entity.doomedOnGround()) {
             String msg_cannotsurviveground = Messages.getString("BoardView1.Tooltip.CannotSurviveGround");
             sWarnings += "<BR>" + msg_cannotsurviveground;
         }
-        if (entity.getCurrentMap().isGround() && !entity.getGame().usesGroundMap()) {
+        if (entity.getCurrentMapType().isGround() && !entity.getGame().usesGroundMap()) {
             String msg_cannotsurviveground = Messages.getString("BoardView1.Tooltip.NoGroundMap");
             sWarnings += "<BR>" + msg_cannotsurviveground;
         }
-        if (entity.getCurrentMap().isSpace() && entity.doomedInSpace()) {
+        if (entity.getCurrentMapType().isSpace() && entity.doomedInSpace()) {
             String msg_cannotsurvivespace = Messages.getString("BoardView1.Tooltip.CannotSurviveSpace");
             sWarnings += "<BR>" + msg_cannotsurvivespace;
         }
-        if (entity.getCurrentMap().isSpace() && !entity.getGame().usesSpaceMap()) {
+        if (entity.getCurrentMapType().isSpace() && !entity.getGame().usesSpaceMap()) {
             String msg_cannotsurvivespace = Messages.getString("BoardView1.Tooltip.NoSpaceMap");
             sWarnings += "<BR>" + msg_cannotsurvivespace;
         }

@@ -15,6 +15,7 @@ package megamek.client.ui.swing;
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.widget.IndexedRadioButton;
 import megamek.client.ui.swing.widget.MegamekButton;
@@ -122,8 +123,6 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
         super(clientgui);
 
         clientgui.getClient().getGame().addGameListener(this);
-
-        clientgui.getBoardView().addBoardViewListener(this);
         setupStatusBar(Messages.getString("PhysicalDisplay.waitingForPhysicalAttackPhase"));
 
         setButtons();
@@ -223,14 +222,13 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
                 }
             }
         }
-        clientgui.getBoardView().highlight(ce().getPosition());
-        clientgui.getBoardView().select(null);
-        clientgui.getBoardView().cursor(null);
+        clientgui.removeAllCoordMarkings();
+        clientgui.getBoardView(ce()).highlight(ce().getPosition());
 
         clientgui.getUnitDisplay().displayEntity(entity);
         clientgui.getUnitDisplay().showPanel("movement");
 
-        clientgui.getBoardView().centerOnHex(entity.getPosition());
+        clientgui.getBoardView(ce()).centerOnHex(entity.getPosition());
 
         // does it have a club?
         String clubLabel = null;
@@ -282,7 +280,7 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
             initDonePanelForNewTurn();
 
         }
-        clientgui.getBoardView().select(null);
+        clientgui.removeAllCoordMarkings();
     }
 
     /**
@@ -298,10 +296,8 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
         }
         cen = Entity.NONE;
         target(null);
-        clientgui.getBoardView().select(null);
-        clientgui.getBoardView().highlight(null);
-        clientgui.getBoardView().cursor(null);
-        clientgui.getBoardView().clearMovementData();
+        clientgui.removeAllCoordMarkings();
+        clientgui.boardViews().forEach(BoardView::clearMovementData);
         clientgui.setSelectedEntityNum(Entity.NONE);
         disableButtons();
     }
@@ -541,7 +537,7 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
 
         // and add it into the game, temporarily
         clientgui.getClient().getGame().addAction(saa);
-        clientgui.getBoardView().addAttack(saa);
+        clientgui.getBoardView(ce()).addAttack(saa);
 
         // and prevent duplicates
         setSearchlightEnabled(false);
@@ -1323,11 +1319,11 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
             && (b.getButton() == MouseEvent.BUTTON1)) {
             if (b.getType() == BoardViewEvent.BOARD_HEX_DRAGGED) {
                 if (!b.getCoords().equals(
-                        clientgui.getBoardView().getLastCursor())) {
-                    clientgui.getBoardView().cursor(b.getCoords());
+                        b.getBoardView().getLastCursor())) {
+                    b.getBoardView().cursor(b.getCoords());
                 }
             } else if (b.getType() == BoardViewEvent.BOARD_HEX_CLICKED) {
-                clientgui.getBoardView().select(b.getCoords());
+                b.getBoardView().select(b.getCoords());
             }
         }
     }
@@ -1557,7 +1553,7 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
             clientgui.maybeShowUnitDisplay();
             clientgui.getUnitDisplay().displayEntity(e);
             if (e.isDeployed()) {
-                clientgui.getBoardView().centerOnHex(e.getPosition());
+                clientgui.getBoardView(e).centerOnHex(e.getPosition());
             }
         }
     }
@@ -1640,7 +1636,7 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
     @Override
     public void removeAllListeners() {
         clientgui.getClient().getGame().removeGameListener(this);
-        clientgui.getBoardView().removeBoardViewListener(this);
+        clientgui.removeListenerFromBoardViews(this);
     }
 
     private class AimedShotHandler implements ActionListener, ItemListener {

@@ -179,7 +179,7 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
         if (!game.hasBoardLocation(boardLocation)) {
             return;
         }
-        if (!game.isOnGround(boardLocation) && !remove) {
+        if (!game.isOnGroundMap(boardLocation) && !remove) {
             LobbyErrors.showErrorDialog(clientgui.getFrame(),
                     "Minefields may not be deployed into low atmosphere or space hexes.",
                     "Minefield Deployment: Not allowed");

@@ -82,7 +82,7 @@ public class OffBoardTargetOverlay implements IDisplayable {
             return false;
         }
 
-        Mounted selectedArtilleryWeapon = clientgui.getBoardView().getSelectedArtilleryWeapon();
+        Mounted selectedArtilleryWeapon = clientgui.getActiveBoardView().getSelectedArtilleryWeapon();
 
         // only relevant if we've got an artillery weapon selected for one of our own units
         if (selectedArtilleryWeapon == null) {
@@ -202,34 +202,34 @@ public class OffBoardTargetOverlay implements IDisplayable {
 
         // each of these draws the relevant icon and stores the coordinates for retrieval when checking hit box
         // pre-store the selected artillery weapon as it carries out a bunch of computations
-        Mounted selectedArtilleryWeapon = clientgui.getBoardView().getSelectedArtilleryWeapon();
+        Mounted selectedArtilleryWeapon = clientgui.getActiveBoardView().getSelectedArtilleryWeapon();
 
         // draw top icon, if necessary
         if (showDirectionalElement(OffBoardDirection.NORTH, selectedArtilleryWeapon)) {
             button = generateRectangle(OffBoardDirection.NORTH, rect);
             buttons.put(OffBoardDirection.NORTH, button);
-            graph.drawImage(offBoardTargetImage, button.x, button.y, button.width, button.height, clientgui.getBoardView());
+            graph.drawImage(offBoardTargetImage, button.x, button.y, button.width, button.height, null);
         }
 
         // draw left icon, if necessary
         if (showDirectionalElement(OffBoardDirection.WEST, selectedArtilleryWeapon)) {
             button = generateRectangle(OffBoardDirection.WEST, rect);
             buttons.put(OffBoardDirection.WEST, button);
-            graph.drawImage(offBoardTargetImage, button.x, button.y, button.width, button.height, clientgui.getBoardView());
+            graph.drawImage(offBoardTargetImage, button.x, button.y, button.width, button.height, null);
         }
 
         // draw bottom icon, if necessary
         if (showDirectionalElement(OffBoardDirection.SOUTH, selectedArtilleryWeapon)) {
             button = generateRectangle(OffBoardDirection.SOUTH, rect);
             buttons.put(OffBoardDirection.SOUTH, button);
-            graph.drawImage(offBoardTargetImage, button.x, button.y, button.width, button.height, clientgui.getBoardView());
+            graph.drawImage(offBoardTargetImage, button.x, button.y, button.width, button.height, null);
         }
 
         // draw right icon, if necessary. This one is hairy because of the unit overview pane
         if (showDirectionalElement(OffBoardDirection.EAST, selectedArtilleryWeapon)) {
             button = generateRectangle(OffBoardDirection.EAST, rect);
             buttons.put(OffBoardDirection.EAST, button);
-            graph.drawImage(offBoardTargetImage, button.x, button.y, button.width, button.height, clientgui.getBoardView());
+            graph.drawImage(offBoardTargetImage, button.x, button.y, button.width, button.height, null);
         }
 
         // be nice, leave the color as we found it
@@ -304,9 +304,9 @@ public class OffBoardTargetOverlay implements IDisplayable {
         // upon selection, generate an ArtilleryAttackAction vs selected entity as per  TargetingPhaseDisplay, like so:
         WeaponAttackAction waa = new ArtilleryAttackAction(targetingPhaseDisplay.ce().getId(), choice.getTargetType(),
                 choice.getId(),
-                targetingPhaseDisplay.ce().getEquipmentNum(clientgui.getBoardView().getSelectedArtilleryWeapon()),
+                targetingPhaseDisplay.ce().getEquipmentNum(clientgui.getActiveBoardView().getSelectedArtilleryWeapon()),
                 clientgui.getClient().getGame());
 
-        targetingPhaseDisplay.updateDisplayForPendingAttack(clientgui.getBoardView().getSelectedArtilleryWeapon(), waa);
+        targetingPhaseDisplay.updateDisplayForPendingAttack(clientgui.getActiveBoardView().getSelectedArtilleryWeapon(), waa);
     }
 }

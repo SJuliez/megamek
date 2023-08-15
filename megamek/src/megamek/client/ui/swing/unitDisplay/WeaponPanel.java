@@ -7,6 +7,7 @@ import megamek.client.ui.GBC;
 import megamek.client.ui.Messages;
 import megamek.client.ui.baseComponents.MMComboBox;
 import megamek.client.ui.swing.*;
+import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.tooltip.UnitToolTip;
 import megamek.client.ui.swing.util.UIUtil;
 import megamek.client.ui.swing.widget.*;
@@ -2125,7 +2126,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
                 // boolean isCap = wtype.isCapital();
                 int rangeMultiplier = wtype.isCapital() ? 2 : 1;
                 final Game game = unitDisplay.getClientGUI().getClient().getGame();
-                if (entity.getCurrentMap().isGround()) {
+                if (entity.getCurrentMapType().isGround()) {
                     rangeMultiplier *= 8;
                 }
 
@@ -2163,7 +2164,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
             ((DeploymentDisplay) gui.getCurrentPanel()).setWeaponFieldOfFire(entity, ranges, arc, loc);
         }
 
-        unitDisplay.getClientGUI().getBoardView().setSensorRange(entity, entity.getPosition());
+        unitDisplay.getClientGUI().getBoardView(entity).setSensorRange(entity, entity.getPosition());
     }
 
     private String formatAmmo(Mounted m) {
@@ -2675,7 +2676,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
                 } else {
                     if (prevTarget != null) {
                         firingDisplay.target(prevTarget);
-                        unitDisplay.getClientGUI().getBoardView()
+                        unitDisplay.getClientGUI().getBoardView(prevTarget)
                                 .select(prevTarget.getPosition());
                         prevTarget = null;
                     } else {
@@ -2689,8 +2690,8 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
             // Tell the <Phase>Display to update the
             // firing arc info when a weapon has been de-selected
             if (weaponList.getSelectedIndex() == -1) {
-                unitDisplay.getClientGUI().getBoardView().clearFieldOfFire();
-                unitDisplay.getClientGUI().getBoardView().clearSensorsRanges();
+                unitDisplay.getClientGUI().boardViews().forEach(BoardView::clearFieldOfFire);
+                unitDisplay.getClientGUI().boardViews().forEach(BoardView::clearSensorsRanges);
             }
         }
         onResize();

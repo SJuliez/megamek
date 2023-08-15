@@ -22,11 +22,9 @@ import megamek.MegaMek;
 import megamek.client.Client;
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.GUIPreferences;
-import megamek.client.ui.swing.calculationReport.FlexibleCalculationReport;
 import megamek.client.ui.swing.util.PlayerColour;
 import megamek.common.*;
 import megamek.common.alphaStrike.AlphaStrikeElement;
-import megamek.common.alphaStrike.conversion.ASConverter;
 import megamek.common.force.Force;
 import megamek.common.options.GameOptions;
 import megamek.common.options.OptionsConstants;
@@ -113,7 +111,7 @@ class LobbyMekCellFormatter {
         boolean isCarried = entity.getTransportId() != Entity.NONE; 
         boolean hasWarning = false;
         boolean hasCritical = false;
-        MapType mapType = entity.getCurrentMap();
+        MapType mapType = entity.getCurrentMapType();
 
         // First line
         if (LobbyUtility.hasYellowWarning(entity)) {

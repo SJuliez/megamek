@@ -142,7 +142,7 @@ public class SummaryPanel extends PicMap {
             String col = "";
             String row = "";
 
-            BoardView bv = unitDisplay.getClientGUI().getBoardView();
+            BoardView bv = unitDisplay.getClientGUI().getBoardView(entity);
             Hex mhex = entity.getGame().getHex(entity.getBoardLocation());
             if (bv != null && mhex != null) {
                 StringBuffer sb = new StringBuffer();

@@ -1965,7 +1965,7 @@ public class Princess extends BotClient {
                 
                 // this condition is a simple check that we're not unloading infantry into deep space
                 // or into lava or some other such nonsense
-                boolean unloadFatal = !loadedEntity.isMapTypeAllowed(movingEntity.getCurrentMap())
+                boolean unloadFatal = !loadedEntity.isMapTypeAllowed(movingEntity.getCurrentMapType())
                         || loadedEntity.isLocationProhibited(pathEndpoint);
                 
                 // Unloading a unit may sometimes cause a stacking violation, take that into account when planning
