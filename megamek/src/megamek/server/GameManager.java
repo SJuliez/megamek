@@ -1105,7 +1105,7 @@ public class GameManager implements IGameManager {
                     && game.hasEnclosingBoard(entity.getBoardId())) {
                 // Rise to the space map, TW p.78
                 int oldBoard = entity.getCurrentBoardId();
-                entity.setCurrentBoard(entity.getBoard().getEnclosingBoard());
+                entity.setCurrentBoard(entity.getBoard().getEnclosingBoardId());
                 entity.setPosition(entity.getBoard().embeddedBoardPosition(oldBoard));
                 int atmoVelocity = ((Aero) entity).getNextVelocity();
                 // No rule in TW; the map scale factor is 36/1 but the turn scale is 1/6, so a factor of 6 between speeds
@@ -6649,7 +6649,7 @@ public class GameManager implements IGameManager {
                     a.setCurrentVelocity(md.getFinalVelocity());
                     entity.setAltitude(curAltitude);
                     if (game.hasEnclosingBoard(entity.getBoardId())) {
-                        Board enclosingBoard = game.getBoard(entity.getBoard().getEnclosingBoard());
+                        Board enclosingBoard = game.getBoard(entity.getBoard().getEnclosingBoardId());
                         entity.setCurrentBoard(enclosingBoard.getBoardId());
                         entity.setPosition(enclosingBoard.getCenter());
                     } else {

@@ -1688,6 +1688,10 @@ public class Compute {
             return 0;
         }
 
+        if (!game.onTheSameBoard(attacker, target) && game.isOnGroundMap(attacker) && game.isOnGroundMap(target)) {
+            return CrossBoardAttackHelper.getCrossBoardGroundMapDistance(attacker, target, game);
+        }
+
         Vector<Coords> attackPos = new Vector<>();
         attackPos.add(attacker.getPosition());
         Vector<Coords> targetPos = new Vector<>();

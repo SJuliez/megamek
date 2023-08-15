@@ -1019,6 +1019,11 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             Mounted m = ce().getEquipment(weaponId);
 
             int targetDistance = ce().getPosition().distance(target.getPosition());
+            Game game = clientgui.getClient().getGame();
+            if (!game.onTheSameBoard(ce(), target) && game.isOnGroundMap(ce()) && game.isOnGroundMap(target)) {
+                targetDistance = CrossBoardAttackHelper.getCrossBoardGroundMapDistance(ce(), target, game);
+            }
+
             boolean isArtilleryAttack = m.getType().hasFlag(WeaponType.F_ARTILLERY)
                     // For other weapons that can make artillery attacks
                     || target.getTargetType() == Targetable.TYPE_HEX_ARTILLERY;
@@ -1036,7 +1041,6 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             clientgui.getUnitDisplay().wPan.setTarget(target, null);
             clientgui.getUnitDisplay().wPan.wRangeR.setText(String.format("%d %s", targetDistance, flightTimeText));
 
-            Game game = clientgui.getClient().getGame();
             int distance = Compute.effectiveDistance(game, ce(), target);
             if (m.isUsedThisRound()) {
                 clientgui.getUnitDisplay().wPan.setToHit(

@@ -1958,7 +1958,7 @@ public class Board implements Serializable {
     }
 
     /** @return The ID of the enclosing board of this board, or -1 if it has no enclosing board. */
-    public int getEnclosingBoard() {
+    public int getEnclosingBoardId() {
         return enclosingBoard;
     }
 

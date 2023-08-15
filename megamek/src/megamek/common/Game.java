@@ -3718,11 +3718,11 @@ public class Game extends AbstractGame implements Serializable {
      * @return
      */
     public boolean hasEnclosingBoard(int boardId) {
-        return boardExists(getBoard(boardId).getEnclosingBoard());
+        return boardExists(getBoard(boardId).getEnclosingBoardId());
     }
 
     public @Nullable Board getEnclosingBoard(Board board) {
-        return getBoard(board.getEnclosingBoard());
+        return getBoard(board.getEnclosingBoardId());
     }
 
     public boolean boardExists(int boardId) {
@@ -3768,7 +3768,7 @@ public class Game extends AbstractGame implements Serializable {
         if ((entity1 != null) && (entity2 != null)) {
             Board board1 = getBoard(entity1);
             Board board2 = getBoard(entity2);
-            return (board1.getEnclosingBoard() == board2.getBoardId()) || (board2.getEnclosingBoard() == board1.getBoardId());
+            return (board1.getEnclosingBoardId() == board2.getBoardId()) || (board2.getEnclosingBoardId() == board1.getBoardId());
         } else {
             return false;
         }

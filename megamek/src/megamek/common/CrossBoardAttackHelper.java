@@ -76,4 +76,39 @@ public final class CrossBoardAttackHelper {
 
         return false;
     }
+
+    public static int getCrossBoardGroundMapDistance(Entity attacker, Targetable target, Game game) {
+        if ((attacker == null) || (target == null) || game.onTheSameBoard(attacker, target)
+                || !game.isOnGroundMap(attacker) || !game.isOnGroundMap(target)) {
+            return Integer.MAX_VALUE;
+        }
+        Board attackerBoard = game.getBoard(attacker);
+        Board targetBoard = game.getBoard(target);
+        if (!game.hasEnclosingBoard(attackerBoard.getBoardId()) || !game.hasEnclosingBoard(targetBoard.getBoardId())) {
+            return Integer.MAX_VALUE;
+        }
+        if (attackerBoard.getEnclosingBoardId() == targetBoard.getEnclosingBoardId()) {
+            // Both ground maps are contained in a low atmosphere map
+            Board atmoBoard = game.getEnclosingBoard(attackerBoard);
+            Coords attackerBoardPosition = atmoBoard.embeddedBoardPosition(attackerBoard.getBoardId());
+            Coords targetBoardPosition = atmoBoard.embeddedBoardPosition(targetBoard.getBoardId());
+            return attackerBoardPosition.distance(targetBoardPosition) * 17;
+        } else {
+            Board attackerAtmoBoard = game.getEnclosingBoard(attackerBoard);
+            Board targetAtmoBoard = game.getEnclosingBoard(targetBoard);
+            if (!game.hasEnclosingBoard(attackerAtmoBoard.getBoardId()) || !game.hasEnclosingBoard(targetAtmoBoard.getBoardId())) {
+                return Integer.MAX_VALUE;
+            }
+            if (attackerAtmoBoard.getEnclosingBoardId() == targetAtmoBoard.getEnclosingBoardId()) {
+                // The ground maps are contained in different low atmosphere maps but those in turn in the same high atmo map
+                Board spaceBoard = game.getEnclosingBoard(attackerAtmoBoard);
+                Coords attackerBoardPosition = spaceBoard.embeddedBoardPosition(attackerAtmoBoard.getBoardId());
+                Coords targetBoardPosition = spaceBoard.embeddedBoardPosition(targetAtmoBoard.getBoardId());
+                return attackerBoardPosition.distance(targetBoardPosition) * 17 * 36;
+            }
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private CrossBoardAttackHelper() { }
 }
