@@ -1039,8 +1039,8 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         boolean partialRepairsEnabled = gameOptions().booleanOption(OptionsConstants.ADVANCED_STRATOPS_PARTIALREPAIRS);
         final Entity entity = entities.get(0);
         final boolean isMech = entities.stream().allMatch(e -> e instanceof Mech);
-        final boolean isShip = entities.stream().allMatch(Entity::isLargeAerospace);
-        final boolean isAero = entities.stream().allMatch(e -> e.isAerospace() && !e.isLargeAerospace());
+        final boolean isShip = entities.stream().allMatch(Entity::isLargeCraft);
+        final boolean isAero = entities.stream().allMatch(e -> e.isAerospace() && !e.isLargeCraft());
         final boolean isVTOL = entities.stream().allMatch(e -> e.getMovementMode().isVTOL());
         final boolean isWiGE = entities.stream().allMatch(e -> (e instanceof Tank) && e.getMovementMode().isWiGE());
         final boolean isQuadVee = entities.stream().allMatch(e -> e instanceof QuadVee);

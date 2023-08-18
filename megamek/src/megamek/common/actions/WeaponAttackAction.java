@@ -381,12 +381,12 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
 
         boolean isArtilleryDirect = (wtype.hasFlag(WeaponType.F_ARTILLERY) ||
                 (wtype instanceof CapitalMissileWeapon
-                        && Compute.isGroundToGround(ae, target)))
+                        && Compute.isGroundToGround(ae, target, game)))
                 && game.getPhase().isFiring();
 
         boolean isArtilleryIndirect = (wtype.hasFlag(WeaponType.F_ARTILLERY) ||
                 (wtype instanceof CapitalMissileWeapon
-                        && Compute.isGroundToGround(ae, target)))
+                        && Compute.isGroundToGround(ae, target, game)))
                 && (game.getPhase().isTargeting() || game.getPhase().isOffboard());
 
         boolean isBearingsOnlyMissile = (weapon.isInBearingsOnlyMode())
@@ -394,7 +394,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
 
         boolean isCruiseMissile = (weapon.getType().hasFlag(WeaponType.F_CRUISE_MISSILE)
                         || (wtype instanceof CapitalMissileWeapon
-                                && Compute.isGroundToGround(ae, target)));
+                                && Compute.isGroundToGround(ae, target, game)));
 
         // hack, otherwise when actually resolves shot labeled impossible.
         boolean isArtilleryFLAK = isArtilleryDirect && (te != null)
@@ -1230,7 +1230,8 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
         }
 
         //if LOS is blocked, block the shot except in the case of indirect artillery fire
-        if ((losMods.getValue() == TargetRoll.IMPOSSIBLE) && !isArtilleryIndirect) {
+        if ((losMods.getValue() == TargetRoll.IMPOSSIBLE) && !isArtilleryIndirect
+                && !CrossBoardAttackHelper.isCrossBoardAttackPossible(ae, target, game)) {
                 return losMods.getDesc();
         }
 
@@ -1602,6 +1603,12 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
                 }
             }
 
+            if (CrossBoardAttackHelper.isOrbitToSurface(ae, target, game)) {
+                if (!wtype.isCapital() && !wtype.isSubCapital()) {
+                    return Messages.getString("WeaponAttackAction.O2SOnlyCapOrSubCap");
+                }
+            }
+
             // Air-to-ground attacks
             if (Compute.isAirToGround(ae, target) && !isArtilleryIndirect && !ae.isDropping()) {
                 // Can't strike from above altitude 5. Dive bombing uses a different test below
@@ -1780,7 +1787,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
                 // We don't really need to do anything here. This just prevents these weapons
                 // from passing the next test erroneously.
             } else if (wtype instanceof CapitalMissileWeapon
-                        && Compute.isGroundToGround(ae, target)) {
+                        && Compute.isGroundToGround(ae, target, game)) {
                 // Grounded units firing capital missiles at ground targets must do so as artillery
                 if (ttype != Targetable.TYPE_HEX_ARTILLERY) {
                     return Messages.getString("WeaponAttackAction.ArtyAttacksOnly");
@@ -1858,7 +1865,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
                 return Messages.getString("WeaponAttackAction.NoMissileTornado");
             }
 
-            if ((windCond == PlanetaryConditions.WI_TORNADO_F4) && !game.getBoard(target).inSpace()
+            if ((windCond == PlanetaryConditions.WI_TORNADO_F4) && !game.getBoard(target).isSpaceMap()
                     && (wtype.hasFlag(WeaponType.F_MISSILE) || wtype.hasFlag(WeaponType.F_BALLISTIC))) {
                 return Messages.getString("WeaponAttackAction.F4Tornado");
             }
@@ -1949,7 +1956,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             // Bombs and such
 
             // Anti ship missiles can't be launched from altitude 3 or lower
-            if (wtype.hasFlag(WeaponType.F_ANTI_SHIP) && !game.getBoard(target).inSpace() && (ae.getAltitude() < 4)) {
+            if (wtype.hasFlag(WeaponType.F_ANTI_SHIP) && !game.getBoard(target).isSpaceMap() && (ae.getAltitude() < 4)) {
                 return Messages.getString("WeaponAttackAction.TooLowForASM");
             }
 
@@ -2131,7 +2138,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             // Capital weapons fire by grounded units
             if (wtype.isSubCapital() || wtype.isCapital()) {
                 // Can't fire any but capital/subcapital missiles surface to surface
-                if (Compute.isGroundToGround(ae, target)
+                if (Compute.isGroundToGround(ae, target, game)
                         && !(wtype instanceof CapitalMissileWeapon)) {
                     return Messages.getString("WeaponAttackAction.NoS2SCapWeapons");
                 }
@@ -2806,12 +2813,12 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
 
         // weather mods (not in space)
         int weatherMod = game.getPlanetaryConditions().getWeatherHitPenalty(ae);
-        if ((weatherMod != 0) && !game.getBoard(target).inSpace()) {
+        if ((weatherMod != 0) && !game.getBoard(target).isSpaceMap()) {
             weatherToHitMods.addModifier(weatherMod, game.getPlanetaryConditions().getWeatherDisplayableName());
         }
 
         // wind mods (not in space)
-        if (!game.getBoard(target).inSpace()) {
+        if (!game.getBoard(target).isSpaceMap()) {
             int windCond = game.getPlanetaryConditions().getWindStrength();
             if (windCond == PlanetaryConditions.WI_MOD_GALE) {
                 if (wtype != null && wtype.hasFlag(WeaponType.F_MISSILE)) {
@@ -2841,13 +2848,13 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
         }
 
         // fog mods (not in space)
-        if (wtype != null && wtype.hasFlag(WeaponType.F_ENERGY) && !game.getBoard(target).inSpace()
+        if (wtype != null && wtype.hasFlag(WeaponType.F_ENERGY) && !game.getBoard(target).isSpaceMap()
                 && (game.getPlanetaryConditions().getFog() == PlanetaryConditions.FOG_HEAVY)) {
             weatherToHitMods.addModifier(1, Messages.getString("WeaponAttackAction.HeavyFog"));
         }
 
         // blowing sand mods
-        if (wtype != null && wtype.hasFlag(WeaponType.F_ENERGY) && !game.getBoard(target).inSpace()
+        if (wtype != null && wtype.hasFlag(WeaponType.F_ENERGY) && !game.getBoard(target).isSpaceMap()
                 && game.getPlanetaryConditions().isSandBlowing()
                 && (game.getPlanetaryConditions().getWindStrength() > PlanetaryConditions.WI_LIGHT_GALE)) {
             weatherToHitMods.addModifier(1, Messages.getString("WeaponAttackAction.BlowingSand"));
@@ -2861,7 +2868,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
         }
 
         // gravity mods (not in space)
-        if (!game.getBoard(target).inSpace()) {
+        if (!game.getBoard(target).isSpaceMap()) {
             int mod = (int) Math.floor(Math.abs((game.getPlanetaryConditions().getGravity() - 1.0f) / 0.2f));
             if ((mod != 0) && wtype != null &&
                     ((wtype.hasFlag(WeaponType.F_BALLISTIC) && wtype.hasFlag(WeaponType.F_DIRECT_FIRE)) || wtype.hasFlag(WeaponType.F_MISSILE))) {
@@ -3059,7 +3066,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
         // SPA Environmental Specialist
         // Fog Specialist
         if (ae.getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_FOG)
-                && wtype.hasFlag(WeaponType.F_ENERGY) && !game.getBoard(target).inSpace()
+                && wtype.hasFlag(WeaponType.F_ENERGY) && !game.getBoard(target).isSpaceMap()
                 && (game.getPlanetaryConditions().getFog() == PlanetaryConditions.FOG_HEAVY)) {
             toHit.addModifier(-1, Messages.getString("WeaponAttackAction.FogSpec"));
         }
@@ -3689,7 +3696,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             }
 
             // Space ECM
-            if (game.getBoard(target).inSpace() && game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
+            if (game.getBoard(target).isSpaceMap() && game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
                 int ecm = ComputeECM.getLargeCraftECM(ae, ae.getPosition(), target.getPosition());
                 if (!ae.isLargeCraft()) {
                     ecm += ComputeECM.getSmallCraftECM(ae, ae.getPosition(), target.getPosition());
@@ -4402,12 +4409,12 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             IAero a = (IAero) te;
 
             // is the target at zero velocity
-            if ((a.getCurrentVelocity() == 0) && !(a.isSpheroid() && !game.getBoard(target).inSpace())) {
+            if ((a.getCurrentVelocity() == 0) && !(a.isSpheroid() && !game.getBoard(target).isSpaceMap())) {
                 toHit.addModifier(-2, Messages.getString("WeaponAttackAction.ImmobileAero"));
             }
 
             // get mods for direction of attack
-            if (!(a.isSpheroid() && !game.getBoard(target).inSpace())) {
+            if (!(a.isSpheroid() && !game.getBoard(target).isSpaceMap())) {
                 int side = Compute.targetSideTable(ae.getPosition(), te);
 
                 // +1 if shooting at an aero approaching nose-on
@@ -4422,8 +4429,8 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
 
             // Target hidden in the sensor shadow of a larger spacecraft
             if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_SENSOR_SHADOW)
-                    && game.getBoard(target).inSpace()) {
-                for (Entity en : Compute.getAdjacentEntitiesAlongAttack(ae.getPosition(), target.getPosition(), game, ae.getCurrentBoardId())) {
+                    && game.getBoard(target).isSpaceMap()) {
+                for (Entity en : Compute.getAdjacentEntitiesAlongAttack(ae.getPosition(), target.getPosition(), game, ae.getBoardId())) {
                     if (!en.isEnemyOf(te) && en.isLargeCraft()
                             && ((en.getWeight() - te.getWeight()) >= -STRATOPS_SENSOR_SHADOW_WEIGHT_DIFF)) {
                         toHit.addModifier(+1, Messages.getString("WeaponAttackAction.SensorShadow"));
@@ -5117,7 +5124,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             // See SO p110
             // Start with a flat +2 modifier
             if (wtype instanceof CapitalMissileWeapon
-                    && Compute.isGroundToGround(ae, target)) {
+                    && Compute.isGroundToGround(ae, target, game)) {
                 toHit.addModifier(2, Messages.getString("WeaponAttackAction.SubCapArtillery"));
                 // +3 additional modifier if fired underwater
                 if (ae.isUnderwater()) {

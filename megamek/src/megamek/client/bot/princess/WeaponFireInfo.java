@@ -333,7 +333,7 @@ public class WeaponFireInfo {
     WeaponAttackAction buildWeaponAttackAction() {
         if (!(getWeapon().getType().hasFlag(WeaponType.F_ARTILLERY) 
                 || (getWeapon().getType() instanceof CapitalMissileWeapon
-                        && Compute.isGroundToGround(shooter, target)))) {
+                        && Compute.isGroundToGround(shooter, target, game)))) {
             return new WeaponAttackAction(getShooter().getId(), getTarget().getTargetType(), getTarget().getId(),
                                           getShooter().getEquipmentNum(getWeapon()));
         } else {
@@ -644,7 +644,7 @@ public class WeaponFireInfo {
         }
         if (!(getWeapon().getType().hasFlag(WeaponType.F_ARTILLERY)
                 || (getWeapon().getType() instanceof CapitalMissileWeapon
-                        && Compute.isGroundToGround(shooter, target)))) {
+                        && Compute.isGroundToGround(shooter, target, game)))) {
             setAction(new WeaponAttackAction(getShooter().getId(), getTarget().getId(),
                     getShooter().getEquipmentNum(getWeapon())));
         } else {

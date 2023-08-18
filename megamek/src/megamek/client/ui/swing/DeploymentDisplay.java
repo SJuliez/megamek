@@ -115,8 +115,6 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
     public DeploymentDisplay(ClientGUI clientgui) {
         super(clientgui);
         clientgui.getClient().getGame().addGameListener(this);
-        // @@MultiBoardTODO: necessary?
-//        clientgui.addListenerToBoardViews(this);
         setupStatusBar(Messages.getString("DeploymentDisplay.waitingForDeploymentPhase"));
 
         setButtons();
@@ -228,7 +226,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             clientgui.getUnitDisplay().showPanel("movement");
             clientgui.boardViews().forEach(b -> b.setWeaponFieldOfFire(ce().getFacing(), ce().getPosition()));
             clientgui.boardViews().forEach(b -> b.setSensorRange(ce(), ce().getPosition()));
-            clientgui.showBoardView(ce().getCurrentBoardId());
+            clientgui.showBoardView(ce().getBoardId());
         } else {
             disableButtons();
             setNextEnabled(true);
@@ -501,7 +499,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         } else if (!ce().isMapTypeAllowed(board.getMapType())) {
             // check if this type of unit can be on the given type of map
             title = Messages.getString("DeploymentDisplay.alertDialog.title");
-            msg = Messages.getString("DeploymentDisplay.wrongMapType", ce().getShortName(), board.getMapType().getdisplayName());
+            msg = Messages.getString("DeploymentDisplay.wrongMapType", ce().getShortName(), board.getMapType().getDisplayName());
             JOptionPane.showMessageDialog(clientgui, msg, title, JOptionPane.WARNING_MESSAGE);
             return;
         } else if (!(board.isLegalDeployment(moveto, ce()) || assaultDropPreference)
@@ -510,7 +508,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             title = Messages.getString("DeploymentDisplay.alertDialog.title");
             JOptionPane.showMessageDialog(clientgui.frame, msg, title, JOptionPane.ERROR_MESSAGE);
             return;
-        } else if (isAero && board.inAtmosphere() && (ce().getElevation() <= board.getHex(moveto).ceiling(true))) {
+        } else if (isAero && board.isLowAtmosphereMap() && (ce().getElevation() <= board.getHex(moveto).ceiling(true))) {
             // Ensure aeros don't end up at lower elevation than the current hex
             title = Messages.getString("DeploymentDisplay.alertDialog.title");
             msg = Messages.getString("DeploymentDisplay.elevationTooLow", ce().getShortName(), moveto.getBoardNum());

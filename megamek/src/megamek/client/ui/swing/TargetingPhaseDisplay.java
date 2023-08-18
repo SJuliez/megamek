@@ -568,6 +568,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             } else {
                 clientgui.boardViews().forEach(BoardView::clearFiringSolutionData);
             }
+            clientgui.showBoardView(ce().getBoardId());
         } else {
             LogManager.getLogger().error("Tried to select non-existent entity: " + en);
         }
@@ -823,11 +824,15 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
                 target.getId(), weaponNum);
         Game game = clientgui.getClient().getGame();
         int distance = Compute.effectiveDistance(game, waa.getEntity(game), waa.getTarget(game));
+        if (CrossBoardAttackHelper.isOrbitToSurface(ce(), target, game)) {
+            waa = new OrbitToSurfaceAttackAction(cen, target.getTargetType(),
+                    target.getId(), weaponNum, game);
+        } else
         if ((mounted.getType().hasFlag(WeaponType.F_ARTILLERY))
                 || (mounted.isInBearingsOnlyMode()
                         && distance >= RangeType.RANGE_BEARINGS_ONLY_MINIMUM)
                 || (mounted.getType() instanceof CapitalMissileWeapon
-                        && Compute.isGroundToGround(ce(), target))) {
+                        && Compute.isGroundToGround(ce(), target, game))) {
             waa = new ArtilleryAttackAction(cen, target.getTargetType(),
                     target.getId(), weaponNum, clientgui.getClient().getGame());
             // Get the launch velocity for bearings-only telemissiles
@@ -1019,9 +1024,11 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             Mounted m = ce().getEquipment(weaponId);
 
             int targetDistance = ce().getPosition().distance(target.getPosition());
+            String distanceText = Integer.toString(targetDistance);
             Game game = clientgui.getClient().getGame();
             if (!game.onTheSameBoard(ce(), target) && game.isOnGroundMap(ce()) && game.isOnGroundMap(target)) {
                 targetDistance = CrossBoardAttackHelper.getCrossBoardGroundMapDistance(ce(), target, game);
+                distanceText = targetDistance / 17 + " Map Sheets";
             }
 
             boolean isArtilleryAttack = m.getType().hasFlag(WeaponType.F_ARTILLERY)
@@ -1039,7 +1046,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             }
 
             clientgui.getUnitDisplay().wPan.setTarget(target, null);
-            clientgui.getUnitDisplay().wPan.wRangeR.setText(String.format("%d %s", targetDistance, flightTimeText));
+            clientgui.getUnitDisplay().wPan.wRangeR.setText(String.format("%s %s", distanceText, flightTimeText));
 
             int distance = Compute.effectiveDistance(game, ce(), target);
             if (m.isUsedThisRound()) {

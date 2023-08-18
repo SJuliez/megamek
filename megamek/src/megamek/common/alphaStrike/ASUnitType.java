@@ -74,9 +74,9 @@ public enum ASUnitType {
         return this == PM;
     }
 
-    /** @return True if this ASUnitType is a Large Aerospace type, i.e. SC, DS, DA, SS, JS, WS. */
+    /** @return True if this ASUnitType is a Large Aerospace Craft type, i.e. DS, DA, SS, JS, WS. */
     public boolean isLargeAerospace() {
-        return isAnyOf(SC, DS, DA, SS, JS, WS);
+        return isAnyOf(DS, DA, SS, JS, WS);
     }
 
     /** @return True if this ASUnitType is BattleArmor (BA). */

@@ -72,7 +72,7 @@ public class HVACWeaponHandler extends ACWeaponHandler {
                 rearCoords = src;
             }
 
-            gameManager.createSmoke(rearCoords, ae.getCurrentBoardId(), SmokeCloud.SMOKE_HEAVY, 2);
+            gameManager.createSmoke(rearCoords, ae.getBoardId(), SmokeCloud.SMOKE_HEAVY, 2);
         }
         return super.handle(phase, vPhaseReport);
     }

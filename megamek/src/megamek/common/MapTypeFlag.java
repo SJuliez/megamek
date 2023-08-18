@@ -3,14 +3,14 @@ package megamek.common;
 public enum MapTypeFlag {
     NONE,
 
-    /** A space map with gravity is a high atmosphere map */
-    HIGH_ATMOSPHERE,
+    /** A space map with gravity is a high-altitude map */
+    HIGH_ALTITUDE,
 
     /** A low atmosphere map with this flag uses no ground terrain (pure sky map) */
     SKY;
 
-    public boolean isHighAtmosphere() {
-        return this == HIGH_ATMOSPHERE;
+    public boolean isHighAltitude() {
+        return this == HIGH_ALTITUDE;
     }
 
     public boolean isSky() {

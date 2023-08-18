@@ -24,7 +24,7 @@ import megamek.server.GameManager;
  * @author Jay Lawson
  * @since Sep 25, 2004
  */
-public class CapitalMissileBayWeapon extends AmmoBayWeapon {
+public class CapitalMissileBayWeapon extends CapitalAmmoBayWeapon {
     private static final long serialVersionUID = 8756042527483383101L;
     
     //There's no RAW minimum, but it can't be 0...

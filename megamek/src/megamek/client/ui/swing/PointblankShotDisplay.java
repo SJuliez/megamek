@@ -726,7 +726,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
         WeaponAttackAction waa;
         if (!(mounted.getType().hasFlag(WeaponType.F_ARTILLERY)
                 || (mounted.getType() instanceof CapitalMissileWeapon
-                        && Compute.isGroundToGround(ce(), target)))) {
+                        && Compute.isGroundToGround(ce(), target, game)))) {
             waa = new WeaponAttackAction(cen, target.getTargetType(),
                     target.getId(), weaponNum);
         } else {

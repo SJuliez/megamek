@@ -40,7 +40,7 @@ public class ASSpecialAbilityConverter {
     protected CalculationReport report;
 
     static ASSpecialAbilityConverter getConverter(Entity entity, AlphaStrikeElement element, CalculationReport report) {
-        if (element.isLargeAerospace()) { // SC, DS, DA, JS, SS, WS
+        if (element.usesLargeAerospaceCardFormat()) { // SC, DS, DA, JS, SS, WS
             return new ASLargeAeroSpecialAbilityConverter(entity, element, report);
         } else if (element.isProtoMek()) { // PM
             return new ASProtoMekSpecialAbilityConverter(entity, element, report);
@@ -291,7 +291,7 @@ public class ASSpecialAbilityConverter {
     }
 
     protected boolean eligibleForCASE() {
-        return !(element.isInfantry() || element.isProtoMek() || element.isFighter() || element.isLargeAerospace());
+        return !(element.isInfantry() || element.isProtoMek() || element.isFighter() || element.usesLargeAerospaceCardFormat());
     }
 
     protected void processSEALandSOA(Mounted misc) { }
@@ -360,7 +360,7 @@ public class ASSpecialAbilityConverter {
             }
         }
 
-        if (entity.hasEngine() && !element.isLargeAerospace()) {
+        if (entity.hasEngine() && !element.usesLargeAerospaceCardFormat()) {
             String engineName = "Engine: " + entity.getEngine().getEngineName();
             if (entity.getEngine().getEngineType() == Engine.COMBUSTION_ENGINE) {
                 assign(engineName, EE);
@@ -542,7 +542,7 @@ public class ASSpecialAbilityConverter {
                 element.getSpecialAbilities().removeSUA(CTxD);
                 report.addLine("Replace CT with CK",
                         AlphaStrikeHelper.formatAbility(CK, element.getSpecialAbilities(), element, ", "));
-            } else if (element.isLargeAerospace()) {
+            } else if (element.usesLargeAerospaceCardFormat()) {
                 // Replace CT with a rounded value on large aerospace
                 if (ctValue != (int) ctValue) {
                     element.getSpecialAbilities().replaceSUA(CT, (int) Math.round(ctValue));

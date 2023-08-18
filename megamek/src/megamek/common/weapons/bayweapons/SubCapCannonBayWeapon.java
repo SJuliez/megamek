@@ -19,7 +19,7 @@ import megamek.common.EquipmentTypeLookup;
  * @author Jay Lawson
  * @since Sep 25, 2004
  */
-public class SubCapCannonBayWeapon extends AmmoBayWeapon {
+public class SubCapCannonBayWeapon extends CapitalAmmoBayWeapon {
     private static final long serialVersionUID = 8756042527483383101L;
 
     public SubCapCannonBayWeapon() {

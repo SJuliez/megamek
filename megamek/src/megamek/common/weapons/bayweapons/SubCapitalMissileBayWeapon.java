@@ -25,7 +25,7 @@ import megamek.server.GameManager;
  * @author Jay Lawson
  * @since Sep 25, 2004
  */
-public class SubCapitalMissileBayWeapon extends AmmoBayWeapon {
+public class SubCapitalMissileBayWeapon extends CapitalAmmoBayWeapon {
     private static final long serialVersionUID = 8656042527483383101L;
 
     public SubCapitalMissileBayWeapon() {

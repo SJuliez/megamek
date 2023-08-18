@@ -72,6 +72,7 @@ public class Board implements Serializable {
     private int maxElevation = UNDEFINED_MAX_ELEV;
 
     private final int boardId;
+    private String mapName = "Map";
 
     private int mapType = T_GROUND;
     private MapType mapType2 = MapType.GROUND;
@@ -200,6 +201,7 @@ public class Board implements Serializable {
         this.height = height;
         data = new Hex[width * height];
         this.boardId = boardId;
+        mapName = "Map #" + boardId;
     }
 
     /**
@@ -221,6 +223,7 @@ public class Board implements Serializable {
             }
         }
         this.boardId = boardId;
+        mapName = "Map #" + boardId;
     }
 
     //endregion Constructors
@@ -1665,15 +1668,15 @@ public class Board implements Serializable {
     }
 
     // some convenience functions
-    public boolean onGround() {
+    public boolean isGroundMap() {
         return (mapType2.isGround());
     }
 
-    public boolean inAtmosphere() {
+    public boolean isLowAtmosphereMap() {
         return (mapType2.isLowAtmo());
     }
 
-    public boolean inSpace() {
+    public boolean isSpaceMap() {
         return (mapType2.isSpace());
     }
 
@@ -1930,6 +1933,9 @@ public class Board implements Serializable {
 
     public void setMapType(MapType newMapType) {
         mapType2 = newMapType;
+        if (mapName.startsWith("Map #")) {
+            mapName = mapType2.getDisplayName() + " " + mapName;
+        }
     }
 
     public void setMapTypeFlag(MapTypeFlag newMapTypeFlag) {
@@ -1984,4 +1990,76 @@ public class Board implements Serializable {
     public int getEmbeddedBoardAt(Coords coords) {
         return embeddedBoards.getOrDefault(coords, -1);
     }
+
+    /** @return The name of this map; this is meant to be displayed in the GUI. */
+    public String getMapName() {
+        return mapName;
+    }
+
+    public void setMapName(String mapName) {
+        this.mapName = mapName;
+    }
+
+    /** @return True when this map is a space map of the high-altitude type. */
+    public boolean isHighAltitudeMap() {
+        return getMapTypeFlag().isHighAltitude();
+    }
+
+    /**
+     * Returns true when the given Coords is a hex of any of the atmospheric rows 1-4 on a high-atmosphere map,
+     * false otherwise. Returns false for ground row hexes and for hexes of the space-atmosphere interface!
+     *
+     * @param coords The position on the board to test
+     * @return true for hexes of atmospheric rows 1-4 on a high-atmosphere map
+     */
+    public boolean isAtmosphericRow(Coords coords) {
+        return isHighAltitudeMap() && (coords.getX() >= 1) && (coords.getX() <= 4);
+    }
+
+    /**
+     * Returns the number of the atmospheric row (i.e. 1 to 4) of the given Coords on a high-atmosphere map
+     * (see TW p.79). For coords not in an atmospheric row or not on a high-altitude map, returns -1.
+     *
+     * @param coords The position on the board to test
+     * @return the number of the atmospheric row on a high-atmosphere map
+     */
+    public int atmosphericRowNumber(Coords coords) {
+        return isAtmosphericRow(coords) ? coords.getX() : -1;
+    }
+
+    /**
+     * Returns true when the given Coords is a hex of the space-atmosphere interface on a high-atmosphere map,
+     * false otherwise.
+     *
+     * @param coords The position on the board to test
+     * @return true for hexes of the space-atmosphere interface on a high-atmosphere map
+     */
+    public boolean isSpaceAtmosphereInterface(Coords coords) {
+        return isHighAltitudeMap() && (coords.getX() == 5);
+    }
+
+    /**
+     * Returns true when the given Coords is a ground row hex on a high-atmospheric map, i.e. the
+     * lowermost row of hexes. Returns false for atmospheric and ground maps as well as for a space map that
+     * is not high atmosphere.
+     *
+     * @param coords The position on the board to test
+     * @return true for the ground row hexes on a high atmospheric map
+     */
+    public boolean isGroundRowHex(Coords coords) {
+        return isHighAltitudeMap() && (coords.getX() == 0);
+    }
+
+    /**
+     * Returns true when the given Coords is a hex that is true space on a high-atmospheric map, i.e. beyond the
+     * space-atmosphere interface, or for any hex in a space map that is not a high-atmosphere map.
+     * Returns false for atmospheric and ground maps.
+     *
+     * @param coords The position on the board to test
+     * @return true for true space hexes on a space map
+     */
+    public boolean isTrueSpaceHex(Coords coords) {
+        return isSpaceMap() && (!isHighAltitudeMap() || (coords.getX() > 5));
+    }
+
 }

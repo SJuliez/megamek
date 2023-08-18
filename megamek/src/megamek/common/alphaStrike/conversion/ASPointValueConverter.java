@@ -40,7 +40,7 @@ public class ASPointValueConverter {
     protected double subTotal = 0;
 
     static ASPointValueConverter getPointValueConverter(AlphaStrikeElement element, CalculationReport report) {
-        if (element.isLargeAerospace()) {
+        if (element.usesLargeAerospaceCardFormat()) {
             return new ASLargeAeroPointValueConverter(element, report);
         } else if (element.isType(AF, CF) || element.isAerospaceSV()) {
             return new ASAeroPointValueConverter(element, report);

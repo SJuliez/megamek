@@ -516,7 +516,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
                     Hex h = board.getHex(j, k);
                     if (dirtyMap || dirty[j / 10][k / 10]) {
                         gg.setColor(terrainColor(h));
-                        if ((board.getMapType().isSpace()) && board.getMapTypeFlag().isHighAtmosphere()) {
+                        if ((board.getMapType().isSpace()) && board.getMapTypeFlag().isHighAltitude()) {
                             paintHighAtmoCoord(gg, j, k);
                         } else if (board.getMapType().isSpace()) {
                             paintSpaceCoord(gg, j, k);
@@ -1734,6 +1734,6 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
 
     /** @return True when the given Entity is on the board of this Minimap (it may still have a null position). */
     public boolean isOnThisBoard(@Nullable Entity entity) {
-        return (entity != null) && boardId == entity.getCurrentBoardId();
+        return (entity != null) && boardId == entity.getBoardId();
     }
 }

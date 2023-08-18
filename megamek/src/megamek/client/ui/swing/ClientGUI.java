@@ -2170,17 +2170,28 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         if (boardViews.size() > 1) {
             mapTabPane.removeAll();
             for (BoardView boardView : boardViews()) {
-                String name = boardView.getBoard().getMapType().getdisplayName() + " Map";
-                mapTabPane.add(name, boardView.getComponent(true));
+                mapTabPane.add(boardView.getMapName(), boardView.getComponent(true));
+                mapTabPane.setToolTipTextAt(mapTabPane.getTabCount() - 1, getBoardViewTabTooltip(boardView));
             }
             bvc.add(mapTabPane);
         } else if (boardViews.size() == 1) {
             // Avoid having a tab for only a single map
-            String name = boardViews().get(0).getBoard().getMapType().getdisplayName() + " Map";
-            bvc.add(name, boardViews().get(0).getComponent(true));
-
+            BoardView boardView = boardViews().get(0);
+            bvc.add(boardView.getMapName(), boardView.getComponent(true));
         }
         bvc.validate();
+    }
+
+    private String getBoardViewTabTooltip(BoardView boardView) {
+        int boardId = boardView.getBoard().getBoardId();
+        String tooltip = String.format("<HTML>%s (Board #%d)", boardView.getMapName(), boardId);
+        Game game = getClient().getGame();
+        if (game.hasEnclosingBoard(boardId)) {
+            Board enclosingBoard = game.getEnclosingBoard(boardView.getBoard());
+            tooltip += "<BR>Located at " + enclosingBoard.embeddedBoardPosition(boardId).getBoardNum() +
+                    " in " + game.getEnclosingBoard(boardView.getBoard());
+        }
+        return tooltip;
     }
 
     private final GameListener gameListener = new GameListenerAdapter() {

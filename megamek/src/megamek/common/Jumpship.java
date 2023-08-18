@@ -1464,7 +1464,7 @@ public class Jumpship extends Aero {
     }
 
     @Override
-    public boolean isLargeAerospace() {
+    public boolean isLargeCraft() {
         return true;
     }
 }

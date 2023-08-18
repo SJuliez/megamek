@@ -55,7 +55,7 @@ public class WeatherProcessor extends DynamicTerrainProcessor {
 
     private void resolveWeather() {
         for (Board board : game.getBoards()) {
-            if (!board.onGround()) {
+            if (!board.isGroundMap()) {
                 continue;
             }
             int width = board.getWidth();
@@ -72,7 +72,7 @@ public class WeatherProcessor extends DynamicTerrainProcessor {
             // first we need to increment the conditions
             if (conditions.getWeather() == PlanetaryConditions.WE_MOD_SNOW
                     || conditions.getWeather() == PlanetaryConditions.WE_SNOW_FLURRIES
-                    && game.getBoard().onGround()) {
+                    && game.getBoard().isGroundMap()) {
                 modSnowTurn = modSnowTurn + 1;
                 if (modSnowTurn == 9) {
                     lightSnow = true;
@@ -83,7 +83,7 @@ public class WeatherProcessor extends DynamicTerrainProcessor {
                 }
             }
             if (((conditions.getWeather() == PlanetaryConditions.WE_HEAVY_SNOW)
-                    && game.getBoard().onGround())) {
+                    && game.getBoard().isGroundMap())) {
                 heavySnowTurn = heavySnowTurn + 1;
                 if (heavySnowTurn == 4) {
                     lightSnow = true;
@@ -96,14 +96,14 @@ public class WeatherProcessor extends DynamicTerrainProcessor {
                 }
             }
             if (conditions.getWeather() == PlanetaryConditions.WE_SLEET
-                    && game.getBoard().onGround()) {
+                    && game.getBoard().isGroundMap()) {
                 sleetTurn = sleetTurn + 1;
                 if (sleetTurn == 14) {
                     ice = true;
                 }
             }
             if (conditions.getWeather() == PlanetaryConditions.WE_ICE_STORM
-                    && game.getBoard().onGround()) {
+                    && game.getBoard().isGroundMap()) {
                 iceTurn = iceTurn + 1;
                 if (iceTurn == 9) {
                     ice = true;

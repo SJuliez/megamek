@@ -3266,7 +3266,7 @@ public class Game extends AbstractGame implements Serializable {
     // applicable
     public boolean useVectorMove() {
         return getOptions().booleanOption(OptionsConstants.ADVAERORULES_ADVANCED_MOVEMENT)
-               && board.inSpace();
+               && board.isSpaceMap();
     }
 
     /**
@@ -3695,11 +3695,11 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public boolean inSpace(BoardLocation boardLocation) {
-        return getBoard(boardLocation).inSpace();
+        return getBoard(boardLocation).isSpaceMap();
     }
 
     public boolean inLowAtmosphere(BoardLocation boardLocation) {
-        return getBoard(boardLocation).inAtmosphere();
+        return getBoard(boardLocation).isLowAtmosphereMap();
     }
 
     public boolean hasBuildingAt(BoardLocation boardLocation) {
@@ -3707,7 +3707,7 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public List<Board> getGroundBoards() {
-        return getBoards().stream().filter(Board::onGround).collect(toList());
+        return getBoards().stream().filter(Board::isGroundMap).collect(toList());
     }
 
     /**
@@ -3736,8 +3736,8 @@ public class Game extends AbstractGame implements Serializable {
         }
         Board lowerBoard = getBoard(lowerBoardId);
         Board higherBoard = getBoard(higherBoardId);
-        if ((lowerBoard.inAtmosphere() && !higherBoard.inSpace()) || (lowerBoard.onGround() && !higherBoard.inAtmosphere())
-                || lowerBoard.inSpace() || higherBoard.onGround()) {
+        if ((lowerBoard.isLowAtmosphereMap() && !higherBoard.isSpaceMap()) || (lowerBoard.isGroundMap() && !higherBoard.isLowAtmosphereMap())
+                || lowerBoard.isSpaceMap() || higherBoard.isGroundMap()) {
             LogManager.getLogger().error("Can only enclose a ground map in an atmo map or an atmo map in a space map.");
             return;
         }
@@ -3800,7 +3800,7 @@ public class Game extends AbstractGame implements Serializable {
     /**
      * Returns true when both given units or objects are on boards that are connected at least through a common
      * high atmosphere map. For two connected maps, a fighter unit can reach one from the other, traversing
-     * atmospheric and/or high atmospheric maps.
+     * atmospheric and/or high atmospheric maps. Also returns true when both are on the same board.
      *
      * When two maps are not connected they're part of different hierarchies of maps and therefore,
      * nothing happening on one can influence the other. It is possible to set up games of such unrelated
@@ -3813,18 +3813,34 @@ public class Game extends AbstractGame implements Serializable {
      * @return True when both units or objects are on vertically connected boards
      */
     public boolean onConnectedBoards(@Nullable Targetable entity1, @Nullable Targetable entity2) {
-        if ((entity1 != null) && (entity2 != null)) {
-            int boardId1 = entity1.getBoardId();
-            int boardId2 = entity2.getBoardId();
-            return getAllEnclosingBoards(boardId1).contains(boardId2)
-                    || getAllEnclosingBoards(boardId2).contains(boardId1);
-        } else {
-            return false;
-        }
+        return (entity1 != null) && (entity2 != null) && areConnectedBoards(entity1.getBoardId(), entity2.getBoardId());
+    }
+
+    /**
+     * Returns true when both given boards are connected at least through a common high atmosphere map.
+     * When two boards are connected, a fighter unit can reach one from the other, traversing
+     * atmospheric and/or high atmospheric maps. Also returns true if the boards are one and the same.
+     *
+     * When two maps are not connected they're part of different hierarchies of maps and therefore,
+     * nothing happening on one can influence the other. It is possible to set up games of such unrelated
+     * map clusters but it is not advisable. Such games could just as well be played separately from each other
+     * and suffer a lower chance of MM crashing both...
+     *
+     * @param boardId1 The first board ID
+     * @param boardId2 The second board ID
+     *
+     * @return True when the given boards are connected at least through a common high atmosphere map
+     */
+    public boolean areConnectedBoards(int boardId1, int boardId2) {
+        List<Integer> hierarchy1 = getAllEnclosingBoards(boardId1);
+        hierarchy1.add(boardId1);
+        List<Integer> hierarchy2 = getAllEnclosingBoards(boardId2);
+        hierarchy2.add(boardId2);
+        return !Collections.disjoint(hierarchy1, hierarchy2);
     }
 
     public boolean isOnGroundMap(BoardLocation boardLocation) {
-        return getBoard(boardLocation).onGround();
+        return getBoard(boardLocation).isGroundMap();
     }
 
     public boolean isOnGroundMap(Targetable targetable) {
@@ -3857,7 +3873,19 @@ public class Game extends AbstractGame implements Serializable {
     public boolean isInAtmosphericRowOnHighAtmoMap(Targetable targetable) {
         Board board = getBoard(targetable);
         // @@MultiBoardTODO: encode the position thing, ATMO terrain?
-        return board.inSpace() && board.getMapTypeFlag().isHighAtmosphere() && targetable.getPosition().getX() < 5;
+        return board.isSpaceMap() && board.getMapTypeFlag().isHighAltitude() && targetable.getPosition().getX() < 5;
+    }
+
+    public boolean isOnSpaceMap(BoardLocation boardLocation) {
+        return getBoard(boardLocation).isSpaceMap();
+    }
+
+    public boolean isOnSpaceMap(Targetable targetable) {
+        return isOnSpaceMap(targetable.getBoardLocation());
+    }
+
+    public boolean hasConnectedBoard(Board board) {
+        return hasEnclosingBoard(board.getBoardId()) || !board.embeddedBoardCoords().isEmpty();
     }
 
 }

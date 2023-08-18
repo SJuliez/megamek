@@ -1252,7 +1252,7 @@ public class Compute {
 
         // if Aero then adjust to standard ranges
         if (ae.isAero() && (ae.isAirborne()
-            || (ae.usesWeaponBays() && game.getBoard(ae).onGround()))) {
+            || (ae.usesWeaponBays() && game.getBoard(ae).isGroundMap()))) {
             weaponRanges = wtype.getATRanges();
         }
         // And if you're using bearings-only capital missiles, update the extreme range
@@ -1309,7 +1309,7 @@ public class Compute {
 
         // if aero and greater than max range then swith to range_out
         if ((ae.isAirborne() || (ae.usesWeaponBays() && game.getBoard(ae)
-                .onGround())) && (range > maxRange)) {
+                .isGroundMap())) && (range > maxRange)) {
             range = RangeType.RANGE_OUT;
         }
 
@@ -1452,7 +1452,7 @@ public class Compute {
         // add minimum range modifier (only for ground-to-ground attacks)
         int minRange = weaponRanges[RangeType.RANGE_MINIMUM];
         if ((minRange > 0) && (distance <= minRange)
-            && Compute.isGroundToGround(ae, target)) {
+            && Compute.isGroundToGround(ae, target, game)) {
             int minPenalty = (minRange - distance) + 1;
             mods.addModifier(minPenalty, "minimum range");
         }
@@ -1696,6 +1696,15 @@ public class Compute {
         attackPos.add(attacker.getPosition());
         Vector<Coords> targetPos = new Vector<>();
         targetPos.add(target.getPosition());
+
+        if (CrossBoardAttackHelper.isOrbitToSurface(attacker, target, game)) {
+            // In a O2S attack, replace the target position with the ground hex on the space map
+            Board targetAtmoBoard = game.getEnclosingBoard(game.getBoard(target.getBoardId()));
+            Coords coords = attacker.getBoard().embeddedBoardPosition(targetAtmoBoard.getBoardId());
+            targetPos.clear();
+            targetPos.add(coords);
+        }
+
         // if a grounded dropship is the attacker, then it gets to choose the
         // best secondary position for LoS
         if ((attacker instanceof Dropship) && !attacker.isAirborne() && !attacker.isSpaceborne()) {
@@ -1771,6 +1780,25 @@ public class Compute {
         // Attacking a ground unit while dropping
         if (attacker.isDropping() && target.getAltitude() == 0) {
             distance += (2 * attacker.getAltitude());
+        }
+
+        if (attacker.getBoard().isHighAltitudeMap() && !attacker.getPosition().equals(targetPos.get(0))) {
+            // Atmospheric hexes count as extra range
+            Board attackerBoard = attacker.getBoard();
+            // @@MultiBoardTODO:  targetPos??
+            Coords currentCoords = attacker.getPosition();
+            currentCoords = Coords.nextHex(currentCoords, targetPos.get(0));
+            int safetyCounter = 0;
+            while (!currentCoords.equals(targetPos.get(0)) && safetyCounter < 1000) {
+                safetyCounter++; // prevent infinite loops
+                currentCoords = Coords.nextHex(currentCoords, targetPos.get(0));
+                // @@MultiBoardTODO: atmo pressure modifies this
+                if (attackerBoard.isAtmosphericRow(currentCoords) || attackerBoard.isGroundRowHex(currentCoords)) {
+                    distance += 5;
+                } else if (attackerBoard.isSpaceAtmosphereInterface(currentCoords)) {
+                    distance += 2;
+                }
+            }
         }
 
         return distance;
@@ -3854,6 +3882,32 @@ public class Compute {
                 tPosV.add(((Entity) t).getSecondaryPositions().get(key));
             }
         }
+
+        if (CrossBoardAttackHelper.isCrossBoardArtyAttack(ae, t, game)) {
+            // When attacking between two ground boards, replace the attacker and target positions with the positions of
+            // the boards themselves on the atmospheric map
+            // When the ground boards are only connected through a high atmospheric map, the arrangement of
+            // the maps is unkown and the arc cannot be tested; therefore return false in that case, although
+            // a distance could be computed
+            Board attackerAtmoBoard = game.getEnclosingBoard(ae.getBoard());
+            Board targetAtmoBoard = game.getEnclosingBoard(game.getBoard(t.getBoardId()));
+            if (attackerAtmoBoard.getBoardId() == targetAtmoBoard.getBoardId()) {
+                aPos = attackerAtmoBoard.embeddedBoardPosition(ae.getBoardId());
+                tPosV.clear();
+                tPosV.add(attackerAtmoBoard.embeddedBoardPosition(t.getBoardId()));
+            } else {
+                return false;
+            }
+        }
+
+        if (CrossBoardAttackHelper.isOrbitToSurface(ae, t, game)) {
+            // For this attack, the ground row hex enclosing the ground map target must be in arc; replace position
+            Board targetAtmoBoard = game.getEnclosingBoard(game.getBoard(t.getBoardId()));
+            Coords c = ae.getBoard().embeddedBoardPosition(targetAtmoBoard.getBoardId());
+            tPosV.clear();
+            tPosV.add(c);
+        }
+
         return Compute.isInArc(aPos, facing, tPosV, ae.getWeaponArc(weaponId));
     }
 
@@ -4902,7 +4956,7 @@ public class Compute {
             return 0;
         }
         Board board = ae.getGame().getBoard(ae);
-        if (board.inSpace()) {
+        if (board.isSpaceMap()) {
             return 0;
         }
 
@@ -5701,7 +5755,7 @@ public class Compute {
 
         // Get the Hex at those coordinates.
 
-        return Compute.isInBuilding(game, entity.getElevation(), coords, entity.getCurrentBoardId());
+        return Compute.isInBuilding(game, entity.getElevation(), coords, entity.getBoardId());
     }
 
     public static boolean isInBuilding(Game game, int entityElev, Coords coords, int boardId) {
@@ -6341,6 +6395,7 @@ public class Compute {
         }
         // According to errata, VTOL and WiGes are considered ground targets
         return attacker.isAirborne() && !target.isAirborne() && attacker.isAero();
+        // @@MultiBoardTODO: same map?
 
     }
 
@@ -6349,6 +6404,7 @@ public class Compute {
             return false;
         }
         // According to errata, VTOL and WiGes are considered ground targets
+        // @@MultiBoardTODO: same map?
         return attacker.isAirborne() && target.isAirborne();
     }
 
@@ -6356,14 +6412,13 @@ public class Compute {
         if ((attacker == null) || (target == null)) {
             return false;
         }
+        // @@MultiBoardTODO: same map?
         return !attacker.isAirborne() && target.isAirborne();
     }
 
-    public static boolean isGroundToGround(Entity attacker, Targetable target) {
-        if ((attacker == null) || (target == null)) {
-            return false;
-        }
-        return !attacker.isAirborne() && !target.isAirborne();
+    public static boolean isGroundToGround(Entity attacker, Targetable target, Game game) {
+        return (attacker != null) && (target != null) && game.isOnGroundMap(target)
+                && game.onTheSameBoard(attacker, target);
     }
 
     /**

@@ -25,7 +25,7 @@ import megamek.server.GameManager;
  * @author Jay Lawson
  * @since Sep 25, 2004
  */
-public class AR10BayWeapon extends AmmoBayWeapon {
+public class AR10BayWeapon extends CapitalAmmoBayWeapon {
     private static final long serialVersionUID = 8756042527483383101L;
 
     public AR10BayWeapon() {

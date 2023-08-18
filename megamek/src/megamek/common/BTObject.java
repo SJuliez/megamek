@@ -37,13 +37,13 @@ public interface BTObject {
     }
 
     /**
-     * Returns true when this object is an aerospace unit (fighter, aerospace support vehicle or large craft)
+     * Returns true when this object is an aerospace unit (fighter, aerospace support vehicle or small/large craft)
      * or of type AS/CF/SC/DS/DA/WS/JS/SS for Alpha Strike. An aerospace unit is not {@link #isGround()}.
      *
      * @return True when this is an aerospace unit (including aerospace support vehicles) or aerospace group (SBF)
      */
     default boolean isAerospace() {
-        return isFighter() || isLargeAerospace();
+        return isFighter() || isLargeCraft() || isSmallCraft();
     }
 
     /**
@@ -151,13 +151,12 @@ public interface BTObject {
     }
 
     /**
-     * Returns true when this object is a large aerospace unit (SmallCraft, DropShip, JumpShip, WarShip, Space
-     * Station).
+     * Returns true when this object is a large aerospace unit (DropShip, JumpShip, WarShip, Space Station).
      * Returns false for any type of unit group even if it is of the right type.
      *
-     * @return True when this is a large aerospace unit
+     * @return True when this is a Large Craft aerospace unit
      */
-    default boolean isLargeAerospace() {
+    default boolean isLargeCraft() {
         return false;
     }
 
@@ -365,7 +364,7 @@ public interface BTObject {
      */
     default boolean doomedOnGround() {
         return false;
-    };
+    }
 
     /**
      * Returns true if this unit/object cannot enter or deploy on a low atmosphere map. By default, this returns

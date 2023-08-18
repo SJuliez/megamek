@@ -159,7 +159,7 @@ public class BoardUtilities {
             result.setType(Board.T_SPACE);
             result.setMapType(mapSettings.getMapType());
             if (mapSettings.isSpaceUsesGravity()) {
-                result.setMapTypeFlag(MapTypeFlag.HIGH_ATMOSPHERE);
+                result.setMapTypeFlag(MapTypeFlag.HIGH_ALTITUDE);
             }
             return result;
         } else if (mapSettings.getMapType().isLowAtmo()) {

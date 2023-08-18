@@ -19,7 +19,7 @@ import megamek.common.EquipmentTypeLookup;
  * @author Jay Lawson
  * @since Sep 25, 2004
  */
-public class CapitalACBayWeapon extends AmmoBayWeapon {
+public class CapitalACBayWeapon extends CapitalAmmoBayWeapon {
     private static final long serialVersionUID = 8756042527483383101L;
 
     public CapitalACBayWeapon() {

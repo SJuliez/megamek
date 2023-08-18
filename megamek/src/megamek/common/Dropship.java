@@ -740,4 +740,9 @@ public class Dropship extends SmallCraft {
     public boolean canTakeOffVertically() {
         return (isSpheroid() || game.getPlanetaryConditions().isVacuum()) && (getCurrentThrust() > 2);
     }
+
+    @Override
+    public boolean isLargeCraft() {
+        return true;
+    }
 }

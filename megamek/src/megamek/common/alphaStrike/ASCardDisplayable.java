@@ -34,7 +34,7 @@ import static megamek.common.alphaStrike.BattleForceSUA.*;
  * the AlphaStrike values printed on a card. Currently implemented by MechSummary and 
  * AlphaStrikeElement.
  * This interface also offers some utility methods for unit information that can be directly derived from
- * the available data; those don't require any overriding (e.g. {@link #isLargeAerospace()}.
+ * the available data; those don't require any overriding (e.g. {@link #isLargeCraft()}.
  * It also has methods that return current (= possibly damaged) values of an element.
  * These return an undamaged state by default and thus require overriding in AlphaStrikeElement
  * (e.g. {@link #getCurrentArmor()}.
@@ -170,10 +170,13 @@ public interface ASCardDisplayable extends BattleForceSUAFormatter, BTObject {
         return getASUnitType().isProtoMek();
     }
 
-    /** @return True if this AS element is a large Aerospace unit, i.e. SC, DS, DA, SS, JS, WS. */
     @Override
-    default boolean isLargeAerospace() {
+    default boolean isLargeCraft() {
         return getASUnitType().isLargeAerospace();
+    }
+
+    default boolean usesLargeAerospaceCardFormat() {
+        return isLargeCraft() || isSmallCraft();
     }
 
     /** @return True if this AS element is a BattleArmor unit, i.e. BA. */
@@ -275,9 +278,8 @@ public interface ASCardDisplayable extends BattleForceSUAFormatter, BTObject {
      * @return True if this unit uses firing arcs
      */
     default boolean usesArcs() {
-        return isLargeAerospace() || (isSupportVehicle() &&
-                (getSpecialAbilities().hasSUA(LG) || getSpecialAbilities().hasSUA(SLG)
-                || getSpecialAbilities().hasSUA(VLG)));
+        return usesLargeAerospaceCardFormat()
+                || (isSupportVehicle() && getSpecialAbilities().hasAnySUAOf(LG, SLG, VLG));
     }
 
     /** @return True if this AS element uses CAP weapons in its arcs, i.e. WS, SS or JS. */

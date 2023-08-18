@@ -1154,7 +1154,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         drawSprites(g, c3Sprites);
 
         // draw flyover routes
-        if (boardSupplier.get().onGround()) {
+        if (boardSupplier.get().isGroundMap()) {
             drawSprites(g, vtolAttackSprites);
             drawSprites(g, flyOverSprites);
         }
@@ -1209,7 +1209,6 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
         // Undo the previous translation
         g.translate(-HEX_W, -HEX_H);
-
 
         // draw all the "displayables"
         if (displayablesRect == null) {
@@ -1419,7 +1418,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         }
 
         Board board = boardSupplier.get();
-        if ((board == null) || board.inSpace() || (board.inAtmosphere() && board.getMapTypeFlag() == MapTypeFlag.SKY)) {
+        if ((board == null) || board.isSpaceMap() || (board.isLowAtmosphereMap() && board.getMapTypeFlag() == MapTypeFlag.SKY)) {
             return;
         }
 
@@ -1857,7 +1856,17 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         for (Coords coords : getBoard().embeddedBoardCoords()) {
             if ((coords.getX() >= drawX) && (coords.getX() <= drawX + drawWidth)
                     && (coords.getY() >= drawY) && (coords.getY() <= drawY + drawHeight)) {
-                drawHexBorder(g, getHexLocation(coords), Color.GREEN);
+                Point p = getHexLocation(coords);
+                AffineTransform oldTransform = ((Graphics2D) g).getTransform();
+                ((Graphics2D) g).transform(AffineTransform.getTranslateInstance(p.x, p.y));
+                ((Graphics2D) g).transform(AffineTransform.getScaleInstance(scale, scale));
+                ((Graphics2D) g).transform(AffineTransform.getTranslateInstance(-p.x, -p.y));
+                g.setColor(new Color(0, 140, 0, 120));
+                g.fillRect(p.x + HEX_W / 4 + 1, p.y + 2, HEX_W / 2 - 2, HEX_H - 4);
+                g.setColor(new Color(0, 140, 0));
+                ((Graphics2D) g).setStroke(new BasicStroke(1.5f));
+                g.drawRect(p.x + HEX_W / 4 + 1, p.y + 2, HEX_W / 2 - 2, HEX_H - 4);
+                ((Graphics2D) g).setTransform(oldTransform);
             }
         }
     }
@@ -2031,7 +2040,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
              attacks.hasMoreElements(); ) {
             final ArtilleryAttackAction attack = attacks.nextElement();
             final Targetable target = attack.getTarget(game);
-            if (target == null) {
+            if ((target == null) || !isOnThisBoard(target.getBoardLocation())) {
                 continue;
             }
             final Coords c = target.getPosition();
@@ -2252,7 +2261,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             drawSprites(boardGraph, c3Sprites);
 
             // draw flyover routes
-            if (boardSupplier.get().onGround()) {
+            if (boardSupplier.get().isGroundMap()) {
                 drawSprites(boardGraph, vtolAttackSprites);
                 drawSprites(boardGraph, flyOverSprites);
             }
@@ -2599,6 +2608,62 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             }
         }
 
+        AffineTransform scaleTransform = new AffineTransform();
+        scaleTransform.scale(scale, scale);
+
+        if (getBoard().isHighAltitudeMap()) {
+            // Draw in atmosphere in a high-altitude map
+            if (getBoard().isAtmosphericRow(c)) {
+                // First, tint the stars
+                g.setColor(new Color(0, 0, 0, 250 - getBoard().atmosphericRowNumber(c) * 30));
+                g.fill(scaleTransform.createTransformedShape(hexPoly));
+                g.setColor(new Color(0, 250, 250, 190 - getBoard().atmosphericRowNumber(c) * 40));
+                g.fill(scaleTransform.createTransformedShape(hexPoly));
+            }
+
+            // Draw in the space/atmosphere interface in a high-altitude map
+            if (getBoard().isSpaceAtmosphereInterface(c)) {
+                Polygon halfHex = new Polygon();
+                halfHex.addPoint(21, 0);
+                halfHex.addPoint(42, 0);
+                halfHex.addPoint(42, 71);
+                halfHex.addPoint(21, 71);
+                halfHex.addPoint(0, 36);
+                halfHex.addPoint(0, 35);
+                g.setColor(new Color(0, 250, 250, 15));
+                g.fill(scaleTransform.createTransformedShape(halfHex));
+                Polygon line = new Polygon();
+                line.addPoint(42, 0);
+                line.addPoint(42, 71);
+                g.setColor(new Color(130, 130, 130, 100));
+                BasicStroke bs1 = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND,
+                        1.0f, new float[] { 3f, 5f }, 0f);
+                g.setStroke(bs1);
+                AffineTransform oldTransform = g.getTransform();
+                g.transform(scaleTransform);
+                g.draw(line);
+                g.setTransform(oldTransform);
+            }
+
+            // Draw in ground in a high-altitude map
+            if (getBoard().isGroundRowHex(c)) {
+                // Remove stars
+                g.setColor(new Color(0, 0, 0));
+                g.fill(scaleTransform.createTransformedShape(hexPoly));
+                g.setColor(new Color(0, 250, 250, 190));
+                g.fill(scaleTransform.createTransformedShape(hexPoly));
+                Polygon leftTriangle = new Polygon();
+                leftTriangle.addPoint(21, 0);
+                leftTriangle.addPoint(21, 71);
+                leftTriangle.addPoint(0, 36);
+                leftTriangle.addPoint(0, 35);
+                g.setColor(new Color(40, 80, 40));
+                g.fill(scaleTransform.createTransformedShape(leftTriangle));
+                g.setColor(new Color(40, 140, 40));
+                g.draw(scaleTransform.createTransformedShape(HexDrawUtilities.getHexCrossLine01(4, 2)));
+            }
+        }
+
         // Shade and add static noise to hexes that are in an ECM field
         if (ecmHexes != null) {
             Color tint = ecmHexes.get(c);
@@ -2655,7 +2720,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
         // Set the text color according to Preferences or Light Gray in space
         g.setColor(GUIP.getBoardTextColor());
-        if (boardSupplier.get().inSpace()) {
+        if (boardSupplier.get().isSpaceMap()) {
             g.setColor(GUIP.getBoardSpaceTextColor());
         }
 
@@ -5490,9 +5555,15 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
         String result = "";
 
-        // Hex Terrain
+
         if (GUIP.getShowMapHexPopup() && (mhex != null)) {
             StringBuffer sbTerrain = new StringBuffer();
+            // Embedded Board
+            if (getBoard().embeddedBoardCoords().contains(mcoords)) {
+                Board embeddedBoard = game.getBoard(getBoard().getEmbeddedBoardAt(mcoords));
+                sbTerrain.append("Embedded Map: ").append(embeddedBoard.getMapName()).append("<BR>");
+            }
+            // Hex Terrain
             appendTerrainTooltip(sbTerrain, mhex);
             String sTrerain = sbTerrain.toString();
 
@@ -6375,20 +6446,48 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         // create the lists of hexes
         List<Set<Coords>> fieldFire = new ArrayList<>(5);
         int range = 1;
-        // for all available range brackets Min/S/M/L/E ...
-        for (int bracket = 0; bracket < maxrange; bracket++) {
-            fieldFire.add(new HashSet<>());
-            // Add all hexes up to the weapon range to separate lists
-            while (range <= fieldOfFireRanges[fieldOfFireWpUnderwater][bracket]) {
-                fieldFire.get(bracket).addAll(c.allAtDistance(range));
-                range++;
-                if (range > 100) {
-                    break; // only to avoid hangs
+        if (getBoard().isHighAltitudeMap()) {
+            // This is more computationally expensive as the atmospheric row hexes reduce range per hex
+            // for all available range brackets Min/S/M/L/E ...
+            for (int bracket = 0; bracket < maxrange; bracket++) {
+                fieldFire.add(new HashSet<>());
+                // Add all hexes up to the weapon range for the current range bracket
+                final int currentRange = fieldOfFireRanges[fieldOfFireWpUnderwater][bracket];
+                fieldFire.get(bracket).addAll(c.allAtDistanceOrLess(currentRange));
+                for (int previousBracket = 0; previousBracket < bracket; previousBracket++) {
+                    // All hexes that were found to be a lesser range bracket must no longer be considered
+                    fieldFire.get(bracket).removeAll(fieldFire.get(previousBracket));
                 }
-            }
+                fieldFire.get(bracket).remove(c);
 
-            // Remove hexes that are not on the board or not in the arc
-            fieldFire.get(bracket).removeIf(h -> !boardSupplier.get().contains(h) || !Compute.isInArc(c, fac, h, fieldOfFireWpArc));
+                // Remove hexes that are not on the board or not in the arc
+                fieldFire.get(bracket).removeIf(h -> !getBoard().contains(h));
+                fieldFire.get(bracket).removeIf(h -> !Compute.isInArc(c, fac, h, fieldOfFireWpArc));
+                fieldFire.get(bracket).removeIf(h -> Compute.effectiveDistance(game, fieldOfFireUnit,
+                        new HexTarget(h, boardId, Targetable.TYPE_HEX_CLEAR)) > currentRange);
+            }
+        } else {
+            for (int bracket = 0; bracket < maxrange; bracket++) {
+                fieldFire.add(new HashSet<>());
+                // Add all hexes up to the weapon range to separate lists
+                while (range <= fieldOfFireRanges[fieldOfFireWpUnderwater][bracket]) {
+                    fieldFire.get(bracket).addAll(c.allAtDistance(range));
+                    range++;
+                    if (range > 100) {
+                        break; // only to avoid hangs
+                    }
+                }
+
+                boolean isHighAltitude = getBoard().isHighAltitudeMap();
+                final int currentRange = fieldOfFireRanges[fieldOfFireWpUnderwater][bracket];
+
+                // Remove hexes that are not on the board or not in the arc
+                fieldFire.get(bracket).removeIf(h -> !boardSupplier.get().contains(h)
+                        || !Compute.isInArc(c, fac, h, fieldOfFireWpArc)
+                        || (isHighAltitude
+                        && Compute.effectiveDistance(game, fieldOfFireUnit,
+                        new HexTarget(h, boardId, Targetable.TYPE_HEX_CLEAR)) > currentRange));
+            }
         }
 
         // create the sprites
@@ -6496,7 +6595,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             Compute.SensorRangeHelper srh = Compute.getSensorRanges(entity.getGame(), entity);
 
             if (srh != null) {
-                if (entity.isAirborne() && entity.getGame().getBoard().onGround()) {
+                if (entity.isAirborne() && entity.getGame().getBoard().isGroundMap()) {
                     minSensorRange = srh.minGroundSensorRange;
                     maxSensorRange = srh.maxGroundSensorRange;
                     minAirSensorRange = srh.minSensorRange;
@@ -6593,7 +6692,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             return null;
         }
         Board board = boardSupplier.get();
-        if (board.inSpace()) {
+        if (board.isSpaceMap()) {
             return null;
         }
 
@@ -6746,5 +6845,10 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
     public int getBoardId() {
         return boardId;
+    }
+
+
+    public String getMapName() {
+        return getBoard().getMapName();
     }
 }

@@ -34,7 +34,7 @@ import megamek.common.weapons.capitalweapons.CapitalMissileWeapon;
  */
 public class ArtilleryAttackAction extends WeaponAttackAction implements Serializable {
     private static final long serialVersionUID = -3893844894076028005L;
-    private int turnsTilHit;
+    protected int turnsTilHit;
     private Vector<Integer> spotterIds; // IDs of possible spotters, won't know
     // until it lands.
     protected int playerId;

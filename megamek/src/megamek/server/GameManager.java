@@ -1104,7 +1104,7 @@ public class GameManager implements IGameManager {
             if ((entity instanceof Aero) && (entity.getAltitude() == 11) && entity.getCurrentMapType().isLowAtmo()
                     && game.hasEnclosingBoard(entity.getBoardId())) {
                 // Rise to the space map, TW p.78
-                int oldBoard = entity.getCurrentBoardId();
+                int oldBoard = entity.getBoardId();
                 entity.setCurrentBoard(entity.getBoard().getEnclosingBoardId());
                 entity.setPosition(entity.getBoard().embeddedBoardPosition(oldBoard));
                 int atmoVelocity = ((Aero) entity).getNextVelocity();
@@ -2944,6 +2944,7 @@ public class GameManager implements IGameManager {
         }
         if (game.boardExists(1) && game.boardExists(2)) {
             Board spaceBoard = game.getBoard(2);
+            spaceBoard.setMapTypeFlag(MapTypeFlag.HIGH_ALTITUDE);
             Coords groundCenter = new Coords(0, spaceBoard.getHeight() / 2);
             game.connectBoards(1, 2, groundCenter);
         }
@@ -2954,12 +2955,20 @@ public class GameManager implements IGameManager {
             if (game.boardExists(1)) {
                 Board secondBoard = new Board(4);
                 secondBoard.load(new MegaMekFile(Configuration.boardsDir(), "GrassLands/16x17 Grasslands 1.board").getFile());
+                secondBoard.setMapName("Grasslands");
                 if (game.getPlanetaryConditions().isTerrainAffected()) {
                     BoardUtilities.addWeatherConditions(secondBoard, game.getPlanetaryConditions().getWeather(),
                             game.getPlanetaryConditions().getWindStrength());
                 }
                 game.addBoard(secondBoard);
                 game.connectBoards(4, 1, new Coords(2, 2));
+            }
+
+            if (game.boardExists(2)) {
+                Board thirdMap = BoardUtilities.generateRandom(MapSettings.newLowAtmoMap(), 5);
+                thirdMap.setMapName("Second Low Atmo Map");
+                game.addBoard(thirdMap);
+                game.connectBoards(5, 2, new Coords(0, 4));
             }
 
 
@@ -4182,7 +4191,7 @@ public class GameManager implements IGameManager {
         // same thing if faster than 2 velocity in atmosphere
         if ((((Aero) unloader).isOutControlTotal() && !unit.isDoomed())
                 || ((((Aero) unloader).getCurrentVelocity() > 2) && !game
-                .getBoard().inSpace())) {
+                .getBoard().isSpaceMap())) {
             int damageRoll = Compute.d6(2);
             int damage = damageRoll * 10;
             r = new Report(9385);
@@ -4253,7 +4262,7 @@ public class GameManager implements IGameManager {
         // Spheroid - facing
         // Aerodyne - opposite of facing
         // http://www.classicbattletech.com/forums/index.php?topic=65600.msg1568089#new
-        if (game.getBoard().onGround() && (null != curPos)) {
+        if (game.getBoard().isGroundMap() && (null != curPos)) {
             boolean selected = false;
             int count;
             int max = 0;
@@ -5679,7 +5688,7 @@ public class GameManager implements IGameManager {
             return vReport;
         }
 
-        if (game.getBoard().inAtmosphere()) {
+        if (game.getBoard().isLowAtmosphereMap()) {
             r = new Report(9393, Report.PUBLIC);
             r.indent();
             r.addDesc(entity);
@@ -6675,7 +6684,7 @@ public class GameManager implements IGameManager {
                             fellDuringMovement = true;
                         }
                         // multiply forward by 16 when on ground hexes
-                        if (game.getBoard(entity).onGround()) {
+                        if (game.getBoard(entity).isGroundMap()) {
                             forward *= 16;
                         }
                         while (forward > 0) {
@@ -7629,7 +7638,7 @@ public class GameManager implements IGameManager {
                         .collect(Collectors.toList());
                 if (chaffDispensers.size() > 0) {
                     chaffDispensers.get(0).setFired(true);
-                    createSmoke(curPos, entity.getCurrentBoardId(), SmokeCloud.SMOKE_CHAFF_LIGHT, 1);
+                    createSmoke(curPos, entity.getBoardId(), SmokeCloud.SMOKE_CHAFF_LIGHT, 1);
                     Hex hex = game.getBoard(entity).getHex(curPos);
                     hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_CHAFF_LIGHT));
                     sendChangedHex(curPos);
@@ -10475,7 +10484,7 @@ public class GameManager implements IGameManager {
                                     report.indent(1);
                                 }
                             } else if (damageableCoverType == LosEffects.DAMAGABLE_COVER_BUILDING) {
-                                BuildingTarget bldgTrgt = new BuildingTarget(coverLoc, te.getCurrentBoardId(),
+                                BuildingTarget bldgTrgt = new BuildingTarget(coverLoc, te.getBoardId(),
                                         game.getBoard(te), false);
                                 coverDamageReport = deliverInfernoMissiles(ae, bldgTrgt, 1,
                                         CalledShot.CALLED_NONE);
@@ -11407,7 +11416,7 @@ public class GameManager implements IGameManager {
                         continue;
                     }
                     if (LosEffects.calculateLOS(game, en,
-                            new HexTarget(mf.getCoords(), layer.getCurrentBoardId(), Targetable.TYPE_HEX_CLEAR)).canSee()) {
+                            new HexTarget(mf.getCoords(), layer.getBoardId(), Targetable.TYPE_HEX_CLEAR)).canSee()) {
                         target = 0;
                         break;
                     }
@@ -13709,7 +13718,7 @@ public class GameManager implements IGameManager {
                     for (Coords pos : coords) {
                         // Check that we're in the right arc
                         if (Compute.isInArc(game, e.getId(), e.getEquipmentNum(ams),
-                                new HexTarget(pos, e.getCurrentBoardId(), HexTarget.TYPE_HEX_CLEAR))) {
+                                new HexTarget(pos, e.getBoardId(), HexTarget.TYPE_HEX_CLEAR))) {
                             apdsList = apdsCoords.computeIfAbsent(pos, k -> new ArrayList<>());
                             apdsList.add(ams);
                         }
@@ -27286,7 +27295,7 @@ public class GameManager implements IGameManager {
         Coords curPos = entity.getPosition();
         Hex entityHex = game.getBoard().getHex(curPos);
         if (game.getOptions().booleanOption(OptionsConstants.ADVANCED_TACOPS_BATTLE_WRECK)
-                && (entityHex != null) && game.getBoard().onGround()
+                && (entityHex != null) && game.getBoard().isGroundMap()
                 && !((entity instanceof Infantry) || (entity instanceof Protomech))) {
             // large support vees will create ultra rough, otherwise rough
             if (entity instanceof LargeSupportTank) {
@@ -32228,7 +32237,7 @@ public class GameManager implements IGameManager {
                         entity.addPilotingModifierForTerrain(rollTarget, step);
                         int gravMod = game.getPlanetaryConditions()
                                 .getGravityPilotPenalty();
-                        if ((gravMod != 0) && !game.getBoard().inSpace()) {
+                        if ((gravMod != 0) && !game.getBoard().isSpaceMap()) {
                             rollTarget.addModifier(gravMod, game
                                     .getPlanetaryConditions().getGravity()
                                     + "G gravity");
@@ -32451,7 +32460,7 @@ public class GameManager implements IGameManager {
                 }
                 if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_EJECTED_PILOTS_FLEE)
                         // Don't create a pilot entity on low-atmospheric maps
-                        || game.getBoard().inAtmosphere()) {
+                        || game.getBoard().isLowAtmosphereMap()) {
                     game.removeEntity(pilot.getId(),
                             IEntityRemovalConditions.REMOVE_IN_RETREAT);
                     send(createRemoveEntityPacket(pilot.getId(),
@@ -33640,7 +33649,7 @@ public class GameManager implements IGameManager {
         addReport(r);
 
         // if we are on an atmospheric map or the entity is off the map for some reason
-        if (game.getBoard().inAtmosphere() || entity.getPosition() == null) {
+        if (game.getBoard().isLowAtmosphereMap() || entity.getPosition() == null) {
             // then just remove the entity
             // TODO : for this and when the unit scatters off the board, we should really still
             // TODO : apply damage before we remove, but this causes all kinds of problems for

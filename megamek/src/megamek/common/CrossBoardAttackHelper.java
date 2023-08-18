@@ -1,9 +1,27 @@
+/*
+ * Copyright (c) 2023 - The MegaMek Team. All Rights Reserved.
+ *
+ * This file is part of MegaMek.
+ *
+ * MegaMek is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MegaMek is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with MegaMek. If not, see <http://www.gnu.org/licenses/>.
+ */
 package megamek.common;
 
 public final class CrossBoardAttackHelper {
 
     /**
-     * Returns true when the given attacker can possibly attack the given target where attacker and target
+     * Returns true when the given attacker can possibly attack the given target wherein attacker and target
      * are not on the same board.
      *
      * <P>Note: Returns false when attacker and target are on the same board!</P>
@@ -21,7 +39,6 @@ public final class CrossBoardAttackHelper {
      * an attack is definitely impossible
      */
     public static boolean isCrossBoardAttackPossible(Entity attacker, Targetable target, Game game) {
-        // @@MultiBoardTODO:
         if ((attacker == null) || (target == null) || game.onTheSameBoard(attacker, target)) {
             return false;
         }
@@ -34,52 +51,98 @@ public final class CrossBoardAttackHelper {
 
         // A2A attacks are possible between ground map and atmospheric map
         if (attacker.isFighter() && target.isFighter() && game.onDirectlyConnectedBoards(attacker, target)
-                && !attacker.getCurrentMapType().isSpace() && !game.getBoard(target).inSpace()) {
-            return true;
-        }
-
-        // O2G fire is possible using capital and sub-capital weapons
-        if (attacker.isCapitalScale() && attacker.isSpaceborne() && game.isOnGroundMap(target)
-                && (target instanceof HexTarget)) {
-            // @@MultiBoardTODO: might add some checks; not necessarily capital scale, but the weapons must be
-            return true;
-        }
-
-        // A2G fire is possible using capital and sub-capital weapons
-        if (attacker.isCapitalScale() && game.isInAtmosphericRowOnHighAtmoMap(attacker) && game.isOnGroundMap(target)
-                && (target instanceof HexTarget)) {
-            // @@MultiBoardTODO: might add some checks; not necessarily capital scale, but the weapons must be
-            return true;
-        }
-
-        // S2O fire is possible using capital and sub-capital weapons
-        if (attacker.isCapitalScale() && game.isOnGroundMap(attacker) && game.inSpace(target.getBoardLocation())
-                && target.isLargeAerospace() // @@MultiBoardTODO: bring in line with isLargeCraft, SC are not large craft!
-                && (target instanceof Entity)) {
-            // @@MultiBoardTODO: might add some checks; not necessarily capital scale, but the weapons must be
+                && !attacker.getCurrentMapType().isSpace() && !game.getBoard(target).isSpaceMap()) {
             return true;
         }
 
         // A2O fire is possible using capital and sub-capital weapons
         if (attacker.isCapitalScale() && game.isOnGroundMap(attacker) && game.inSpace(target.getBoardLocation())
-                && target.isLargeAerospace() // @@MultiBoardTODO: bring in line with isLargeCraft, SC are not large craft!
+                && target.isLargeCraft() // @@MultiBoardTODO: bring in line with isLargeCraft, SC are not large craft!
                 && (target instanceof Entity)) {
             // @@MultiBoardTODO: might add some checks; not necessarily capital scale, but the weapons must be
             return true;
         }
 
-        // S2S fire is possible using capital and sub-capital missiles between different ground maps under the same space map
-        if (game.isOnGroundMap(attacker) && game.isOnGroundMap(target) && (target instanceof HexTarget)) {
-            // @@MultiBoardTODO: might add some checks; not necessarily capital scale, but the weapons must be
-            return true;
-        }
-
-        return false;
+        return isOrbitToSurface(attacker, target, game) || isCrossBoardArtyAttack(attacker, target, game)
+                || isSurfaceToOrbit(attacker, target, game) || isAirborneToSurface(attacker, target, game);
     }
 
+    /**
+     * Returns true when an attack of the given attacker on the given target is an orbit-to-surface attack.
+     * When true, the attack may still be impossible because of ammo, arc, distance etc. but when false, the
+     * attack cannot work as an O2S attack.
+     *
+     * @param attacker The attacking unit for the O2S attack
+     * @param target The target
+     * @param game The game
+     * @return True when an attack must be handled as an O2S attack
+     */
+    public static boolean isOrbitToSurface(Entity attacker, Targetable target, Game game) {
+        return (attacker != null) && (target != null)
+                && attacker.getBoard().isTrueSpaceHex(attacker.getPosition())
+                && game.isOnGroundMap(target) && game.onConnectedBoards(attacker, target)
+                && target instanceof HexTarget;
+    }
+
+    /**
+     * Returns true when an attack of the given attacker on the given target is an airborne-to-surface attack.
+     * When true, the attack may still be impossible because of ammo, arc, distance etc. but when false, the
+     * attack cannot work as an A2S attack.
+     *
+     * @param attacker The attacking unit for the A2S attack
+     * @param target The target
+     * @param game The game
+     * @return True when an attack must be handled as an A2S attack
+     */
+    public static boolean isAirborneToSurface(Entity attacker, Targetable target, Game game) {
+        return (attacker != null) && (target != null)
+                && isInAtmosphericTypeHex(attacker, game)
+                && game.isOnGroundMap(target) && game.onConnectedBoards(attacker, target)
+                && target instanceof HexTarget;
+    }
+
+    private static boolean isInAtmosphericTypeHex(Targetable targetable, Game game) {
+        Board board = game.getBoard(targetable);
+        return board.isLowAtmosphereMap()
+                || (board.isSpaceMap() && !board.isTrueSpaceHex(targetable.getPosition()));
+    }
+
+    /**
+     * Returns true when an attack of the given attacker on the given target is a surface-to-orbit attack.
+     * When true, the attack may still be impossible because of ammo, arc, distance etc. but when false, the
+     * attack cannot work as an S2O attack.
+     *
+     * @param attacker The attacking unit for the S2O attack
+     * @param target The target
+     * @param game The game
+     * @return True when an attack must be handled as an S2O attack
+     */
+    public static boolean isSurfaceToOrbit(Entity attacker, Targetable target, Game game) {
+        return (attacker != null) && (target != null) && game.isOnSpaceMap(target)
+                && game.isOnGroundMap(attacker) && game.onConnectedBoards(attacker, target)
+                && target.isLargeCraft();
+    }
+
+    /**
+     * Returns the distance between attacker and target provided they are on different ground map sheets. The
+     * distance is given in hexes and can be converted to a map sheet distance by dividing by 17 (see
+     * WeaponAttackAction.toHitIsImpossible()). The position of attacker or target on their respective boards
+     * does not influence the distance, as the result is supposed to be treated as a multiple of "map sheets".
+     * The hex distance is measured as the distance in hexes between the ground maps on their atmospheric map
+     * multiplied by 17 (Board.DEFAULT_BOARD_HEIGHT).
+     * If the ground maps are not on the same atmospheric map but instead two different ones
+     * within a common space map, the distance is equal to the hex distance of the atmospheric maps on the space
+     * map times 36 * 17 as each space hex measures 18 km and each atmo hex 0.5 km.
+     * If attacker and target are on the same map or one of them is not on a ground map or their maps are not
+     * connected at all (no common space map), this will return {@link Integer#MAX_VALUE}.
+     *
+     * @param attacker The attacker
+     * @param target The target (typically a hex)
+     * @param game The game
+     * @return The distance between attacker and target measured in hexes
+     */
     public static int getCrossBoardGroundMapDistance(Entity attacker, Targetable target, Game game) {
-        if ((attacker == null) || (target == null) || game.onTheSameBoard(attacker, target)
-                || !game.isOnGroundMap(attacker) || !game.isOnGroundMap(target)) {
+        if (!isCrossBoardArtyAttack(attacker, target, game)) {
             return Integer.MAX_VALUE;
         }
         Board attackerBoard = game.getBoard(attacker);
@@ -92,7 +155,7 @@ public final class CrossBoardAttackHelper {
             Board atmoBoard = game.getEnclosingBoard(attackerBoard);
             Coords attackerBoardPosition = atmoBoard.embeddedBoardPosition(attackerBoard.getBoardId());
             Coords targetBoardPosition = atmoBoard.embeddedBoardPosition(targetBoard.getBoardId());
-            return attackerBoardPosition.distance(targetBoardPosition) * 17;
+            return attackerBoardPosition.distance(targetBoardPosition) * Board.DEFAULT_BOARD_HEIGHT;
         } else {
             Board attackerAtmoBoard = game.getEnclosingBoard(attackerBoard);
             Board targetAtmoBoard = game.getEnclosingBoard(targetBoard);
@@ -104,10 +167,28 @@ public final class CrossBoardAttackHelper {
                 Board spaceBoard = game.getEnclosingBoard(attackerAtmoBoard);
                 Coords attackerBoardPosition = spaceBoard.embeddedBoardPosition(attackerAtmoBoard.getBoardId());
                 Coords targetBoardPosition = spaceBoard.embeddedBoardPosition(targetAtmoBoard.getBoardId());
-                return attackerBoardPosition.distance(targetBoardPosition) * 17 * 36;
+                return attackerBoardPosition.distance(targetBoardPosition) * Board.DEFAULT_BOARD_HEIGHT * 36;
             }
         }
         return Integer.MAX_VALUE;
+    }
+
+    /**
+     * Returns true when the given attacker and target may generally take part in an artillery attack from one
+     * ground board to another ground board. When true, the attack may still be impossible because of ammo, arc,
+     * distance etc. but when false, the attack is definitely impossible.
+     *
+     * This method checks for null combatants and if both are on connected but different ground maps
+     *
+     * @param attacker The attacking unit firing an artillery weapon
+     * @param target The target (hex)
+     * @param game The game
+     * @return True when a cross board arty attack is possible in principle, false when it is definitely impossible
+     */
+    public static boolean isCrossBoardArtyAttack(Entity attacker, Targetable target, Game game) {
+        // @@MultiBoardTODO: forbid attacks on different atmo maps as no direction between them exists?
+        return (attacker != null) && (target != null) && !game.onTheSameBoard(attacker, target)
+                && game.isOnGroundMap(attacker) && game.isOnGroundMap(target) && game.onConnectedBoards(attacker, target);
     }
 
     private CrossBoardAttackHelper() { }

@@ -59,7 +59,7 @@ public enum MapType implements Serializable {
         return this == CAPITAL_RADAR;
     }
 
-    public String getdisplayName() {
+    public String getDisplayName() {
         return Messages.getString("MapType." + name());
     }
 

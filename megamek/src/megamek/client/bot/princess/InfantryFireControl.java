@@ -68,7 +68,7 @@ public class InfantryFireControl extends FireControl {
         boolean fieldGunsDoDamage = (shooterIsActualInfantry && shooterPath.getMpUsed() == 0)
                 || !shooterIsActualInfantry;
         boolean inBuilding = Compute.isInBuilding(target.getGame(), targetPath.getFinalElevation(),
-                targetPath.getFinalCoords(), target.getCurrentBoardId());
+                targetPath.getFinalCoords(), target.getBoardId());
         boolean inOpen = ServerHelper.infantryInOpen(target, targetHex, target.getGame(), targetIsPlatoon, false,
                 false);
         boolean nonInfantryVsMechanized = !shooter.hasETypeFlag(Entity.ETYPE_INFANTRY)

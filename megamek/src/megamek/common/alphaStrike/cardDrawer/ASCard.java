@@ -119,7 +119,7 @@ public class ASCard {
      */
     public static ASCard createCard(@Nullable ASCardDisplayable element) {
         if (element != null) {
-            if (element.isLargeAerospace()) {
+            if (element.usesLargeAerospaceCardFormat()) {
                 return new ASLargeAeroCard(element);
             } else if (element.isAerospace()) {
                 return new ASAeroCard(element);

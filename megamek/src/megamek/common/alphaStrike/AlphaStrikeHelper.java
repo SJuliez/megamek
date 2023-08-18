@@ -107,7 +107,7 @@ public class AlphaStrikeHelper {
         } else if (sua.isTransport()) {
             String result = sua.toString() + suaObject;
             BattleForceSUA door = sua.getDoor();
-            if ((element == null || element.isLargeAerospace())
+            if ((element == null || element.usesLargeAerospaceCardFormat())
                     && collection.hasSUA(door) && ((int) collection.getSUA(door) > 0)) {
                 result += door.toString() + collection.getSUA(door);
             }
@@ -137,11 +137,11 @@ public class AlphaStrikeHelper {
      */
     public static boolean hideSpecial(BattleForceSUA sua, ASCardDisplayable element) {
         return sua.isDoor() || sua.isAnyOf(TRI, QUAD, AERODYNESC)
-                || (element.isLargeAerospace() && (sua == STD))
+                || (element.usesLargeAerospaceCardFormat() && (sua == STD))
                 || (element.usesCapitalWeapons() && sua.isAnyOf(MSL, SCAP, CAP))
                 || (element.isType(BM, PM) && (sua == SOA))
                 || (element.isBattleMek() && (sua == SRCH))
-                || (!element.isLargeAerospace() && sua.isDoor())
+                || (!element.usesLargeAerospaceCardFormat() && sua.isDoor())
                 || (hasAutoSeal(element) && (sua == SEAL));
     }
 

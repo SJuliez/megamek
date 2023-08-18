@@ -9969,6 +9969,11 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                     && wtype instanceof CapitalMissileWeapon) {
                 return true;
             }
+
+            // O2S, A2S, S2O, S2S attacks using CAP or SCAP weapons fire during the Arty Targeting phase
+            if ((wtype != null) && (wtype.isCapital() || wtype.isSubCapital()) && game.hasConnectedBoard(getBoard())) {
+                return true;
+            }
         }
         return false;
     }
@@ -10846,7 +10851,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             if ((srcHex != null) && (curHex != null)) {
                 LosEffects.AttackInfo ai = LosEffects.buildAttackInfo(src,
                                                                       getPosition(), 1, getElevation(), srcHex.floor(),
-                                                                      curHex.floor(), getCurrentBoardId());
+                                                                      curHex.floor(), getBoardId());
                 ArrayList<Coords> in = Coords.intervening(ai.attackPos,
                                                           ai.targetPos, true);
                 leftBetter = LosEffects.dividedLeftBetter(in, game, ai,
@@ -12555,14 +12560,6 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     public boolean isMilitary() {
         return military;
-    }
-
-    /**
-     * is this entity a large craft? (dropship, jumpship, warship, or space
-     * station)
-     */
-    public boolean isLargeCraft() {
-        return (this instanceof Dropship) || (this instanceof Jumpship);
     }
 
     /**
@@ -15438,7 +15435,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
 
     private @Nullable MapType getCurrentMapFromMapSettings() {
         if (game != null) {
-            MapSettings mapSettings = game.getAllMapSettings().get(getCurrentBoardId());
+            MapSettings mapSettings = game.getAllMapSettings().get(getBoardId());
             return (mapSettings != null) ? mapSettings.getMapType() : null;
         } else {
             return null;
@@ -15483,7 +15480,8 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         return new BoardLocation(getPosition(), currentBoard);
     }
 
-    public int getCurrentBoardId() {
+    @Override
+    public int getBoardId() {
         return currentBoard;
     }
 
@@ -15499,7 +15497,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     }
 
     public boolean isOnBoard(int boardId) {
-        return getCurrentBoardId() == boardId;
+        return getBoardId() == boardId;
     }
 
     public Board getBoard() {

@@ -108,6 +108,8 @@ public class LosEffects {
     int softBuildings = 0;
     int hardBuildings = 0;
     int buildingLevelsOrHexes = 0;
+    /** Counts atmospheric row hexes on a high-altitude map */
+    int atmosphericHexes = 0;
     boolean blockedByHill = false;
     boolean blockedByWater = false;
     int targetCover = COVER_NONE; // that means partial cover
@@ -206,6 +208,7 @@ public class LosEffects {
         ultraWoods += other.ultraWoods;
         lightSmoke += other.lightSmoke;
         heavySmoke += other.heavySmoke;
+        atmosphericHexes += other.atmosphericHexes;
         buildingLevelsOrHexes += other.buildingLevelsOrHexes;
         screen += other.screen;
         softBuildings += other.softBuildings;
@@ -524,6 +527,16 @@ public class LosEffects {
             ai.attackPos = ai.targetPos;
         }
 
+        if (CrossBoardAttackHelper.isOrbitToSurface(attacker, target, game)) {
+            Board targetAtmoBoard = game.getEnclosingBoard(game.getBoard(target.getBoardId()));
+            Coords coords = attacker.getBoard().embeddedBoardPosition(targetAtmoBoard.getBoardId());
+            ai.targetLocation = new BoardLocation(coords, attacker.getBoardId());
+            ai.targetPos = coords;
+            ai.attackAbsHeight = 0;
+            ai.targetAbsHeight = 0;
+            ai.underWaterCombat = false;
+        }
+
         final LosEffects finalLoS = calculateLos(game, ai);
         finalLoS.setMinimumWaterDepth(ai.minimumWaterDepth);
         finalLoS.targetLoc = target.getPosition();
@@ -719,6 +732,10 @@ public class LosEffects {
                 modifiers.addModifier(1, "target has partial cover");
                 modifiers.setHitTable(ToHitData.HIT_PARTIAL_COVER);
             }
+        }
+
+        if (atmosphericHexes > 0) {
+            modifiers.addModifier(atmosphericHexes * 2, "intervening atmospheric hexes");
         }
 
         return modifiers;
@@ -1068,6 +1085,10 @@ public class LosEffects {
                 && board.getBuildingAt(ai.attackPos).equals(board.getBuildingAt(ai.targetPos))
                 && ai.targetEntity && thruBldg.equals(board.getBuildingAt(ai.attackPos))) {
             los.buildingLevelsOrHexes += 1;
+        }
+
+        if (board.isAtmosphericRow(coords)) {
+            los.atmosphericHexes++;
         }
 
         Hex hex = board.getHex(coords);

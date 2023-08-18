@@ -62,7 +62,7 @@ public enum IlluminationLevel {
     public static IlluminationLevel determineIlluminationLevel(final Game game, BoardLocation boardLocation) {
         final Coords coords = boardLocation.getCoords();
         // fix for NPE when recovering spacecraft while in visual range of enemy
-        if (game.getBoard(boardLocation).inSpace()) {
+        if (game.getBoard(boardLocation).isSpaceMap()) {
             return IlluminationLevel.NONE;
         }
 

@@ -125,8 +125,8 @@ class LobbyMekCellFormatter {
 //                || (entity.getCurrentMap().isLowAtmo() && (entity.doomedInAtmosphere() || !entity.getGame().usesLowAtmoMap()))
 //                || (entity.getCurrentMap().isSpace() && (entity.doomedInSpace() || !entity.getGame().usesSpaceMap()))
 //                || (entity.getCurrentMap().isGround() && (entity.doomedOnGround() || !entity.getGame().usesGroundMap()))
-                || (!game.getAllMapSettings().get(entity.getCurrentBoardId()).isUsed())
-                || (entity.isDoomedOn(game.getAllMapSettings().get(entity.getCurrentBoardId()).getMapType()))
+                || (!game.getAllMapSettings().get(entity.getBoardId()).isUsed())
+                || (entity.isDoomedOn(game.getAllMapSettings().get(entity.getBoardId()).getMapType()))
                 || (!entity.isDesignValid())) {
             result.append(guiScaledFontHTML(GUIP.getWarningColor()));
             result.append(WARNING_SIGN + "</FONT>");
@@ -376,7 +376,7 @@ class LobbyMekCellFormatter {
 
 
             if ((mapType == null) || !mapType.isGround()) {
-                String mapTypeString = mapType != null ? mapType.getdisplayName() : "Unknown Map";
+                String mapTypeString = mapType != null ? mapType.getDisplayName() : "Unknown Map";
                 firstEntry = dotSpacer(result, firstEntry);
                 result.append(mapTypeString);
             }

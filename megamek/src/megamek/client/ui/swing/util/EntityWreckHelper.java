@@ -44,7 +44,7 @@ public class EntityWreckHelper {
         //  for units that were destroyed by ejection rather than unit destruction
         //  for units on top of a bridge (looks kind of stupid)
         
-        if (entity.getGame().getBoard().inSpace() ||
+        if (entity.getGame().getBoard().isSpaceMap() ||
                 (entity instanceof Mech) ||
                 (entity instanceof Infantry) ||
                 (entity instanceof GunEmplacement) ||
@@ -68,7 +68,7 @@ public class EntityWreckHelper {
                 (entity.getMovementMode() != EntityMovementMode.VTOL) && 
                 (entity.getEngine().getEngineType() == Engine.COMBUSTION_ENGINE) &&
                 entity.isPermanentlyImmobilized(false) &&
-                !entity.getGame().getBoard().inSpace() &&
+                !entity.getGame().getBoard().isSpaceMap() &&
                 !entityOnBridge(entity);
     }
     
@@ -80,7 +80,7 @@ public class EntityWreckHelper {
                 ((entity.getMovementMode() == EntityMovementMode.WHEELED) ||
                 (entity.getMovementMode() == EntityMovementMode.TRACKED)) && 
                 entity.getSecondaryPositions().isEmpty() &&
-                !entity.getGame().getBoard().inSpace() &&
+                !entity.getGame().getBoard().isSpaceMap() &&
                 !entityOnBridge(entity);
     }
     

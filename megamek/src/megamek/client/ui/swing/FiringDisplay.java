@@ -843,7 +843,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         } else {
             clientgui.boardViews().forEach(BoardView::clearFiringSolutionData);
         }
-        clientgui.showBoardView(ce().getCurrentBoardId());
+        clientgui.showBoardView(ce().getBoardId());
     }
 
     public void setFiringSolutions() {
@@ -1467,7 +1467,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             }
             Building bldg = game.getBoard(ce()).getBuildingAt(c);
             if (bldg != null) {
-                Targetable t = new BuildingTarget(c, ce().getCurrentBoardId(), game.getBoard(ce()), false);
+                Targetable t = new BuildingTarget(c, ce().getBoardId(), game.getBoard(ce()), false);
                 toHit = WeaponAttackAction.toHit(game, cen, t, weaponId,
                         Entity.LOC_NONE, AimingMode.NONE, true);
                 toHitBuff.append(t.getDisplayName() + ": ");
@@ -1581,10 +1581,10 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         ArrayList<Targetable> targets = new ArrayList<>();
         if (isStrafing) {
             for (Coords c : strafingCoords) {
-                targets.add(new HexTarget(c, ce().getCurrentBoardId(), Targetable.TYPE_HEX_CLEAR));
+                targets.add(new HexTarget(c, ce().getBoardId(), Targetable.TYPE_HEX_CLEAR));
                 Building bldg = game.getBoard(ce()).getBuildingAt(c);
                 if (bldg != null) {
-                    targets.add(new BuildingTarget(c, ce().getCurrentBoardId(), game.getBoard(ce()), false));
+                    targets.add(new BuildingTarget(c, ce().getBoardId(), game.getBoard(ce()), false));
                 }
                 // Target all ground units (non-airborne, VTOLs still count)
                 for (Entity t : game.getEntitiesVector(c)) {
@@ -1605,7 +1605,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             WeaponAttackAction waa;
             if (!(mounted.getType().hasFlag(WeaponType.F_ARTILLERY)
                     || (mounted.getType() instanceof CapitalMissileWeapon
-                            && Compute.isGroundToGround(ce(), t)))) {
+                            && Compute.isGroundToGround(ce(), t, game)))) {
                 waa = new WeaponAttackAction(cen, t.getTargetType(),
                         t.getId(), weaponNum);
             } else {

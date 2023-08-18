@@ -780,7 +780,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         }
         clientgui.boardViews().forEach(BoardView::clearFieldOfFire);
         clientgui.boardViews().forEach(BoardView::clearSensorsRanges);
-        clientgui.showBoardView(ce().getCurrentBoardId());
+        clientgui.showBoardView(ce().getBoardId());
         computeMovementEnvelope(ce);
     }
 
@@ -2529,7 +2529,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
         final Board board = clientgui.getClient().getGame().getBoard(ce);
         // for spheroids in atmosphere we just need to check being on the edge
-        if (a.isSpheroid() && !board.inSpace()) {
+        if (a.isSpheroid() && !board.isSpaceMap()) {
             setFlyOffEnabled((position != null) && (ce.getWalkMP() > 0)
                     && ((position.getX() == 0)
                             || (position.getX() == (board.getWidth() - 1))
@@ -4159,7 +4159,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         // Is there a building in the hex?
         Building bldg = clientgui.getClient().getGame().getBoard(ce).getBuildingAt(pos);
         if (bldg != null) {
-            targets.add(new BuildingTarget(pos, ce.getCurrentBoardId(), clientgui.getClient().getGame().getBoard(ce), false));
+            targets.add(new BuildingTarget(pos, ce.getBoardId(), clientgui.getClient().getGame().getBoard(ce), false));
         }
 
         // Do we have a single choice?
@@ -5029,9 +5029,9 @@ public class MovementDisplay extends ActionPhaseDisplay {
             Board board = clientgui.getClient().getGame().getBoard(ce);
             // On Atmospheric maps, elevations are treated as altitudes, so
             // hex ceiling is the ground
-            int ceil = board.getHex(pos).ceiling(board.inAtmosphere());
+            int ceil = board.getHex(pos).ceiling(board.isLowAtmosphereMap());
             // On the ground map, Aeros ignore hex elevations
-            if (board.onGround()) {
+            if (board.isGroundMap()) {
                 ceil = 0;
             }
             choiceDialog.checkPerformability(vel, altitude, ceil, a.isVSTOL(),
