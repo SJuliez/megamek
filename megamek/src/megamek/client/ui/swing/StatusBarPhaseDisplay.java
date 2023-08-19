@@ -375,23 +375,25 @@ public abstract class StatusBarPhaseDisplay extends AbstractPhaseDisplay
         }
     }
 
-    public void setWeaponFieldOfFire(Entity unit, int[][] ranges, int arc, int loc) {
-        setWeaponFieldOfFire(unit, ranges, arc, loc, unit.getFacing());
+    public void setWeaponFieldOfFire(Entity unit, int[][] ranges, int arc, int loc, boolean isCapitalWeapon) {
+        setWeaponFieldOfFire(unit, ranges, arc, loc, unit.getFacing(), isCapitalWeapon);
     }
 
-    public void setWeaponFieldOfFire(Entity unit, int[][] ranges, int arc, int loc, int facing) {
+    public void setWeaponFieldOfFire(Entity unit, int[][] ranges, int arc, int loc, int facing, boolean isCapitalWeapon) {
         clientgui.getBoardView(unit).fieldOfFireUnit = unit;
         clientgui.getBoardView(unit).fieldOfFireRanges = ranges;
         clientgui.getBoardView(unit).fieldOfFireWpArc = arc;
         clientgui.getBoardView(unit).fieldOfFireWpLoc = loc;
+        clientgui.getBoardView(unit).fieldOfFireWpIsCapital = isCapitalWeapon;
         clientgui.getBoardView(unit).setWeaponFieldOfFire(facing, unit.getPosition());
     }
 
-    public void setWeaponFieldOfFire(Entity unit, int[][] ranges, int arc, int loc, MovePath cmd) {
+    public void setWeaponFieldOfFire(Entity unit, int[][] ranges, int arc, int loc, MovePath cmd, boolean isCapitalWeapon) {
         clientgui.getBoardView(unit).fieldOfFireUnit = unit;
         clientgui.getBoardView(unit).fieldOfFireRanges = ranges;
         clientgui.getBoardView(unit).fieldOfFireWpArc = arc;
         clientgui.getBoardView(unit).fieldOfFireWpLoc = loc;
+        clientgui.getBoardView(unit).fieldOfFireWpIsCapital = isCapitalWeapon;
         clientgui.getBoardView(unit).setWeaponFieldOfFire(unit, cmd);
     }
 }

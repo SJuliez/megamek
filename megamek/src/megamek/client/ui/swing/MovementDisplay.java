@@ -5709,13 +5709,13 @@ public class MovementDisplay extends ActionPhaseDisplay {
     }
 
     @Override
-    public void setWeaponFieldOfFire(Entity unit, int[][] ranges, int arc, int loc) {
+    public void setWeaponFieldOfFire(Entity unit, int[][] ranges, int arc, int loc, boolean isCapitalWeapon) {
         // If the unit is the current unit, then work with
         // the current considered movement
         if (unit.equals(ce())) {
-            setWeaponFieldOfFire(unit, ranges, arc, loc, cmd);
+            setWeaponFieldOfFire(unit, ranges, arc, loc, cmd, isCapitalWeapon);
         } else {
-            super.setWeaponFieldOfFire(unit, ranges, arc, loc);
+            super.setWeaponFieldOfFire(unit, ranges, arc, loc, isCapitalWeapon);
         }
     }
 

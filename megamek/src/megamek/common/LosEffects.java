@@ -46,6 +46,7 @@ public class LosEffects {
         public Coords targetPos;
         public BoardLocation attackerLocation;
         public BoardLocation targetLocation;
+        public Mounted weapon;
         
         /**
          * The absolute elevation of the attacker, i.e. the number of levels
@@ -110,6 +111,7 @@ public class LosEffects {
     int buildingLevelsOrHexes = 0;
     /** Counts atmospheric row hexes on a high-altitude map */
     int atmosphericHexes = 0;
+    boolean standardScaleCrossesSpaceAtmosphericInterface = false;
     boolean blockedByHill = false;
     boolean blockedByWater = false;
     int targetCover = COVER_NONE; // that means partial cover
@@ -347,12 +349,22 @@ public class LosEffects {
     @Deprecated // Deprecated for nullable passing
     public static LosEffects calculateLos(final Game game, final int attackerId,
                                           final @Nullable Targetable target) {
-        return calculateLOS(game, game.getEntity(attackerId), target, false);
+        return calculateLOS(game, game.getEntity(attackerId), target, false, null);
     }
 
     public static LosEffects calculateLOS(final Game game, final @Nullable Entity attacker,
                                           final @Nullable Targetable target) {
-        return calculateLOS(game, attacker, target, false);
+        return calculateLOS(game, attacker, target, false, null);
+    }
+
+    public static LosEffects calculateLOS(final Game game, final @Nullable Entity attacker,
+                                          final @Nullable Targetable target, @Nullable Mounted weapon) {
+        return calculateLOS(game, attacker, target, false, weapon);
+    }
+
+    public static LosEffects calculateLOS(final Game game, final int attackerId,
+                                          final @Nullable Targetable target, @Nullable Mounted weapon) {
+        return calculateLOS(game, game.getEntity(attackerId), target, false, weapon);
     }
 
     /**
@@ -367,11 +379,11 @@ public class LosEffects {
      * @return the found LOS Effects
      */
     public static LosEffects calculateLOS(final Game game, final @Nullable Entity attacker,
-                                          final @Nullable Targetable target, final boolean spotting) {
+                                          final @Nullable Targetable target, final boolean spotting, @Nullable Mounted weapon) {
         if ((attacker == null) || (target == null)) {
             return calculateLOS(game, attacker, target,
                     (attacker == null) ? null : attacker.getPosition(),
-                    (target == null) ? null : target.getPosition(), spotting);
+                    (target == null) ? null : target.getPosition(), spotting, weapon);
         }
 
         // We need to create Attacker and Target position lists because they might have secondary
@@ -399,7 +411,7 @@ public class LosEffects {
         LosEffects bestLOS = null;
         for (final Coords attackerPosition : attackerPositions) {
             for (final Coords targetPosition : targetPositions) {
-                LosEffects newLos = calculateLOS(game, attacker, target, attackerPosition, targetPosition, spotting);
+                LosEffects newLos = calculateLOS(game, attacker, target, attackerPosition, targetPosition, spotting, weapon);
                 // is the new one better?
                 if ((bestLOS == null) || bestLOS.isBlocked()
                         || (newLos.losModifiers(game).getValue() < bestLOS.losModifiers(game).getValue())) {
@@ -409,7 +421,7 @@ public class LosEffects {
         }
 
         if (bestLOS == null) {
-            bestLOS = calculateLOS(game, attacker, target, attacker.getPosition(), target.getPosition(), spotting);
+            bestLOS = calculateLOS(game, attacker, target, attacker.getPosition(), target.getPosition(), spotting, weapon);
         }
 
         bestLOS.targetLoc = target.getPosition();
@@ -420,7 +432,8 @@ public class LosEffects {
                                           final @Nullable Targetable target,
                                           final @Nullable Coords attackerPosition,
                                           final @Nullable Coords targetPosition,
-                                          final boolean spotting) {
+                                          final boolean spotting,
+                                          final @Nullable Mounted weapon) {
         // LOS fails if one of the entities is not deployed.
         if ((attacker == null) || (target == null) || (attackerPosition == null)
                 || (targetPosition == null) || attacker.isOffBoard() || target.isOffBoard()) {
@@ -443,10 +456,11 @@ public class LosEffects {
 
         // this will adjust the effective height of a building target by 1 if the hex contains a rooftop gun emplacement
         final int targetHeightAdjustment = game.hasRooftopGunEmplacement(target.getBoardLocation()) ? 1 : 0;
-        
+
         final AttackInfo ai = new AttackInfo();
         ai.attackerIsMech = attacker instanceof Mech;
         ai.attackPos = attackerPosition;
+        ai.attackerLocation = attacker.getBoardLocation();
         ai.attackerId = attacker.getId();
         ai.targetPos = targetPosition;
         ai.targetEntity = target.getTargetType() == Targetable.TYPE_ENTITY;
@@ -456,7 +470,7 @@ public class LosEffects {
         } else {
             ai.targetIsMech = false;
         }
-        
+
         ai.targetInfantry = target instanceof Infantry;
         ai.attackHeight = attacker.getHeight();
         ai.targetHeight = target.getHeight() + targetHeightAdjustment;
@@ -487,6 +501,8 @@ public class LosEffects {
                     && (attackerHex.depth() > 0) && (attackerElevation == attackerHex.getLevel());
             attackerOnLand = !(attackerUnderWater || attackerInWater);
         }
+
+        ai.weapon = weapon;
 
         final boolean targetUnderWater;
         final boolean targetInWater;
@@ -582,13 +598,19 @@ public class LosEffects {
         } else {
             finalLoS = LosEffects.losStraight(game, ai, diagramLos, partialCover);
         }
-        
-        finalLoS.hasLoS = !finalLoS.blocked && 
-                            (finalLoS.screen < 1) && 
-                            (finalLoS.plantedFields < 6) && 
-                            (finalLoS.heavyIndustrial < 3) && 
-                           ((finalLoS.lightWoods + finalLoS.lightSmoke)
-                             + ((finalLoS.heavyWoods + finalLoS.heavySmoke) * 2)
+
+        if ((ai.weapon != null) && (ai.weapon.getType() instanceof WeaponType)) {
+            WeaponType weaponType = (WeaponType) ai.weapon.getType();
+            finalLoS.standardScaleCrossesSpaceAtmosphericInterface = !weaponType.isCapital() && !weaponType.isSubCapital()
+                    && crossesSpaceAtmosphereInterface(game.getBoard(ai.attackerLocation), ai.attackPos, ai.targetPos);
+        }
+
+        finalLoS.hasLoS = !finalLoS.blocked
+                && !finalLoS.standardScaleCrossesSpaceAtmosphericInterface
+                && (finalLoS.screen < 1)
+                && (finalLoS.plantedFields < 6)
+                && (finalLoS.heavyIndustrial < 3)
+                && ((finalLoS.lightWoods + finalLoS.lightSmoke) + ((finalLoS.heavyWoods + finalLoS.heavySmoke) * 2)
                              + (finalLoS.ultraWoods * 3) < 3);
         
         finalLoS.targetLoc = ai.targetPos;
@@ -620,6 +642,11 @@ public class LosEffects {
                     "LOS blocked by dead zone.");
         }
         */
+
+        if (standardScaleCrossesSpaceAtmosphericInterface) {
+            return new ToHitData(TargetRoll.IMPOSSIBLE,
+                    "Standard-scale weapon crossing the space/atmopshere interface.");
+        }
 
         if (blocked) {
             return new ToHitData(TargetRoll.IMPOSSIBLE,
@@ -1685,6 +1712,24 @@ public class LosEffects {
     
     public boolean infantryProtected() {
         return infProtected;
+    }
+
+    /**
+     * Returns true when a path between the two given positions on the given board crosses the space/atmosphere
+     * interface and the board is actually a high-altitude board. Returns false when the board is not
+     * a high-altitude board and when one or both positions are on the space/atmosphere interface or
+     * both positions are in ground row/atmospheric hexes or both positions are in true space.
+     *
+     * @param board The board to check
+     * @param position1 The first position
+     * @param position2 The second position
+     * @return True when a path between the two positions crosses the space/atmosphere interface
+     */
+    public static boolean crossesSpaceAtmosphereInterface(Board board, Coords position1, Coords position2) {
+        return board.isHighAltitudeMap() &&
+                ((board.isTrueSpaceHex(position1) && board.isBelowSpaceAtmosphereInterface(position2))
+                        || (board.isTrueSpaceHex(position2) && board.isBelowSpaceAtmosphereInterface(position1)));
+        // @@MultiBoardTODO: Make this an IMPOSSIBLE reason in loseffects for non-cap weapons
     }
 }
 

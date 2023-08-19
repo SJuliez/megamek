@@ -1401,7 +1401,7 @@ public class Princess extends BotClient {
                     prunedPath.clipToPossible();
 
                     if (levelingTarget != null) {
-                        LosEffects los = LosEffects.calculateLOS(game, mover, levelingTarget, prunedPath.getFinalCoords(), levelingTarget.getPosition(), false);
+                        LosEffects los = LosEffects.calculateLOS(game, mover, levelingTarget, prunedPath.getFinalCoords(), levelingTarget.getPosition(), false, null);
 
                         // break out of this loop, we can get to the thing we're trying to level this turn, so let's
                         // use normal movement routines to move into optimal position to blow it up

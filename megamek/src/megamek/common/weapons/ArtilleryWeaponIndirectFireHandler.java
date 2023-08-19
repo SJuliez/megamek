@@ -141,7 +141,7 @@ public class ArtilleryWeaponIndirectFireHandler extends AmmoWeaponHandler {
                             Integer id = entity.getId();
                             if ((player == entity.getOwnerId())
                                     && spottersBefore.contains(id)
-                                    && !LosEffects.calculateLOS(game, entity, targ, true).isBlocked()
+                                    && !LosEffects.calculateLOS(game, entity, targ, true, null).isBlocked()
                                     && entity.isActive()
                                     // airborne aeros can't spot for arty
                                     && !((entity.isAero()) && entity.isAirborne())

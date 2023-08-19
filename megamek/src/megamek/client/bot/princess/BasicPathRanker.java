@@ -222,7 +222,7 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
 
         // If they don't have LoS, they can't do damage.
         final LosEffects losEffects = LosEffects.calculateLOS(game, enemy, path.getEntity(),
-                shooterState.getPosition(), targetState.getPosition(), false);
+                shooterState.getPosition(), targetState.getPosition(), false, null);
 
         if (!losEffects.canSee()) {
             return 0;
@@ -279,7 +279,7 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
 
         // If I don't have LoS, I can't do damage.  ToDo: Account for indirect fire.
         LosEffects losEffects = LosEffects.calculateLOS(game, me, enemy, path.getFinalCoords(),
-                enemy.getPosition(), false);
+                enemy.getPosition(), false, null);
         if (!losEffects.canSee()) {
             return 0;
         }

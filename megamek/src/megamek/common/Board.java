@@ -2017,6 +2017,18 @@ public class Board implements Serializable {
     }
 
     /**
+     * Returns true when the given Coords is a hex of any of the atmospheric rows 1-4 or the ground row
+     * on a high-atmosphere map, false if it is in the space/atmosphere interface or in true space.
+     * Returns false for all hexes if this board is not a high-altitude board.
+     *
+     * @param coords The position on the board to test
+     * @return true for hexes of atmospheric rows 1-4 and the ground row on a high-atmosphere map
+     */
+    public boolean isBelowSpaceAtmosphereInterface(Coords coords) {
+        return isHighAltitudeMap() && (isGroundRowHex(coords) || isAtmosphericRow(coords));
+    }
+
+    /**
      * Returns the number of the atmospheric row (i.e. 1 to 4) of the given Coords on a high-atmosphere map
      * (see TW p.79). For coords not in an atmospheric row or not on a high-altitude map, returns -1.
      *

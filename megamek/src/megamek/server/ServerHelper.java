@@ -659,7 +659,7 @@ public class ServerHelper {
                 }
             }
 
-            LosEffects los = LosEffects.calculateLOS(game, detector, detected, detectorCoords, detected.getPosition(), false);
+            LosEffects los = LosEffects.calculateLOS(game, detector, detected, detectorCoords, detected.getPosition(), false, null);
             if (los.canSee() || !beyondPointBlankRange) {
                 detected.setHidden(false);
                 gameManager.entityUpdate(detected.getId());

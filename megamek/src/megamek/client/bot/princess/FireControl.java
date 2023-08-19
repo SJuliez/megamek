@@ -528,7 +528,7 @@ public class FireControl {
     }
 
     /**
-     * Returns the value of {@link LosEffects#calculateLOS(Game, Entity, Targetable, Coords, Coords, boolean)}.
+     * Returns the value of {@link LosEffects#calculateLOS(Game, Entity, Targetable, Coords, Coords, boolean, Mounted)}.
      *
      * @param game The current {@link Game}
      * @param shooter The shooting unit.
@@ -543,7 +543,7 @@ public class FireControl {
                              final @Nullable Targetable target,
                              final @Nullable Coords shooterPosition,
                              final @Nullable Coords targetPosition, final boolean spotting) {
-        return LosEffects.calculateLOS(game, shooter, target, shooterPosition, targetPosition, spotting);
+        return LosEffects.calculateLOS(game, shooter, target, shooterPosition, targetPosition, spotting, null);
     }
 
     /**

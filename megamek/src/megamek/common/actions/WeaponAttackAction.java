@@ -570,7 +570,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             losMods = new ToHitData();
         } else if (!isIndirect || (spotter == null)) {
             if (!exchangeSwarmTarget) {
-                los = LosEffects.calculateLos(game, attackerId, target);
+                los = LosEffects.calculateLOS(game, attackerId, target, weapon);
             } else {
                 // Swarm should draw LoS between targets, not attacker, since
                 // we don't want LoS to be blocked
@@ -605,7 +605,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
                 }
             } else {
                 // For everything else, set up a plain old LOS
-                los = LosEffects.calculateLOS(game, spotter, target, true);
+                los = LosEffects.calculateLOS(game, spotter, target, true, null);
             }
 
             // do not count attacker partial cover in indirect fire

@@ -216,6 +216,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
     public int fieldOfFireWpArc;
     public Entity fieldOfFireUnit;
     public int fieldOfFireWpLoc;
+    public boolean fieldOfFireWpIsCapital;
     // int because it acts as an array index
     public int fieldOfFireWpUnderwater = 0;
     private static final String[] rangeTexts = { "min", "S", "M", "L", "E" };
@@ -6465,6 +6466,9 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 fieldFire.get(bracket).removeIf(h -> !Compute.isInArc(c, fac, h, fieldOfFireWpArc));
                 fieldFire.get(bracket).removeIf(h -> Compute.effectiveDistance(game, fieldOfFireUnit,
                         new HexTarget(h, boardId, Targetable.TYPE_HEX_CLEAR)) > currentRange);
+                if (!fieldOfFireWpIsCapital) {
+                    fieldFire.get(bracket).removeIf(h -> LosEffects.crossesSpaceAtmosphereInterface(getBoard(), c, h));
+                }
             }
         } else {
             for (int bracket = 0; bracket < maxrange; bracket++) {
