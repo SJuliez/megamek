@@ -43,7 +43,7 @@ public class MoveStep implements Serializable {
     private int targetType = Targetable.TYPE_ENTITY;
     private Coords targetPos;
 
-    private Coords position;
+    private BoardLocation boardLocation;
     private int facing;
 
     private int mp; // this step
@@ -399,6 +399,8 @@ public class MoveStep implements Serializable {
                 return "Brace";
             case CHAFF:
                 return "Chaff";
+            case CHANGE_MAP:
+                return "ChangeMap";
             default:
                 return "???";
         }
@@ -797,6 +799,11 @@ public class MoveStep implements Serializable {
                 }
                 adjustFacing(getType());
                 break;
+            case OFF:
+                int newBoardId = entity.getBoard().getEnclosingBoardId();
+                Coords position = game.getBoard(newBoardId).embeddedBoardPosition(entity.getBoardId());
+                setBoardLocation(new BoardLocation(position, newBoardId));
+                break;
             case BACKWARDS:
                 moveInDir((getFacing() + 3) % 6);
                 setThisStepBackwards(true);
@@ -1159,7 +1166,7 @@ public class MoveStep implements Serializable {
         }
         hasJustStood = prev.hasJustStood;
         facing = prev.getFacing();
-        position = prev.getPosition();
+        boardLocation = prev.boardLocation;
 
         distance = prev.getDistance();
         mpUsed = prev.mpUsed;
@@ -1201,7 +1208,7 @@ public class MoveStep implements Serializable {
      */
     public void setFromEntity(Entity entity, Game game) {
         this.entity = entity;
-        position = entity.getPosition();
+        boardLocation = entity.getBoardLocation();
         facing = entity.getFacing();
         // elevation
         mpUsed = entity.mpUsed;
@@ -1270,8 +1277,8 @@ public class MoveStep implements Serializable {
         }
 
         // check pavement & water
-        if (position != null) {
-            Hex curHex = game.getBoard(entity).getHex(position);
+        if (game.hasBoardLocation(boardLocation)) {
+            Hex curHex = game.getHex(boardLocation);
             if (curHex.hasPavement()) {
                 onlyPavement = true;
                 isPavementStep = true;
@@ -1320,7 +1327,7 @@ public class MoveStep implements Serializable {
      * @param dir
      */
     public void moveInDir(int dir) {
-        position = position.translated(dir);
+        boardLocation = boardLocation.translated(dir);
     }
 
     /**
@@ -1558,7 +1565,7 @@ public class MoveStep implements Serializable {
 
         // If this step isn't the end step anymore, we might not be in danger
         // after all
-        Hex pos = getGame().getBoard(entity).getHex(position);
+        Hex pos = getGame().getHex(boardLocation);
         if (getGame().getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_PSR_JUMP_HEAVY_WOODS)) {
             if (!isEnd
                     && isJumping()
@@ -1648,7 +1655,15 @@ public class MoveStep implements Serializable {
     }
 
     public Coords getPosition() {
-        return position;
+        return boardLocation.getCoords();
+    }
+
+    public BoardLocation getBoardLocation() {
+        return boardLocation;
+    }
+
+    public void setBoardLocation(BoardLocation boardLocation) {
+        this.boardLocation = boardLocation;
     }
 
     public boolean isPrevStepOnPavement() {

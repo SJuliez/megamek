@@ -1101,17 +1101,38 @@ public class GameManager implements IGameManager {
 
     private void resolveMapChanges() {
         for (Entity entity : game.getEntitiesVector()) {
-            if ((entity instanceof Aero) && (entity.getAltitude() == 11) && entity.getCurrentMapType().isLowAtmo()
-                    && game.hasEnclosingBoard(entity.getBoardId())) {
+            if (game.canRiseToSpaceMap(entity) && (entity.getAltitude() == 11)) {
                 // Rise to the space map, TW p.78
                 int oldBoard = entity.getBoardId();
                 entity.setCurrentBoard(entity.getBoard().getEnclosingBoardId());
-                entity.setPosition(entity.getBoard().embeddedBoardPosition(oldBoard));
+                Coords boardPosition = entity.getBoard().embeddedBoardPosition(oldBoard);
+                List<Coords> adjacentPositions = boardPosition.allAdjacent();
+                adjacentPositions.removeIf(c -> !entity.getBoard().contains(c));
+                adjacentPositions.removeIf(c -> !entity.getBoard().isAtmosphericRow(c));
+                // @@MultiBoardTODO: deploy freely
+                entity.setPosition(adjacentPositions.get(0));
+                entity.setFacing(1);
                 int atmoVelocity = ((Aero) entity).getNextVelocity();
                 // No rule in TW; the map scale factor is 36/1 but the turn scale is 1/6, so a factor of 6 between speeds
                 int spaceVelocity = (int) Math.round(atmoVelocity / 6.0);
                 ((Aero) entity).setNextVelocity(spaceVelocity);
                 addReport(new Report(5570).subject(entity.getId()).addDesc(entity));
+            }
+            if (entity.changesMapAtEndOfTurn()) {
+                entity.setChangeMap(false);
+                if (game.isOnSpaceMap(entity) && entity.getBoard().embeddedBoardCoords().contains(entity.getPosition())) {
+                    entity.setCurrentBoard(entity.getBoard().getEmbeddedBoardAt(entity.getPosition()));
+                    entity.setDeployed(false);
+                    // @@MultiBoardTODO: set deployment area to any
+                    entity.setPosition(null);
+                    entity.setDeployRound(game.getRoundCount() + 1);
+                    // No rule in TW; the map scale factor is 36/1 but the turn scale is 1/6, so a factor of 6
+                    // between speeds; include reducing the velo in atmosphere by half as this does not happen for
+                    // undeployed units
+                    ((Aero) entity).setNextVelocity(((Aero) entity).getNextVelocity() * 3);
+                    game.setupRoundDeployment();
+                    addReport(new Report(5575).subject(entity.getId()).addDesc(entity));
+                }
             }
         }
     }
@@ -6657,18 +6678,21 @@ public class GameManager implements IGameManager {
                 if (step.getType() == MovePath.MoveStepType.OFF) {
                     a.setCurrentVelocity(md.getFinalVelocity());
                     entity.setAltitude(curAltitude);
+                    // @@MultiBoardTODO: should be handled without special intervention as part of movement
                     if (game.hasEnclosingBoard(entity.getBoardId())) {
-                        Board enclosingBoard = game.getBoard(entity.getBoard().getEnclosingBoardId());
-                        entity.setCurrentBoard(enclosingBoard.getBoardId());
-                        entity.setPosition(enclosingBoard.getCenter());
+//                        Board enclosingBoard = game.getBoard(entity.getBoard().getEnclosingBoardId());
+//                        entity.setCurrentBoard(enclosingBoard.getBoardId());
+//                        entity.setPosition(enclosingBoard.getCenter());
                     } else {
                         processLeaveMap(md, true, -1);
                     }
                     return;
                 }
 
-                // @@MultiBoardTODO:
-//                if (step.getType()==ENTER)
+                // @@MultiBoardTODO: is this enough?
+                if (step.getType() == MovePath.MoveStepType.CHANGE_MAP) {
+                    entity.setChangeMap(true);
+                }
 
                 rollTarget = a.checkRolls(step, overallMoveType);
                 if (rollTarget.getValue() != TargetRoll.CHECK_FALSE) {

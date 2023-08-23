@@ -15,7 +15,6 @@
 package megamek.common;
 
 import megamek.client.bot.princess.Princess;
-import megamek.common.MovePath.MoveStepType;
 import megamek.common.annotations.Nullable;
 import megamek.common.options.OptionsConstants;
 import megamek.common.pathfinder.AbstractPathFinder;
@@ -59,7 +58,7 @@ public class MovePath implements Cloneable, Serializable {
         CLIMB_MODE_OFF, SWIM, DIG_IN, FORTIFY, SHAKE_OFF_SWARMERS, TAKEOFF, VTAKEOFF, LAND, ACC, DEC, EVADE,
         SHUTDOWN, STARTUP, SELF_DESTRUCT, ACCN, DECN, ROLL, OFF, RETURN, LAUNCH, THRUST, YAW, CRASH, RECOVER,
         RAM, HOVER, MANEUVER, LOOP, CAREFUL_STAND, JOIN, DROP, VLAND, MOUNT, UNDOCK, TAKE_COVER,
-        CONVERT_MODE, BOOTLEGGER, TOW, DISCONNECT, BRACE, CHAFF;
+        CONVERT_MODE, BOOTLEGGER, TOW, DISCONNECT, BRACE, CHAFF, CHANGE_MAP, FLIGHT_PATH;
 
         /**
          * Whether this move step type will result in the unit entering a new hex
@@ -70,7 +69,8 @@ public class MovePath implements Cloneable, Serializable {
                     this == LATERAL_LEFT ||
                     this == LATERAL_RIGHT ||
                     this == LATERAL_LEFT_BACKWARDS ||
-                    this == LATERAL_RIGHT_BACKWARDS;
+                    this == LATERAL_RIGHT_BACKWARDS ||
+                    this == CHANGE_MAP;
         }
     }
 
@@ -251,7 +251,7 @@ public class MovePath implements Cloneable, Serializable {
         return false;
     }
 
-    protected MovePath addStep(final MoveStep step) {
+    public MovePath addStep(final MoveStep step) {
         return addStep(step, true);
     }
 

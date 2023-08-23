@@ -163,7 +163,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         MOVE_MANEUVER("MoveManeuver", CMD_AERO_BOTH),
         MOVE_JOIN("MoveJoin", CMD_AERO_BOTH),
         MOVE_FLY_OFF("MoveOff", CMD_AERO_BOTH),
-        MOVE_TO_GROUNDMAP("MoveToGroundMap", CMD_AERO_BOTH),
+        MOVE_CHANGE_MAP("MoveChangeMap", CMD_AERO_BOTH),
         MOVE_TAKE_OFF("MoveTakeOff", CMD_TANK),
         MOVE_VERT_TAKE_OFF("MoveVertTakeOff", CMD_TANK),
         MOVE_LAND("MoveLand", CMD_AERO_BOTH),
@@ -1026,7 +1026,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
     private void updateMove(boolean redrawMovement) {
         if (redrawMovement) {
-            clientgui.getBoardView(ce()).drawMovementData(ce(), cmd);
+            clientgui.boardViews().forEach(bv -> bv.drawMovementData(ce(), cmd));
         }
         updateDonePanel();
     }
@@ -2368,11 +2368,62 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
     private void updateMapChangeButtons() {
         final Entity ce = ce();
-        if ((ce == null) || !ce.isAero()) {
-            return;
+        if ((ce == null) || !ce.isAero() || !ce.isAirborne()) {
+            setChangeMapEnabled(false);
+        } else if (game().isOnAtmosphericMap(ce)
+                && game().getOptions().booleanOption(OptionsConstants.ADVAERORULES_AERO_GROUND_MOVE)
+                && ce.getBoard().embeddedBoardCoords().contains(finalPosition())) {
+            // Can change from the low atmospheric map to an embedded ground map
+            setChangeMapEnabled(true);
+        } else if (game().isOnGroundMap(ce) && game().hasEnclosingBoard(ce.getBoardId())) {
+            // Can possibly change from a ground map to an enclosing low atmospheric map
+            IAero a = (IAero) ce;
+            MoveStep step = cmd.getLastStep();
+            Coords position = ce.getPosition();
+            int facing = ce.getFacing();
+
+            int velocityLeft = a.getCurrentVelocity();
+            if (step != null) {
+                position = step.getPosition();
+                facing = step.getFacing();
+                velocityLeft = step.getVelocityLeft();
+            }
+
+            final Board board = clientgui.getClient().getGame().getBoard(ce);
+            // for spheroids in atmosphere we just need to check being on the edge
+            if (a.isSpheroid() && !board.isSpaceMap()) {
+                setChangeMapEnabled((position != null) && (ce.getWalkMP() > 0)
+                        && ((position.getX() == 0)
+                        || (position.getX() == (board.getWidth() - 1))
+                        || (position.getY() == 0)
+                        || (position.getY() == (board.getHeight() - 1))));
+                return;
+            }
+
+            // for all aerodynes and spheroids in space it is more complicated - the nose of the aircraft
+            // must be facing in the righ direction and there must be velocity remaining
+
+            boolean evenx = (position.getX() % 2) == 0;
+            if ((velocityLeft > 0) && (((position.getX() == 0) && ((facing == 5) || (facing == 4)))
+                    || ((position.getX() == (board.getWidth() - 1))
+                    && ((facing == 1) || (facing == 2)))
+                    || ((position.getY() == 0) && ((facing == 1) || (facing == 5) || (facing == 0)) && evenx)
+                    || ((position.getY() == 0) && (facing == 0))
+                    || ((position.getY() == (board.getHeight() - 1))
+                    && ((facing == 2) || (facing == 3) || (facing == 4)) && !evenx)
+                    || ((position.getY() == (board.getHeight() - 1))
+                    && (facing == 3)))) {
+                setChangeMapEnabled(true);
+            } else {
+                setChangeMapEnabled(false);
+            }
+        } else if (game().isOnSpaceMap(ce)
+                && ce.getBoard().embeddedBoardCoords().contains(finalPosition())) {
+            // Can change from a space map to an embedded low atmospheric map
+            setChangeMapEnabled(true);
+        } else {
+            setChangeMapEnabled(false);
         }
-        boolean aboveGroundMap = ce.getBoard().embeddedBoardCoords().contains(ce.getPosition());
-        getBtn(MoveCommand.MOVE_TO_GROUNDMAP).setEnabled(aboveGroundMap);
     }
 
     private void updateHoverButton() {
@@ -4803,10 +4854,18 @@ public class MovementDisplay extends ActionPhaseDisplay {
                             Messages.getString("MovementDisplay.ReturnFly.title"),
                             Messages.getString("MovementDisplay.ReturnFly.message"))) {
                 addStepToMovePath(MoveStepType.RETURN);
+                ready();
             } else {
-                addStepToMovePath(MoveStepType.OFF);
+//                int newBoardId = ce.getBoard().getEnclosingBoardId();
+//                Coords position = game().getBoard(newBoardId).embeddedBoardPosition(ce.getBoardId());
+                MoveStep step = new MoveStep(cmd, MoveStepType.OFF);
+//                step.setBoardLocation(new BoardLocation(position, newBoardId));
+                cmd.addStep(step);
+                updateMove();
             }
-            ready();
+        } else if (actionCmd.equals(MoveCommand.MOVE_CHANGE_MAP.getCmd())) {
+
+            addStepToMovePath(MoveStepType.CHANGE_MAP);
         } else if (actionCmd.equals(MoveCommand.MOVE_EJECT.getCmd())) {
             if (ce instanceof Tank) {
                 if (clientgui.doYesNoDialog(
@@ -5472,6 +5531,10 @@ public class MovementDisplay extends ActionPhaseDisplay {
     private void setFlyOffEnabled(boolean enabled) {
         getBtn(MoveCommand.MOVE_FLY_OFF).setEnabled(enabled);
         clientgui.getMenuBar().setEnabled(MoveCommand.MOVE_FLY_OFF.getCmd(), enabled);
+    }
+
+    private void setChangeMapEnabled(boolean enabled) {
+        getBtn(MoveCommand.MOVE_CHANGE_MAP).setEnabled(enabled);
     }
 
     private void setEjectEnabled(boolean enabled) {

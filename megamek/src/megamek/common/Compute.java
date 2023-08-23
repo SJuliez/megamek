@@ -35,6 +35,9 @@ import org.apache.logging.log4j.LogManager;
 
 import java.util.*;
 
+import static megamek.common.MovePath.MoveStepType.CHANGE_MAP;
+import static megamek.common.MovePath.MoveStepType.OFF;
+
 /**
  * The Compute class is designed to provide static methods for 'Mechs and other
  * entities moving, firing, etc.
@@ -538,6 +541,9 @@ public class Compute {
             Coords src, Coords dest, EntityMovementType movementType,
             boolean isTurning, boolean prevStepIsOnPavement, int srcElevation,
             int destElevation, MoveStep moveStep) {
+        if (moveStep.getType() == OFF || moveStep.getType() == CHANGE_MAP) {
+            return false;
+        }
         final Entity entity = game.getEntity(entityId);
         final Hex srcHex = game.getBoard(entity).getHex(src);
         final Hex destHex = game.getBoard(entity).getHex(dest);

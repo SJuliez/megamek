@@ -3888,4 +3888,17 @@ public class Game extends AbstractGame implements Serializable {
         return hasEnclosingBoard(board.getBoardId()) || !board.embeddedBoardCoords().isEmpty();
     }
 
+    public boolean isOnAtmosphericMap(BoardLocation boardLocation) {
+        return getBoard(boardLocation).isLowAtmosphereMap();
+    }
+
+    public boolean isOnAtmosphericMap(Targetable targetable) {
+        return isOnAtmosphericMap(targetable.getBoardLocation());
+    }
+
+    public boolean canRiseToSpaceMap(Entity entity) {
+        // @@MultiBoardTODO: all aero?
+        // @@MultiBoardTODO: clean up board / map wording
+        return (entity instanceof Aero) && entity.getCurrentMapType().isLowAtmo() && hasEnclosingBoard(entity.getBoardId());
+    }
 }

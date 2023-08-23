@@ -3924,8 +3924,12 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 pathSprites.get(pathSprites.size() - 1).setHidden(true);
             }
 
-            pathSprites.add(new StepSprite(this, step, md.isEndStep(step)));
-            previousStep = step;
+            if (isOnThisBoard(step.getBoardLocation())) {
+                pathSprites.add(new StepSprite(this, step, md.isEndStep(step)));
+                previousStep = step;
+            } else {
+                previousStep = null;
+            }
         }
         repaint(100);
     }

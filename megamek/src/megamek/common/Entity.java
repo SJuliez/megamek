@@ -806,6 +806,9 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     private transient BVCalculator bvCalculator = BVCalculator.getBVCalculator(this);
 
+    /** When true, this unit is set to switch from one map to another at end of turn, usually due to a movement choice. */
+    private boolean changeMap = false;
+
     /**
      * Generates a new, blank, entity.
      */
@@ -15507,5 +15510,13 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     public boolean isDoomedOn(MapType mapType) {
         return (mapType.isGround() && doomedOnGround()) || (mapType.isLowAtmo() && doomedInAtmosphere())
                 || (mapType.isSpace() && doomedInSpace());
+    }
+
+    public void setChangeMap(boolean changeMap) {
+        this.changeMap = changeMap;
+    }
+
+    public boolean changesMapAtEndOfTurn() {
+        return changeMap;
     }
 }
