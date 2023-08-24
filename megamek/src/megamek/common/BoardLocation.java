@@ -64,6 +64,26 @@ public class BoardLocation implements Serializable {
     }
 
     /**
+     * Returns a list of all coordinates at the given distance dist
+     * and anything less than dist as well.
+     */
+    public ArrayList<BoardLocation> allAtDistanceOrLess(int dist) {
+        return allAtDistances(0, dist);
+    }
+
+    /**
+     * Returns a list of all coordinates at the given distance dist
+     * and anything less than dist as well.
+     */
+    public ArrayList<BoardLocation> allAtDistances(int minimumDistance, int maximumDistance) {
+        ArrayList<BoardLocation> result = new ArrayList<>();
+        for (int radius = minimumDistance; radius <= maximumDistance; radius++) {
+            result.addAll(allAtDistance(radius));
+        }
+        return result;
+    }
+
+    /**
      * Returns the coordinate 1 unit in the specified direction dir.
      */
     public BoardLocation translated(int dir) {

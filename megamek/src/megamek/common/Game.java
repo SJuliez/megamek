@@ -3645,11 +3645,19 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public boolean hasBoardLocation(@Nullable BoardLocation boardLocation) {
-        return usesBoard(boardLocation) && getBoard(boardLocation).contains(boardLocation.getCoords());
+        return hasBoardLocation(boardLocation.getCoords(), boardLocation.getBoardId());
     }
 
-    public boolean usesBoard(@Nullable BoardLocation boardLocation) {
-        return (boardLocation != null) && gameBoards.containsKey(boardLocation.getBoardId());
+    public boolean hasBoardLocation(Coords coords, int boardId) {
+        return hasBoard(boardId) && getBoard(boardId).contains(coords);
+    }
+
+    public boolean hasBoard(@Nullable BoardLocation boardLocation) {
+        return (boardLocation != null) && hasBoard(boardLocation.getBoardId());
+    }
+
+    public boolean hasBoard(int boardId) {
+        return gameBoards.containsKey(boardId);
     }
 
     public void addSpecialHexDisplay(BoardLocation boardLocation, SpecialHexDisplay shd) {

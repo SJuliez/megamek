@@ -23,6 +23,8 @@ import megamek.common.Building.DemolitionCharge;
 import megamek.common.actions.*;
 import megamek.common.annotations.Nullable;
 import megamek.common.containers.PlayerIDandList;
+import megamek.common.deployment.AnywhereDeploymentZone;
+import megamek.common.deployment.ListDeploymentZone;
 import megamek.common.enums.BasementType;
 import megamek.common.enums.GamePhase;
 import megamek.common.enums.WeaponSortOrder;
@@ -1110,8 +1112,13 @@ public class GameManager implements IGameManager {
                 adjacentPositions.removeIf(c -> !entity.getBoard().contains(c));
                 adjacentPositions.removeIf(c -> !entity.getBoard().isAtmosphericRow(c));
                 // @@MultiBoardTODO: deploy freely
-                entity.setPosition(adjacentPositions.get(0));
-                entity.setFacing(1);
+//                entity.setPosition(adjacentPositions.get(0));
+//                entity.setFacing(1);
+                entity.setDeployed(false);
+                // @@MultiBoardTODO: set deployment area to any
+                entity.setPosition(null);
+                entity.setDeployRound(game.getRoundCount() + 1);
+                entity.setDeploymentZone(new ListDeploymentZone(entity.getBoardId(), adjacentPositions));
                 int atmoVelocity = ((Aero) entity).getNextVelocity();
                 // No rule in TW; the map scale factor is 36/1 but the turn scale is 1/6, so a factor of 6 between speeds
                 int spaceVelocity = (int) Math.round(atmoVelocity / 6.0);
@@ -1126,11 +1133,13 @@ public class GameManager implements IGameManager {
                     // @@MultiBoardTODO: set deployment area to any
                     entity.setPosition(null);
                     entity.setDeployRound(game.getRoundCount() + 1);
+                    entity.setDeploymentZone(new AnywhereDeploymentZone(entity.getBoardId()));
                     // No rule in TW; the map scale factor is 36/1 but the turn scale is 1/6, so a factor of 6
                     // between speeds; include reducing the velo in atmosphere by half as this does not happen for
                     // undeployed units
                     ((Aero) entity).setNextVelocity(((Aero) entity).getNextVelocity() * 3);
                     game.setupRoundDeployment();
+
                     addReport(new Report(5575).subject(entity.getId()).addDesc(entity));
                 }
             }

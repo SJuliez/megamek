@@ -24,6 +24,8 @@ import megamek.common.MovePath.MoveStepType;
 import megamek.common.actions.*;
 import megamek.common.annotations.Nullable;
 import megamek.common.battlevalue.BVCalculator;
+import megamek.common.deployment.DeploymentZone;
+import megamek.common.deployment.OwnerDeploymentZone;
 import megamek.common.enums.*;
 import megamek.common.event.GameEntityChangeEvent;
 import megamek.common.force.Force;
@@ -808,6 +810,8 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
 
     /** When true, this unit is set to switch from one map to another at end of turn, usually due to a movement choice. */
     private boolean changeMap = false;
+
+    private DeploymentZone deploymentZone = new OwnerDeploymentZone(this);
 
     /**
      * Generates a new, blank, entity.
@@ -15518,5 +15522,21 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
 
     public boolean changesMapAtEndOfTurn() {
         return changeMap;
+    }
+
+    public DeploymentZone getDeploymentZone() {
+        return deploymentZone;
+    }
+
+    public void setDeploymentZone(DeploymentZone deploymentZone) {
+        this.deploymentZone = deploymentZone;
+    }
+
+    public boolean isLegalDeployment(BoardLocation boardLocation) {
+        return deploymentZone.canDeployTo(game, boardLocation);
+    }
+
+    public boolean isLegalDeployment(Coords coords, int boardId) {
+        return deploymentZone.canDeployTo(game, coords, boardId);
     }
 }

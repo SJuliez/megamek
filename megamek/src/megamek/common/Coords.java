@@ -16,6 +16,7 @@ package megamek.common;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import jakarta.xml.bind.annotation.XmlElement;
@@ -460,22 +461,28 @@ public class Coords implements Serializable {
      * Returns a list of all adjacent coordinates (distance = 1), 
      * regardless of whether they're on the board or not.
      */
-    public ArrayList<Coords> allAdjacent() {
+    public List<Coords> allAdjacent() {
         return (allAtDistance(1));
     }
     
     /**
-     * Returns a list of all coordinates at the given distance dist 
+     * Returns a list of all coordinates at the given distance dist
      * and anything less than dist as well.
      */
-    public ArrayList<Coords> allAtDistanceOrLess(int dist) {
-        ArrayList<Coords> retval = new ArrayList<>();
-        
-        for (int radius = 0; radius < dist; radius++) {
-            retval.addAll(allAtDistance(radius));
+    public List<Coords> allAtDistanceOrLess(int dist) {
+        return allAtDistances(0, dist);
+    }
+
+    /**
+     * Returns a list of all coordinates at the given distance dist
+     * and anything less than dist as well.
+     */
+    public List<Coords> allAtDistances(int minimumDistance, int maximumDistance) {
+        ArrayList<Coords> result = new ArrayList<>();
+        for (int radius = minimumDistance; radius <= maximumDistance; radius++) {
+            result.addAll(allAtDistance(radius));
         }
-        
-        return retval;
+        return result;
     }
     
     /**
@@ -483,8 +490,8 @@ public class Coords implements Serializable {
      * regardless of whether they're on the board or not. Returns an 
      * empty Set for dist &lt; 0 and the calling Coords itself for dist == 0.
      */
-    public ArrayList<Coords> allAtDistance(int dist) { 
-        ArrayList<Coords> retval = new ArrayList<>();
+    public List<Coords> allAtDistance(int dist) {
+        List<Coords> retval = new ArrayList<>();
         
         if (dist == 0) {
             retval.add(this);

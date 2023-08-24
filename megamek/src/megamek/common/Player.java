@@ -14,6 +14,8 @@
 package megamek.common;
 
 import megamek.client.ui.swing.util.PlayerColour;
+import megamek.common.deployment.AnywhereDeploymentZone;
+import megamek.common.deployment.DeploymentZone;
 import megamek.common.event.GamePlayerChangeEvent;
 import megamek.common.icons.Camouflage;
 import megamek.common.options.OptionsConstants;
@@ -55,6 +57,7 @@ public final class Player extends TurnOrdered {
     private int startingPos = Board.START_ANY;
     private int startOffset = 0;
     private int startWidth = 3;
+    private DeploymentZone deploymentZone;
 
     // number of minefields
     private int numMfConv = 0;
@@ -178,6 +181,9 @@ public final class Player extends TurnOrdered {
 
     public void setGame(Game game) {
         this.game = game;
+        if (deploymentZone == null) {
+            deploymentZone = new AnywhereDeploymentZone();
+        }
     }
 
     public String getName() {
@@ -769,5 +775,13 @@ public final class Player extends TurnOrdered {
         copy.admitsDefeat = admitsDefeat;
 
         return copy;
+    }
+
+    public DeploymentZone getDeploymentZone() {
+        return deploymentZone;
+    }
+
+    public void setDeploymentZone(DeploymentZone deploymentZone) {
+        this.deploymentZone = deploymentZone;
     }
 }
