@@ -15526,6 +15526,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
 
     public DeploymentZone getDeploymentZone() {
         return deploymentZone;
+//        return deploymentZone instanceof OwnerDeploymentZone ? getOwner().getDeploymentZone() : deploymentZone;
     }
 
     public void setDeploymentZone(DeploymentZone deploymentZone) {

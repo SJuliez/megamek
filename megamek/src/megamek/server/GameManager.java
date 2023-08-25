@@ -1114,11 +1114,7 @@ public class GameManager implements IGameManager {
                 List<Coords> adjacentPositions = boardPosition.allAdjacent();
                 adjacentPositions.removeIf(c -> !entity.getBoard().contains(c));
                 adjacentPositions.removeIf(c -> !entity.getBoard().isAtmosphericRow(c));
-                // @@MultiBoardTODO: deploy freely
-//                entity.setPosition(adjacentPositions.get(0));
-//                entity.setFacing(1);
                 entity.setDeployed(false);
-                // @@MultiBoardTODO: set deployment area to any
                 entity.setPosition(null);
                 entity.setDeployRound(game.getRoundCount() + 1);
                 entity.setDeploymentZone(new ListDeploymentZone(entity.getBoardId(), adjacentPositions));
@@ -1133,16 +1129,15 @@ public class GameManager implements IGameManager {
                 if (game.isOnSpaceMap(entity) && entity.getBoard().embeddedBoardCoords().contains(entity.getPosition())) {
                     entity.setCurrentBoard(entity.getBoard().getEmbeddedBoardAt(entity.getPosition()));
                     entity.setDeployed(false);
-                    // @@MultiBoardTODO: set deployment area to any
                     entity.setPosition(null);
                     entity.setDeployRound(game.getRoundCount() + 1);
                     entity.setDeploymentZone(new AnywhereDeploymentZone(entity.getBoardId()));
+                    entity.setAltitude(10);
                     // No rule in TW; the map scale factor is 36/1 but the turn scale is 1/6, so a factor of 6
                     // between speeds; include reducing the velo in atmosphere by half as this does not happen for
                     // undeployed units
                     ((Aero) entity).setNextVelocity(((Aero) entity).getNextVelocity() * 3);
                     game.setupRoundDeployment();
-
                     addReport(new Report(5575).subject(entity.getId()).addDesc(entity));
                 }
             }
@@ -12773,7 +12768,7 @@ public class GameManager implements IGameManager {
             turn = game.getTurnForPlayer(connId);
         }
         if ((turn == null) || !turn.isValid(connId, entity, game)
-                || !(game.getBoard(entity).isLegalDeployment(boardLocation.getCoords(), entity)
+                || !(entity.getDeploymentZone().canDeployTo(game, boardLocation)
                 || (assaultDrop && game.getOptions().booleanOption(OptionsConstants.ADVANCED_ASSAULT_DROP)
                 && entity.canAssaultDrop()))) {
             String msg = "server got invalid deployment packet from "

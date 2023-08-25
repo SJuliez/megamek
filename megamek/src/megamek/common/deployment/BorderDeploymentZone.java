@@ -13,15 +13,15 @@ public class BorderDeploymentZone implements DeploymentZone {
     private final int boardId;
     private final int borderType;
 
-    BorderDeploymentZone(int borderType, int boardId) {
+    public BorderDeploymentZone(int borderType, int boardId) {
         this(borderType, 3, 0, boardId);
     }
 
-    BorderDeploymentZone(int borderType, int width, int boardId) {
+    public BorderDeploymentZone(int borderType, int width, int boardId) {
         this(borderType, width, 0, boardId);
     }
 
-    BorderDeploymentZone(int borderType, int width, int edgeOffset, int boardId) {
+    public BorderDeploymentZone(int borderType, int width, int edgeOffset, int boardId) {
         this.width = width;
         this.edgeOffset = edgeOffset;
         this.boardId = boardId;
@@ -30,7 +30,8 @@ public class BorderDeploymentZone implements DeploymentZone {
 
     @Override
     public boolean canDeployTo(Game game, Coords coords, int boardId) {
-        if ((game == null) || (coords == null) || (this.boardId != boardId)) {
+        if ((game == null) || (coords == null)
+                || ((this.boardId != boardId) && (this.boardId != ANY_BOARD))) {
             return false;
         }
         Board board = game.getBoard(boardId);

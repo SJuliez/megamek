@@ -1834,7 +1834,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         for (int i = 0; i < drawHeight; i++) {
             for (int j = 0; j < drawWidth; j++) {
                 Coords c = new Coords(j + drawX, i + drawY);
-                if (board.contains(c) && en_Deployer.isLegalDeployment(c, boardId) &&
+                if (board.contains(c) && en_Deployer.getDeploymentZone().canDeployTo(game, c, boardId) &&
                         !en_Deployer.isLocationProhibited(c)) {
                     drawHexBorder(g, getHexLocation(c), Color.yellow);
                 }
@@ -1889,15 +1889,12 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         for (int i = 0; i < drawHeight; i++) {
             for (int j = 0; j < drawWidth; j++) {
                 Coords c = new Coords(j + drawX, i + drawY);
-                Enumeration<Player> allP = game.getPlayers();
-                Player cp;
                 int pCount = 0;
                 int bThickness = 1 + 10 / game.getNoOfPlayers();
                 // loop through all players
-                while (allP.hasMoreElements()) {
-                    cp = allP.nextElement();
-                    if (board.isLegalDeployment(c, cp)) {
-                        Color bC = cp.getColour().getColour();
+                for (Player player : game.getPlayersList()) {
+                    if (player.getDeploymentZone().canDeployTo(game, c, boardId) && board.contains(c)) {
+                        Color bC = player.getColour().getColour();
                         drawHexBorder(g, getHexLocation(c), bC, (bThickness + 2) * pCount, bThickness);
                         pCount++;
                     }
@@ -2348,8 +2345,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                             }
                             drawHexSpritesForHex(c, g, moveEnvSprites);
                             drawHexSpritesForHex(c, g, moveModEnvSprites);
-                            if ((en_Deployer != null)
-                                    && board.isLegalDeployment(c, en_Deployer)) {
+                            if ((en_Deployer != null) && en_Deployer.getDeploymentZone().canDeployTo(game, c, boardId)) {
                                 drawHexBorder(g, getHexLocation(c), Color.YELLOW);
                             }
                             drawOrthograph(c, g);
@@ -5645,19 +5641,17 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         // in the artillery autohit designation phase
         if (game.getPhase().isSetArtilleryAutohitHexes() && (mhex != null)) {
             String sAttilleryAutoHix = "";
-            Enumeration<Player> allP = game.getPlayers();
             boolean foundPlayer = false;
             // loop through all players
-            while (allP.hasMoreElements()) {
-                Player cp = allP.nextElement();
-                if (boardSupplier.get().isLegalDeployment(mcoords, cp)) {
+            for (Player player : game.getPlayersList()) {
+                if (player.getDeploymentZone().canDeployTo(game, mcoords, boardId)) {
                     if (!foundPlayer) {
                         foundPlayer = true;
                         sAttilleryAutoHix += Messages.getString("BoardView1.Tooltip.ArtyAutoHeader") + "<BR>";
                     }
 
-                    String sName = "&nbsp;&nbsp;" + cp.getName();
-                    sName = guiScaledFontHTML(cp.getColour().getColour()) + sName + "</FONT>";
+                    String sName = "&nbsp;&nbsp;" + player.getName();
+                    sName = guiScaledFontHTML(player.getColour().getColour()) + sName + "</FONT>";
                     sAttilleryAutoHix += "<B>"  + sName + "</B>";
                     sAttilleryAutoHix += "<BR>";
                 }

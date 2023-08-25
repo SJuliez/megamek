@@ -625,8 +625,8 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
                 for (int j = 0; j < board.getWidth(); j++) {
                     for (int k = 0; k < board.getHeight(); k++) {
                         Coords coords = new Coords(j, k);
-                        
-                        if (board.isLegalDeployment(coords, deployingUnit) &&
+
+                        if (deployingUnit.getDeploymentZone().canDeployTo(game, coords, boardId) &&
                                 !deployingUnit.isLocationProhibited(coords)) {
                             paintSingleCoordBorder(g, j, k, Color.yellow);
                         }

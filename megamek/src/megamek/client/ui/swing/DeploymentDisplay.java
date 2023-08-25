@@ -475,7 +475,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         // check for a deployment
         Coords moveto = b.getCoords();
         final Board board = ((BoardView) b.getSource()).getBoard();
-        if (board == null) {
+        if ((board == null) || !board.contains(moveto)) {
             return;
         }
         final Game game = clientgui.getClient().getGame();
@@ -502,7 +502,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             msg = Messages.getString("DeploymentDisplay.wrongMapType", ce().getShortName(), board.getMapType().getDisplayName());
             JOptionPane.showMessageDialog(clientgui, msg, title, JOptionPane.WARNING_MESSAGE);
             return;
-        } else if (!(board.isLegalDeployment(moveto, ce()) || assaultDropPreference)
+        } else if (!(ce().getDeploymentZone().canDeployTo(game, moveto, ce().getBoardId()) || assaultDropPreference)
                 || (ce().isLocationProhibited(moveto) && !isTankOnPavement)) {
             msg = Messages.getString("DeploymentDisplay.cantDeployInto", ce().getShortName(), moveto.getBoardNum());
             title = Messages.getString("DeploymentDisplay.alertDialog.title");

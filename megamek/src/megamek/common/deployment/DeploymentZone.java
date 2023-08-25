@@ -9,6 +9,8 @@ import java.io.Serializable;
 
 public interface DeploymentZone extends Serializable {
 
+    public static final int ANY_BOARD = -99;
+
     /**
      * Returns true when this deployment zone includes the given BoardLocation.
      *
@@ -16,7 +18,7 @@ public interface DeploymentZone extends Serializable {
      *
      * <P>Note: Forwards to {@link #canDeployTo(Game, Coords, int)}. Will typically not need to be overridden.</P>
      *
-     * @param game The game
+     * @param game          The game
      * @param boardLocation The BoardLocation to test
      * @return True when this deployment zone includes the given BoardLocation
      */
@@ -33,7 +35,7 @@ public interface DeploymentZone extends Serializable {
      *
      * <P>Note: This method is called many times. The implementation should be efficient!</P>
      *
-     * @param game The game
+     * @param game    The game
      * @param boardId The Board to test
      * @return True when the given location is a legal deployment location
      */

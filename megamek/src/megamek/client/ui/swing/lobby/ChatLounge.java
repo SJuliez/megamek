@@ -44,6 +44,8 @@ import megamek.client.ui.swing.util.UIUtil;
 import megamek.client.ui.swing.widget.SkinSpecification;
 import megamek.common.*;
 import megamek.common.annotations.Nullable;
+import megamek.common.deployment.BorderDeploymentZone;
+import megamek.common.deployment.DeploymentZone;
 import megamek.common.event.*;
 import megamek.common.force.Force;
 import megamek.common.force.Forces;
@@ -1541,6 +1543,8 @@ public class ChatLounge extends AbstractPhaseDisplay implements
             player.setStartingPos(startPos);
             player.setStartOffset(psd.getStartOffset());
             player.setStartWidth(psd.getStartWidth());
+            player.setDeploymentZone(new BorderDeploymentZone(startPos, psd.getStartWidth(), psd.getStartOffset(),
+                    DeploymentZone.ANY_BOARD));
             c.sendPlayerInfo();
 
             // If the gameoption set_arty_player_homeedge is set, adjust the player's offboard
