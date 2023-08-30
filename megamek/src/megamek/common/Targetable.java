@@ -105,13 +105,18 @@ public interface Targetable extends InGameObject, Serializable {
     }
 
     /**
-     * @return True if this entity is airborne in the fashion of an aerospace unit, i.e. using altitude but
-     * not if it is in space.
-     * Returns false for ground units having elevation, such as VTOLs (see {@link Targetable#isAirborneVTOLorWIGE()}
+     * @return True if this entity is airborne in the fashion of an aerospace unit, i.e. using altitude on a
+     * low atmospheric or ground map.
+     * Returns false if it is in space, even in an atmospheric row hex.
+     * Returns false for ground units having elevation, such as VTOLs, see {@link Targetable#isAirborneVTOLorWIGE()}.
+     * Does not check for the presence of an atmosphere or other planetary conditions.
      */
     boolean isAirborne();
     
     /**
+     * Returns true if this is a VTOL or WiGE unit that that has lifted off (elevation > 0). Returns
+     * false for any units using aerospace movement and altitude.
+     *
      * @return is the entity airborne in the fashion of a VTOL
      * Not used for aerospace units, see {@link Targetable#isAirborne()}
      */

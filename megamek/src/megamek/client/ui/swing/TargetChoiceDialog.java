@@ -91,7 +91,7 @@ public class TargetChoiceDialog extends AbstractChoiceDialog<Targetable> {
 
         if (firingEntity != null) {
             ToHitData thd = WeaponAttackAction.toHit(clientGUI.getClient().getGame(), firingEntity.getId(), target);
-            thd.setLocation(target.getPosition());
+            thd.setLocation(target.getBoardLocation());
             thd.setRange(firingEntity.getPosition().distance(target.getPosition()));
             if (thd.needsRoll()) {
                 int mod = thd.getValue();

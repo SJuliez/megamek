@@ -3947,8 +3947,10 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             return;
         }
         for (FiringSolution sln : firingSolutions.values()) {
-            FiringSolutionSprite sprite = new FiringSolutionSprite(this, sln);
-            firingSprites.add(sprite);
+            if (isOnThisBoard(sln.getToHitData().getLocation())) {
+                FiringSolutionSprite sprite = new FiringSolutionSprite(this, sln);
+                firingSprites.add(sprite);
+            }
         }
     }
 

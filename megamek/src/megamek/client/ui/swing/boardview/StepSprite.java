@@ -138,9 +138,14 @@ class StepSprite extends Sprite {
             case ACC:
             case ACCN:
             case LOOP:
+            case EXIT_GROUNDMAP:
                 // forward movement arrow
                 drawArrowShape(g2D, moveArrow, col);
-                drawMovementCost(step, isLastStep, new Point(0, 0), graph, col, true);
+                if (!step.getEntity().isAero()) {
+                    drawMovementCost(step, isLastStep, new Point(0, 0), graph, col, true);
+                } else {
+                    drawVelocityToGo(step, isLastStep, new Point(0, 0), graph, col, true);
+                }
                 drawRemainingVelocity(step, graph, true);
                 break;
             case GO_PRONE:
@@ -280,7 +285,7 @@ class StepSprite extends Sprite {
             g2D.fill(HexDrawUtilities.getHexFullBorderArea(3, 0));
         }
 
-        if (isLastLegalStep) {
+        if (isLastLegalStep && !step.getEntity().isAero()) {
             drawTMMAndRolls(step, jumped, bv.game, new Point(0, 0), graph, col, true);
         }
 
@@ -400,12 +405,14 @@ class StepSprite extends Sprite {
 
         int distTraveled = step.getDistance();
         int velocity = step.getVelocity();
-        if (bv.getBoard().isGroundMap()) {
+        if (bv.game.isOnGroundMap(step.getBoardLocation())) {
             velocity *= 16;
         }
 
-        velStringBuf.append("(").append(distTraveled).append("/")
-                .append(velocity).append(")");
+        // Always multiply velocity by 16 and count each atmospheric map move as 16 hexes
+//        velocity *= 16;
+
+        velStringBuf.append("(").append(distTraveled).append("/").append(velocity).append(")");
 
         Color col = (step.getVelocityLeft() > 0) ? Color.RED : Color.GREEN;
 
@@ -484,6 +491,24 @@ class StepSprite extends Sprite {
 
         // Convert the buffer to a String and draw it.
         String costString = costStringBuf.toString();
+        graph.setFont(getMovementFont());
+        int costX = stepPos.x + 42;
+        if (shiftFlag) {
+            costX -= (graph.getFontMetrics(graph.getFont()).stringWidth(costString) / 2);
+        }
+        graph.setColor(Color.darkGray);
+        graph.drawString(costString, costX, stepPos.y + 39);
+        graph.setColor(col);
+        graph.drawString(costString, costX - 1, stepPos.y + 38);
+    }
+
+    private void drawVelocityToGo(MoveStep step, boolean isLastStep,
+                                  Point stepPos, Graphics graph, Color col, boolean shiftFlag) {
+        if (step.getMovementType(isLastStep) == EntityMovementType.MOVE_ILLEGAL) {
+            return;
+        }
+
+        String costString = step.getVelocityLeft() + "";
         graph.setFont(getMovementFont());
         int costX = stepPos.x + 42;
         if (shiftFlag) {

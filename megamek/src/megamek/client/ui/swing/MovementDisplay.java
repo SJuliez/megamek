@@ -45,6 +45,7 @@ import megamek.common.pathfinder.AbstractPathFinder;
 import megamek.common.pathfinder.LongestPathFinder;
 import megamek.common.pathfinder.ShortestPathFinder;
 import megamek.common.preference.PreferenceManager;
+import megamek.common.util.BoardHelper;
 import org.apache.logging.log4j.LogManager;
 
 import javax.swing.*;
@@ -59,8 +60,6 @@ import java.util.stream.Stream;
 
 import static megamek.common.MiscType.F_CHAFF_POD;
 import static megamek.common.options.OptionsConstants.ADVGRNDMOV_TACOPS_ZIPLINES;
-
-import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
 
 public class MovementDisplay extends ActionPhaseDisplay {
     private static final long serialVersionUID = -7246715124042905688L;
@@ -163,7 +162,9 @@ public class MovementDisplay extends ActionPhaseDisplay {
         MOVE_MANEUVER("MoveManeuver", CMD_AERO_BOTH),
         MOVE_JOIN("MoveJoin", CMD_AERO_BOTH),
         MOVE_FLY_OFF("MoveOff", CMD_AERO_BOTH),
-        MOVE_CHANGE_MAP("MoveChangeMap", CMD_AERO_BOTH),
+        EXIT_GROUNDMAP_CMD("MoveExitGroundMap", CMD_AERO_BOTH),
+        ENTER_GROUNDMAP_CMD("MoveEnterGroundMap", CMD_AERO_BOTH),
+        FALL_TOATMOMAP_CMD("MoveFallToAtmoMap", CMD_AERO_BOTH),
         MOVE_TAKE_OFF("MoveTakeOff", CMD_TANK),
         MOVE_VERT_TAKE_OFF("MoveVertTakeOff", CMD_TANK),
         MOVE_LAND("MoveLand", CMD_AERO_BOTH),
@@ -342,6 +343,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
     public static final int GEAR_LONGEST_RUN = 10;
     public static final int GEAR_LONGEST_WALK = 11;
     public static final int GEAR_STRAFE = 12;
+    public static final int GEAR_ENTER_GROUNDMAP = 13;
     public static final String turnDetailsFormat = "%s%-3s %-14s %1s %2dMP%s";
 
     /**
@@ -533,19 +535,16 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
                     @Override
                     public boolean shouldPerformAction() {
-                        if (clientgui.isChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
+                        return !clientgui.isChatterBoxActive() && display.isVisible() && !display.isIgnoringEvents();
                     }
 
                     @Override
                     public void performAction() {
                         clear();
                         computeMovementEnvelope(ce());
+                        if (ce() != null) {
+                            clientgui.showBoardView(ce().getBoardId());
+                        }
                     }
                 });
 
@@ -1015,8 +1014,13 @@ public class MovementDisplay extends ActionPhaseDisplay {
         updateMove();
     }
 
-    private void addStepToMovePath(MoveStepType moveStep, int recover ,int mineToLay) {
+    private void addStepToMovePath(MoveStepType moveStep, int recover, int mineToLay) {
         cmd.addStep(moveStep, recover, mineToLay);
+        updateMove();
+    }
+
+    private void addStepToMovePath(MoveStepType type, BoardLocation destination) {
+        cmd.addStep(type, destination);
         updateMove();
     }
 
@@ -1261,6 +1265,9 @@ public class MovementDisplay extends ActionPhaseDisplay {
         getBtn(MoveCommand.MOVE_CLIMB_MODE).setEnabled(false);
         getBtn(MoveCommand.MOVE_DIG_IN).setEnabled(false);
         getBtn(MoveCommand.MOVE_CALL_SUPPORT).setEnabled(false);
+        getBtn(MoveCommand.ENTER_GROUNDMAP_CMD).setEnabled(false);
+        getBtn(MoveCommand.EXIT_GROUNDMAP_CMD).setEnabled(false);
+        getBtn(MoveCommand.FALL_TOATMOMAP_CMD).setEnabled(false);
     }
 
     /**
@@ -1833,6 +1840,10 @@ public class MovementDisplay extends ActionPhaseDisplay {
                     MoveStepType.ACC);
             cmd.rotatePathfinder(cmd.getFinalCoords().direction(dest), true);
             gear = GEAR_LAND;
+        } else if (gear == GEAR_ENTER_GROUNDMAP) {
+            addStepToMovePath(MoveStepType.ENTER_GROUNDMAP,
+                    new BoardLocation(dest, ce().getBoard().getEmbeddedBoardAt(finalPosition())));
+            gear = GEAR_LAND;
         }
         if (gear == GEAR_LONGEST_WALK || gear == GEAR_LONGEST_RUN) {
             int maxMp;
@@ -1876,7 +1887,8 @@ public class MovementDisplay extends ActionPhaseDisplay {
             return;
         }
 
-        if (!((BoardView) b.getSource()).isOnThisBoard(ce())) {
+        if (b.getBoardView().getBoardId() != finalBoardId()
+                && gear != GEAR_ENTER_GROUNDMAP) {
             return;
         }
 
@@ -1910,7 +1922,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
         if ((b.getType() == BoardViewEvent.BOARD_HEX_DRAGGED) && !nopath) {
             if (!b.getCoords().equals(currPosition) || shiftheld
-                    || (gear == MovementDisplay.GEAR_TURN)) {
+                    || (gear == GEAR_TURN)) {
                 ((BoardView) b.getSource()).cursor(b.getCoords());
                 // either turn or move
                 if (ce != null) {
@@ -1921,7 +1933,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         } else if (b.getType() == BoardViewEvent.BOARD_HEX_CLICKED) {
             Coords moveto = b.getCoords();
             updateMove();
-            if (shiftheld || (gear == MovementDisplay.GEAR_TURN)) {
+            if (shiftheld || (gear == GEAR_TURN)) {
                 updateDonePanel();
 
                 //FIXME what is this
@@ -1991,6 +2003,11 @@ public class MovementDisplay extends ActionPhaseDisplay {
                         toHit.getDesc());
                 clear();
                 return;
+            } else if (gear == GEAR_ENTER_GROUNDMAP) {
+                if (b.getBoardView().getBoardId() == ce().getBoard().getEmbeddedBoardAt(finalPosition())) {
+                    currentMove(b.getCoords());
+                    updateMove();
+                }
             } else if (gear == MovementDisplay.GEAR_CHARGE) {
                 // check if target is valid
                 final Targetable target = chooseTarget(b.getCoords());
@@ -2367,62 +2384,51 @@ public class MovementDisplay extends ActionPhaseDisplay {
     }
 
     private void updateMapChangeButtons() {
+        setExitGroundMapEnabled(false);
+        setEnterGroundMapEnabled(false);
+        setFallToAtmoMapEnabled(false);
+        Board board = game().getBoard(finalBoardId());
         final Entity ce = ce();
         if ((ce == null) || !ce.isAero() || !ce.isAirborne()) {
-            setChangeMapEnabled(false);
-        } else if (game().isOnAtmosphericMap(ce)
+            return;
+        } else if (board.isLowAtmosphereMap()
                 && game().getOptions().booleanOption(OptionsConstants.ADVAERORULES_AERO_GROUND_MOVE)
-                && ce.getBoard().embeddedBoardCoords().contains(finalPosition())) {
+                && board.embeddedBoardCoords().contains(finalPosition())) {
             // Can change from the low atmospheric map to an embedded ground map
-            setChangeMapEnabled(true);
-        } else if (game().isOnGroundMap(ce) && game().hasEnclosingBoard(ce.getBoardId())) {
+            setEnterGroundMapEnabled(true);
+        } else if (board.isGroundMap() && game().hasEnclosingBoard(board)) {
             // Can possibly change from a ground map to an enclosing low atmospheric map
             IAero a = (IAero) ce;
             MoveStep step = cmd.getLastStep();
-            Coords position = ce.getPosition();
+            Coords position = finalPosition();
             int facing = ce.getFacing();
 
             int velocityLeft = a.getCurrentVelocity();
             if (step != null) {
-                position = step.getPosition();
                 facing = step.getFacing();
                 velocityLeft = step.getVelocityLeft();
             }
 
-            final Board board = clientgui.getClient().getGame().getBoard(ce);
             // for spheroids in atmosphere we just need to check being on the edge
             if (a.isSpheroid() && !board.isSpaceMap()) {
-                setChangeMapEnabled((position != null) && (ce.getWalkMP() > 0)
-                        && ((position.getX() == 0)
-                        || (position.getX() == (board.getWidth() - 1))
-                        || (position.getY() == 0)
-                        || (position.getY() == (board.getHeight() - 1))));
+                setExitGroundMapEnabled((ce.getWalkMP() > 0) && BoardHelper.isBoardEdge(board, position));
                 return;
             }
 
             // for all aerodynes and spheroids in space it is more complicated - the nose of the aircraft
             // must be facing in the righ direction and there must be velocity remaining
-
             boolean evenx = (position.getX() % 2) == 0;
-            if ((velocityLeft > 0) && (((position.getX() == 0) && ((facing == 5) || (facing == 4)))
-                    || ((position.getX() == (board.getWidth() - 1))
-                    && ((facing == 1) || (facing == 2)))
-                    || ((position.getY() == 0) && ((facing == 1) || (facing == 5) || (facing == 0)) && evenx)
+            boolean mayLeave = ((velocityLeft > 0) && (((position.getX() == 0) && ((facing == 5) || (facing == 4)))
+                    || ((position.getX() == (board.getWidth() - 1)) && ((facing == 1) || (facing == 2)))
+                    || ((position.getY() == 0) && ((facing == 1) || (facing == 5)) && evenx)
                     || ((position.getY() == 0) && (facing == 0))
-                    || ((position.getY() == (board.getHeight() - 1))
-                    && ((facing == 2) || (facing == 3) || (facing == 4)) && !evenx)
-                    || ((position.getY() == (board.getHeight() - 1))
-                    && (facing == 3)))) {
-                setChangeMapEnabled(true);
-            } else {
-                setChangeMapEnabled(false);
-            }
+                    || ((position.getY() == (board.getHeight() - 1)) && ((facing == 2) || (facing == 4)) && !evenx)
+                    || ((position.getY() == (board.getHeight() - 1)) && (facing == 3))));
+            setExitGroundMapEnabled(mayLeave);
         } else if (game().isOnSpaceMap(ce)
                 && ce.getBoard().embeddedBoardCoords().contains(finalPosition())) {
             // Can change from a space map to an embedded low atmospheric map
-            setChangeMapEnabled(true);
-        } else {
-            setChangeMapEnabled(false);
+            setFallToAtmoMapEnabled(true);
         }
     }
 
@@ -2995,6 +3001,11 @@ public class MovementDisplay extends ActionPhaseDisplay {
     /** @return The end position of the current movement path if there is one, the current position otherwise. */
     private Coords finalPosition() {
         return cmd == null ? ce().getPosition() : cmd.getFinalCoords();
+    }
+
+    /** @return The end position of the current movement path if there is one, the current position otherwise. */
+    private int finalBoardId() {
+        return cmd == null ? ce().getBoardId() : cmd.getFinalBoardId();
     }
 
     /** @return True when the endpoint of the current movement path is on the board. */
@@ -4476,6 +4487,11 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
         Map<Coords, MovePath> mvEnvData = new HashMap<>();
         MovePath mp = new MovePath(clientgui.getClient().getGame(), en);
+        Map<Coords, Integer> mvEnvMP = new HashMap<>((int) ((mvEnvData.size() * 1.25) + 1));
+        if (mvMode == GEAR_ENTER_GROUNDMAP) {
+            showEnterGroundMapMoveEnvelope(en);
+            return;
+        }
 
         int maxMP;
         if (mvMode == GEAR_JUMP || mvMode == GEAR_DFA) {
@@ -4503,12 +4519,45 @@ public class MovementDisplay extends ActionPhaseDisplay {
         ShortestPathFinder pf = ShortestPathFinder.newInstanceOfOneToAll(maxMP, stepType, en.getGame());
         pf.run(mp);
         mvEnvData = pf.getAllComputedPaths();
-        Map<Coords, Integer> mvEnvMP = new HashMap<>((int) ((mvEnvData.size() * 1.25) + 1));
         for (Coords c : mvEnvData.keySet()) {
             mvEnvMP.put(c, mvEnvData.get(c).countMp(mvMode == GEAR_JUMP));
         }
         clientgui.getBoardView(en).setMovementEnvelope(mvEnvMP, en.getWalkMP(), en
                 .getRunMP(), en.getJumpMP(), mvMode);
+    }
+
+    private void showEnterGroundMapMoveEnvelope(Entity en) {
+        Board groundMap = game().getBoard(en.getBoard().getEmbeddedBoardAt(finalPosition()));
+        Coords positionBeforeEntering = previousHexInMovePath();
+        if (groundMap == null || positionBeforeEntering == null) {
+            return;
+        }
+        Map<Coords, Integer> entryHexes = new HashMap<>();
+        int dir = finalPosition().direction(positionBeforeEntering);
+        if ((dir == 0) || (dir == 3)) {
+            int y = (dir == 0) ? 0 : groundMap.getHeight() - 1;
+            for (int x = 0; x < groundMap.getWidth(); x++) {
+                entryHexes.put(new Coords(x, y), cmd.getMpUsed());
+            }
+        } else {
+            int x = (dir > 3) ? 0 : groundMap.getWidth() - 1;
+            for (int y = 0; y < groundMap.getHeight(); y++) {
+                entryHexes.put(new Coords(x, y), cmd.getMpUsed());
+            }
+        }
+        clientgui.getBoardView(groundMap.getBoardId()).setMovementEnvelope(entryHexes,
+                en.getWalkMP(), en.getRunMP(), en.getJumpMP(), GEAR_ENTER_GROUNDMAP);
+    }
+
+    private Coords previousHexInMovePath() {
+        List<MoveStep> steps = cmd.getStepVector();
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            MoveStep step = steps.get(i);
+            if (!step.getPosition().equals(finalPosition())) {
+                return step.getPosition();
+            }
+        }
+        return null;
     }
 
     public void computeModifierEnvelope() {
@@ -4856,16 +4905,23 @@ public class MovementDisplay extends ActionPhaseDisplay {
                 addStepToMovePath(MoveStepType.RETURN);
                 ready();
             } else {
-//                int newBoardId = ce.getBoard().getEnclosingBoardId();
-//                Coords position = game().getBoard(newBoardId).embeddedBoardPosition(ce.getBoardId());
                 MoveStep step = new MoveStep(cmd, MoveStepType.OFF);
-//                step.setBoardLocation(new BoardLocation(position, newBoardId));
                 cmd.addStep(step);
                 updateMove();
             }
-        } else if (actionCmd.equals(MoveCommand.MOVE_CHANGE_MAP.getCmd())) {
-
-            addStepToMovePath(MoveStepType.CHANGE_MAP);
+        } else if (actionCmd.equals(MoveCommand.EXIT_GROUNDMAP_CMD.getCmd())) {
+            addStepToMovePath(MoveStepType.EXIT_GROUNDMAP);
+            updateMove();
+            clientgui.showBoardView(finalBoardId());
+        } else if (actionCmd.equals(MoveCommand.ENTER_GROUNDMAP_CMD.getCmd())) {
+            gear = GEAR_ENTER_GROUNDMAP;
+            updateMove();
+            computeMovementEnvelope(ce());
+            clientgui.showBoardView(ce().getBoard().getEmbeddedBoardAt(finalPosition()));
+        } else if (actionCmd.equals(MoveCommand.FALL_TOATMOMAP_CMD.getCmd())) {
+            addStepToMovePath(MoveStepType.FALL_TO_ATMOSPHERICMAP);
+            updateMove();
+            clientgui.showBoardView(finalBoardId());
         } else if (actionCmd.equals(MoveCommand.MOVE_EJECT.getCmd())) {
             if (ce instanceof Tank) {
                 if (clientgui.doYesNoDialog(
@@ -5533,8 +5589,16 @@ public class MovementDisplay extends ActionPhaseDisplay {
         clientgui.getMenuBar().setEnabled(MoveCommand.MOVE_FLY_OFF.getCmd(), enabled);
     }
 
-    private void setChangeMapEnabled(boolean enabled) {
-        getBtn(MoveCommand.MOVE_CHANGE_MAP).setEnabled(enabled);
+    private void setExitGroundMapEnabled(boolean enabled) {
+        getBtn(MoveCommand.EXIT_GROUNDMAP_CMD).setEnabled(enabled);
+    }
+
+    private void setFallToAtmoMapEnabled(boolean enabled) {
+        getBtn(MoveCommand.FALL_TOATMOMAP_CMD).setEnabled(enabled);
+    }
+
+    private void setEnterGroundMapEnabled(boolean enabled) {
+        getBtn(MoveCommand.ENTER_GROUNDMAP_CMD).setEnabled(enabled);
     }
 
     private void setEjectEnabled(boolean enabled) {

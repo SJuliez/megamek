@@ -50,8 +50,8 @@ public final class CrossBoardAttackHelper {
         }
 
         // A2A attacks are possible between ground map and atmospheric map
-        if (attacker.isFighter() && target.isFighter() && game.onDirectlyConnectedBoards(attacker, target)
-                && !attacker.getCurrentMapType().isSpace() && !game.getBoard(target).isSpaceMap()) {
+        if (Compute.isAirToAir(game, attacker, target) && (game.onDirectlyConnectedBoards(attacker, target)
+                || onGroundMapsWithinOneAtmoMap(game, attacker, target))) {
             return true;
         }
 
@@ -65,6 +65,12 @@ public final class CrossBoardAttackHelper {
 
         return isOrbitToSurface(attacker, target, game) || isCrossBoardArtyAttack(attacker, target, game)
                 || isSurfaceToOrbit(attacker, target, game) || isAirborneToSurface(attacker, target, game);
+    }
+
+    public static boolean onGroundMapsWithinOneAtmoMap(Game game, Targetable unit1, Targetable unit2) {
+        return game.isOnGroundMap(unit1) && game.isOnGroundMap(unit2)
+                && game.hasEnclosingBoard(unit1.getBoardId())
+                && game.getBoard(unit1).getEnclosingBoardId() == game.getBoard(unit2).getEnclosingBoardId();
     }
 
     /**

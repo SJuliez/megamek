@@ -891,10 +891,10 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 showLOSSettingDialog();
                 break;
             case VIEW_ZOOM_IN:
-                bv.zoomIn();
+                getActiveBoardView().zoomIn();
                 break;
             case VIEW_ZOOM_OUT:
-                bv.zoomOut();
+                getActiveBoardView().zoomOut();
                 break;
             case VIEW_TOGGLE_ISOMETRIC:
                 GUIP.setIsometricEnabled(bv.toggleIsometric());

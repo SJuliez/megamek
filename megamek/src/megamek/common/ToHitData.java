@@ -48,7 +48,7 @@ public class ToHitData extends TargetRoll {
     private int cover = LosEffects.COVER_NONE;
     private int margineOfSuccess = 0;
 
-    private Coords location;
+    private BoardLocation location;
 
     private int range;
 
@@ -240,11 +240,11 @@ public class ToHitData extends TargetRoll {
         margineOfSuccess = moS;
     }
 
-    public void setLocation(Coords l) {
+    public void setLocation(BoardLocation l) {
         location = l;
     }
 
-    public Coords getLocation() {
+    public BoardLocation getLocation() {
         return location;
     }
 

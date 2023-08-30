@@ -3729,6 +3729,17 @@ public class Game extends AbstractGame implements Serializable {
         return boardExists(getBoard(boardId).getEnclosingBoardId());
     }
 
+    /**
+     * Returns true when the given Board has an (existing) enclosing Board, i.e. when there's an atmospheric map
+     * for a ground map or a space map for an atmospheric map.
+     *
+     * @param board The board to test
+     * @return
+     */
+    public boolean hasEnclosingBoard(Board board) {
+        return hasEnclosingBoard(board.getBoardId());
+    }
+
     public @Nullable Board getEnclosingBoard(Board board) {
         return getBoard(board.getEnclosingBoardId());
     }
@@ -3765,7 +3776,8 @@ public class Game extends AbstractGame implements Serializable {
     /**
      * Returns true when both given units or objects are on directly connected boards, such as a ground map
      * and its enclosing atmospheric map. Returns false if they are on connected maps that are one or more
-     * other maps "apart", such as a ground map and a connected high-atmo map.
+     * other maps "apart", such as a ground map and a connected high-altitude map or two ground maps
+     * enclosed within a single atmospheric map.
      *
      * @param entity1 The first unit or object to test
      * @param entity2 The second unit or object to test
@@ -3807,7 +3819,7 @@ public class Game extends AbstractGame implements Serializable {
 
     /**
      * Returns true when both given units or objects are on boards that are connected at least through a common
-     * high atmosphere map. For two connected maps, a fighter unit can reach one from the other, traversing
+     * high altitude map. For two connected maps, an aerospace fighter can reach one from the other, traversing
      * atmospheric and/or high atmospheric maps. Also returns true when both are on the same board.
      *
      * When two maps are not connected they're part of different hierarchies of maps and therefore,
@@ -3818,14 +3830,14 @@ public class Game extends AbstractGame implements Serializable {
      * @param entity1 The first unit or object to test
      * @param entity2 The second unit or object to test
      *
-     * @return True when both units or objects are on vertically connected boards
+     * @return True when both units or objects are on connected boards (or the same board)
      */
     public boolean onConnectedBoards(@Nullable Targetable entity1, @Nullable Targetable entity2) {
         return (entity1 != null) && (entity2 != null) && areConnectedBoards(entity1.getBoardId(), entity2.getBoardId());
     }
 
     /**
-     * Returns true when both given boards are connected at least through a common high atmosphere map.
+     * Returns true when both given boards are connected at least through a common high altitude map.
      * When two boards are connected, a fighter unit can reach one from the other, traversing
      * atmospheric and/or high atmospheric maps. Also returns true if the boards are one and the same.
      *

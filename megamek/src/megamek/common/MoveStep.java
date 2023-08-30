@@ -22,8 +22,10 @@ import megamek.common.MovePath.MoveStepType;
 import megamek.common.enums.MPBoosters;
 import megamek.common.options.OptionsConstants;
 import megamek.common.pathfinder.CachedEntityState;
+import megamek.common.util.BoardHelper;
 import org.apache.logging.log4j.LogManager;
 
+import java.awt.desktop.AboutHandler;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -311,6 +313,11 @@ public class MoveStep implements Serializable {
         this.mf = mf;
     }
 
+    public MoveStep(MovePath path, MoveStepType type, BoardLocation destination) {
+        this(path, type);
+        boardLocation = destination;
+    }
+
     @Override
     public String toString() {
         switch (type) {
@@ -399,8 +406,12 @@ public class MoveStep implements Serializable {
                 return "Brace";
             case CHAFF:
                 return "Chaff";
-            case CHANGE_MAP:
-                return "ChangeMap";
+            case FALL_TO_ATMOSPHERICMAP:
+                return "Fall to Atmosphere";
+            case ENTER_GROUNDMAP:
+                return "Enter Groundmap to [" + boardLocation + "]";
+            case EXIT_GROUNDMAP:
+                return "Exit Groundmap to [" + boardLocation + "]";
             default:
                 return "???";
         }
@@ -486,7 +497,7 @@ public class MoveStep implements Serializable {
     private void compileMove(final Game game, final Entity entity,
                              MoveStep prev, CachedEntityState cachedEntityState) {
 
-        Hex destHex = game.getBoard(entity).getHex(getPosition());
+        Hex destHex = game.getHex(boardLocation);
 
         // Check for pavement movement.
         if (!entity.isAirborne() && Compute.canMoveOnPavement(game, prev.getPosition(), getPosition(), this)) {
@@ -506,15 +517,13 @@ public class MoveStep implements Serializable {
         // nTurns)
         // this is handled differently by aerospace units operating on the
         // ground map and by spheroids in atmosphere
-        if (entity.isAirborne() && entity.getCurrentMapType().isGround()) {
+        if (entity.isAirborne() && game.isOnGroundMap(boardLocation)) {
             setNMoved(getNMoved() + 1);
-            if ((entity.getMovementMode() != EntityMovementMode.SPHEROID)
-                    && (getNMoved() >= 16)) {
+            if ((entity.getMovementMode() != EntityMovementMode.SPHEROID) && (getNMoved() >= 16)) {
                 setVelocityLeft(getVelocityLeft() - 1);
                 setNMoved(0);
             }
-        } else if (entity.isAirborne() && !game.useVectorMove()
-                && !useSpheroidAtmosphere(game, entity)) {
+        } else if (entity.isAirborne() && !game.useVectorMove() && !useSpheroidAtmosphere(game, entity)) {
             setVelocityLeft(getVelocityLeft() - 1);
             setNTurns(0);
         }
@@ -799,10 +808,15 @@ public class MoveStep implements Serializable {
                 }
                 adjustFacing(getType());
                 break;
-            case OFF:
-                int newBoardId = entity.getBoard().getEnclosingBoardId();
-                Coords position = game.getBoard(newBoardId).embeddedBoardPosition(entity.getBoardId());
-                setBoardLocation(new BoardLocation(position, newBoardId));
+            case EXIT_GROUNDMAP:
+                int atmoBoardId = BoardHelper.enclosingBoardId(game, prev.boardLocation);
+                Coords atmoPosition = BoardHelper.positionOnEnclosingBoard(game, prev.boardLocation.getBoardId());
+                setBoardLocation(new BoardLocation(atmoPosition, atmoBoardId));
+                setDistance(getDistance() / 16);
+                break;
+            case ENTER_GROUNDMAP:
+                // @@MultiBoardTODO:
+                setDistance(getDistance() * 16);
                 break;
             case BACKWARDS:
                 moveInDir((getFacing() + 3) % 6);
@@ -994,7 +1008,11 @@ public class MoveStep implements Serializable {
             case ACC:
                 setVelocity(getVelocity() + 1);
                 setVelocityLeft(getVelocityLeft() + 1);
-                setMp(1);
+                if (game.getBoard(getBoardLocation()).isAtmosphericRow(getBoardLocation().getCoords())) {
+                    setMp(2);
+                } else {
+                    setMp(1);
+                }
                 break;
             case DEC:
                 setVelocity(getVelocity() - 1);
@@ -1254,7 +1272,7 @@ public class MoveStep implements Serializable {
             velocityN = a.getNextVelocity();
             velocityLeft = a.getCurrentVelocity() - entity.delta_distance;
             if (entity.getCurrentMapType().isGround()) {
-                velocityLeft = a.getCurrentVelocity() - (entity.delta_distance / 16);
+                velocityLeft = a.getCurrentVelocity() - entity.delta_distance / 16;
             }
             isRolled = false;// a.isRolled();
             nStraight = a.getStraightMoves();
@@ -2047,12 +2065,10 @@ public class MoveStep implements Serializable {
 
             // check to make sure there is velocity left to spend
             if ((getVelocityLeft() >= 0) || useSpheroidAtmosphere(game, entity)) {
-                // when aeros are flying on the ground mapsheet we need an
-                // additional check
-                // because velocityLeft is only decremented at intervals of 16
-                // hexes
+                // when aeros are flying on the ground mapsheet we need an additional check
+                // because velocityLeft is only decremented at intervals of 16 hexes
                 if (useAeroAtmosphere(game, entity)
-                        && entity.getCurrentMapType().isGround()
+                        && game.isOnGroundMap(boardLocation)
                         && (getVelocityLeft() == 0) && (getNMoved() > 0)) {
                     return;
                 }

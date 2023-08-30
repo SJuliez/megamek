@@ -6255,6 +6255,7 @@ public class GameManager implements IGameManager {
         // okay, proceed with movement calculations
         Coords lastPos = entity.getPosition();
         Coords curPos = entity.getPosition();
+        int curBoardId = entity.getBoardId();
         Hex firstHex = game.getHex(entity.getBoardLocation()); // Used to check for start/end magma damage
         int curFacing = entity.getFacing();
         int curVTOLElevation = entity.getElevation();
@@ -6685,20 +6686,18 @@ public class GameManager implements IGameManager {
                 if (step.getType() == MovePath.MoveStepType.OFF) {
                     a.setCurrentVelocity(md.getFinalVelocity());
                     entity.setAltitude(curAltitude);
-                    // @@MultiBoardTODO: should be handled without special intervention as part of movement
-                    if (game.hasEnclosingBoard(entity.getBoardId())) {
-//                        Board enclosingBoard = game.getBoard(entity.getBoard().getEnclosingBoardId());
-//                        entity.setCurrentBoard(enclosingBoard.getBoardId());
-//                        entity.setPosition(enclosingBoard.getCenter());
-                    } else {
-                        processLeaveMap(md, true, -1);
-                    }
+                    processLeaveMap(md, true, -1);
                     return;
                 }
 
-                // @@MultiBoardTODO: is this enough?
-                if (step.getType() == MovePath.MoveStepType.CHANGE_MAP) {
+                // @@MultiBoardTODO: is this enough? looks like
+                if (step.getType() == MovePath.MoveStepType.FALL_TO_ATMOSPHERICMAP) {
                     entity.setChangeMap(true);
+                }
+
+                if (step.getType() == MovePath.MoveStepType.EXIT_GROUNDMAP
+                        || step.getType() == MovePath.MoveStepType.ENTER_GROUNDMAP) {
+                    curBoardId = step.getBoardLocation().getBoardId();
                 }
 
                 rollTarget = a.checkRolls(step, overallMoveType);
@@ -8476,6 +8475,7 @@ public class GameManager implements IGameManager {
 
         // set entity parameters
         entity.setPosition(curPos);
+        entity.setCurrentBoard(curBoardId);
         entity.setFacing(curFacing);
         entity.setSecondaryFacing(curFacing);
         entity.delta_distance = distance;

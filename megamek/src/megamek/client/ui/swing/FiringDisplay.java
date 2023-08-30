@@ -878,7 +878,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                     && (sameBoard || CrossBoardAttackHelper.isCrossBoardAttackPossible(ce(), target, game))
                     && target.isTargetable()) {
                 ToHitData thd = WeaponAttackAction.toHit(game, cen, target);
-                thd.setLocation(target.getPosition());
+                thd.setLocation(target.getBoardLocation());
                 thd.setRange(ce().getPosition().distance(target.getPosition()));
                 fs.put(target.getId(), new FiringSolution(thd, spottedEntities.contains(target.getId())));
             }

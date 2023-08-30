@@ -58,7 +58,8 @@ public class MovePath implements Cloneable, Serializable {
         CLIMB_MODE_OFF, SWIM, DIG_IN, FORTIFY, SHAKE_OFF_SWARMERS, TAKEOFF, VTAKEOFF, LAND, ACC, DEC, EVADE,
         SHUTDOWN, STARTUP, SELF_DESTRUCT, ACCN, DECN, ROLL, OFF, RETURN, LAUNCH, THRUST, YAW, CRASH, RECOVER,
         RAM, HOVER, MANEUVER, LOOP, CAREFUL_STAND, JOIN, DROP, VLAND, MOUNT, UNDOCK, TAKE_COVER,
-        CONVERT_MODE, BOOTLEGGER, TOW, DISCONNECT, BRACE, CHAFF, CHANGE_MAP, FLIGHT_PATH;
+        CONVERT_MODE, BOOTLEGGER, TOW, DISCONNECT, BRACE, CHAFF, FALL_TO_ATMOSPHERICMAP, FLIGHT_PATH, EXIT_GROUNDMAP,
+        ENTER_GROUNDMAP;
 
         /**
          * Whether this move step type will result in the unit entering a new hex
@@ -70,11 +71,14 @@ public class MovePath implements Cloneable, Serializable {
                     this == LATERAL_RIGHT ||
                     this == LATERAL_LEFT_BACKWARDS ||
                     this == LATERAL_RIGHT_BACKWARDS ||
-                    this == CHANGE_MAP;
+                    this == FALL_TO_ATMOSPHERICMAP ||
+                    this == EXIT_GROUNDMAP ||
+                    this == ENTER_GROUNDMAP;
         }
     }
 
     public static class Key {
+        // @@MultiBoardTODO: BoardLocation?
         private final Coords coords;
         private final int facing;
         private final int type;
@@ -140,8 +144,9 @@ public class MovePath implements Cloneable, Serializable {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("MOVE PATH:").append(getKey().hashCode()).append("; Length: ").append(length());
-        sb.append("; End: ").append(getFinalCoords()).append("; Steps: ");
+        sb.append("MovePath: ").append(getKey().hashCode()).append("; Steps: ").append(length());
+        sb.append("; Start: ").append(getStartBoardLocation());
+        sb.append("; End: ").append(new BoardLocation(getFinalCoords(), getFinalBoardId())).append("; Steps: ");
         List<String> stepList = steps.stream().map(MoveStep::toString).collect(Collectors.toList());
         sb.append(String.join("-", stepList));
         if (!getGame().getBoard(entity).contains(getFinalCoords())) {
@@ -204,6 +209,10 @@ public class MovePath implements Cloneable, Serializable {
 
     public MovePath addStep(final MoveStepType type, final Minefield mf) {
         return addStep(new MoveStep(this, type, mf));
+    }
+
+    public MovePath addStep(final MoveStepType type, BoardLocation destination) {
+        return addStep(new MoveStep(this, type, destination));
     }
 
     public MovePath addManeuver(final int manType) {
@@ -290,6 +299,7 @@ public class MovePath implements Cloneable, Serializable {
         steps.addElement(step);
 
         final MoveStep prev = getStep(steps.size() - 2);
+        BoardLocation destination = step.getBoardLocation();
 
         if (compile) {
             try {
@@ -298,6 +308,11 @@ public class MovePath implements Cloneable, Serializable {
                 // N.B. the pathfinding will try steps off the map.
                 step.setMovementType(EntityMovementType.MOVE_ILLEGAL);
             }
+        }
+
+        if (step.getType() == MoveStepType.ENTER_GROUNDMAP) {
+            // restore the board location as it is a player choice and cannot be derived from the previous step
+            step.setBoardLocation(destination);
         }
 
         // jumping into heavy woods is danger
@@ -567,10 +582,12 @@ public class MovePath implements Cloneable, Serializable {
                 step = new MoveStep(this, step.getType(), step.hasNoCost());
             } else if (null != step.getMinefield()) {
                 step = new MoveStep(this, step.getType(), step.getMinefield());
+            } else if (step.getType() == MoveStepType.ENTER_GROUNDMAP) {
+                step = new MoveStep(this, step.getType(), step.getBoardLocation());
             } else {
                 step = new MoveStep(this, step.getType());
             }
-            this.addStep(step);
+            addStep(step);
         }
 
         // Can't move out of a hex with an enemy unit unless we started
@@ -807,6 +824,23 @@ public class MovePath implements Cloneable, Serializable {
     }
 
     /**
+     * @return the final coordinates if a mech were to perform all the steps in this path, or
+     * null if there's an issue with determining the coords
+     */
+    public int getFinalBoardId() {
+        if (getGame().useVectorMove()) {
+//            return Compute.getFinalPosition(getEntity().getPosition(), getFinalVectors());
+            // ??
+            // @@MultiBoardTODO: do this with vector move
+            return -1;
+        } else if (getLastStep() != null) {
+            return getLastStep().getBoardLocation().getBoardId();
+        } else {
+            return getEntity().getBoardId();
+        }
+    }
+
+    /**
      * Returns the starting {@link Coords} of this path.
      */
     public @Nullable Coords getStartCoords() {
@@ -815,6 +849,15 @@ public class MovePath implements Cloneable, Serializable {
             final Coords coords = step.getPosition();
             if (coords != null) {
                 return coords;
+            }
+        }
+        return null;
+    }
+
+    public @Nullable BoardLocation getStartBoardLocation() {
+        for (MoveStep step : steps) {
+            if (step.getBoardLocation() != null) {
+                return step.getBoardLocation();
             }
         }
         return null;
@@ -1223,12 +1266,12 @@ public class MovePath implements Cloneable, Serializable {
     public void findPathTo(final Coords dest, final MoveStepType type) {
         final int timeLimit = PreferenceManager.getClientPreferences().getMaxPathfinderTime();
 
-        ShortestPathFinder pf = ShortestPathFinder.newInstanceOfAStar(dest, type, game, game.getBoard(entity));
+        ShortestPathFinder pf = ShortestPathFinder.newInstanceOfAStar(dest, type, game, game.getBoard(getFinalBoardId()));
 
         AbstractPathFinder.StopConditionTimeout<MovePath> timeoutCondition = new AbstractPathFinder.StopConditionTimeout<>(timeLimit);
         pf.addStopCondition(timeoutCondition);
 
-        pf.run(this.clone());
+        pf.run(clone());
         MovePath finPath = pf.getComputedPath(dest);
         // this can be used for debugging the "destruction aware pathfinder"
         //MovePath finPath = calculateDestructionAwarePath(dest);
@@ -1251,7 +1294,7 @@ public class MovePath implements Cloneable, Serializable {
 
         if (finPath != null) {
             finPath.compile(game, entity, false);
-            this.steps = finPath.steps;
+            steps = finPath.steps;
         } else {
             LogManager.getLogger().error("Unable to find a path to the destination hex! \tMoving "
                     + getEntity() + "from " + getFinalCoords() + " to " + dest);

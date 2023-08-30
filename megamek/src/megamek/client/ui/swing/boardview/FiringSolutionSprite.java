@@ -70,7 +70,7 @@ class FiringSolutionSprite extends HexSprite {
     private final StringDrawer rangeWriter;
 
     public FiringSolutionSprite(BoardView boardView1, final FiringSolution firingSolution) {
-        super(boardView1, firingSolution.getToHitData().getLocation());
+        super(boardView1, firingSolution.getToHitData().getLocation().getCoords());
         this.firingSolution = firingSolution;
 
         // to-hit modifier

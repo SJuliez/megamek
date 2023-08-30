@@ -26,6 +26,7 @@ import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import megamek.common.Coords;
 import megamek.common.MapSettings;
+import megamek.common.deployment.DeploymentZone;
 
 /**
  * Class that off-loads serialization related code from Server.java
@@ -83,6 +84,7 @@ public class SerializationHelper {
         xStream.allowTypeHierarchy(megamek.common.options.IOption.class);
         xStream.allowTypeHierarchy(megamek.common.weapons.AttackHandler.class);
         xStream.allowTypeHierarchy(megamek.server.victory.IVictoryConditions.class);
+        xStream.allowTypeHierarchy(megamek.common.deployment.DeploymentZone.class);
         return xStream;
     }
 
