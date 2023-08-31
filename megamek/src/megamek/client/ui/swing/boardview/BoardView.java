@@ -50,6 +50,7 @@ import megamek.common.preference.ClientPreferences;
 import megamek.common.preference.IPreferenceChangeListener;
 import megamek.common.preference.PreferenceChangeEvent;
 import megamek.common.preference.PreferenceManager;
+import megamek.common.util.BoardHelper;
 import megamek.common.util.FiringSolution;
 import megamek.common.util.ImageUtil;
 import megamek.common.util.fileUtils.MegaMekFile;
@@ -2608,57 +2609,68 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         AffineTransform scaleTransform = new AffineTransform();
         scaleTransform.scale(scale, scale);
 
-        if (getBoard().isHighAltitudeMap()) {
-            // Draw in atmosphere in a high-altitude map
-            if (getBoard().isAtmosphericRow(c)) {
-                // First, tint the stars
-                g.setColor(new Color(0, 0, 0, 250 - getBoard().atmosphericRowNumber(c) * 30));
+        int spaceInterfacePosition = BoardHelper.spaceAtmosphereInterfacePosition(game);
+        // Draw in atmosphere in a high-altitude map (unless planetary conditions say its vacuum)
+        if (BoardHelper.isAtmosphericRow(game, getBoard(), c)) {
+            int atmosphericRow = BoardHelper.effectiveAtmosphericRowNumber(game, getBoard(), c);
+            // First, fade out the stars
+            int alphaStepStars = 120 / (spaceInterfacePosition - 1);
+            g.setColor(new Color(0, 0, 0, 250 - atmosphericRow * alphaStepStars));
+            g.fill(scaleTransform.createTransformedShape(hexPoly));
+            // Add atmosphere
+            int alphaStep = 160 / (spaceInterfacePosition - 1);
+            g.setColor(new Color(0, 250, 250, 190 - atmosphericRow * alphaStep));
+            g.fill(scaleTransform.createTransformedShape(hexPoly));
+        }
+
+        // Draw in the space/atmosphere interface in a high-altitude map
+        if (BoardHelper.isSpaceAtmosphereInterface(game, getBoard(), c)) {
+            Polygon halfHex = new Polygon();
+            halfHex.addPoint(21, 0);
+            halfHex.addPoint(42, 0);
+            halfHex.addPoint(42, 71);
+            halfHex.addPoint(21, 71);
+            halfHex.addPoint(0, 36);
+            halfHex.addPoint(0, 35);
+            g.setColor(new Color(0, 250, 250, 15));
+            g.fill(scaleTransform.createTransformedShape(halfHex));
+            Polygon line = new Polygon();
+            line.addPoint(42, 0);
+            line.addPoint(42, 71);
+            g.setColor(new Color(130, 130, 130, 100));
+            BasicStroke bs1 = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND,
+                    1.0f, new float[] { 3f, 5f }, 0f);
+            g.setStroke(bs1);
+            AffineTransform oldTransform = g.getTransform();
+            g.transform(scaleTransform);
+            g.draw(line);
+            g.setTransform(oldTransform);
+        }
+
+        // Draw in ground in a high-altitude map
+        if (BoardHelper.isGroundRowHex(getBoard(), c)) {
+            // Atmosphere
+            if (game.getPlanetaryConditions().getAtmosphere() != PlanetaryConditions.ATMO_VACUUM) {
+                int atmosphericRow = BoardHelper.effectiveAtmosphericRowNumber(game, getBoard(), 1) - 1;
+                // First, fade out the stars
+                int alphaStepStars = 120 / (spaceInterfacePosition - 1);
+                g.setColor(new Color(0, 0, 0, 250 - atmosphericRow * alphaStepStars));
                 g.fill(scaleTransform.createTransformedShape(hexPoly));
-                g.setColor(new Color(0, 250, 250, 190 - getBoard().atmosphericRowNumber(c) * 40));
+                // Add atmosphere
+                int alphaStep = 160 / (spaceInterfacePosition - 1);
+                g.setColor(new Color(0, 250, 250, 190 - atmosphericRow * alphaStep));
                 g.fill(scaleTransform.createTransformedShape(hexPoly));
             }
 
-            // Draw in the space/atmosphere interface in a high-altitude map
-            if (getBoard().isSpaceAtmosphereInterface(c)) {
-                Polygon halfHex = new Polygon();
-                halfHex.addPoint(21, 0);
-                halfHex.addPoint(42, 0);
-                halfHex.addPoint(42, 71);
-                halfHex.addPoint(21, 71);
-                halfHex.addPoint(0, 36);
-                halfHex.addPoint(0, 35);
-                g.setColor(new Color(0, 250, 250, 15));
-                g.fill(scaleTransform.createTransformedShape(halfHex));
-                Polygon line = new Polygon();
-                line.addPoint(42, 0);
-                line.addPoint(42, 71);
-                g.setColor(new Color(130, 130, 130, 100));
-                BasicStroke bs1 = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND,
-                        1.0f, new float[] { 3f, 5f }, 0f);
-                g.setStroke(bs1);
-                AffineTransform oldTransform = g.getTransform();
-                g.transform(scaleTransform);
-                g.draw(line);
-                g.setTransform(oldTransform);
-            }
-
-            // Draw in ground in a high-altitude map
-            if (getBoard().isGroundRowHex(c)) {
-                // Remove stars
-                g.setColor(new Color(0, 0, 0));
-                g.fill(scaleTransform.createTransformedShape(hexPoly));
-                g.setColor(new Color(0, 250, 250, 190));
-                g.fill(scaleTransform.createTransformedShape(hexPoly));
-                Polygon leftTriangle = new Polygon();
-                leftTriangle.addPoint(21, 0);
-                leftTriangle.addPoint(21, 71);
-                leftTriangle.addPoint(0, 36);
-                leftTriangle.addPoint(0, 35);
-                g.setColor(new Color(40, 80, 40));
-                g.fill(scaleTransform.createTransformedShape(leftTriangle));
-                g.setColor(new Color(40, 140, 40));
-                g.draw(scaleTransform.createTransformedShape(HexDrawUtilities.getHexCrossLine01(4, 2)));
-            }
+            Polygon leftTriangle = new Polygon();
+            leftTriangle.addPoint(21, 0);
+            leftTriangle.addPoint(21, 71);
+            leftTriangle.addPoint(0, 36);
+            leftTriangle.addPoint(0, 35);
+            g.setColor(new Color(40, 80, 40));
+            g.fill(scaleTransform.createTransformedShape(leftTriangle));
+            g.setColor(new Color(40, 140, 40));
+            g.draw(scaleTransform.createTransformedShape(HexDrawUtilities.getHexCrossLine01(4, 2)));
         }
 
         // Shade and add static noise to hexes that are in an ECM field
@@ -6237,8 +6249,8 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 ZOOM_SCALE_TYPES[zoomIndex]);
     }
 
-    public boolean toggleIsometric() {
-        drawIsometric = !drawIsometric;
+    public void setIsometric() {
+        drawIsometric = GUIP.getIsometricEnabled();
         for (Sprite spr : moveEnvSprites) {
             spr.prepare();
         }
@@ -6264,7 +6276,6 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             sprite.updateBounds();
         }
         repaint();
-        return drawIsometric;
     }
 
     public void updateEntityLabels() {
@@ -6467,7 +6478,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 fieldFire.get(bracket).removeIf(h -> Compute.effectiveDistance(game, fieldOfFireUnit,
                         new HexTarget(h, boardId, Targetable.TYPE_HEX_CLEAR)) > currentRange);
                 if (!fieldOfFireWpIsCapital) {
-                    fieldFire.get(bracket).removeIf(h -> LosEffects.crossesSpaceAtmosphereInterface(getBoard(), c, h));
+                    fieldFire.get(bracket).removeIf(h -> BoardHelper.crossesSpaceAtmosphereInterface(game, getBoard(), c, h));
                 }
             }
         } else {

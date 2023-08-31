@@ -40,6 +40,7 @@ import megamek.common.annotations.Nullable;
 import megamek.common.event.*;
 import megamek.common.preference.IPreferenceChangeListener;
 import megamek.common.preference.PreferenceChangeEvent;
+import megamek.common.util.BoardHelper;
 import megamek.common.util.ImageUtil;
 import megamek.common.util.fileUtils.MegaMekFile;
 import org.apache.logging.log4j.LogManager;
@@ -900,14 +901,23 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
         int baseY = (((2 * y) + 1 + (x % 2)) * HEX_SIDE_BY_COS30[zoom]) + topMargin;
         int[] xPoints = xPoints(x);
         int[] yPoints = yPoints(x, y);
-        if (x <= 5) {
-            g.setColor(new Color(75 - 15 * x, 150 - 30 * x, 150 - 30 * x));
+
+        int spaceInterfacePosition = BoardHelper.spaceAtmosphereInterfacePosition(game);
+        // Draw in atmosphere in a high-altitude map (unless planetary conditions say its vacuum)
+        if (BoardHelper.isAtmosphericRow(game, board, x)) {
+            int atmosphericRow = BoardHelper.effectiveAtmosphericRowNumber(game, board, x);
+            // Add atmosphere
+            int step = 120 / (spaceInterfacePosition - 1);
+            g.setColor(new Color(75 - step/2 * atmosphericRow,
+                    150 - step * atmosphericRow, 150 - step * atmosphericRow));
+        } else if (BoardHelper.isGroundRowHex(board, x)) {
+            g.setColor(Color.GREEN);
         }
         g.fillPolygon(xPoints, yPoints, 6);
         g.setColor(new Color(20, 20, 60));
         g.drawPolygon(xPoints, yPoints, 6);
 
-        if (x > 5) {
+        if (x > spaceInterfacePosition) {
             // Drop in a star
             int dx = (int) (Math.random() * HEX_SIDE[zoom]);
             int dy = (int) ((Math.random() - 0.5) * HEX_SIDE_BY_COS30[zoom]);

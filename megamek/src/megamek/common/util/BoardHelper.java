@@ -102,5 +102,212 @@ public final class BoardHelper {
         return result;
     }
 
+    /**
+     * Returns true when the given Coords is a hex of any of the atmospheric rows 1-4 (or 1-7 with very high
+     * atmosphere conditions) on a high-altitude map, false otherwise. Returns false for ground row hexes and
+     * for hexes of the space-atmosphere interface. Also returns false when planetary conditions indicate
+     * the atmosphere is "vacuum".
+     *
+     * @param coords The position on the board to test
+     * @return True for hexes of the atmospheric rows on a high-altitude map
+     */
+    public static boolean isAtmosphericRow(Game game, Board board, Coords coords) {
+        return isAtmosphericRow(game, board, coords.getX());
+    }
+
+    /**
+     * Returns true when the given X position is a hex of any of the atmospheric rows 1-4 (or 1-7 with very high
+     * atmosphere conditions) on a high-altitude map, false otherwise. Returns false for ground row hexes and
+     * for hexes of the space-atmosphere interface. Also returns false when planetary conditions indicate
+     * the atmosphere is "vacuum".
+     *
+     * @param x The X position on the board to test (Coords.getX())
+     * @return True for hexes of the atmospheric rows on a high-altitude map
+     */
+    public static boolean isAtmosphericRow(Game game, Board board, int x) {
+        return board.isHighAltitudeMap() && (x >= 1) && (x < spaceAtmosphereInterfacePosition(game));
+    }
+
+    /**
+     * Returns true when the given BoardLocation indicates a hex of any of the atmospheric rows 1-4 (or 1-7 with very high
+     * atmosphere conditions) on a high-altitude map, false otherwise. Returns false for ground row hexes and
+     * for hexes of the space-atmosphere interface. Also returns false when planetary conditions indicate
+     * the atmosphere is "vacuum".
+     *
+     * @param boardLocation The location to test
+     * @return True for hexes of the atmospheric rows on a high-altitude map
+     */
+    public static boolean isAtmosphericRow(Game game, BoardLocation boardLocation) {
+        return isAtmosphericRow(game, game.getBoard(boardLocation), boardLocation.getCoords().getX());
+    }
+
+    /**
+     * Returns true when the given Coords is a hex of any of the atmospheric rows 1-4 or the ground row
+     * on a high-altitude map, false if it is in the space/atmosphere interface or in true space.
+     * Returns false for all hexes if this board is not a high-altitude board or when planetary conditions indicate
+     * the atmosphere is "vacuum".
+     *
+     * @param coords The position on the board to test
+     * @return true for hexes of atmospheric rows 1-4 and the ground row on a high-altitude map
+     */
+    public static boolean isBelowSpaceAtmosphereInterface(Game game, Board board, Coords coords) {
+        return board.isHighAltitudeMap() && (coords.getX() < spaceAtmosphereInterfacePosition(game));
+    }
+
+    /**
+     * Returns the number of the atmospheric row (i.e. 1 to 4 or 1 to 7 for very high atmosphere) of the given
+     * Coords on a high-altitude map (see TW p.79). For coords not in an atmospheric row or not on a
+     * high-altitude map, returns -1.
+     *
+     * @param coords The position on the board to test
+     * @return The number of the atmospheric row on a high-altitude map
+     */
+    public static int atmosphericRowNumber(Game game, Board board, Coords coords) {
+        return isAtmosphericRow(game, board, coords) ? coords.getX() : -1;
+    }
+
+    /**
+     * Returns the number of the coords' atmospheric row (i.e. 1 to 4 or 1 to 7 for very high atmosphere) that is to be
+     * effectively used for rule purposes on a high-altitude map (see TW p.79). This takes into account atmosphere
+     * density, see Trace Atmosphere, TO:AR, p.52; in these conditions, it is not equal to
+     * {@link #atmosphericRowNumber(Game, Board, Coords)}.
+     * For coords not in an atmospheric row or not on a high-altitude map, returns -1.
+     *
+     * @param coords The position on the board to test
+     * @return The effective number of the atmospheric row on a high-altitude map
+     */
+    public static int effectiveAtmosphericRowNumber(Game game, Board board, Coords coords) {
+        return effectiveAtmosphericRowNumber(game, board, coords.getX());
+    }
+
+    /**
+     * Returns the number of the X position's atmospheric row (i.e. 1 to 4 or 1 to 7 for very high atmosphere) that
+     * is to be effectively used for rule purposes on a high-altitude map (see TW p.79). This takes into account
+     * atmosphere density, see Trace Atmosphere, TO:AR, p.52; in these conditions, it is not equal to
+     * {@link #atmosphericRowNumber(Game, Board, Coords)}.
+     * For coords not in an atmospheric row or not on a high-altitude map, returns -1.
+     *
+     * @param x The X position on the board to test (Coords.getX())
+     * @return The effective number of the atmospheric row on a high-altitude map
+     */
+    public static int effectiveAtmosphericRowNumber(Game game, Board board, int x) {
+        if (game.getPlanetaryConditions().getAtmosphere() == PlanetaryConditions.ATMO_TRACE) {
+            return isAtmosphericRow(game, board, x) ? 4 : -1;
+        } else {
+            return isAtmosphericRow(game, board, x) ? x : -1;
+        }
+    }
+
+    /**
+     * Returns true when the given Coords is a hex of the space-atmosphere interface on a high-altitude map,
+     * false otherwise.
+     *
+     * @param coords The position on the board to test
+     * @return true for hexes of the space-atmosphere interface on a high-atmosphere map
+     */
+    public static boolean isSpaceAtmosphereInterface(Game game, Board board, Coords coords) {
+        return board.isHighAltitudeMap() && (coords.getX() == spaceAtmosphereInterfacePosition(game));
+    }
+
+    /**
+     * Returns true when the given Coords is a ground row hex on a high-atmospheric map, i.e. the
+     * lowermost row of hexes. Returns false for atmospheric and ground maps as well as for a space map that
+     * is not high-altitude. This is true for ground row hexes even if planetary conditions indicate the
+     * atmosphere is "vacuum".
+     *
+     * @param coords The position on the board to test
+     * @return true for the ground row hexes on a high atmospheric map
+     */
+    public static boolean isGroundRowHex(Board board, Coords coords) {
+        return isGroundRowHex(board, coords.getX());
+    }
+
+    /**
+     * Returns true when the given X position is a ground row hex on a high-atmospheric map, i.e. the
+     * lowermost row of hexes. Returns false for atmospheric and ground maps as well as for a space map that
+     * is not high-altitude. This is true for ground row hexes even if planetary conditions indicate the
+     * atmosphere is "vacuum".
+     *
+     * @param x The X position on the board to test
+     * @return true for the ground row hexes on a high atmospheric map
+     */
+    public static boolean isGroundRowHex(Board board, int x) {
+        return board.isHighAltitudeMap() && (x == 0);
+    }
+
+    /**
+     * Returns true when the given Coords is a hex that is true space on a high-atmospheric map, i.e. beyond the
+     * space-atmosphere interface, or for any hex in a space map that is not a high-atmosphere map.
+     * Returns false for atmospheric and ground maps.
+     *
+     * @param coords The position on the board to test
+     * @return true for true space hexes on a space map
+     */
+    public static boolean isTrueSpaceHex(Game game, Board board, Coords coords) {
+        return board.isSpaceMap() && (!board.isHighAltitudeMap() || (coords.getX() > spaceAtmosphereInterfacePosition(game)));
+    }
+
+    public static int spaceAtmosphereInterfacePosition(Game game) {
+        switch (game.getPlanetaryConditions().getAtmosphere()) {
+            case PlanetaryConditions.ATMO_VACUUM:
+                return -1;
+            case PlanetaryConditions.ATMO_VHIGH:
+                return 8;
+            default:
+                return 5;
+        }
+    }
+
+    public static int highAltAtmoRowRangeIncrease(Game game) {
+        switch (game.getPlanetaryConditions().getAtmosphere()) {
+            case PlanetaryConditions.ATMO_VACUUM:
+                return 0;
+            case PlanetaryConditions.ATMO_TRACE:
+                return 1;
+            case PlanetaryConditions.ATMO_THIN:
+                return 3;
+            case PlanetaryConditions.ATMO_HIGH:
+                return 7;
+            case PlanetaryConditions.ATMO_VHIGH:
+                return 9;
+            default:
+                return 5;
+        }
+    }
+
+    public static int highAltSpaceAtmoRangeIncrease(Game game) {
+        switch (game.getPlanetaryConditions().getAtmosphere()) {
+            case PlanetaryConditions.ATMO_VACUUM:
+            case PlanetaryConditions.ATMO_TRACE:
+            case PlanetaryConditions.ATMO_THIN:
+                return 0;
+            case PlanetaryConditions.ATMO_HIGH:
+                return 3;
+            case PlanetaryConditions.ATMO_VHIGH:
+                return 5;
+            default:
+                return 2;
+        }
+    }
+
+    /**
+     * Returns true when a path between the two given positions on the given board crosses the space/atmosphere
+     * interface and the board is actually a high-altitude map. Returns false when the board is not
+     * a high-altitude board or when one or both positions are on the space/atmosphere interface or
+     * both positions are in ground row/atmospheric hexes or both positions are in true space.
+     *
+     * @param game The game
+     * @param board The board to check
+     * @param position1 The first position
+     * @param position2 The second position
+     * @return True when a path between the two positions crosses the space/atmosphere interface
+     */
+    public static boolean crossesSpaceAtmosphereInterface(Game game, Board board, Coords position1, Coords position2) {
+        return board.isHighAltitudeMap() &&
+                ((isTrueSpaceHex(game, board, position1) && isBelowSpaceAtmosphereInterface(game, board, position2))
+                        || (isTrueSpaceHex(game, board, position2) && isBelowSpaceAtmosphereInterface(game, board, position1)));
+        // @@MultiBoardTODO: Make this an IMPOSSIBLE reason in loseffects for non-cap weapons
+    }
+
     private BoardHelper() { }
 }

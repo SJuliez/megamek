@@ -2004,9 +2004,12 @@ public class MovementDisplay extends ActionPhaseDisplay {
                 clear();
                 return;
             } else if (gear == GEAR_ENTER_GROUNDMAP) {
-                if (b.getBoardView().getBoardId() == ce().getBoard().getEmbeddedBoardAt(finalPosition())) {
+                if ((ce() != null) && (b.getBoardView().getBoardId() == ce().getBoard().getEmbeddedBoardAt(finalPosition()))
+                        && edgeOfGroundMapEntry(ce()).contains(b.getCoords())) {
                     currentMove(b.getCoords());
                     updateMove();
+                    clientgui.boardViews().forEach(BoardView::clearMovementEnvelope);
+                    gear = GEAR_LAND;
                 }
             } else if (gear == MovementDisplay.GEAR_CHARGE) {
                 // check if target is valid
@@ -4528,25 +4531,32 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
     private void showEnterGroundMapMoveEnvelope(Entity en) {
         Board groundMap = game().getBoard(en.getBoard().getEmbeddedBoardAt(finalPosition()));
-        Coords positionBeforeEntering = previousHexInMovePath();
-        if (groundMap == null || positionBeforeEntering == null) {
+        if (groundMap == null) {
             return;
         }
         Map<Coords, Integer> entryHexes = new HashMap<>();
-        int dir = finalPosition().direction(positionBeforeEntering);
-        if ((dir == 0) || (dir == 3)) {
-            int y = (dir == 0) ? 0 : groundMap.getHeight() - 1;
-            for (int x = 0; x < groundMap.getWidth(); x++) {
-                entryHexes.put(new Coords(x, y), cmd.getMpUsed());
-            }
-        } else {
-            int x = (dir > 3) ? 0 : groundMap.getWidth() - 1;
-            for (int y = 0; y < groundMap.getHeight(); y++) {
-                entryHexes.put(new Coords(x, y), cmd.getMpUsed());
-            }
-        }
+        int mpUsed = cmd.getMpUsed();
+        edgeOfGroundMapEntry(en).forEach(c -> entryHexes.put(c, mpUsed));
         clientgui.getBoardView(groundMap.getBoardId()).setMovementEnvelope(entryHexes,
                 en.getWalkMP(), en.getRunMP(), en.getJumpMP(), GEAR_ENTER_GROUNDMAP);
+    }
+
+    private List<Coords> edgeOfGroundMapEntry(Entity entity) {
+        Board groundMap = game().getBoard(entity.getBoard().getEmbeddedBoardAt(finalPosition()));
+        Coords positionBeforeEntering = previousHexInMovePath();
+        if ((groundMap == null) || (positionBeforeEntering == null)) {
+            return new ArrayList<>();
+        }
+        int dir = finalPosition().direction(positionBeforeEntering);
+        if (dir == 0) {
+            return BoardHelper.topEdge(groundMap);
+        } else if (dir == 3) {
+            return BoardHelper.bottomEdge(groundMap);
+        } else if (dir == 1 || dir == 2) {
+            return BoardHelper.rightEdge(groundMap);
+        } else {
+            return BoardHelper.leftEdge(groundMap);
+        }
     }
 
     private Coords previousHexInMovePath() {

@@ -16,10 +16,13 @@ package megamek.common;
 import megamek.client.ui.Messages;
 import megamek.common.annotations.Nullable;
 import megamek.common.options.OptionsConstants;
+import megamek.common.util.BoardHelper;
 import megamek.server.SmokeCloud;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static megamek.common.util.BoardHelper.*;
 
 /**
  * Keeps track of the cumulative effects of intervening terrain on LOS
@@ -602,7 +605,7 @@ public class LosEffects {
         if ((ai.weapon != null) && (ai.weapon.getType() instanceof WeaponType)) {
             WeaponType weaponType = (WeaponType) ai.weapon.getType();
             finalLoS.standardScaleCrossesSpaceAtmosphericInterface = !weaponType.isCapital() && !weaponType.isSubCapital()
-                    && crossesSpaceAtmosphereInterface(game.getBoard(ai.attackerLocation), ai.attackPos, ai.targetPos);
+                    && crossesSpaceAtmosphereInterface(game, game.getBoard(ai.attackerLocation), ai.attackPos, ai.targetPos);
         }
 
         finalLoS.hasLoS = !finalLoS.blocked
@@ -1114,7 +1117,7 @@ public class LosEffects {
             los.buildingLevelsOrHexes += 1;
         }
 
-        if (board.isAtmosphericRow(coords)) {
+        if (BoardHelper.isAtmosphericRow(game, board, coords)) {
             los.atmosphericHexes++;
         }
 
@@ -1713,23 +1716,4 @@ public class LosEffects {
     public boolean infantryProtected() {
         return infProtected;
     }
-
-    /**
-     * Returns true when a path between the two given positions on the given board crosses the space/atmosphere
-     * interface and the board is actually a high-altitude board. Returns false when the board is not
-     * a high-altitude board and when one or both positions are on the space/atmosphere interface or
-     * both positions are in ground row/atmospheric hexes or both positions are in true space.
-     *
-     * @param board The board to check
-     * @param position1 The first position
-     * @param position2 The second position
-     * @return True when a path between the two positions crosses the space/atmosphere interface
-     */
-    public static boolean crossesSpaceAtmosphereInterface(Board board, Coords position1, Coords position2) {
-        return board.isHighAltitudeMap() &&
-                ((board.isTrueSpaceHex(position1) && board.isBelowSpaceAtmosphereInterface(position2))
-                        || (board.isTrueSpaceHex(position2) && board.isBelowSpaceAtmosphereInterface(position1)));
-        // @@MultiBoardTODO: Make this an IMPOSSIBLE reason in loseffects for non-cap weapons
-    }
 }
-

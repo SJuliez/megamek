@@ -1008,7 +1008,7 @@ public class MoveStep implements Serializable {
             case ACC:
                 setVelocity(getVelocity() + 1);
                 setVelocityLeft(getVelocityLeft() + 1);
-                if (game.getBoard(getBoardLocation()).isAtmosphericRow(getBoardLocation().getCoords())) {
+                if (BoardHelper.isAtmosphericRow(game, getBoardLocation())) {
                     setMp(2);
                 } else {
                     setMp(1);

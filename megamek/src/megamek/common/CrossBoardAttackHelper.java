@@ -18,6 +18,8 @@
  */
 package megamek.common;
 
+import megamek.common.util.BoardHelper;
+
 public final class CrossBoardAttackHelper {
 
     /**
@@ -85,7 +87,7 @@ public final class CrossBoardAttackHelper {
      */
     public static boolean isOrbitToSurface(Entity attacker, Targetable target, Game game) {
         return (attacker != null) && (target != null)
-                && attacker.getBoard().isTrueSpaceHex(attacker.getPosition())
+                && BoardHelper.isTrueSpaceHex(game, attacker.getBoard(), attacker.getPosition())
                 && game.isOnGroundMap(target) && game.onConnectedBoards(attacker, target)
                 && target instanceof HexTarget;
     }
@@ -110,7 +112,7 @@ public final class CrossBoardAttackHelper {
     private static boolean isInAtmosphericTypeHex(Targetable targetable, Game game) {
         Board board = game.getBoard(targetable);
         return board.isLowAtmosphereMap()
-                || (board.isSpaceMap() && !board.isTrueSpaceHex(targetable.getPosition()));
+                || (board.isSpaceMap() && !BoardHelper.isTrueSpaceHex(game, board, targetable.getPosition()));
     }
 
     /**

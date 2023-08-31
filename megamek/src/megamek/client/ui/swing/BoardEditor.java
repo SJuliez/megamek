@@ -1878,7 +1878,7 @@ public class BoardEditor extends JPanel
         } else if (ae.getActionCommand().equals(ClientGUI.VIEW_ZOOM_OUT)) {
             bv.zoomOut();
         } else if (ae.getActionCommand().equals(ClientGUI.VIEW_TOGGLE_ISOMETRIC)) {
-            bv.toggleIsometric();
+            bv.setIsometric();
         } else if (ae.getActionCommand().equals(ClientGUI.VIEW_CHANGE_THEME)) {
             String newTheme = bv.changeTheme();
             if (newTheme != null) {

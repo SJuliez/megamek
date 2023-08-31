@@ -27,6 +27,7 @@ import megamek.client.generator.skillGenerators.ModifiedTotalWarfareSkillGenerat
 import megamek.client.ui.IClientCommandHandler;
 import megamek.client.ui.swing.GUIPreferences;
 import megamek.client.ui.swing.boardview.BoardView;
+import megamek.client.ui.swing.tileset.MMStaticDirectoryManager;
 import megamek.common.*;
 import megamek.common.Building.DemolitionCharge;
 import megamek.common.actions.*;
@@ -111,9 +112,6 @@ public class Client implements IClientCommandHandler {
 
     // Hashtable for storing image tags containing base64Text src
     private Hashtable<Integer, String> imgCache;
-
-    // board view for getting entity art assets
-    private BoardView bv;
 
     ConnectionHandler packetUpdate;
 
@@ -230,10 +228,6 @@ public class Client implements IClientCommandHandler {
         if (connection != null && !connection.isClosed()) {
             connection.update();
         }
-    }
-
-    public void setBoardView(BoardView bv) {
-        this.bv = bv;
     }
 
     /**
@@ -1268,12 +1262,13 @@ public class Client implements IClientCommandHandler {
      * Gets the current mech image
      */
     private Image getTargetImage(Entity e) {
-        if (bv == null) {
-            return null;
-        } else if (e.isDestroyed()) {
-            return bv.getTilesetManager().wreckMarkerFor(e, -1);
+        if (e.isDestroyed()) {
+            // @@MultiBoardTODO:
+//            return bv.getTilesetManager().wreckMarkerFor(e, -1);
+            return MMStaticDirectoryManager.getMechTileset().imageFor(e);
         } else {
-            return bv.getTilesetManager().imageFor(e);
+            return MMStaticDirectoryManager.getMechTileset().imageFor(e);
+//            return bv.getTilesetManager().imageFor(e);
         }
     }
 

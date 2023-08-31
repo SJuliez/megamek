@@ -39,6 +39,7 @@ import megamek.client.ui.swing.lobby.PlayerTable.PlayerTableModel;
 import megamek.client.ui.swing.lobby.sorters.*;
 import megamek.client.ui.swing.lobby.sorters.MekTableSorter.Sorting;
 import megamek.client.ui.swing.minimap.Minimap;
+import megamek.client.ui.swing.tileset.MMStaticDirectoryManager;
 import megamek.client.ui.swing.util.ScalingPopup;
 import megamek.client.ui.swing.util.UIUtil;
 import megamek.client.ui.swing.widget.SkinSpecification;
@@ -1738,8 +1739,10 @@ public class ChatLounge extends AbstractPhaseDisplay implements
                 }
 
             } else if (ev.getSource() == butRandomMap) {
-                RandomMapDialog rmd = new RandomMapDialog(clientgui.frame, ChatLounge.this, clientgui.getClient(), mapSettings());
-                rmd.activateDialog(clientgui.getBoardView().getTilesetManager().getThemes());
+                RandomMapDialog rmd = new RandomMapDialog(clientgui.frame, ChatLounge.this,
+                        clientgui.getClient(), mapSettings());
+                Set<String> themes = Set.of("", "desert", "volcano", "mars", "lunar", "tropical", "snow");
+                rmd.activateDialog(themes);
 
             } else if (ev.getSource().equals(butBoardPreview)) {
                 previewGameBoard();

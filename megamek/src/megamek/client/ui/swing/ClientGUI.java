@@ -240,7 +240,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     private ChatterBox cb;
     public ChatterBox2 cb2;
     private BoardView bv;
-    private BoardView bvSpace;
     private final Map<Integer, BoardView> boardViews = new HashMap<>();
     private final JPanel bvc = new JPanel();
     private final JTabbedPane mapTabPane = new JTabbedPane();
@@ -517,7 +516,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             splitPaneA.setResizeWeight(0.5);
             panTop.add(splitPaneA, BorderLayout.CENTER);
 
-            client.setBoardView(bv);
         } catch (Exception ex) {
             LogManager.getLogger().fatal("", ex);
             doAlertDialog(Messages.getString("ClientGUI.FatalError.title"),
@@ -566,9 +564,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         aw = new AccessibilityWindow(this);
         aw.setLocation(0, 0);
         aw.setSize(300, 300);
-
-//        bv.addDisplayable(uo);
-//        bv.addDisplayable(offBoardOverlay);
 
         setUnitDisplay(new UnitDisplay(this, controller));
         setUnitDisplayDialog(new UnitDisplayDialog(getFrame(), this));
@@ -897,18 +892,19 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 getActiveBoardView().zoomOut();
                 break;
             case VIEW_TOGGLE_ISOMETRIC:
-                GUIP.setIsometricEnabled(bv.toggleIsometric());
+                GUIP.setIsometricEnabled(!GUIP.getIsometricEnabled());
+                boardViews().forEach(BoardView::setIsometric);
                 break;
             case VIEW_TOGGLE_FOV_HIGHLIGHT:
                 GUIP.setFovHighlight(!GUIP.getFovHighlight());
                 refreshDisplayablesOnBoardViews();
                 if (client.getGame().getPhase().isMovement()) {
-                    bv.clearHexImageCache();
+                    boardViews().forEach(BoardView::clearHexImageCache);
                 }
                 break;
             case VIEW_TOGGLE_FIELD_OF_FIRE:
                 GUIP.setShowFieldOfFire(!GUIP.getShowFieldOfFire());
-                bv.repaint();
+                repaintBoardViews();
                 break;
             case VIEW_TOGGLE_SENSOR_RANGE:
                 GUIP.setShowSensorRange(!GUIP.getShowSensorRange());
@@ -917,13 +913,13 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 GUIP.setFovDarken(!GUIP.getFovDarken());
                 refreshDisplayablesOnBoardViews();
                 if (client.getGame().getPhase().isMovement()) {
-                    bv.clearHexImageCache();
+                    boardViews().forEach(BoardView::clearHexImageCache);
                 }
                 break;
             case VIEW_TOGGLE_FIRING_SOLUTIONS:
                 GUIP.setFiringSolutions(!GUIP.getFiringSolutions());
                 if (!GUIP.getFiringSolutions()) {
-                    bv.clearFiringSolutionData();
+                    boardViews().forEach(BoardView::clearFiringSolutionData);
                 } else {
                     if (curPanel instanceof FiringDisplay) {
                         ((FiringDisplay) curPanel).setFiringSolutions();
@@ -943,6 +939,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 }
                 break;
             case VIEW_CHANGE_THEME:
+                // @@MultiBoardTODO:
                 bv.changeTheme();
                 break;
             case FIRE_SAVE_WEAPON_ORDER:
@@ -1054,10 +1051,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     void die() {
         // Tell all the displays to remove themselves as listeners.
         boolean reportHandled = false;
-        if (bv != null) {
-            // cleanup our timers first
-            bv.die();
-        }
+        boardViews().forEach(BoardView::die);
 
         for (String s : phaseComponents.keySet()) {
             JComponent component = phaseComponents.get(s);
@@ -2319,9 +2313,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
         @Override
         public void gameEnd(GameEndEvent e) {
-            bv.clearMovementData();
-            bv.clearFieldOfFire();
-            bv.clearSensorsRanges();
+            boardViews().forEach(BoardView::clearMovementData);
+            boardViews().forEach(BoardView::clearFieldOfFire);
+            boardViews().forEach(BoardView::clearSensorsRanges);
             for (Client client2 : getLocalBots().values()) {
                 client2.die();
             }
@@ -2524,10 +2518,11 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                         return;
                     }
                     // If this is the client to handle the PBS, take care of it
-                    bv.centerOnHex(attacker.getPosition());
-                    bv.highlight(attacker.getPosition());
-                    bv.select(target.getPosition());
-                    bv.cursor(target.getPosition());
+                    showBoardView(attacker.getBoardId());
+                    getBoardView(attacker).centerOnHex(attacker.getPosition());
+                    getBoardView(attacker).highlight(attacker.getPosition());
+                    getBoardView(attacker).select(attacker.getPosition());
+                    getBoardView(attacker).cursor(attacker.getPosition());
 
                     // Ask whether the player wants to take a PBS or not
                     int pbsChoice = JOptionPane.showConfirmDialog(frame,
@@ -2550,7 +2545,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                         curDisp.beginMyTurn();
                         curDisp.selectEntity(evt.getEntityId());
                         curDisp.target(target);
-                        bv.select(target.getPosition());
+                        getBoardView(target).cursor(target.getPosition());
                     } else { // PBS declined
                         client.sendHiddenPBSCFRResponse(null);
                     }
@@ -2694,7 +2689,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         waitD.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         // save!
         try {
-            ImageIO.write(bv.getEntireBoardImage(ignoreUnits, false), CG_FILEFORMATNAMEPNG, curfileBoardImage);
+            ImageIO.write(getActiveBoardView().getEntireBoardImage(ignoreUnits, false),
+                    CG_FILEFORMATNAMEPNG, curfileBoardImage);
         } catch (IOException e) {
             LogManager.getLogger().error("", e);
         }
@@ -2838,9 +2834,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
     @Override
     public void componentResized(ComponentEvent evt) {
-        for (BoardView bv : boardViews()) {
-            bv.setPreferredSize(getSize());
-        }
+        boardViews().forEach(bv -> bv.setPreferredSize(getSize()));
     }
 
     @Override

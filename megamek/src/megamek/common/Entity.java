@@ -12836,7 +12836,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
 
     @Override
     public boolean isAirborne() {
-        return !isSpaceborne() && ((getAltitude() > 0) || getMovementMode().isAerodyne() || getMovementMode().isSpheroid());
+        return (getAltitude() > 0) || getMovementMode().isAerodyne() || getMovementMode().isSpheroid();
     }
 
     /** @return True when this unit is currently on a space map, including atmospheric hexes of a high-altitude map. */

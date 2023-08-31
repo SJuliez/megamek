@@ -1809,11 +1809,11 @@ public class Compute {
             while (!currentCoords.equals(targetPos.get(0)) && (safetyCounter < 1000)) {
                 safetyCounter++; // prevent infinite loops
                 currentCoords = Coords.nextHex(currentCoords, targetPos.get(0));
-                // @@MultiBoardTODO: atmo pressure modifies this
-                if (attackerBoard.isAtmosphericRow(currentCoords) || attackerBoard.isGroundRowHex(currentCoords)) {
-                    distance += 5;
-                } else if (attackerBoard.isSpaceAtmosphereInterface(currentCoords)) {
-                    distance += 2;
+                if (BoardHelper.isAtmosphericRow(game, attackerBoard, currentCoords)
+                        || BoardHelper.isGroundRowHex(attackerBoard, currentCoords)) {
+                    distance += BoardHelper.highAltAtmoRowRangeIncrease(game);
+                } else if (BoardHelper.isSpaceAtmosphereInterface(game, attackerBoard, currentCoords)) {
+                    distance += BoardHelper.highAltSpaceAtmoRangeIncrease(game);
                 }
             }
         }
