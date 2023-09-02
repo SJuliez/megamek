@@ -279,7 +279,8 @@ public class AbstractPathFinder<N, C, E> {
                 }
             }
         } catch (OutOfMemoryError ex) {
-            LogManager.getLogger().error("Not enough memory to analyse all options. Try setting time limit to lower value, or increase java memory limit.", ex);
+            LogManager.getLogger().error("Not enough memory to analyse all options. Try setting time limit " +
+                    "to a lower value, or increase the java memory limit.", ex);
         } catch (Exception ex) {
             // Do something, don't just swallow the exception, good lord
             LogManager.getLogger().error("", ex);

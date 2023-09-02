@@ -7423,15 +7423,16 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             boolean isInfantry, int distance) {
 
         PilotingRollData roll = getBasePilotingRoll(overallMoveType);
-        // If we aren't traveling along a road, apply terrain modifiers
-        if (!((prevStep == null || prevStep.isPavementStep()) && currStep.isPavementStep())) {
-            addPilotingModifierForTerrain(roll, lastPos);
-        }
 
         if (isAirborne() || isAirborneVTOLorWIGE()) {
             roll.addModifier(TargetRoll.CHECK_FALSE,
                     "Check false: flying entities don't skid");
             return roll;
+        }
+
+        // If we aren't traveling along a road, apply terrain modifiers
+        if (!((prevStep == null || prevStep.isPavementStep()) && currStep.isPavementStep())) {
+            addPilotingModifierForTerrain(roll, lastPos, currStep.getBoardLocation().getBoardId());
         }
 
         if (isInfantry) {
@@ -7509,7 +7510,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             Coords curPos, boolean isLastStep, boolean isPavementStep) {
         PilotingRollData roll = getBasePilotingRoll(moveType);
         boolean enteringRubble = true;
-        addPilotingModifierForTerrain(roll, curPos, true);
+        addPilotingModifierForTerrain(roll, curPos, step.getBoardLocation().getBoardId(), true);
 
         if (!lastPos.equals(curPos)
                 && ((moveType != EntityMovementType.MOVE_JUMP) || isLastStep)
@@ -7557,7 +7558,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                 roll.addModifier(-1, "Swamp Beast");
             }
 
-            addPilotingModifierForTerrain(roll, curPos, false);
+            addPilotingModifierForTerrain(roll, curPos, step.getBoardLocation().getBoardId(), false);
             adjustDifficultTerrainPSRModifier(roll);
         } else {
             roll.addModifier(TargetRoll.CHECK_FALSE,
@@ -10978,8 +10979,8 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * @param roll the PSR to modify
      * @param c    the coordinates where the PSR happens
      */
-    public void addPilotingModifierForTerrain(PilotingRollData roll, Coords c) {
-        addPilotingModifierForTerrain(roll, c, false);
+    public void addPilotingModifierForTerrain(PilotingRollData roll, Coords c, int boardId) {
+        addPilotingModifierForTerrain(roll, c, boardId, false);
     }
 
     /**
@@ -10989,15 +10990,15 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * @param c    the coordinates where the PSR happens
      * @param enteringRubble True if entering rubble, else false
      */
-    public void addPilotingModifierForTerrain(PilotingRollData roll, Coords c,
-            boolean enteringRubble) {
+    public void addPilotingModifierForTerrain(PilotingRollData roll, Coords c, int boardId,
+                                              boolean enteringRubble) {
         if ((c == null) || (roll == null)) {
             return;
         }
         if (isOffBoard() || !(isDeployed())) {
             return;
         }
-        Hex hex = game.getBoard(currentBoard).getHex(c);
+        Hex hex = game.getBoard(boardId).getHex(c);
         hex.terrainPilotingModifier(getMovementMode(), roll, enteringRubble);
 
         if (hex.containsTerrain(Terrains.JUNGLE) && hasAbility(OptionsConstants.PILOT_TM_FOREST_RANGER)) {
@@ -11016,7 +11017,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         if (step.getElevation() > 0) {
             return;
         }
-        addPilotingModifierForTerrain(roll, step.getPosition());
+        addPilotingModifierForTerrain(roll, step.getPosition(), step.getBoardLocation().getBoardId());
     }
 
     /**
@@ -11028,7 +11029,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         if (getElevation() > 0) {
             return;
         }
-        addPilotingModifierForTerrain(roll, getPosition());
+        addPilotingModifierForTerrain(roll, getPosition(), getBoardId());
     }
 
     /**

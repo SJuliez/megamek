@@ -175,7 +175,7 @@ public class SharedUtility {
         EntityMovementType overallMoveType = EntityMovementType.MOVE_NONE;
         boolean firstStep;
         int prevFacing = curFacing;
-        Hex prevHex = game.getBoard(entity).getHex(curPos);
+        Hex prevHex = game.getHex(entity.getBoardLocation());
         final boolean isInfantry = (entity instanceof Infantry);
 
         PilotingRollData rollTarget;
@@ -221,7 +221,7 @@ public class SharedUtility {
             curFacing = step.getFacing();
             curElevation = step.getElevation();
 
-            final Hex curHex = game.getBoard(entity).getHex(curPos);
+            final Hex curHex = game.getHex(step.getBoardLocation());
 
             // check for vertical takeoff
             if ((step.getType() == MoveStepType.VTAKEOFF)
@@ -252,11 +252,11 @@ public class SharedUtility {
                         - (curElevation + curHex.getLevel());
                 if (leapDistance > 2) {
                     rollTarget = entity.getBasePilotingRoll(moveType);
-                    entity.addPilotingModifierForTerrain(rollTarget, curPos);
+                    entity.addPilotingModifierForTerrain(rollTarget, curPos, step.getBoardLocation().getBoardId());
                     rollTarget.append(new PilotingRollData(entity.getId(), 2 * leapDistance, "leaping (leg damage)"));
                     SharedUtility.checkNag(rollTarget, nagReport, psrList);
                     rollTarget = entity.getBasePilotingRoll(moveType);
-                    entity.addPilotingModifierForTerrain(rollTarget, curPos);
+                    entity.addPilotingModifierForTerrain(rollTarget, curPos, step.getBoardLocation().getBoardId());
                     rollTarget.append(new PilotingRollData(entity.getId(), leapDistance, "leaping (fall)"));
                     SharedUtility.checkNag(rollTarget, nagReport, psrList);
                 }

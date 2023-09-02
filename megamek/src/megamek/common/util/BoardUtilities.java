@@ -96,7 +96,6 @@ public class BoardUtilities {
         }
 
         // assuming that the map setting and board types match
-        result.setType(medium);
         result.setMapType(boards[0].getMapType());
 
         return result;
@@ -156,21 +155,18 @@ public class BoardUtilities {
         Board result = new Board(mapSettings.getBoardWidth(), mapSettings.getBoardHeight(), boardId, nb);
 
         if (mapSettings.getMedium() == MapSettings.MEDIUM_SPACE) {
-            result.setType(Board.T_SPACE);
             result.setMapType(mapSettings.getMapType());
             if (mapSettings.isSpaceUsesGravity()) {
                 result.setMapTypeFlag(MapTypeFlag.HIGH_ALTITUDE);
             }
             return result;
         } else if (mapSettings.getMapType().isLowAtmo()) {
-            result.setType(Board.T_ATMOSPHERE);
             result.setMapType(MapType.LOW_ATMOSPHERE);
             if (!mapSettings.usesTerrain()) {
                 result.setMapTypeFlag(MapTypeFlag.SKY);
             }
             return result;
         } else if (mapSettings.getMapType().isGround()) {
-            result.setType(Board.T_GROUND);
             result.setMapType(MapType.GROUND);
         }
 

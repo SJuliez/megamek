@@ -55,13 +55,6 @@ public class Board implements Serializable {
     protected int width;
     protected int height;
 
-    // MapType
-    public static final int T_GROUND = 0;
-    public static final int T_ATMOSPHERE = 1;
-    public static final int T_SPACE = 2;
-
-    private static final String[] typeNames = { "Ground", "Low Atmosphere", "Space" };
-
     // Min and Max elevation values for when they are undefined (since you can't set an int to null).
     private static final int UNDEFINED_MIN_ELEV = 10000;
     private static final int UNDEFINED_MAX_ELEV = -10000;
@@ -74,8 +67,7 @@ public class Board implements Serializable {
     private final int boardId;
     private String mapName = "Map";
 
-    private int mapType = T_GROUND;
-    private MapType mapType2 = MapType.GROUND;
+    private MapType mapType = MapType.GROUND;
     private MapTypeFlag mapTypeFlag = MapTypeFlag.NONE;
 
     private Hex[] data;
@@ -1586,29 +1578,17 @@ public class Board implements Serializable {
         specialHexes = shd;
     }
 
-    public void setType(int t) {
-        mapType = t;
-    }
-
-    public int getType() {
-        return mapType;
-    }
-
-    public static String getTypeName(int t) {
-        return typeNames[t];
-    }
-
     // some convenience functions
     public boolean isGroundMap() {
-        return (mapType2.isGround());
+        return (mapType.isGround());
     }
 
     public boolean isLowAtmosphereMap() {
-        return (mapType2.isLowAtmo());
+        return (mapType.isLowAtmo());
     }
 
     public boolean isSpaceMap() {
-        return (mapType2.isSpace());
+        return (mapType.isSpace());
     }
 
     /**
@@ -1863,9 +1843,9 @@ public class Board implements Serializable {
     }
 
     public void setMapType(MapType newMapType) {
-        mapType2 = newMapType;
+        mapType = newMapType;
         if (mapName.startsWith("Map #")) {
-            mapName = mapType2.getDisplayName() + " " + mapName;
+            mapName = mapType.getDisplayName() + " " + mapName;
         }
     }
 
@@ -1874,7 +1854,7 @@ public class Board implements Serializable {
     }
 
     public MapType getMapType() {
-        return mapType2;
+        return mapType;
     }
 
     public MapTypeFlag getMapTypeFlag() {
@@ -1883,7 +1863,8 @@ public class Board implements Serializable {
 
     @Override
     public String toString() {
-        return "Board: " + width + "x" + height + "; " + mapType2 + "; " + (tags.isEmpty() ? "" : tags);
+        return "Board: " + width + "x" + height + "; " + mapType + "; ID: " + boardId + "; "
+                + (tags.isEmpty() ? "" : tags);
     }
 
     public int getBoardId() {

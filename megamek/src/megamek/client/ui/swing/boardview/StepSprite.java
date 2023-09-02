@@ -409,9 +409,6 @@ class StepSprite extends Sprite {
             velocity *= 16;
         }
 
-        // Always multiply velocity by 16 and count each atmospheric map move as 16 hexes
-//        velocity *= 16;
-
         velStringBuf.append("(").append(distTraveled).append("/").append(velocity).append(")");
 
         Color col = (step.getVelocityLeft() > 0) ? Color.RED : Color.GREEN;

@@ -100,7 +100,7 @@ public class AeroSpacePathFinder extends NewtonianAerospacePathFinder {
         }
         
         // there's no reason to consider off-board paths in the standard flight model.
-        if (!path.getGame().getBoard().contains(pathDestination.getCoords())) {
+        if (!path.getGame().getBoard(path.getFinalBoardId()).contains(pathDestination.getCoords())) {
             return true;
         }
         

@@ -2988,6 +2988,36 @@ public class GameManager implements IGameManager {
                 }
                 game.addBoard(secondBoard);
                 game.connectBoards(4, 1, new Coords(2, 2));
+
+                Board airport = new Board(6);
+                airport.load(new MegaMekFile(Configuration.boardsDir(), "unofficial/UlyssesMaps/StratCon Facilities/40x40 - Grass - Air Base Small 2.board").getFile());
+                airport.setMapName("Airport");
+                if (game.getPlanetaryConditions().isTerrainAffected()) {
+                    BoardUtilities.addWeatherConditions(airport, game.getPlanetaryConditions().getWeather(),
+                            game.getPlanetaryConditions().getWindStrength());
+                }
+                game.addBoard(airport);
+                game.connectBoards(6, 1, new Coords(3, 12));
+
+                Board spaceport = new Board(7);
+                spaceport.load(new MegaMekFile(Configuration.boardsDir(), "unofficial/Dervs/Map Pack 2/40x40 Kalitz Spaceport.board").getFile());
+                spaceport.setMapName("Spaceport");
+                if (game.getPlanetaryConditions().isTerrainAffected()) {
+                    BoardUtilities.addWeatherConditions(spaceport, game.getPlanetaryConditions().getWeather(),
+                            game.getPlanetaryConditions().getWindStrength());
+                }
+                game.addBoard(spaceport);
+                game.connectBoards(7, 1, new Coords(14, 11));
+
+                Board airport2 = new Board(8);
+                airport2.load(new MegaMekFile(Configuration.boardsDir(), "unofficial/Cakefish/General/50x50 -Grass- QRF Airbase.board").getFile());
+                airport2.setMapName("Airbase");
+                if (game.getPlanetaryConditions().isTerrainAffected()) {
+                    BoardUtilities.addWeatherConditions(airport2, game.getPlanetaryConditions().getWeather(),
+                            game.getPlanetaryConditions().getWindStrength());
+                }
+                game.addBoard(airport2);
+                game.connectBoards(8, 1, new Coords(12, 1));
             }
 
             if (game.boardExists(2)) {
@@ -3898,6 +3928,7 @@ public class GameManager implements IGameManager {
 
         // Place the unloaded unit onto the screen.
         unit.setPosition(pos);
+        unit.setCurrentBoard(unloader.getBoardId());
 
         // Units unloaded onto the screen are deployed.
         if (pos != null) {
@@ -3908,9 +3939,9 @@ public class GameManager implements IGameManager {
         unit.setFacing(facing);
         unit.setSecondaryFacing(facing);
 
-        Hex hex = game.getBoard().getHex(pos);
-        boolean isBridge = (hex != null)
-                && hex.containsTerrain(Terrains.PAVEMENT);
+        Hex hex = game.getHex(unit.getBoardLocation());
+        Building bldg = game.getBuildingAt(unit.getBoardLocation());
+        boolean isBridge = (hex != null) && hex.containsTerrain(Terrains.PAVEMENT);
 
         if (hex == null) {
             unit.setElevation(elevation);
@@ -3943,7 +3974,7 @@ public class GameManager implements IGameManager {
                     return false;
                 }
             }
-        } else if (game.getBoard().getBuildingAt(pos) != null) {
+        } else if (bldg != null) {
             // non flying unit unloading units into a building
             // -> sit in the building at the same elevation
             unit.setElevation(elevation);
@@ -7392,7 +7423,7 @@ public class GameManager implements IGameManager {
             // set climb mode in case of skid
             entity.setClimbMode(curClimbMode);
 
-            Hex curHex = game.getBoard(entity).getHex(curPos);
+            Hex curHex = game.getBoard(step.getBoardLocation().getBoardId()).getHex(curPos);
 
             // when first entering a building, we need to roll what type
             // of basement it has
@@ -7424,7 +7455,7 @@ public class GameManager implements IGameManager {
                 if (leapDistance > 2) {
                     // skill check for leg damage
                     rollTarget = entity.getBasePilotingRoll(stepMoveType);
-                    entity.addPilotingModifierForTerrain(rollTarget, curPos);
+                    entity.addPilotingModifierForTerrain(rollTarget, curPos, step.getBoardLocation().getBoardId());
                     rollTarget.append(new PilotingRollData(entity.getId(),
                             2 * leapDistance, "leaping (leg damage)"));
                     if (0 < doSkillCheckWhileMoving(entity, lastElevation,
@@ -7447,7 +7478,7 @@ public class GameManager implements IGameManager {
                     }
                     // skill check for fall
                     rollTarget = entity.getBasePilotingRoll(stepMoveType);
-                    entity.addPilotingModifierForTerrain(rollTarget, curPos);
+                    entity.addPilotingModifierForTerrain(rollTarget, curPos, step.getBoardLocation().getBoardId());
                     rollTarget.append(new PilotingRollData(entity.getId(),
                             leapDistance, "leaping (fall)"));
                     if (0 < doSkillCheckWhileMoving(entity, lastElevation,
@@ -7766,20 +7797,19 @@ public class GameManager implements IGameManager {
             }
 
             // check to see if we are not a mech and we've moved INTO fire
+            Hex hex = game.getBoard(step.getBoardLocation().getBoardId()).getHex(curPos);
             if (!(entity instanceof Mech)) {
-                boolean underwater = game.getBoard(entity).getHex(curPos)
-                        .containsTerrain(Terrains.WATER)
-                        && (game.getBoard(entity).getHex(curPos).depth() > 0)
-                        && (step.getElevation() < game.getBoard(entity).getHex(curPos).getLevel());
-                if (game.getBoard(entity).getHex(curPos).containsTerrain(
-                        Terrains.FIRE) && !lastPos.equals(curPos)
+                boolean underwater = hex.containsTerrain(Terrains.WATER)
+                        && (hex.depth() > 0)
+                        && (step.getElevation() < hex.getLevel());
+                if (hex.containsTerrain(Terrains.FIRE) && !lastPos.equals(curPos)
                         && (stepMoveType != EntityMovementType.MOVE_JUMP)
                         && (step.getElevation() <= 1) && !underwater) {
                     doFlamingDamage(entity, curPos);
                 }
             }
 
-            if ((game.getBoard(entity).getHex(curPos).terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_GREEN)
+            if ((hex.terrainLevel(Terrains.SMOKE) == SmokeCloud.SMOKE_GREEN)
                     && !stepMoveType.equals(EntityMovementType.MOVE_JUMP) && entity.antiTSMVulnerable()) {
                 addReport(doGreenSmokeDamage(entity));
             }
@@ -8424,8 +8454,8 @@ public class GameManager implements IGameManager {
 
             // Check for crushing buildings by Dropships/Mobile Structures
             for (Coords pos : step.getCrushedBuildingLocs()) {
-                Building bldg = game.getBoard(entity).getBuildingAt(pos);
-                Hex hex = game.getBoard(entity).getHex(pos);
+                Building bldg = game.getBoard(step.getBoardLocation().getBoardId()).getBuildingAt(pos);
+                Hex bldgHex = game.getBoard(bldg.getBoardId()).getHex(pos);
 
                 r = new Report(3443);
                 r.subject = entity.getId();
@@ -8434,7 +8464,7 @@ public class GameManager implements IGameManager {
                 vPhaseReport.add(r);
 
                 final int cf = bldg.getCurrentCF(pos);
-                final int numFloors = Math.max(0, hex.terrainLevel(Terrains.BLDG_ELEV));
+                final int numFloors = Math.max(0, bldgHex.terrainLevel(Terrains.BLDG_ELEV));
                 vPhaseReport.addAll(damageBuilding(bldg, 150, " is crushed for ", pos));
                 int damage = (int) Math.round((cf / 10.0) * numFloors);
                 HitData hit = entity.rollHitLocation(ToHitData.HIT_NORMAL, ToHitData.SIDE_FRONT);
@@ -31073,7 +31103,7 @@ public class GameManager implements IGameManager {
                 // all entities should fall
                 // ASSUMPTION: PSR to avoid pilot damage
                 PilotingRollData psr = entity.getBasePilotingRoll();
-                entity.addPilotingModifierForTerrain(psr, coords);
+                entity.addPilotingModifierForTerrain(psr, coords, bldg.getBoardId());
 
                 // fall into basement
                 switch (bldg.getBasement(coords)) {
@@ -31272,7 +31302,7 @@ public class GameManager implements IGameManager {
                     // should use mods for entity damage and
                     // 20+ points of collapse damage (if any).
                     PilotingRollData psr = entity.getBasePilotingRoll();
-                    entity.addPilotingModifierForTerrain(psr, coords);
+                    entity.addPilotingModifierForTerrain(psr, coords, bldg.getBoardId());
                     if (damage >= 20) {
                         psr.addModifier(1, "20+ damage");
                     }
@@ -31364,16 +31394,19 @@ public class GameManager implements IGameManager {
                         updateCoords.addElement(coords);
                     }
                 }
-                collapse.put(bldg, collapseCoords);
-                update.put(bldg, updateCoords);
+                if (!collapseCoords.isEmpty()) {
+                    collapse.put(bldg, collapseCoords);
+                }
+                if (!updateCoords.isEmpty()) {
+                    update.put(bldg, updateCoords);
+                }
             } // Handle the next building
 
             // If we have any buildings to collapse, collapse them now.
             if (!collapse.isEmpty()) {
 
                 // Get the position map of all entities in the game.
-                Hashtable<Coords, Vector<Entity>> positionMap = game
-                        .getPositionMap();
+                Hashtable<Coords, Vector<Entity>> positionMap = game.getPositionMap();
 
                 // Walk through the hexes that have collapsed.
                 for (Building bldg : collapse.keySet()) {

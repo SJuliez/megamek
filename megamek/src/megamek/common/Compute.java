@@ -545,8 +545,8 @@ public class Compute {
             return false;
         }
         final Entity entity = game.getEntity(entityId);
-        final Hex srcHex = game.getBoard(entity).getHex(src);
-        final Hex destHex = game.getBoard(entity).getHex(dest);
+        final Hex srcHex = game.getBoard(moveStep.getBoardLocation()).getHex(src);
+        final Hex destHex = game.getBoard(moveStep.getBoardLocation()).getHex(dest);
         final boolean isInfantry = (entity instanceof Infantry);
         int delta_alt = (destElevation + destHex.getLevel())
                         - (srcElevation + srcHex.getLevel());

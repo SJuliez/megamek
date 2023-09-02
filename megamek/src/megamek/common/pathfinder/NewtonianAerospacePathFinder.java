@@ -1,5 +1,6 @@
 package megamek.common.pathfinder;
 
+import megamek.common.Board;
 import megamek.common.Game;
 import megamek.common.IAero;
 import megamek.common.MovePath;
@@ -52,6 +53,7 @@ public class NewtonianAerospacePathFinder {
     public void run(MovePath startingEdge) {
         try {
             aerospacePaths = new ArrayList<>();
+            Board board = startingEdge.getGame().getBoard(startingEdge.getFinalBoardId());
             
             // can't do anything if the unit is out of control.
             if (((IAero) startingEdge.getEntity()).isOutControlTotal()) {
@@ -65,7 +67,7 @@ public class NewtonianAerospacePathFinder {
             // it's possible that we generated some number of paths that go off-board
             // now is the time to clean those out.
             // except for the one that we designated as the shortest off-board path
-            aerospacePaths.removeIf(path -> !startingEdge.getGame().getBoard().contains(path.getFinalCoords()));
+            aerospacePaths.removeIf(path -> !board.contains(path.getFinalCoords()));
             if (offBoardPath != null) {
                 aerospacePaths.add(offBoardPath);
             }
@@ -123,6 +125,7 @@ public class NewtonianAerospacePathFinder {
      */
     private List<MovePath> generateChildren(MovePath startingPath) {
         List<MovePath> retval = new ArrayList<>();
+        Board board = startingPath.getGame().getBoard(startingPath.getFinalBoardId());
         
         // generate all possible children, add them to list
         // for aerospace units, these are:
@@ -149,7 +152,7 @@ public class NewtonianAerospacePathFinder {
             
             // keep track of a single path that takes us off board, if there is such a thing
             // this should always be the shortest one.
-            if (game.getBoard().getHex(pathDestination.getCoords()) == null &&
+            if (board.getHex(pathDestination.getCoords()) == null &&
                     (offBoardPath == null || childPath.getMpUsed() < offBoardPath.getMpUsed())) {        
                 offBoardPath = childPath;
             }

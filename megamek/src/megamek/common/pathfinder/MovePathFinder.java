@@ -299,11 +299,11 @@ public class MovePathFinder<C> extends AbstractPathFinder<CoordsWithFacing, C, M
             }
 
             if (backwardsStep &&
-                    mp.getGame().getBoard(entity).contains(mp.getFinalCoords().translated((mp.getFinalFacing() + 3) % 6))) {
+                    mp.getGame().getBoard(mp.getFinalBoardId()).contains(mp.getFinalCoords().translated((mp.getFinalFacing() + 3) % 6))) {
                 MovePath newPath = mp.clone();
                 PathDecorator.AdjustElevationForForwardMovement(newPath);
                 result.add(newPath.addStep(MoveStepType.BACKWARDS));
-            } else if (mp.getGame().getBoard(entity).contains(mp.getFinalCoords().translated(mp.getFinalFacing()))) {
+            } else if (mp.getGame().getBoard(mp.getFinalBoardId()).contains(mp.getFinalCoords().translated(mp.getFinalFacing()))) {
                 MovePath newPath = mp.clone();
                 PathDecorator.AdjustElevationForForwardMovement(newPath);
                 result.add(newPath.addStep(MoveStepType.FORWARDS));

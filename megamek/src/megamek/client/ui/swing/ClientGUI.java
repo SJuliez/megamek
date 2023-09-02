@@ -239,7 +239,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     public MegaMekController controller;
     private ChatterBox cb;
     public ChatterBox2 cb2;
-    private BoardView bv;
     private final Map<Integer, BoardView> boardViews = new HashMap<>();
     private final JPanel bvc = new JPanel();
     private final JTabbedPane mapTabPane = new JTabbedPane();
@@ -359,10 +358,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         add(panDisplay, BorderLayout.CENTER);
 
         audioService.loadSoundFiles();
-    }
-
-    public BoardView getBoardView() {
-        return bv;
     }
 
     public UnitDisplay getUnitDisplay() {
@@ -937,10 +932,6 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 if (curPanel instanceof MovementDisplay) {
                     ((MovementDisplay) curPanel).computeModifierEnvelope();
                 }
-                break;
-            case VIEW_CHANGE_THEME:
-                // @@MultiBoardTODO:
-                bv.changeTheme();
                 break;
             case FIRE_SAVE_WEAPON_ORDER:
                 Entity ent = getUnitDisplay().getCurrentEntity();
@@ -2183,7 +2174,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         if (game.hasEnclosingBoard(boardId)) {
             Board enclosingBoard = game.getEnclosingBoard(boardView.getBoard());
             tooltip += "<BR>Located at " + enclosingBoard.embeddedBoardPosition(boardId).getBoardNum() +
-                    " in " + game.getEnclosingBoard(boardView.getBoard());
+                    " in " + enclosingBoard;
         }
         return tooltip;
     }

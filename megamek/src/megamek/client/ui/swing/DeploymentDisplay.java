@@ -179,7 +179,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         if (null != ce()) {
             setTurnEnabled(true);
             butDone.setEnabled(false);
-            clientgui.getBoardView(ce()).markDeploymentHexesFor(ce());
+            clientgui.boardViews().forEach(bv -> bv.markDeploymentHexesFor(ce()));
             // set facing according to starting position
             switch (ce().getStartingPos()) {
                 case Board.START_W:
@@ -468,19 +468,16 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         // check for shifty goodness
         boolean shiftheld = (b.getModifiers() & InputEvent.SHIFT_DOWN_MASK) != 0;
 
-        if (!((BoardView) b.getSource()).isOnThisBoard(ce())) {
+        // check for a deployment
+        final Game game = clientgui.getClient().getGame();
+        BoardLocation moveto = b.getBoardLocation();
+        if (!game.hasBoardLocation(moveto)) {
             return;
         }
 
-        // check for a deployment
-        Coords moveto = b.getCoords();
-        final Board board = ((BoardView) b.getSource()).getBoard();
-        if ((board == null) || !board.contains(moveto)) {
-            return;
-        }
-        final Game game = clientgui.getClient().getGame();
-        final Hex deployhex = board.getHex(moveto);
-        final Building bldg = board.getBuildingAt(moveto);
+        final Board board = game.getBoard(moveto);
+        final Hex deployhex = game.getHex(moveto);
+        final Building bldg = game.getBuildingAt(moveto);
         boolean isAero = ce().isAero();
         boolean isVTOL = ce() instanceof VTOL;
         boolean isWiGE = ce().getMovementMode().equals(EntityMovementMode.WIGE);
@@ -489,8 +486,8 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
                 && !ce().isNaval()
                 && deployhex.containsAnyTerrainOf(Terrains.PAVEMENT, Terrains.ROAD, Terrains.BRIDGE_ELEV);
         String title, msg;
-        if ((ce().getPosition() != null) && (shiftheld || turnMode)) { // turn
-            ce().setFacing(ce().getPosition().direction(moveto));
+        if ((ce().getPosition() != null) && (shiftheld || turnMode) && (ce().getBoardId() == moveto.getBoardId())) { // turn
+            ce().setFacing(ce().getPosition().direction(moveto.getCoords()));
             ce().setSecondaryFacing(ce().getFacing());
             clientgui.getBoardView(ce()).redrawEntity(ce());
             clientgui.getBoardView(ce()).setWeaponFieldOfFire(ce().getFacing(), ce().getPosition());
@@ -502,31 +499,31 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             msg = Messages.getString("DeploymentDisplay.wrongMapType", ce().getShortName(), board.getMapType().getDisplayName());
             JOptionPane.showMessageDialog(clientgui, msg, title, JOptionPane.WARNING_MESSAGE);
             return;
-        } else if (!(ce().getDeploymentZone().canDeployTo(game, moveto, ce().getBoardId()) || assaultDropPreference)
-                || (ce().isLocationProhibited(moveto) && !isTankOnPavement)) {
+        } else if (!(ce().getDeploymentZone().canDeployTo(game, moveto) || assaultDropPreference)
+                || (ce().isLocationProhibited(moveto, ce().getElevation()) && !isTankOnPavement)) {
             msg = Messages.getString("DeploymentDisplay.cantDeployInto", ce().getShortName(), moveto.getBoardNum());
             title = Messages.getString("DeploymentDisplay.alertDialog.title");
             JOptionPane.showMessageDialog(clientgui.frame, msg, title, JOptionPane.ERROR_MESSAGE);
             return;
-        } else if (isAero && board.isLowAtmosphereMap() && (ce().getElevation() <= board.getHex(moveto).ceiling(true))) {
+        } else if (isAero && board.isLowAtmosphereMap() && (ce().getElevation() <= deployhex.ceiling(true))) {
             // Ensure aeros don't end up at lower elevation than the current hex
             title = Messages.getString("DeploymentDisplay.alertDialog.title");
             msg = Messages.getString("DeploymentDisplay.elevationTooLow", ce().getShortName(), moveto.getBoardNum());
             JOptionPane.showMessageDialog(clientgui.frame, msg, title, JOptionPane.ERROR_MESSAGE);
             return;
-        } else if ((Compute.stackingViolation(game, ce().getId(), moveto, ce().climbMode()) != null) && (bldg == null)) {
+        } else if ((Compute.stackingViolation(game, ce().getId(), moveto.getCoords(), ce().climbMode()) != null) && (bldg == null)) {
             // check if deployed unit violates stacking
             return;
         } else {
             // check for buildings and if found ask what level they want to deploy at
             if ((null != bldg) && !isAero && !isVTOL && !isWiGE) {
                 if (deployhex.containsTerrain(Terrains.BLDG_ELEV)) {
-                    boolean success = processBuildingDeploy(moveto);
+                    boolean success = processBuildingDeploy(moveto.getCoords());
                     if (!success) {
                         return;
                     }
                 } else if (deployhex.containsTerrain(Terrains.BRIDGE_ELEV)) {
-                    boolean success = processBridgeDeploy(moveto);
+                    boolean success = processBridgeDeploy(moveto.getCoords());
                     if (!success) {
                         return;
                     }
@@ -554,15 +551,16 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
                     }
                 }
             }
-            ce().setPosition(moveto);
+            ce().setPosition(moveto.getCoords());
+            ce().setCurrentBoard(moveto.getBoardId());
 
             clientgui.boardViews().forEach(bv -> bv.redrawEntity(ce()));
-            clientgui.boardViews().forEach(bv -> bv.setWeaponFieldOfFire(ce().getFacing(), moveto));
+            clientgui.boardViews().forEach(bv -> bv.setWeaponFieldOfFire(ce().getFacing(), moveto.getCoords()));
             clientgui.boardViews().forEach(bv -> bv.setSensorRange(ce(), ce().getPosition()));
             butDone.setEnabled(true);
         }
         if (!shiftheld) {
-            clientgui.getBoardView(ce()).select(moveto);
+            clientgui.getBoardView(ce()).select(moveto.getCoords());
         }
     }
 

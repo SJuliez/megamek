@@ -168,7 +168,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         this.entities = entities;
         this.clientgui = clientgui;
         this.client = client;
-        this.space = clientgui.getClient().getMapSettings().getMedium() == Board.T_SPACE;
+        this.space = clientgui.getClient().getMapSettings().getMapType().isSpace();
         this.editable = editable;
         this.editableDeployment = editableDeployment;
 

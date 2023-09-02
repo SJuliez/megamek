@@ -645,7 +645,8 @@ public class Building implements Serializable {
 
     @Override
     public String toString() {
-        return typeName(getType()) + " " + className(getBldgClass()) + " " + name;
+        return typeName(getType()) + " " + className(getBldgClass()) + "; ID: " + id + "; Board Id: " + boardId
+                + "; Size: " + originalHexes + " hexes";
     }
 
     /**

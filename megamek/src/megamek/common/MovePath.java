@@ -149,7 +149,7 @@ public class MovePath implements Cloneable, Serializable {
         sb.append("; End: ").append(new BoardLocation(getFinalCoords(), getFinalBoardId())).append("; Steps: ");
         List<String> stepList = steps.stream().map(MoveStep::toString).collect(Collectors.toList());
         sb.append(String.join("-", stepList));
-        if (!getGame().getBoard(entity).contains(getFinalCoords())) {
+        if (!getGame().getBoard(getFinalBoardId()).contains(getFinalCoords())) {
             sb.append("-OUT!");
         }
         return sb.toString();
@@ -1303,7 +1303,7 @@ public class MovePath implements Cloneable, Serializable {
 
     public boolean isMoveLegal() {
         // Moves which end up off of the board are not legal.
-        if (!getGame().getBoard(entity).contains(getFinalCoords())) {
+        if (!getGame().getBoard(getFinalBoardId()).contains(getFinalCoords())) {
             return false;
         }
 

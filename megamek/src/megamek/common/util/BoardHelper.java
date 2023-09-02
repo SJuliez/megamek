@@ -88,7 +88,7 @@ public final class BoardHelper {
 
     public static List<Coords> coordsRow(Board board, int y) {
         List<Coords> result = new ArrayList<>();
-        for (int x = 0; x < board.getWidth() - 1; x++) {
+        for (int x = 0; x < board.getWidth(); x++) {
             result.add(new Coords(x, y));
         }
         return result;
@@ -96,7 +96,7 @@ public final class BoardHelper {
 
     public static List<Coords> coordsColumn(Board board, int x) {
         List<Coords> result = new ArrayList<>();
-        for (int y = 0; y < board.getHeight() - 1; y++) {
+        for (int y = 0; y < board.getHeight(); y++) {
             result.add(new Coords(x, y));
         }
         return result;
