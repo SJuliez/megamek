@@ -115,4 +115,8 @@ public class BoardLocation implements Serializable {
     public String toFriendlyString() {
         return coords.toFriendlyString() + " (Map Id: " + boardId + ")";
     }
+
+    public boolean isSameBoardAs(BoardLocation other) {
+        return boardId == other.boardId;
+    }
 }

@@ -9,7 +9,10 @@ import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.image.ImageObserver;
+import java.util.ArrayList;
+import java.util.List;
 
+import megamek.common.BoardLocation;
 import megamek.common.Coords;
 import megamek.common.Entity;
 
@@ -19,17 +22,17 @@ import megamek.common.Entity;
  */
 class FlyOverSprite extends Sprite {
 
-    private Polygon flyOverPoly = null;
-
+    private Polygon flyOverPoly;
     protected Entity en;
-
     Color spriteColor;
+    final private List<Coords> flightPath;
 
-    public FlyOverSprite(BoardView boardView1, final Entity e) {
+    public FlyOverSprite(BoardView boardView1, final Entity e, List<Coords> flightPath) {
         super(boardView1);
         en = e;
         spriteColor = e.getOwner().getColour().getColour();
         image = null;
+        this.flightPath = new ArrayList<>(flightPath);
         prepare();
     }
 
@@ -99,11 +102,14 @@ class FlyOverSprite extends Sprite {
      * part of the fly path to the end.
      */
     private void makePoly() {
-        // make polygon
+        if (flyOverPoly != null) {
+            return;
+        }
+
         flyOverPoly = new Polygon();
 
         // Check for degenerate case
-        if ((en.getPosition() == null) || (en.getPassedThrough().size() < 2)) {
+        if ((en.getPosition() == null) || (flightPath.size() < 2)) {
             flyOverPoly = new Polygon();
             flyOverPoly.addPoint(0, 0);
             flyOverPoly.addPoint(1, 0);
@@ -113,15 +119,15 @@ class FlyOverSprite extends Sprite {
 
         // line width
         final double lw = bv.scale * BoardView.FLY_OVER_LINE_WIDTH;
-        int numPassedThrough = en.getPassedThrough().size();
+        int numPassedThrough = flightPath.size();
         double angle;
         double xDiff, yDiff;
         Coords prev, curr, next;
         Point currPoint, nextPoint;
 
         // Handle First Coords
-        curr = en.getPassedThrough().get(0);
-        next = en.getPassedThrough().get(1);
+        curr = flightPath.get(0);
+        next = flightPath.get(1);
         currPoint = bv.getCentreHexLocation(curr, true);
         angle = curr.radian(next);
         flyOverPoly.addPoint(currPoint.x + (int) (Math.cos(angle) * lw + 0.5),
@@ -129,15 +135,15 @@ class FlyOverSprite extends Sprite {
 
         // Handle Middle Coords
         for (int i = 1; i < (numPassedThrough - 1); i++) {
-            prev = en.getPassedThrough().get(i - 1);
-            curr = en.getPassedThrough().get(i);
-            next = en.getPassedThrough().get(i + 1);
+            prev = flightPath.get(i - 1);
+            curr = flightPath.get(i);
+            next = flightPath.get(i + 1);
             addPolyPoint(curr, next, prev, true);
         }
 
         // Handle Last Coords - only draw to the hex edge
-        curr = en.getPassedThrough().get(numPassedThrough - 1);
-        next = en.getPassedThrough().get(numPassedThrough - 2);
+        curr = flightPath.get(numPassedThrough - 1);
+        next = flightPath.get(numPassedThrough - 2);
         currPoint = bv.getCentreHexLocation(curr, true);
         nextPoint = bv.getCentreHexLocation(next, true);
         if (bv.useIsometric()) {
@@ -158,8 +164,8 @@ class FlyOverSprite extends Sprite {
 
         // Now go in reverse order - to add second half of points
         // Handle Last Coords - only draw to the hex edge
-        curr = en.getPassedThrough().get(numPassedThrough - 1);
-        next = en.getPassedThrough().get(numPassedThrough - 2);
+        curr = flightPath.get(numPassedThrough - 1);
+        next = flightPath.get(numPassedThrough - 2);
         currPoint = bv.getCentreHexLocation(curr, true);
         nextPoint = bv.getCentreHexLocation(next, true);
         if (bv.useIsometric()) {
@@ -180,15 +186,15 @@ class FlyOverSprite extends Sprite {
 
         // Handle Middle Coords (in reverse)
         for (int i = (numPassedThrough - 2); i > 0; i--) {
-            prev = en.getPassedThrough().get(i + 1);
-            curr = en.getPassedThrough().get(i);
-            next = en.getPassedThrough().get(i - 1);
+            prev = flightPath.get(i + 1);
+            curr = flightPath.get(i);
+            next = flightPath.get(i - 1);
             addPolyPoint(curr, next, prev, false);
         }
 
         // Handle First Coords
-        curr = en.getPassedThrough().get(0);
-        prev = en.getPassedThrough().get(1);
+        curr = flightPath.get(0);
+        prev = flightPath.get(1);
         currPoint = bv.getCentreHexLocation(curr, true);
         angle = prev.radian(curr);
         flyOverPoly.addPoint(currPoint.x + (int) (Math.cos(angle) * lw + 0.5),
@@ -197,10 +203,7 @@ class FlyOverSprite extends Sprite {
 
     @Override
     public Rectangle getBounds() {
-        if (true) {
-            makePoly();
-        }
-        // set bounds
+        makePoly();
         bounds = new Rectangle(flyOverPoly.getBounds());
         bounds.setSize(bounds.getSize().width + 1, bounds.getSize().height + 1);
         return bounds;

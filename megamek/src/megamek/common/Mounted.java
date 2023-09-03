@@ -2055,7 +2055,7 @@ public class Mounted implements Serializable, RoundUpdated, PhaseUpdated {
         // Ensure we only target attacks in our arc & range
         List<WeaponAttackAction> vAttacksInArc = new Vector<>(vAttacks.size());
         for (WeaponHandler wr : vAttacks) {
-            boolean isInArc = Compute.isInArc(getEntity().getGame(),
+            boolean isInArc = ComputeArc.isInArc(getEntity().getGame(),
                     getEntity().getId(), getEntity().getEquipmentNum(this),
                     getEntity().getGame().getEntity(wr.waa.getEntityId()));
             boolean isInRange = getEntity().getPosition().distance(

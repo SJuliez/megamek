@@ -1379,51 +1379,51 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
         final Mounted mounted = getEquipment(wn);
         if (mounted.getType().hasFlag(WeaponType.F_SPACE_BOMB) || mounted.getType().hasFlag(WeaponType.F_DIVE_BOMB)
                 || mounted.getType().hasFlag(WeaponType.F_ALT_BOMB)) {
-            return Compute.ARC_360;
+            return ComputeArc.ARC_360;
         }
         // We use Aero locations for weapon groups for fighter squadron
         // compatibility
         if (mounted.isWeaponGroup()) {
-            return (mounted.getLocation() == Aero.LOC_AFT) ? Compute.ARC_AFT : Compute.ARC_NOSE;
+            return (mounted.getLocation() == Aero.LOC_AFT) ? ComputeArc.ARC_AFT : ComputeArc.ARC_NOSE;
         }
-        int arc = Compute.ARC_NOSE;
+        int arc = ComputeArc.ARC_NOSE;
         switch (mounted.getLocation()) {
             case LOC_HEAD:
-                arc = Compute.ARC_NOSE;
+                arc = ComputeArc.ARC_NOSE;
                 break;
             case LOC_CT:
                 if (mounted.isRearMounted()) {
-                    arc = Compute.ARC_AFT;
+                    arc = ComputeArc.ARC_AFT;
                 } else {
-                    arc = Compute.ARC_NOSE;
+                    arc = ComputeArc.ARC_NOSE;
                 }
                 break;
             case LOC_RT:
                 if (mounted.isRearMounted()) {
-                    arc = Compute.ARC_RWINGA;
+                    arc = ComputeArc.ARC_RWINGA;
                 } else {
-                    arc = Compute.ARC_RWING;
+                    arc = ComputeArc.ARC_RWING;
                 }
                 break;
             case LOC_LT:
                 if (mounted.isRearMounted()) {
-                    arc = Compute.ARC_LWINGA;
+                    arc = ComputeArc.ARC_LWINGA;
                 } else {
-                    arc = Compute.ARC_LWING;
+                    arc = ComputeArc.ARC_LWING;
                 }
                 break;
             case LOC_RARM:
-                arc = Compute.ARC_RWING;
+                arc = ComputeArc.ARC_RWING;
                 break;
             case LOC_LARM:
-                arc = Compute.ARC_LWING;
+                arc = ComputeArc.ARC_LWING;
                 break;
             case LOC_RLEG:
             case LOC_LLEG:
-                arc = Compute.ARC_AFT;
+                arc = ComputeArc.ARC_AFT;
                 break;
             default:
-                arc = Compute.ARC_360;
+                arc = ComputeArc.ARC_360;
                 break;
         }
 

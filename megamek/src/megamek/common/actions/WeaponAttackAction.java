@@ -37,7 +37,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Vector;
 
 /**
  * Represents intention to fire a weapon at the target.
@@ -1622,8 +1621,8 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
                 }
                 // Additional Nape-of-Earth restrictions for strafing
                 if ((ae.getAltitude() == 1) && isStrafing) {
-                    Vector<Coords> passedThrough = ae.getPassedThrough();
-                    if (passedThrough.isEmpty() || passedThrough.get(0).equals(target.getPosition())) {
+                    List<BoardLocation> passedThrough = ae.getPassedThrough();
+                    if (passedThrough.isEmpty() || passedThrough.get(0).equals(target.getBoardLocation())) {
                         // TW pg 243 says units flying at NOE have a harder time
                         // establishing LoS while strafing and hence have to
                         // consider the adjacent hex along the flight place in the
@@ -1634,9 +1633,9 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
                         return Messages.getString("WeaponAttackAction.TooCloseForStrafe");
                     }
                     // Otherwise, check for a dead-zone, TW pg 243
-                    Coords prevCoords = ae.passedThroughPrevious(target.getPosition());
-                    Hex prevHex = game.getBoard(ae).getHex(prevCoords);
-                    Hex currHex = game.getBoard(ae).getHex(target.getPosition());
+                    BoardLocation prevLocation = ae.passedThroughPrevious(target.getBoardLocation());
+                    Hex prevHex = game.getHex(prevLocation);
+                    Hex currHex = game.getHex(target.getBoardLocation());
                     int prevElev = prevHex.getLevel();
                     int currElev = currHex.getLevel();
                     if ((prevElev - currElev - target.relHeight()) > 2) {
@@ -2394,7 +2393,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             }
 
             // Protomech can fire MGA only into front arc, TW page 137
-            if (!Compute.isInArc(ae.getPosition(), ae.getFacing(), target, Compute.ARC_FORWARD)
+            if (!ComputeArc.isInArc(ae.getPosition(), ae.getFacing(), target, ComputeArc.ARC_FORWARD)
                     && wtype.hasFlag(WeaponType.F_MGA) && (ae instanceof Protomech)) {
                 return Messages.getString("WeaponAttackAction.ProtoMGAOnlyFront");
             }
@@ -2533,7 +2532,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             }
 
             // Weapon in arc?
-            if (!Compute.isInArc(game, attackerId, weaponId, target)
+            if (!ComputeArc.isInArc(game, attackerId, weaponId, target)
                     && (!Compute.isAirToGround(ae, target) || isArtilleryIndirect)
                     && !ae.isMakingVTOLGroundAttack()
                     && !ae.isOffBoard()) {
@@ -3770,8 +3769,8 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
                     }
                     // Additional Nape-of-Earth restrictions for strafing
                     if (ae.getAltitude() == 1) {
-                        Coords prevCoords = ae.passedThroughPrevious(target.getPosition());
-                        Hex prevHex = game.getBoard(target).getHex(prevCoords);
+                        BoardLocation prevLocation = ae.passedThroughPrevious(target.getBoardLocation());
+                        Hex prevHex = game.getHex(prevLocation);
                         toHit.append(Compute.getStrafingTerrainModifier(game, eistatus, prevHex));
                     }
                 } else {
@@ -4329,7 +4328,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
 
         // Ground-to-air attacks against a target flying at NOE
         if (Compute.isGroundToAir(ae, target) && (null != te) && te.isNOE()) {
-            if (te.passedWithin(ae.getPosition(), 1)) {
+            if (te.passedWithin(ae.getBoardLocation(), 1)) {
                 toHit.addModifier(+1, Messages.getString("WeaponAttackAction.TeNoe"));
             } else {
                 toHit.addModifier(+3, Messages.getString("WeaponAttackAction.TeNoe"));

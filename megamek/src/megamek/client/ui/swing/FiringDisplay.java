@@ -1238,7 +1238,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                 WeaponAttackAction waa = (WeaponAttackAction) o;
                 Entity attacker = waa.getEntity(clientgui.getClient().getGame());
                 Targetable target1 = waa.getTarget(clientgui.getClient().getGame());
-                boolean curInFrontArc = Compute.isInArc(attacker.getPosition(),
+                boolean curInFrontArc = ComputeArc.isInArc(attacker.getPosition(),
                         attacker.getSecondaryFacing(), target1,
                         attacker.getForwardArc());
                 if (curInFrontArc) {
@@ -1268,7 +1268,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                 WeaponAttackAction waa = (WeaponAttackAction) o;
                 Entity attacker = waa.getEntity(clientgui.getClient().getGame());
                 Targetable target1 = waa.getTarget(clientgui.getClient().getGame());
-                boolean curInFrontArc = Compute.isInArc(attacker.getPosition(),
+                boolean curInFrontArc = ComputeArc.isInArc(attacker.getPosition(),
                         attacker.getSecondaryFacing(), target1,
                         attacker.getForwardArc());
                 if (!curInFrontArc) {
@@ -1558,9 +1558,9 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                 WeaponAttackAction oldWaa = (WeaponAttackAction) lastAction;
                 Targetable oldTarget = oldWaa.getTarget(game);
                 if (!oldTarget.equals(target)) {
-                    boolean oldInFront = Compute.isInArc(ce().getPosition(),
+                    boolean oldInFront = ComputeArc.isInArc(ce().getPosition(),
                             ce().getSecondaryFacing(), oldTarget, ce().getForwardArc());
-                    boolean curInFront = Compute.isInArc(ce().getPosition(),
+                    boolean curInFront = ComputeArc.isInArc(ce().getPosition(),
                             ce().getSecondaryFacing(), target, ce().getForwardArc());
                     if (!oldInFront && curInFront) {
                         String title = Messages.getString("FiringDisplay.SecondaryTargetToHitChange.title");
@@ -1877,8 +1877,8 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             }
         }
         if ((target instanceof Entity) && Compute.isGroundToAir(ce(), target)) {
-            Coords targetPos = Compute.getClosestFlightPath(cen, ce().getPosition(), (Entity) target);
-            clientgui.getBoardView(ce()).cursor(targetPos);
+            BoardLocation targetPos = Compute.getClosestFlightPath(cen, ce().getBoardLocation(), (Entity) target);
+            clientgui.getBoardView(targetPos).cursor(targetPos.getCoords());
         }
         ash.setAimingMode();
         updateTarget();
@@ -2122,7 +2122,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         if (clientgui.getClient().isMyTurn() && (evtCoords != null)
             && (ce() != null)) {
             if (isStrafing) {
-                if (validStrafingCoord(evtCoords)) {
+                if (validStrafingCoord(b.getBoardLocation())) {
                     strafingCoords.add(evtCoords);
                     clientgui.getBoardView(b.getBoardLocation()).addStrafingCoords(evtCoords);
                     updateStrafingTargets();
@@ -2616,7 +2616,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         return target;
     }
 
-    private boolean validStrafingCoord(Coords newCoord) {
+    private boolean validStrafingCoord(BoardLocation boardLocation) {
         // Only Aeros can strafe...
         if (ce() == null || !ce().isAero()) {
             return false;
@@ -2629,7 +2629,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         }
 
         // Can only strafe hexes that were flown over
-        if (!ce().passedThrough(newCoord)) {
+        if (!ce().passedThrough(boardLocation)) {
             return false;
         }
 
@@ -2644,19 +2644,19 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         }
 
         // Can't strafe the same hex twice
-        if (strafingCoords.contains(newCoord)) {
+        if (strafingCoords.contains(boardLocation.getCoords())) {
             return false;
         }
 
         boolean isConsecutive = false;
         for (Coords c : strafingCoords) {
-            isConsecutive |= (c.distance(newCoord) == 1);
+            isConsecutive |= (c.distance(boardLocation.getCoords()) == 1);
         }
 
         boolean isInaLine = true;
         // If there is only one other coord, then they're linear
         if (strafingCoords.size() > 1) {
-            IdealHex newHex = new IdealHex(newCoord);
+            IdealHex newHex = new IdealHex(boardLocation.getCoords());
             IdealHex start = new IdealHex(strafingCoords.get(0));
             // Define the vector formed by the new coords and the first coords
             for (int i = 1; i < strafingCoords.size(); i++) {

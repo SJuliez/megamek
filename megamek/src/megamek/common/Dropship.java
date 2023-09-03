@@ -15,9 +15,7 @@ import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.common.cost.DropShipCostCalculator;
 import megamek.common.options.OptionsConstants;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * @author Jay Lawson
@@ -511,6 +509,15 @@ public class Dropship extends SmallCraft {
             secondaryPositions.put(5, getPosition().translated((getFacing() + 4) % 6));
             secondaryPositions.put(6, getPosition().translated((getFacing() + 5) % 6));
         }
+    }
+
+    @Override
+    public List<Coords> getAllPositions() {
+        List<Coords> allPositions = new ArrayList<>(super.getAllPositions());
+        if (getSecondaryPositions() != null) {
+            allPositions.addAll(getSecondaryPositions().values());
+        }
+        return allPositions;
     }
 
     /*

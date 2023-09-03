@@ -830,8 +830,8 @@ public class SharedUtility {
                 // TODO : I will need to update this to account for asteroids
 
                 // I need to consider both of these passed through for purposes of bombing
-                en.addPassedThrough(right);
-                en.addPassedThrough(left);
+                en.addPassedThrough(new BoardLocation(right, en.getBoardId()));
+                en.addPassedThrough(new BoardLocation(left, en.getBoardId()));
                 if (client != null) {
                     client.sendUpdateEntity(en);
                 }

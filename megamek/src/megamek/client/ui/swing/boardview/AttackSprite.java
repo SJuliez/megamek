@@ -77,7 +77,7 @@ class AttackSprite extends Sprite {
         Coords targetPosition;
         if (Compute.isGroundToAir(ae, target)) {
             targetPosition = Compute.getClosestFlightPath(ae.getId(),
-                    ae.getPosition(), (Entity) target);
+                    ae.getBoardLocation(), (Entity) target).getCoords();
         } else {
             targetPosition = target.getPosition();
         }
@@ -118,7 +118,7 @@ class AttackSprite extends Sprite {
         Coords targetPosition;
         if (Compute.isGroundToAir(ae, target)) {
             targetPosition = Compute.getClosestFlightPath(ae.getId(),
-                    ae.getPosition(), (Entity) target);
+                    ae.getBoardLocation(), (Entity) target).getCoords();
         } else {
             targetPosition = target.getPosition();
         }

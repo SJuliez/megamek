@@ -1846,15 +1846,15 @@ public abstract class Mech extends Entity {
         // B-Pods need to be special-cased, the have 360 firing arc
         if ((mounted.getType() instanceof WeaponType)
                 && mounted.getType().hasFlag(WeaponType.F_B_POD)) {
-            return Compute.ARC_360;
+            return ComputeArc.ARC_360;
         }
         // VGLs base arc on their facing
         if (mounted.getType().hasFlag(WeaponType.F_VGL)) {
-            return Compute.firingArcFromVGLFacing(mounted.getFacing());
+            return ComputeArc.firingArcFromVGLFacing(mounted.getFacing());
         }
         // rear mounted?
         if (mounted.isRearMounted()) {
-            return Compute.ARC_REAR;
+            return ComputeArc.ARC_REAR;
         }
         // front mounted
         switch (mounted.getLocation()) {
@@ -1864,15 +1864,15 @@ public abstract class Mech extends Entity {
             case LOC_LT:
             case LOC_RLEG:
             case LOC_LLEG:
-                return Compute.ARC_FORWARD;
+                return ComputeArc.ARC_FORWARD;
             case LOC_RARM:
-                return getArmsFlipped() ? Compute.ARC_REAR
-                        : Compute.ARC_RIGHTARM;
+                return getArmsFlipped() ? ComputeArc.ARC_REAR
+                        : ComputeArc.ARC_RIGHTARM;
             case LOC_LARM:
-                return getArmsFlipped() ? Compute.ARC_REAR
-                        : Compute.ARC_LEFTARM;
+                return getArmsFlipped() ? ComputeArc.ARC_REAR
+                        : ComputeArc.ARC_LEFTARM;
             default:
-                return Compute.ARC_360;
+                return ComputeArc.ARC_360;
         }
     }
 

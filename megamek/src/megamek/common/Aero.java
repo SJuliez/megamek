@@ -1037,33 +1037,33 @@ public class Aero extends Entity implements IAero, IBomber {
         final Mounted mounted = getEquipment(wn);
         if (mounted.getType().hasFlag(WeaponType.F_SPACE_BOMB) || mounted.getType().hasFlag(WeaponType.F_DIVE_BOMB)
                 || mounted.getType().hasFlag(WeaponType.F_ALT_BOMB)) {
-            return Compute.ARC_360;
+            return ComputeArc.ARC_360;
         }
         int arc;
         switch (mounted.getLocation()) {
             case LOC_NOSE:
             case LOC_WINGS:
-                arc = Compute.ARC_NOSE;
+                arc = ComputeArc.ARC_NOSE;
                 break;
             case LOC_RWING:
                 if (mounted.isRearMounted()) {
-                    arc = Compute.ARC_RWINGA;
+                    arc = ComputeArc.ARC_RWINGA;
                 } else {
-                    arc = Compute.ARC_RWING;
+                    arc = ComputeArc.ARC_RWING;
                 }
                 break;
             case LOC_LWING:
                 if (mounted.isRearMounted()) {
-                    arc = Compute.ARC_LWINGA;
+                    arc = ComputeArc.ARC_LWINGA;
                 } else {
-                    arc = Compute.ARC_LWING;
+                    arc = ComputeArc.ARC_LWING;
                 }
                 break;
             case LOC_AFT:
-                arc = Compute.ARC_AFT;
+                arc = ComputeArc.ARC_AFT;
                 break;
             default:
-                arc = Compute.ARC_360;
+                arc = ComputeArc.ARC_360;
                 break;
         }
 
@@ -2355,7 +2355,7 @@ public class Aero extends Entity implements IAero, IBomber {
      */
     @Override
     public int getForwardArc() {
-        return Compute.ARC_NOSE;
+        return ComputeArc.ARC_NOSE;
     }
 
     /**
@@ -2363,7 +2363,7 @@ public class Aero extends Entity implements IAero, IBomber {
      */
     @Override
     public int getRearArc() {
-        return Compute.ARC_AFT;
+        return ComputeArc.ARC_AFT;
     }
 
     @Override

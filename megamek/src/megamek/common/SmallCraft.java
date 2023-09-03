@@ -563,122 +563,122 @@ public class SmallCraft extends Aero {
     public int getWeaponArc(int wn) {
         final Mounted mounted = getEquipment(wn);
 
-        int arc = Compute.ARC_NOSE;
+        int arc = ComputeArc.ARC_NOSE;
         if (!isSpheroid()) {
             switch (mounted.getLocation()) {
                 case LOC_NOSE:
                     if (mounted.isInWaypointLaunchMode()) {
-                        arc = Compute.ARC_NOSE_WPL;
+                        arc = ComputeArc.ARC_NOSE_WPL;
                         break;
                     }
-                    arc = Compute.ARC_NOSE;
+                    arc = ComputeArc.ARC_NOSE;
                     break;
                 case LOC_RWING:
                     if (mounted.isRearMounted()) {
                         if (mounted.isInWaypointLaunchMode()) {
-                            arc = Compute.ARC_RWINGA_WPL;
+                            arc = ComputeArc.ARC_RWINGA_WPL;
                             break;
                         }
-                        arc = Compute.ARC_RWINGA;
+                        arc = ComputeArc.ARC_RWINGA;
                     } else {
                         if (mounted.isInWaypointLaunchMode()) {
-                            arc = Compute.ARC_RWING_WPL;
+                            arc = ComputeArc.ARC_RWING_WPL;
                             break;
                         }
-                        arc = Compute.ARC_RWING;
+                        arc = ComputeArc.ARC_RWING;
                     }
                     break;
                 case LOC_LWING:
                     if (mounted.isRearMounted()) {
                         if (mounted.isInWaypointLaunchMode()) {
-                            arc = Compute.ARC_LWINGA_WPL;
+                            arc = ComputeArc.ARC_LWINGA_WPL;
                             break;
                         }
-                        arc = Compute.ARC_LWINGA;
+                        arc = ComputeArc.ARC_LWINGA;
                     } else {
                         if (mounted.isInWaypointLaunchMode()) {
-                            arc = Compute.ARC_LWING_WPL;
+                            arc = ComputeArc.ARC_LWING_WPL;
                             break;
                         }
-                        arc = Compute.ARC_LWING;
+                        arc = ComputeArc.ARC_LWING;
                     }
                     break;
                 case LOC_AFT:
                     if (mounted.isInWaypointLaunchMode()) {
-                        arc = Compute.ARC_AFT_WPL;
+                        arc = ComputeArc.ARC_AFT_WPL;
                         break;
                     }
-                    arc = Compute.ARC_AFT;
+                    arc = ComputeArc.ARC_AFT;
                     break;
                 default:
-                    arc = Compute.ARC_360;
+                    arc = ComputeArc.ARC_360;
             }
         } else {
             if ((game != null) && isSpaceborne()) {
                 switch (mounted.getLocation()) {
                     case LOC_NOSE:
                         if (mounted.isInWaypointLaunchMode()) {
-                            arc = Compute.ARC_NOSE_WPL;
+                            arc = ComputeArc.ARC_NOSE_WPL;
                             break;
                         }
-                        arc = Compute.ARC_NOSE;
+                        arc = ComputeArc.ARC_NOSE;
                         break;
                     case LOC_RWING:
                         if (mounted.isRearMounted()) {
                             if (mounted.isInWaypointLaunchMode()) {
-                                arc = Compute.ARC_RIGHTSIDEA_SPHERE_WPL;
+                                arc = ComputeArc.ARC_RIGHTSIDEA_SPHERE_WPL;
                                 break;
                             }
-                            arc = Compute.ARC_RIGHTSIDEA_SPHERE;
+                            arc = ComputeArc.ARC_RIGHTSIDEA_SPHERE;
                         } else {
                             if (mounted.isInWaypointLaunchMode()) {
-                                arc = Compute.ARC_RIGHTSIDE_SPHERE_WPL;
+                                arc = ComputeArc.ARC_RIGHTSIDE_SPHERE_WPL;
                                 break;
                             }
-                            arc = Compute.ARC_RIGHTSIDE_SPHERE;
+                            arc = ComputeArc.ARC_RIGHTSIDE_SPHERE;
                         }
                         break;
                     case LOC_LWING:
                         if (mounted.isRearMounted()) {
                             if (mounted.isInWaypointLaunchMode()) {
-                                arc = Compute.ARC_LEFTSIDEA_SPHERE_WPL;
+                                arc = ComputeArc.ARC_LEFTSIDEA_SPHERE_WPL;
                                 break;
                             }
-                            arc = Compute.ARC_LEFTSIDEA_SPHERE;
+                            arc = ComputeArc.ARC_LEFTSIDEA_SPHERE;
                         } else {
                             if (mounted.isInWaypointLaunchMode()) {
-                                arc = Compute.ARC_LEFTSIDE_SPHERE_WPL;
+                                arc = ComputeArc.ARC_LEFTSIDE_SPHERE_WPL;
                                 break;
                             }
-                            arc = Compute.ARC_LEFTSIDE_SPHERE;
+                            arc = ComputeArc.ARC_LEFTSIDE_SPHERE;
                         }
                         break;
                     case LOC_AFT:
                         if (mounted.isInWaypointLaunchMode()) {
-                            arc = Compute.ARC_AFT_WPL;
+                            arc = ComputeArc.ARC_AFT_WPL;
                             break;
                         }
-                        arc = Compute.ARC_AFT;
+                        arc = ComputeArc.ARC_AFT;
                         break;
                     default:
-                        arc = Compute.ARC_360;
+                        arc = ComputeArc.ARC_360;
                 }
             } else {
                 switch (mounted.getLocation()) {
                     case LOC_NOSE:
-                        arc = Compute.ARC_360;
+                        arc = ComputeArc.ARC_360;
                         break;
                     case LOC_RWING:
-                        arc = Compute.ARC_RIGHT_SPHERE_GROUND;
+                        arc = ComputeArc.ARC_RIGHT_SPHERE_GROUND;
                         break;
                     case LOC_LWING:
-                        arc = Compute.ARC_LEFT_SPHERE_GROUND;
+                        arc = ComputeArc.ARC_LEFT_SPHERE_GROUND;
                         break;
                     case LOC_AFT:
-                        arc = Compute.ARC_360;
+                        arc = ComputeArc.ARC_360;
                         break;
                     default:
-                        arc = Compute.ARC_360;
+                        arc = ComputeArc.ARC_360;
                 }
             }
 

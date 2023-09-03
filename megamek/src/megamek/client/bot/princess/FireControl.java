@@ -178,14 +178,14 @@ public class FireControl {
 
     /**
      * Returns the {@link Coords} computed by 
-     * {@link Compute#getClosestFlightPath(int, Coords, Entity)}.
+     * {@link Compute#getClosestFlightPath(int, BoardLocation, Entity)}.
      *
      * @param shooterPosition The shooter's position.
      * @param targetAero      The aero unit being attacked.
      * @return The {@link Coords} from the target's flight path closest to the shooter.
      */
     @StaticWrapper
-    Coords getNearestPointInFlightPath(final Coords shooterPosition, final IAero targetAero) {
+    BoardLocation getNearestPointInFlightPath(final BoardLocation shooterPosition, final IAero targetAero) {
         return Compute.getClosestFlightPath(-1, shooterPosition, (Entity) targetAero);
     }
 
@@ -253,7 +253,7 @@ public class FireControl {
         if (!shooterState.isAero() && targetState.isAirborneAero()) {
             final IAero targetAero = (IAero) target;
             if (((Entity) targetAero).isNOE()) {
-                final Coords closestInFlightPath = getNearestPointInFlightPath(shooterState.getPosition(), targetAero);
+                final Coords closestInFlightPath = getNearestPointInFlightPath(shooterState.getBoardLocation(), targetAero).getCoords();
                 final int aeroDistance = closestInFlightPath.distance(shooterState.getPosition());
                 if (1 >= aeroDistance) {
                     toHitData.addModifier(TH_TAR_AERO_NOE_ADJ);
@@ -401,11 +401,11 @@ public class FireControl {
         // Check if target is within arc
         final int arc;
         if (PhysicalAttackType.LEFT_PUNCH == attackType) {
-            arc = Compute.ARC_LEFTARM;
+            arc = ComputeArc.ARC_LEFTARM;
         } else if (PhysicalAttackType.RIGHT_PUNCH == attackType) {
-            arc = Compute.ARC_RIGHTARM;
+            arc = ComputeArc.ARC_RIGHTARM;
         } else {
-            arc = Compute.ARC_FORWARD; // assume kick
+            arc = ComputeArc.ARC_FORWARD; // assume kick
         }
         if (!isInArc(shooterState.getPosition(), shooterState.getSecondaryFacing(), targetState.getPosition(), arc)) {
             return new ToHitData(TH_PHY_NOT_IN_ARC);
@@ -511,7 +511,7 @@ public class FireControl {
     }
 
     /**
-     * Returns the value of {@link Compute#isInArc(Coords, int, Targetable, int)}.
+     * Returns the value of {@link ComputeArc#isInArc(Coords, int, Targetable, int)}.
      *
      * @param shooterPosition The current {@link Coords} of the shooter.
      * @param shooterFacing   The shooter's current facing.
@@ -524,7 +524,7 @@ public class FireControl {
                               final int shooterFacing,
                               final Coords targetPosition,
                               final int weaponArc) {
-        return Compute.isInArc(shooterPosition, shooterFacing, targetPosition, weaponArc);
+        return ComputeArc.isInArc(shooterPosition, shooterFacing, targetPosition, weaponArc);
     }
 
     /**

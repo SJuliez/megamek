@@ -336,7 +336,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     private int recoveryTurn = 0;
 
     // need to keep a list of areas that this entity has passed through on the current turn
-    private Vector<Coords> passedThrough = new Vector<>();
+    private List<BoardLocation> passedThrough = new ArrayList<>();
 
     private List<Integer> passedThroughFacing = new ArrayList<>();
 
@@ -1935,12 +1935,12 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * @return the coords of the second to last position on the passed through
      * vector or the current position if too small
      */
-
-    public Coords getPriorPosition() {
+    public BoardLocation getPriorPosition() {
         if (passedThrough.size() < 2) {
-            return getPosition();
+            return getBoardLocation();
+        } else {
+            return passedThrough.get(passedThrough.size() - 2);
         }
-        return passedThrough.elementAt(passedThrough.size() - 2);
     }
 
     /**
@@ -6524,7 +6524,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         getActiveAMS().stream()
                 .filter(ams -> ams.getType().hasFlag(WeaponType.F_AMSBAY)
                         || (ams.getType().hasFlag(WeaponType.F_PDBAY) && !ams.isUsedThisRound()))
-                .filter(ams -> Compute.isInArc(game, getId(), getEquipmentNum(ams),
+                .filter(ams -> ComputeArc.isInArc(game, getId(), getEquipmentNum(ams),
                         game.getEntity(telemissileAttack.getEntityId())))
                 .forEach(telemissileAttack::addCounterEquipment);
     }
@@ -6542,7 +6542,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             final List<WeaponAttackAction> attacksInArc = attacks.stream()
                     .filter(weaponHandler -> (weaponHandler.getWaa() != null)
                             && !targets.contains(weaponHandler.getWaa())
-                            && Compute.isInArc(getGame(), getId(), getEquipmentNum(ams),
+                            && ComputeArc.isInArc(getGame(), getId(), getEquipmentNum(ams),
                                     (weaponHandler instanceof CapitalMissileBearingsOnlyHandler)
                                             ? getGame().getTarget(weaponHandler.getWaa().getOriginalTargetType(),
                                                     weaponHandler.getWaa().getOriginalTargetId())
@@ -10837,7 +10837,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
 
     public int sideTable(Coords src, boolean usePrior, int face, Coords effectivePos) {
         if (usePrior) {
-            effectivePos = getPriorPosition();
+            effectivePos = getPriorPosition().getCoords();
         }
 
         if (src.equals(effectivePos)) {
@@ -11637,12 +11637,12 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         return playerPickedPassThrough.get(attackerId);
     }
 
-    public void setPassedThrough(Vector<Coords> pass) {
-        passedThrough = pass;
+    public void setPassedThrough(List<BoardLocation> pass) {
+        passedThrough = new ArrayList<>(pass);
     }
 
-    public Vector<Coords> getPassedThrough() {
-        return passedThrough;
+    public List<BoardLocation> getPassedThrough() {
+        return new ArrayList<>(passedThrough);
     }
 
     public void setPassedThroughFacing(List<Integer> passFacing) {
@@ -11653,67 +11653,58 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         return passedThroughFacing;
     }
 
-    public void addPassedThrough(Coords c) {
-        passedThrough.add(c);
+    public void addPassedThrough(BoardLocation boardLocation) {
+        passedThrough.add(boardLocation);
     }
 
     /**
-     * Method that determines if this Entity passed over another entity during
-     * its current path
+     * Method that determines if this Entity passed over (or through) the given target during
+     * its current flight path. Also checks secondary positions of multi-hex targets.
      *
-     * @param t
-     * @return
+     * @param target The target (unit or hex)
+     * @return True when the flight path of this unit crossed the target's position(s)
      */
-    public boolean passedOver(Targetable t) {
-        for (Coords crd : passedThrough) {
-            if (crd.equals(t.getPosition())) {
-                return true;
-            }
-            for (Coords secondary : t.getSecondaryPositions().values()) {
-                if (crd.equals(secondary)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    public boolean passedOver(Targetable target) {
+        List<BoardLocation> targetPositions = new ArrayList<>();
+        targetPositions.add(target.getBoardLocation());
+        targetPositions.addAll(target.getSecondaryPositions().values().stream()
+                .map(c -> new BoardLocation(c, target.getBoardId()))
+                .collect(Collectors.toList()));
+        return !Collections.disjoint(targetPositions, passedThrough);
     }
 
-    public boolean passedThrough(Coords c) {
-        for (Coords crd : passedThrough) {
-            if (crd.equals(c)) {
-                return true;
-            }
-        }
-        return false;
+    public boolean passedThrough(BoardLocation boardLocation) {
+        return passedThrough(boardLocation.getCoords(), boardLocation.getBoardId());
+    }
+
+    public boolean passedThrough(Coords coords, int boardId) {
+        return passedThrough.contains(new BoardLocation(coords, boardId));
     }
 
     /**
      * Did the entity pass within a certain number of hexes of these coords?
      */
-    public boolean passedWithin(Coords c, int dist) {
-        for (Coords crd : passedThrough) {
-            if (crd.distance(c) <= dist) {
-                return true;
-            }
-        }
-        return false;
+    public boolean passedWithin(BoardLocation boardLocation, int dist) {
+        return passedThrough.stream()
+                .filter(bl -> bl.isSameBoardAs(boardLocation))
+                .mapToInt(bl -> bl.getCoords().distance(boardLocation.getCoords()))
+                .anyMatch(distance -> distance < dist);
     }
 
     /**
      * What coords were passed through previous to the given one
      */
-    public Coords passedThroughPrevious(Coords c) {
-        if (passedThrough.isEmpty()) {
-            return getPosition();
-        }
-        Coords prevCrd = passedThrough.get(0);
-        for (Coords crd : passedThrough) {
-            if (crd.equals(c)) {
-                break;
+    public BoardLocation passedThroughPrevious(BoardLocation other) {
+        if (!passedThrough.contains(other)) {
+            return getBoardLocation();
+        } else {
+            int index = passedThrough.indexOf(other);
+            if (index > 0) {
+                return passedThrough.get(index - 1);
+            } else {
+                return passedThrough.get(0);
             }
-            prevCrd = crd;
         }
-        return prevCrd;
     }
 
     public void setRamming(boolean b) {
@@ -12825,14 +12816,14 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * Returns the forward firing arc for this entity - overrided by some units
      */
     public int getForwardArc() {
-        return Compute.ARC_FORWARD;
+        return ComputeArc.ARC_FORWARD;
     }
 
     /**
      * Returns the rear firing arc for this entity - overrided by some units
      */
     public int getRearArc() {
-        return Compute.ARC_REAR;
+        return ComputeArc.ARC_REAR;
     }
 
     @Override
@@ -12947,6 +12938,12 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     @Override
     public Map<Integer, Coords> getSecondaryPositions() {
         return secondaryPositions;
+    }
+
+    public List<BoardLocation> getSecondaryPositionsAsBoardLocations() {
+        return secondaryPositions.values().stream()
+                .map(c -> new BoardLocation(c, currentBoard))
+                .collect(Collectors.toList());
     }
 
     /**

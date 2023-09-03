@@ -910,11 +910,11 @@ public class Tank extends Entity {
         // B-Pods need to be special-cased, the have 360 firing arc
         if ((mounted.getType() instanceof WeaponType)
                 && mounted.getType().hasFlag(WeaponType.F_B_POD)) {
-            return Compute.ARC_360;
+            return ComputeArc.ARC_360;
         }
         // VGLs base arc on their facing
         if (mounted.getType().hasFlag(WeaponType.F_VGL)) {
-            return Compute.firingArcFromVGLFacing(mounted.getFacing());
+            return ComputeArc.firingArcFromVGLFacing(mounted.getFacing());
         }
         switch (mounted.getLocation()) {
             case LOC_BODY:
@@ -923,55 +923,55 @@ public class Tank extends Entity {
                 // http://forums.classicbattletech.com/index.php/topic,9400.0.html
             case LOC_FRONT:
                 if (mounted.isPintleTurretMounted()) {
-                    return Compute.ARC_PINTLE_TURRET_FRONT;
+                    return ComputeArc.ARC_PINTLE_TURRET_FRONT;
                 }
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_NOSE;
+                    return ComputeArc.ARC_NOSE;
                 }
             case LOC_TURRET:
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_TURRET;
+                    return ComputeArc.ARC_TURRET;
                 }
-                return Compute.ARC_FORWARD;
+                return ComputeArc.ARC_FORWARD;
             case LOC_TURRET_2:
                 // Doubles as chin turret location for VTOLs, for which
                 // Tank.LOC_TURRET == magic number 5 == VTOL.LOC_ROTOR.
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_TURRET;
+                    return ComputeArc.ARC_TURRET;
                 }
-                return Compute.ARC_FORWARD;
+                return ComputeArc.ARC_FORWARD;
             case LOC_RIGHT:
                 if (mounted.isSponsonTurretMounted()) {
-                    return Compute.ARC_SPONSON_TURRET_RIGHT;
+                    return ComputeArc.ARC_SPONSON_TURRET_RIGHT;
                 }
                 if (mounted.isPintleTurretMounted()) {
-                    return Compute.ARC_PINTLE_TURRET_RIGHT;
+                    return ComputeArc.ARC_PINTLE_TURRET_RIGHT;
                 }
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_RIGHT_BROADSIDE;
+                    return ComputeArc.ARC_RIGHT_BROADSIDE;
                 }
-                return Compute.ARC_RIGHTSIDE;
+                return ComputeArc.ARC_RIGHTSIDE;
             case LOC_LEFT:
                 if (mounted.isSponsonTurretMounted()) {
-                    return Compute.ARC_SPONSON_TURRET_LEFT;
+                    return ComputeArc.ARC_SPONSON_TURRET_LEFT;
                 }
                 if (mounted.isPintleTurretMounted()) {
-                    return Compute.ARC_PINTLE_TURRET_LEFT;
+                    return ComputeArc.ARC_PINTLE_TURRET_LEFT;
                 }
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_LEFT_BROADSIDE;
+                    return ComputeArc.ARC_LEFT_BROADSIDE;
                 }
-                return Compute.ARC_LEFTSIDE;
+                return ComputeArc.ARC_LEFTSIDE;
             case LOC_REAR:
                 if (mounted.isPintleTurretMounted()) {
-                    return Compute.ARC_PINTLE_TURRET_REAR;
+                    return ComputeArc.ARC_PINTLE_TURRET_REAR;
                 }
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_AFT;
+                    return ComputeArc.ARC_AFT;
                 }
-                return Compute.ARC_REAR;
+                return ComputeArc.ARC_REAR;
             default:
-                return Compute.ARC_360;
+                return ComputeArc.ARC_360;
         }
     }
 
@@ -2224,7 +2224,7 @@ public class Tank extends Entity {
     @Override
     public int getForwardArc() {
         if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-            return Compute.ARC_NOSE;
+            return ComputeArc.ARC_NOSE;
         }
         return super.getForwardArc();
     }
@@ -2235,7 +2235,7 @@ public class Tank extends Entity {
     @Override
     public int getRearArc() {
         if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-            return Compute.ARC_AFT;
+            return ComputeArc.ARC_AFT;
         }
         return super.getRearArc();
     }

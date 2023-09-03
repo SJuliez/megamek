@@ -208,7 +208,7 @@ public class ComputeECM {
                     if (nDist <= range) {
                         // still might need to check for right arc if using medium range
                         if ((range < 7)
-                                || Compute.isInArc(friendlyBAPCoords, facing, c, Compute.ARC_NOSE)) {
+                                || ComputeArc.isInArc(friendlyBAPCoords, facing, c, ComputeArc.ARC_NOSE)) {
                             eccmPresent = true;
                             break;
                         }
@@ -327,8 +327,8 @@ public class ComputeECM {
                 if (nDist <= range) {
                     // still might need to check for right arc if using medium range
                     if ((range < 7)
-                        || Compute.isInArc(friendlyBAPCoords, facing, c,
-                                           Compute.ARC_NOSE)) {
+                        || ComputeArc.isInArc(friendlyBAPCoords, facing, c,
+                                           ComputeArc.ARC_NOSE)) {
                         ecmStatus = ecmStatus - 2;
                     }
                 }

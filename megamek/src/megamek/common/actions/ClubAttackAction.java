@@ -14,19 +14,7 @@
 package megamek.common.actions;
 
 import megamek.client.ui.Messages;
-import megamek.common.Compute;
-import megamek.common.CriticalSlot;
-import megamek.common.Entity;
-import megamek.common.GunEmplacement;
-import megamek.common.Game;
-import megamek.common.Hex;
-import megamek.common.ILocationExposureStatus;
-import megamek.common.Mech;
-import megamek.common.MiscType;
-import megamek.common.Mounted;
-import megamek.common.TargetRoll;
-import megamek.common.Targetable;
-import megamek.common.ToHitData;
+import megamek.common.*;
 import megamek.common.options.OptionsConstants;
 
 /**
@@ -431,19 +419,19 @@ public class ClubAttackAction extends PhysicalAttackAction {
         // check facing
         int clubArc;
         if (bothArms) {
-            clubArc = Compute.ARC_FORWARD;
+            clubArc = ComputeArc.ARC_FORWARD;
         } else {
             if (club.getLocation() == Mech.LOC_LARM) {
-                clubArc = Compute.ARC_LEFTARM;
+                clubArc = ComputeArc.ARC_LEFTARM;
             } else if (armMounted) {
-                clubArc = Compute.ARC_RIGHTARM;
+                clubArc = ComputeArc.ARC_RIGHTARM;
             } else if (club.isRearMounted()) {
-                clubArc = Compute.ARC_REAR;
+                clubArc = ComputeArc.ARC_REAR;
             } else {
-                clubArc = Compute.ARC_FORWARD;
+                clubArc = ComputeArc.ARC_FORWARD;
             }
         }
-        if (!Compute.isInArc(ae.getPosition(), ae.getSecondaryFacing(), target,
+        if (!ComputeArc.isInArc(ae.getPosition(), ae.getSecondaryFacing(), target,
                              clubArc)) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Target not in arc");
         }

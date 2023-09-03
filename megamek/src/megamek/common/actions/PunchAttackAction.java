@@ -14,18 +14,7 @@
 package megamek.common.actions;
 
 import megamek.client.ui.Messages;
-import megamek.common.Compute;
-import megamek.common.Dropship;
-import megamek.common.Entity;
-import megamek.common.GunEmplacement;
-import megamek.common.Game;
-import megamek.common.Hex;
-import megamek.common.ILocationExposureStatus;
-import megamek.common.Mech;
-import megamek.common.Tank;
-import megamek.common.TargetRoll;
-import megamek.common.Targetable;
-import megamek.common.ToHitData;
+import megamek.common.*;
 import megamek.common.options.OptionsConstants;
 
 /**
@@ -198,8 +187,8 @@ public class PunchAttackAction extends PhysicalAttackAction {
         final int attackerHeight = ae.relHeight() + attHex.getLevel(); // The absolute level of the attacker's arms
         final int targetElevation = target.getElevation()
                                     + targHex.getLevel(); // The absolute level of the target's arms
-        final int armArc = (arm == PunchAttackAction.RIGHT) ? Compute.ARC_RIGHTARM
-                                                            : Compute.ARC_LEFTARM;
+        final int armArc = (arm == PunchAttackAction.RIGHT) ? ComputeArc.ARC_RIGHTARM
+                                                            : ComputeArc.ARC_LEFTARM;
 
         ToHitData toHit;
 
@@ -231,7 +220,7 @@ public class PunchAttackAction extends PhysicalAttackAction {
         }
 
         // Check facing if the Mek is not prone.
-        else if (!Compute.isInArc(ae.getPosition(), ae.getSecondaryFacing(),
+        else if (!ComputeArc.isInArc(ae.getPosition(), ae.getSecondaryFacing(),
                                   target, armArc)) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Target not in arc");
         }

@@ -993,17 +993,24 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
     }
 
     void addMovingUnit(Entity entity, Vector<UnitLocation> movePath) {
-        if (!movePath.isEmpty()) {
-            MovingUnit m = new MovingUnit(entity, movePath);
+        List<UnitLocation> cleanedPath = movePathOnThisBoard(movePath);
+        if (!cleanedPath.isEmpty()) {
+            MovingUnit m = new MovingUnit(entity, cleanedPath);
             movingUnits.add(m);
 
             GhostEntitySprite ghostSprite = new GhostEntitySprite(this, entity);
             ghostEntitySprites.add(ghostSprite);
 
             // Center on the starting hex of the moving unit.
-            UnitLocation loc = movePath.get(0);
+            UnitLocation loc = cleanedPath.get(0);
             centerOnHex(loc.getCoords());
         }
+    }
+
+    private List<UnitLocation> movePathOnThisBoard(List<UnitLocation> fullMovePath) {
+        List<UnitLocation> cleanedPath = new ArrayList<>(fullMovePath);
+        cleanedPath.removeIf(unitLocation -> unitLocation.getBoardId() != boardId);
+        return cleanedPath;
     }
 
     public void addDisplayable(IDisplayable disp) {
@@ -3403,6 +3410,29 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
      * to prevent annoying ConcurrentModificationExceptions
      */
     public void redrawEntity(Entity entity, Entity oldEntity) {
+
+        for (Iterator<VTOLAttackSprite> iter = vtolAttackSprites.iterator(); iter.hasNext();) {
+            final VTOLAttackSprite s = iter.next();
+            if (s.getEntity().getId() == entity.getId()) {
+                iter.remove();
+            }
+        }
+
+        // Remove Flyover Sprites
+        Iterator<FlyOverSprite> flyOverIt = flyOverSprites.iterator();
+        while (flyOverIt.hasNext()) {
+            final FlyOverSprite flyOverSprite = flyOverIt.next();
+            if (flyOverSprite.getEntityId() == entity.getId()) {
+                flyOverIt.remove();
+            }
+        }
+
+        // Add Flyover path, if necessary
+        if ((entity.isAirborne() || entity.isMakingVTOLGroundAttack())
+                && (entity.getPassedThrough().size() > 1)) {
+            addFlyOverPath(entity);
+        }
+
         if (!isOnThisBoard(entity)) {
             return;
         }
@@ -3537,28 +3567,6 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         // Update C3 link, if necessary
         if (entity.hasC3() || entity.hasC3i() || entity.hasActiveNovaCEWS() || entity.hasNavalC3()) {
             addC3Link(entity);
-        }
-
-        for (Iterator<VTOLAttackSprite> iter = vtolAttackSprites.iterator(); iter.hasNext();) {
-            final VTOLAttackSprite s = iter.next();
-            if (s.getEntity().getId() == entity.getId()) {
-                iter.remove();
-            }
-        }
-
-        // Remove Flyover Sprites
-        Iterator<FlyOverSprite> flyOverIt = flyOverSprites.iterator();
-        while (flyOverIt.hasNext()) {
-            final FlyOverSprite flyOverSprite = flyOverIt.next();
-            if (flyOverSprite.getEntityId() == entity.getId()) {
-                flyOverIt.remove();
-            }
-        }
-
-        // Add Flyover path, if necessary
-        if ((entity.isAirborne() || entity.isMakingVTOLGroundAttack())
-                && (entity.getPassedThrough().size() > 1)) {
-            addFlyOverPath(entity);
         }
 
         updateEcmList();
@@ -4209,7 +4217,27 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         if (e.isMakingVTOLGroundAttack()) {
             vtolAttackSprites.add(new VTOLAttackSprite(this, e));
         }
-        flyOverSprites.add(new FlyOverSprite(this, e));
+
+        List<List<Coords>> flightPathsOnThisBoard = new ArrayList<>();
+        List<Coords> currentPath = new ArrayList<>();
+        for (BoardLocation passedThrough : e.getPassedThrough()) {
+            if (!currentPath.isEmpty()
+                    && (!isOnThisBoard(passedThrough)
+                    || passedThrough.getCoords().distance(currentPath.get(currentPath.size() - 1)) > 1)) {
+                flightPathsOnThisBoard.add(currentPath);
+                currentPath = new ArrayList<>();
+            } else if (!isOnThisBoard(passedThrough)) {
+                continue;
+            } else {
+                currentPath.add(passedThrough.getCoords());
+            }
+        }
+        if (!currentPath.isEmpty()) {
+            flightPathsOnThisBoard.add(currentPath);
+        }
+        for (List<Coords> flightPathChunk : flightPathsOnThisBoard) {
+            flyOverSprites.add(new FlyOverSprite(this, e, flightPathChunk));
+        }
     }
 
     /**
@@ -4748,7 +4776,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
         public ArrayList<UnitLocation> path;
 
-        MovingUnit(Entity entity, Vector<UnitLocation> path) {
+        MovingUnit(Entity entity, List<UnitLocation> path) {
             this.entity = entity;
             this.path = new ArrayList<>(path);
         }
@@ -5380,7 +5408,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                     int dir = ecmInfo.getDirection();
                     // Direction is the facing of the owning Entity
                     boolean inArc = (dir == -1)
-                            || Compute.isInArc(ecmPos, dir, c, Compute.ARC_NOSE);
+                            || ComputeArc.isInArc(ecmPos, dir, c, ComputeArc.ARC_NOSE);
                     if ((dist > range) || !inArc) {
                         continue;
                     }
@@ -6474,7 +6502,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
                 // Remove hexes that are not on the board or not in the arc
                 fieldFire.get(bracket).removeIf(h -> !getBoard().contains(h));
-                fieldFire.get(bracket).removeIf(h -> !Compute.isInArc(c, fac, h, fieldOfFireWpArc));
+                fieldFire.get(bracket).removeIf(h -> !ComputeArc.isInArc(c, fac, h, fieldOfFireWpArc));
                 fieldFire.get(bracket).removeIf(h -> Compute.effectiveDistance(game, fieldOfFireUnit,
                         new HexTarget(h, boardId, Targetable.TYPE_HEX_CLEAR)) > currentRange);
                 if (!fieldOfFireWpIsCapital) {
@@ -6498,7 +6526,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
                 // Remove hexes that are not on the board or not in the arc
                 fieldFire.get(bracket).removeIf(h -> !boardSupplier.get().contains(h)
-                        || !Compute.isInArc(c, fac, h, fieldOfFireWpArc)
+                        || !ComputeArc.isInArc(c, fac, h, fieldOfFireWpArc)
                         || (isHighAltitude
                         && Compute.effectiveDistance(game, fieldOfFireUnit,
                         new HexTarget(h, boardId, Targetable.TYPE_HEX_CLEAR)) > currentRange));

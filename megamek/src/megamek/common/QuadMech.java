@@ -17,7 +17,6 @@
 package megamek.common;
 
 import megamek.common.enums.AimingMode;
-import megamek.common.enums.MPBoosters;
 import megamek.common.options.OptionsConstants;
 import megamek.common.preference.PreferenceManager;
 import org.apache.logging.log4j.LogManager;
@@ -237,15 +236,15 @@ public class QuadMech extends Mech {
         // B-Pods need to be special-cased, the have 360 firing arc
         if ((mounted.getType() instanceof WeaponType) &&
                 mounted.getType().hasFlag(WeaponType.F_B_POD)) {
-            return Compute.ARC_360;
+            return ComputeArc.ARC_360;
         }
         // VGLs base arc on their facing
         if (mounted.getType().hasFlag(WeaponType.F_VGL)) {
-            return Compute.firingArcFromVGLFacing(mounted.getFacing());
+            return ComputeArc.firingArcFromVGLFacing(mounted.getFacing());
         }
         // rear mounted?
         if (mounted.isRearMounted()) {
-            return Compute.ARC_REAR;
+            return ComputeArc.ARC_REAR;
         }
         // front mounted
         switch (mounted.getLocation()) {
@@ -257,9 +256,9 @@ public class QuadMech extends Mech {
             case LOC_LLEG:
             case LOC_LARM:
             case LOC_RARM:
-                return Compute.ARC_FORWARD;
+                return ComputeArc.ARC_FORWARD;
             default:
-                return Compute.ARC_360;
+                return ComputeArc.ARC_360;
         }
     }
 

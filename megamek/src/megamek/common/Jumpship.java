@@ -888,52 +888,52 @@ public class Jumpship extends Aero {
     public int getWeaponArc(int wn) {
         final Mounted mounted = getEquipment(wn);
 
-        int arc = Compute.ARC_NOSE;
+        int arc = ComputeArc.ARC_NOSE;
         switch (mounted.getLocation()) {
             case LOC_NOSE:
                 if (mounted.isInWaypointLaunchMode()) {
-                    arc = Compute.ARC_NOSE_WPL;
+                    arc = ComputeArc.ARC_NOSE_WPL;
                     break;
                 }
-                arc = Compute.ARC_NOSE;
+                arc = ComputeArc.ARC_NOSE;
                 break;
             case LOC_FRS:
                 if (mounted.isInWaypointLaunchMode()) {
-                    arc = Compute.ARC_RIGHTSIDE_SPHERE_WPL;
+                    arc = ComputeArc.ARC_RIGHTSIDE_SPHERE_WPL;
                     break;
                 }
-                arc = Compute.ARC_RIGHTSIDE_SPHERE;
+                arc = ComputeArc.ARC_RIGHTSIDE_SPHERE;
                 break;
             case LOC_FLS:
                 if (mounted.isInWaypointLaunchMode()) {
-                    arc = Compute.ARC_LEFTSIDE_SPHERE_WPL;
+                    arc = ComputeArc.ARC_LEFTSIDE_SPHERE_WPL;
                     break;
                 }
-                arc = Compute.ARC_LEFTSIDE_SPHERE;
+                arc = ComputeArc.ARC_LEFTSIDE_SPHERE;
                 break;
             case LOC_ARS:
                 if (mounted.isInWaypointLaunchMode()) {
-                    arc = Compute.ARC_RIGHTSIDEA_SPHERE_WPL;
+                    arc = ComputeArc.ARC_RIGHTSIDEA_SPHERE_WPL;
                     break;
                 }
-                arc = Compute.ARC_RIGHTSIDEA_SPHERE;
+                arc = ComputeArc.ARC_RIGHTSIDEA_SPHERE;
                 break;
             case LOC_ALS:
                 if (mounted.isInWaypointLaunchMode()) {
-                    arc = Compute.ARC_LEFTSIDEA_SPHERE_WPL;
+                    arc = ComputeArc.ARC_LEFTSIDEA_SPHERE_WPL;
                     break;
                 }
-                arc = Compute.ARC_LEFTSIDEA_SPHERE;
+                arc = ComputeArc.ARC_LEFTSIDEA_SPHERE;
                 break;
             case LOC_AFT:
                 if (mounted.isInWaypointLaunchMode()) {
-                    arc = Compute.ARC_AFT_WPL;
+                    arc = ComputeArc.ARC_AFT_WPL;
                     break;
                 }
-                arc = Compute.ARC_AFT;
+                arc = ComputeArc.ARC_AFT;
                 break;
             default:
-                arc = Compute.ARC_360;
+                arc = ComputeArc.ARC_360;
                 break;
         }
         return rollArcs(arc);
@@ -1357,18 +1357,18 @@ public class Jumpship extends Aero {
      */
     public int getAdjacentArcCW(int arc) {
         switch (arc) {
-            case Compute.ARC_NOSE:
-                return Compute.ARC_RIGHTSIDE_SPHERE;
-            case Compute.ARC_LEFTSIDE_SPHERE:
-                return Compute.ARC_NOSE;
-            case Compute.ARC_RIGHTSIDE_SPHERE:
-                return Compute.ARC_RIGHTSIDEA_SPHERE;
-            case Compute.ARC_LEFTSIDEA_SPHERE:
-                return Compute.ARC_LEFTSIDE_SPHERE;
-            case Compute.ARC_RIGHTSIDEA_SPHERE:
-                return Compute.ARC_AFT;
-            case Compute.ARC_AFT:
-                return Compute.ARC_LEFTSIDEA_SPHERE;
+            case ComputeArc.ARC_NOSE:
+                return ComputeArc.ARC_RIGHTSIDE_SPHERE;
+            case ComputeArc.ARC_LEFTSIDE_SPHERE:
+                return ComputeArc.ARC_NOSE;
+            case ComputeArc.ARC_RIGHTSIDE_SPHERE:
+                return ComputeArc.ARC_RIGHTSIDEA_SPHERE;
+            case ComputeArc.ARC_LEFTSIDEA_SPHERE:
+                return ComputeArc.ARC_LEFTSIDE_SPHERE;
+            case ComputeArc.ARC_RIGHTSIDEA_SPHERE:
+                return ComputeArc.ARC_AFT;
+            case ComputeArc.ARC_AFT:
+                return ComputeArc.ARC_LEFTSIDEA_SPHERE;
             default:
                 return Integer.MIN_VALUE;
         }
@@ -1379,18 +1379,18 @@ public class Jumpship extends Aero {
      */
     public int getAdjacentArcCCW(int arc) {
         switch (arc) {
-            case Compute.ARC_NOSE:
-                return Compute.ARC_LEFTSIDE_SPHERE;
-            case Compute.ARC_RIGHTSIDE_SPHERE:
-                return Compute.ARC_NOSE;
-            case Compute.ARC_LEFTSIDE_SPHERE:
-                return Compute.ARC_LEFTSIDEA_SPHERE;
-            case Compute.ARC_LEFTSIDEA_SPHERE:
-                return Compute.ARC_AFT;
-            case Compute.ARC_RIGHTSIDEA_SPHERE:
-                return Compute.ARC_RIGHTSIDE_SPHERE;
-            case Compute.ARC_AFT:
-                return Compute.ARC_RIGHTSIDEA_SPHERE;
+            case ComputeArc.ARC_NOSE:
+                return ComputeArc.ARC_LEFTSIDE_SPHERE;
+            case ComputeArc.ARC_RIGHTSIDE_SPHERE:
+                return ComputeArc.ARC_NOSE;
+            case ComputeArc.ARC_LEFTSIDE_SPHERE:
+                return ComputeArc.ARC_LEFTSIDEA_SPHERE;
+            case ComputeArc.ARC_LEFTSIDEA_SPHERE:
+                return ComputeArc.ARC_AFT;
+            case ComputeArc.ARC_RIGHTSIDEA_SPHERE:
+                return ComputeArc.ARC_RIGHTSIDE_SPHERE;
+            case ComputeArc.ARC_AFT:
+                return ComputeArc.ARC_RIGHTSIDEA_SPHERE;
             default:
                 return Integer.MIN_VALUE;
         }
@@ -1404,22 +1404,22 @@ public class Jumpship extends Aero {
      */
     public int getOppositeArc(int arc) {
         switch (arc) {
-            case Compute.ARC_NOSE:
-                return Compute.ARC_AFT;
-            case Compute.ARC_LEFTSIDE_SPHERE:
-                return Compute.ARC_RIGHTSIDEA_SPHERE;
-            case Compute.ARC_RIGHTSIDE_SPHERE:
-                return Compute.ARC_LEFTSIDEA_SPHERE;
-            case Compute.ARC_LEFTSIDEA_SPHERE:
-                return Compute.ARC_RIGHTSIDE_SPHERE;
-            case Compute.ARC_RIGHTSIDEA_SPHERE:
-                return Compute.ARC_LEFTSIDE_SPHERE;
-            case Compute.ARC_LEFT_BROADSIDE:
-                return Compute.ARC_RIGHT_BROADSIDE;
-            case Compute.ARC_RIGHT_BROADSIDE:
-                return Compute.ARC_LEFT_BROADSIDE;
-            case Compute.ARC_AFT:
-                return Compute.ARC_NOSE;
+            case ComputeArc.ARC_NOSE:
+                return ComputeArc.ARC_AFT;
+            case ComputeArc.ARC_LEFTSIDE_SPHERE:
+                return ComputeArc.ARC_RIGHTSIDEA_SPHERE;
+            case ComputeArc.ARC_RIGHTSIDE_SPHERE:
+                return ComputeArc.ARC_LEFTSIDEA_SPHERE;
+            case ComputeArc.ARC_LEFTSIDEA_SPHERE:
+                return ComputeArc.ARC_RIGHTSIDE_SPHERE;
+            case ComputeArc.ARC_RIGHTSIDEA_SPHERE:
+                return ComputeArc.ARC_LEFTSIDE_SPHERE;
+            case ComputeArc.ARC_LEFT_BROADSIDE:
+                return ComputeArc.ARC_RIGHT_BROADSIDE;
+            case ComputeArc.ARC_RIGHT_BROADSIDE:
+                return ComputeArc.ARC_LEFT_BROADSIDE;
+            case ComputeArc.ARC_AFT:
+                return ComputeArc.ARC_NOSE;
             default:
                 return Integer.MIN_VALUE;
         }

@@ -711,12 +711,12 @@ public class Infantry extends Entity {
         // Infantry can fire all around themselves. But field guns are set up to a vehicular turret facing
         if (isFieldWeapon(weapon)) {
             if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                return Compute.ARC_TURRET;
+                return ComputeArc.ARC_TURRET;
             }
-            return Compute.ARC_FORWARD;
+            return ComputeArc.ARC_FORWARD;
         }
         // According to TacOps rules, dug-in units no longer have to declare a facing
-        return Compute.ARC_360;
+        return ComputeArc.ARC_360;
     }
 
     @Override

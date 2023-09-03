@@ -14,7 +14,9 @@
 package megamek.common;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import megamek.common.annotations.Nullable;
 
@@ -47,6 +49,17 @@ public interface Targetable extends InGameObject, Serializable {
     /** @return the coordinates of the hex containing the unit, object or target on its board. */
     default Coords getPosition() {
         return getBoardLocation().getCoords();
+    }
+
+    /**
+     * Returns a list of the positions that this target occupies; in most cases this list only
+     * contains its single position as in ({@link #getPosition()}. For grounded DropShips, this
+     * list also contains the surrounding secondary positions.
+     *
+     * @return All Coords this target occupies
+     */
+    default List<Coords> getAllPositions() {
+        return List.of(getPosition());
     }
 
     /** @return the ID of the board containing the unit, object or target. */

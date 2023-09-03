@@ -618,7 +618,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
                         .getEntity(clientgui.getClient().getGame());
                 Targetable target1 = waa.getTarget(clientgui.getClient()
                         .getGame());
-                boolean curInFrontArc = Compute.isInArc(attacker.getPosition(),
+                boolean curInFrontArc = ComputeArc.isInArc(attacker.getPosition(),
                         attacker.getSecondaryFacing(), target1,
                         attacker.getForwardArc());
                 if (curInFrontArc) {
@@ -652,7 +652,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
                         .getEntity(clientgui.getClient().getGame());
                 Targetable target1 = waa.getTarget(clientgui.getClient()
                         .getGame());
-                boolean curInFrontArc = Compute.isInArc(attacker.getPosition(),
+                boolean curInFrontArc = ComputeArc.isInArc(attacker.getPosition(),
                         attacker.getSecondaryFacing(), target1,
                         attacker.getForwardArc());
                 if (!curInFrontArc) {
@@ -826,8 +826,8 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
             target = t;
         }
         if ((target instanceof Entity) && Compute.isGroundToAir(ce(), target)) {
-            Coords targetPos = Compute.getClosestFlightPath(cen, ce().getPosition(), (Entity) target);
-            clientgui.getBoardView(cen).cursor(targetPos);
+            BoardLocation targetPos = Compute.getClosestFlightPath(cen, ce().getBoardLocation(), (Entity) target);
+            clientgui.getBoardView(targetPos).cursor(targetPos.getCoords());
         }
         ash.setAimingMode();
         updateTarget();

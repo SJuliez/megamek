@@ -582,24 +582,24 @@ public class Protomech extends Entity {
         final Mounted mounted = getEquipment(wn);
         // rear mounted?
         if (mounted.isRearMounted()) {
-            return Compute.ARC_REAR;
+            return ComputeArc.ARC_REAR;
         }
         // VGLs base arc on their facing
         if (mounted.getType().hasFlag(WeaponType.F_VGL)) {
-            return Compute.firingArcFromVGLFacing(mounted.getFacing());
+            return ComputeArc.firingArcFromVGLFacing(mounted.getFacing());
         }
         // front mounted
         switch (mounted.getLocation()) {
             case LOC_TORSO:
-                return Compute.ARC_FORWARD;
+                return ComputeArc.ARC_FORWARD;
             case LOC_RARM:
-                return Compute.ARC_RIGHTARM;
+                return ComputeArc.ARC_RIGHTARM;
             case LOC_LARM:
-                return Compute.ARC_LEFTARM;
+                return ComputeArc.ARC_LEFTARM;
             case LOC_MAINGUN:
-                return Compute.ARC_MAINGUN;
+                return ComputeArc.ARC_MAINGUN;
             default:
-                return Compute.ARC_360;
+                return ComputeArc.ARC_360;
         }
     }
 

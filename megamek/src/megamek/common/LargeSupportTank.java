@@ -191,7 +191,7 @@ public class LargeSupportTank extends SupportTank {
     public int sideTable(Coords src, boolean usePrior, int face) {
         Coords effectivePos = getPosition();
         if (usePrior) {
-            effectivePos = getPriorPosition();
+            effectivePos = getPriorPosition().getCoords();
         }
         if (src.equals(effectivePos)) {
             // most places handle 0 range explicitly,
@@ -212,8 +212,7 @@ public class LargeSupportTank extends SupportTank {
                 LosEffects.AttackInfo ai = LosEffects.buildAttackInfo(src,
                         getPosition(), 1, getElevation(), srcHex.floor(),
                         curHex.floor(), getCurrentMapType());
-                ArrayList<Coords> in = Coords.intervening(ai.attackPos,
-                        ai.targetPos, true);
+                ArrayList<Coords> in = Coords.intervening(ai.attackPos, ai.targetPos, true);
                 leftBetter = LosEffects.dividedLeftBetter(in, game, ai,
                         Compute.isInBuilding(game, this), new LosEffects());
             }
@@ -276,11 +275,11 @@ public class LargeSupportTank extends SupportTank {
         // B-Pods need to be special-cased, the have 360 firing arc
         if ((mounted.getType() instanceof WeaponType)
                 && mounted.getType().hasFlag(WeaponType.F_B_POD)) {
-            return Compute.ARC_360;
+            return ComputeArc.ARC_360;
         }
         // VGLs base arc on their facing
         if (mounted.getType().hasFlag(WeaponType.F_VGL)) {
-            return Compute.firingArcFromVGLFacing(mounted.getFacing());
+            return ComputeArc.firingArcFromVGLFacing(mounted.getFacing());
         }
         switch (mounted.getLocation()) {
             case LOC_BODY:
@@ -289,50 +288,50 @@ public class LargeSupportTank extends SupportTank {
                 // http://forums.classicbattletech.com/index.php/topic,9400.0.html
             case LOC_FRONT:
                 if (mounted.isPintleTurretMounted()) {
-                    return Compute.ARC_PINTLE_TURRET_FRONT;
+                    return ComputeArc.ARC_PINTLE_TURRET_FRONT;
                 }
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_NOSE;
+                    return ComputeArc.ARC_NOSE;
                 }
             case LOC_TURRET:
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_TURRET;
+                    return ComputeArc.ARC_TURRET;
                 }
-                return Compute.ARC_FORWARD;
+                return ComputeArc.ARC_FORWARD;
             case LOC_FRONTRIGHT:
             case LOC_REARRIGHT:
                 if (mounted.isSponsonTurretMounted()) {
-                    return Compute.ARC_SPONSON_TURRET_RIGHT;
+                    return ComputeArc.ARC_SPONSON_TURRET_RIGHT;
                 }
                 if (mounted.isPintleTurretMounted()) {
-                    return Compute.ARC_PINTLE_TURRET_RIGHT;
+                    return ComputeArc.ARC_PINTLE_TURRET_RIGHT;
                 }
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_RIGHT_BROADSIDE;
+                    return ComputeArc.ARC_RIGHT_BROADSIDE;
                 }
-                return Compute.ARC_RIGHTSIDE;
+                return ComputeArc.ARC_RIGHTSIDE;
             case LOC_FRONTLEFT:
             case LOC_REARLEFT:
                 if (mounted.isSponsonTurretMounted()) {
-                    return Compute.ARC_SPONSON_TURRET_LEFT;
+                    return ComputeArc.ARC_SPONSON_TURRET_LEFT;
                 }
                 if (mounted.isPintleTurretMounted()) {
-                    return Compute.ARC_PINTLE_TURRET_LEFT;
+                    return ComputeArc.ARC_PINTLE_TURRET_LEFT;
                 }
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_LEFT_BROADSIDE;
+                    return ComputeArc.ARC_LEFT_BROADSIDE;
                 }
-                return Compute.ARC_LEFTSIDE;
+                return ComputeArc.ARC_LEFTSIDE;
             case LOC_REAR:
                 if (mounted.isPintleTurretMounted()) {
-                    return Compute.ARC_PINTLE_TURRET_REAR;
+                    return ComputeArc.ARC_PINTLE_TURRET_REAR;
                 }
                 if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VEHICLE_ARCS)) {
-                    return Compute.ARC_AFT;
+                    return ComputeArc.ARC_AFT;
                 }
-                return Compute.ARC_REAR;
+                return ComputeArc.ARC_REAR;
             default:
-                return Compute.ARC_360;
+                return ComputeArc.ARC_360;
         }
     }
 

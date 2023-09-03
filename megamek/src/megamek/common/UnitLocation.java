@@ -21,8 +21,8 @@ package megamek.common;
 import java.io.Serializable;
 
 /**
- * A simple class to specify a location and facing for a unit.
- * @since July 5, 2005
+ * This class specifies the complete placement of a unit, including its id, position and board,
+ * facing and elevation/altitude.
  */
 public class UnitLocation implements Serializable {
     private static final long serialVersionUID = 3989732522854387850L;
@@ -33,6 +33,9 @@ public class UnitLocation implements Serializable {
     /** The coordinates of this location. */
     private final Coords coords;
 
+    /** The board id of the this location. */
+    private final int boardId;
+
     /** The facing of the unit at this location. */
     private final int facing;
 
@@ -42,14 +45,31 @@ public class UnitLocation implements Serializable {
     /**
      * Create a new location object.
      * 
-     * @param id the unit's <code>int</code> ID number.
+     * @param entityId the unit's <code>int</code> ID number.
      * @param coords the <code>Coords</code> of this location.
      * @param facing the unit's <code>int</code> facing at this location.
      * @param elevation the unit's <code>int</code> elevation at this location.
      */
-    public UnitLocation(int id, Coords coords, int facing, int elevation) {
-        this.entityId = id;
+    public UnitLocation(int entityId, Coords coords, int boardId, int facing, int elevation) {
+        this.entityId = entityId;
         this.coords = coords;
+        this.boardId = boardId;
+        this.facing = facing;
+        this.elevation = elevation;
+    }
+
+    /**
+     * Create a new location object.
+     *
+     * @param entityId the unit's <code>int</code> ID number.
+     * @param boardLocation the BoardLocation
+     * @param facing the unit's <code>int</code> facing at this location.
+     * @param elevation the unit's <code>int</code> elevation at this location.
+     */
+    public UnitLocation(int entityId, BoardLocation boardLocation, int facing, int elevation) {
+        this.entityId = entityId;
+        coords = boardLocation.getCoords();
+        boardId = boardLocation.getBoardId();
         this.facing = facing;
         this.elevation = elevation;
     }
@@ -90,4 +110,7 @@ public class UnitLocation implements Serializable {
         return elevation;
     }
 
+    public int getBoardId() {
+        return boardId;
+    }
 }

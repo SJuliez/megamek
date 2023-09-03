@@ -842,7 +842,7 @@ public class TestBot extends BotClient {
                                 enemy_option.getFinalFacing(),
                                 option.getFinalCoords());
                         if (enemy_option.isJumping()) {
-                            enemy_hit_arc = Compute.ARC_FORWARD;
+                            enemy_hit_arc = ComputeArc.ARC_FORWARD;
                         }
                         int[] modifiers = option.getModifiers(enemy_option
                                                                       .getEntity());
@@ -1116,12 +1116,12 @@ public class TestBot extends BotClient {
                 if (en.getFacing() != -1) {
                     if (en.canChangeSecondaryFacing()) {
 
-                        if (!Compute.isInArc(en.getPosition(),
+                        if (!ComputeArc.isInArc(en.getPosition(),
                                              en.getSecondaryFacing(), e, en.getForwardArc())) {
                             starg_mod = 2;
                         }
                     } else {
-                        if (!Compute.isInArc(en.getPosition(), en.getFacing(),
+                        if (!ComputeArc.isInArc(en.getPosition(), en.getFacing(),
                                              e, en.getForwardArc())) {
                             starg_mod = 2;
                         }

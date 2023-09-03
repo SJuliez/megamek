@@ -46,7 +46,7 @@ public class RamAttackAction extends AbstractAttackAction {
         final Entity entity = game.getEntity(getEntityId());
         return toHit(game, game.getTarget(getTargetType(), getTargetId()),
                      entity.getPosition(), entity.getElevation(), 
-                     entity.getPriorPosition(), entity.moved);
+                     entity.getPriorPosition().getCoords(), entity.moved);
     }
     
     /**
@@ -242,7 +242,7 @@ public class RamAttackAction extends AbstractAttackAction {
        if (target.isAero()) {
            tvel = ((IAero) target).getCurrentVelocity();
        }
-       return getDamageFor(attacker, target, ((Entity) attacker).getPriorPosition(), avel, tvel);
+       return getDamageFor(attacker, target, ((Entity) attacker).getPriorPosition().getCoords(), avel, tvel);
    }
    
    public static int getDamageFor(IAero attacker, Entity target, Coords atthex, int avel, int tvel) {
@@ -259,7 +259,7 @@ public class RamAttackAction extends AbstractAttackAction {
        if (target.isAero()) {
            tvel = ((IAero) target).getCurrentVelocity();
        }
-       return getDamageTakenBy(attacker, target, ((Entity) attacker).getPriorPosition(), avel, tvel);
+       return getDamageTakenBy(attacker, target, ((Entity) attacker).getPriorPosition().getCoords(), avel, tvel);
    }
    
    public static int getDamageTakenBy(IAero attacker, Entity target, Coords atthex, int avel, int tvel) {

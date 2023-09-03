@@ -15,7 +15,6 @@ package megamek.client.ui.swing;
 
 import megamek.client.ui.IDisplayable;
 import megamek.client.ui.Messages;
-import megamek.client.ui.SharedUtility;
 import megamek.client.ui.swing.boardview.BoardView;
 import megamek.common.*;
 import megamek.common.actions.ArtilleryAttackAction;
@@ -23,7 +22,6 @@ import megamek.common.actions.WeaponAttackAction;
 import megamek.common.util.ImageUtil;
 import megamek.common.util.fileUtils.MegaMekFile;
 
-import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -151,7 +149,7 @@ public class OffBoardTargetOverlay implements IDisplayable {
 
         Targetable checkTarget = new HexTarget(checkCoords, 0, Targetable.TYPE_HEX_ARTILLERY);
 
-        return Compute.isInArc(getCurrentGame(), artilleryWeapon.getEntity().getId(),
+        return ComputeArc.isInArc(getCurrentGame(), artilleryWeapon.getEntity().getId(),
                 artilleryWeapon.getEntity().getEquipmentNum(artilleryWeapon), checkTarget);
     }
 

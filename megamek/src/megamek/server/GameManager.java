@@ -3714,7 +3714,7 @@ public class GameManager implements IGameManager {
             int damageDice = (8 - i) * 2;
             List<Coords> ring = centralPos.allAtDistance(i);
             for (Coords pos : ring) {
-                if (rearArc && !Compute.isInArc(centralPos, facing, pos, Compute.ARC_AFT)) {
+                if (rearArc && !ComputeArc.isInArc(centralPos, facing, pos, ComputeArc.ARC_AFT)) {
                     continue;
                 }
                 BoardLocation currentLocation = new BoardLocation(pos, killer.getBoardId());
@@ -6329,8 +6329,8 @@ public class GameManager implements IGameManager {
         // get a list of coordinates that the unit passed through this turn
         // so that I can later recover potential bombing targets
         // it may already have some values
-        Vector<Coords> passedThrough = entity.getPassedThrough();
-        passedThrough.add(curPos);
+        List<BoardLocation> passedThrough = entity.getPassedThrough();
+        passedThrough.add(entity.getBoardLocation());
         List<Integer> passedThroughFacing = entity.getPassedThroughFacing();
         passedThroughFacing.add(curFacing);
 
@@ -6362,7 +6362,7 @@ public class GameManager implements IGameManager {
             if (md.length() > 0) {
                 entity.setFacing(md.getFinalFacing());
             }
-            passedThrough.add(entity.getPosition());
+            passedThrough.add(entity.getBoardLocation());
             entity.setPassedThrough(passedThrough);
             passedThroughFacing.add(entity.getFacing());
             entity.setPassedThroughFacing(passedThroughFacing);
@@ -8472,14 +8472,14 @@ public class GameManager implements IGameManager {
             }
 
             // Track this step's location.
-            movePath.addElement(new UnitLocation(entity.getId(), curPos,
+            movePath.addElement(new UnitLocation(entity.getId(), curPos, step.getBoardId(),
                     curFacing, step.getElevation()));
 
             // if the lastpos is not the same as the current position
             // then add the current position to the list of places passed
             // through
             if (!curPos.equals(lastPos)) {
-                passedThrough.add(curPos);
+                passedThrough.add(step.getBoardLocation());
                 passedThroughFacing.add(curFacing);
             }
 
@@ -9380,14 +9380,14 @@ public class GameManager implements IGameManager {
         for (int trId : allTowedTrailers) {
             Entity trailer = game.getEntity(trId);
             Coords position = trailer.getPosition();
-            //Duplicates foul up the works...
+            // Duplicates foul up the works...
             if (!trainCoords.contains(position)) {
                 trainCoords.add(position);
             }
         }
-        for (Coords c : tractor.getPassedThrough()) {
-            if (!trainCoords.contains(c)) {
-                trainCoords.add(c);
+        for (BoardLocation boardLocation : tractor.getPassedThrough()) {
+            if (!trainCoords.contains(boardLocation.getCoords())) {
+                trainCoords.add(boardLocation.getCoords());
             }
         }
         return trainCoords;
@@ -13597,7 +13597,7 @@ public class GameManager implements IGameManager {
         // Create a list of valid assignments for this APDS
         List<WeaponAttackAction> vAttacksInArc = new ArrayList<>(vAttacks.size());
         for (WeaponHandler wr : vAttacks) {
-            boolean isInArc = Compute.isInArc(e.getGame(), e.getId(),
+            boolean isInArc = ComputeArc.isInArc(e.getGame(), e.getId(),
                     e.getEquipmentNum(apds),
                     game.getEntity(wr.waa.getEntityId()));
             boolean isInRange = e.getPosition().distance(
@@ -13683,7 +13683,7 @@ public class GameManager implements IGameManager {
             List<WeaponAttackAction> vAttacksInArc = new ArrayList<>(vAttacks.size());
             for (WeaponHandler wr : vAttacks) {
                 if (!amsTargets.contains(wr.waa)
-                        && Compute.isInArc(game, e.getId(),
+                        && ComputeArc.isInArc(game, e.getId(),
                         e.getEquipmentNum(ams),
                         game.getEntity(wr.waa.getEntityId()))) {
                     vAttacksInArc.add(wr.waa);
@@ -13776,7 +13776,7 @@ public class GameManager implements IGameManager {
                     List<Coords> coords = e.getPosition().allAtDistance(dist);
                     for (Coords pos : coords) {
                         // Check that we're in the right arc
-                        if (Compute.isInArc(game, e.getId(), e.getEquipmentNum(ams),
+                        if (ComputeArc.isInArc(game, e.getId(), e.getEquipmentNum(ams),
                                 new HexTarget(pos, e.getBoardId(), HexTarget.TYPE_HEX_CLEAR))) {
                             apdsList = apdsCoords.computeIfAbsent(pos, k -> new ArrayList<>());
                             apdsList.add(ams);
@@ -14879,7 +14879,7 @@ public class GameManager implements IGameManager {
         }
         boolean throughFront = true;
         if (te != null) {
-            throughFront = Compute.isThroughFrontHex(game, ae.getPosition(), te);
+            throughFront = ComputeArc.isThroughFrontHex(ae.getPosition(), te);
         }
         final String armName = (paa.getArm() == PunchAttackAction.LEFT) ? "Left Arm" : "Right Arm";
         final int armLoc = (paa.getArm() == PunchAttackAction.LEFT) ? Mech.LOC_LARM : Mech.LOC_RARM;
@@ -15137,7 +15137,7 @@ public class GameManager implements IGameManager {
         }
         boolean throughFront = true;
         if (te != null) {
-            throughFront = Compute.isThroughFrontHex(game, ae.getPosition(), te);
+            throughFront = ComputeArc.isThroughFrontHex(ae.getPosition(), te);
         }
         String legName = (kaa.getLeg() == KickAttackAction.LEFT)
                 || (kaa.getLeg() == KickAttackAction.LEFTMULE) ? "Left " : "Right ";
@@ -15376,7 +15376,7 @@ public class GameManager implements IGameManager {
         }
         boolean throughFront = true;
         if (te != null) {
-            throughFront = Compute.isThroughFrontHex(game, ae.getPosition(), te);
+            throughFront = ComputeArc.isThroughFrontHex(ae.getPosition(), te);
         }
         String legName;
         switch (kaa.getLeg()) {
@@ -15584,7 +15584,7 @@ public class GameManager implements IGameManager {
         }
         boolean throughFront = true;
         if (te != null) {
-            throughFront = Compute.isThroughFrontHex(game, ae.getPosition(), te);
+            throughFront = ComputeArc.isThroughFrontHex(ae.getPosition(), te);
         }
         final boolean targetInBuilding = Compute.isInBuilding(game, te);
         final boolean glancing = game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_GLANCING_BLOWS)
@@ -16223,8 +16223,8 @@ public class GameManager implements IGameManager {
         }
         boolean throughFront = true;
         if (te != null) {
-            throughFront = Compute
-                    .isThroughFrontHex(game, ae.getPosition(), te);
+            throughFront = ComputeArc
+                    .isThroughFrontHex(ae.getPosition(), te);
         }
         final boolean targetInBuilding = Compute.isInBuilding(game, te);
         final boolean glancing = game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_GLANCING_BLOWS)
@@ -17185,7 +17185,7 @@ public class GameManager implements IGameManager {
         }
         boolean throughFront = true;
         if (te != null) {
-            throughFront = Compute.isThroughFrontHex(game, ae.getPosition(), te);
+            throughFront = ComputeArc.isThroughFrontHex(ae.getPosition(), te);
         }
         final boolean glancing = game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_GLANCING_BLOWS)
                 && (roll == toHit.getValue());
@@ -17375,7 +17375,7 @@ public class GameManager implements IGameManager {
         }
         boolean throughFront = true;
         if (te != null) {
-            throughFront = Compute.isThroughFrontHex(game, ae.getPosition(), te);
+            throughFront = ComputeArc.isThroughFrontHex(ae.getPosition(), te);
         }
         final boolean glancing = game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_GLANCING_BLOWS)
                 && (roll == toHit.getValue());
@@ -17539,7 +17539,7 @@ public class GameManager implements IGameManager {
 
         boolean throughFront = true;
         if (te != null) {
-            throughFront = Compute.isThroughFrontHex(game, ae.getPosition(), te);
+            throughFront = ComputeArc.isThroughFrontHex(ae.getPosition(), te);
         }
 
         Report r;
@@ -17683,7 +17683,7 @@ public class GameManager implements IGameManager {
 
         boolean throughFront = true;
         if (te != null) {
-            throughFront = Compute.isThroughFrontHex(game, ae.getPosition(), te);
+            throughFront = ComputeArc.isThroughFrontHex(ae.getPosition(), te);
         }
 
         Report r;
@@ -18256,7 +18256,7 @@ public class GameManager implements IGameManager {
         }
         boolean throughFront = true;
         if (te != null) {
-            throughFront = Compute.isThroughFrontHex(game, ae.getPosition(), te);
+            throughFront = ComputeArc.isThroughFrontHex(ae.getPosition(), te);
         }
         final boolean glancing = game.getOptions().booleanOption(
                 OptionsConstants.ADVCOMBAT_TACOPS_GLANCING_BLOWS) && (roll == toHit.getValue());

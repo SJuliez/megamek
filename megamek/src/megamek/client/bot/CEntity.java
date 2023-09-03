@@ -380,19 +380,19 @@ public class CEntity {
                                              entity.hasAbility(OptionsConstants.PILOT_APTITUDE_PILOTING)) / 100);
 
                 // Either a kick or double-punch to the front
-                overall_damage[Compute.ARC_FORWARD][1] = 2.0 * cur_weapon_damage[1];
+                overall_damage[ComputeArc.ARC_FORWARD][1] = 2.0 * cur_weapon_damage[1];
 
                 // If the Mech can flip arms, don't consider arm arcs
                 if (!((Mech) entity).canFlipArms()) {
-                    overall_damage[Compute.ARC_LEFTARM][1] = cur_weapon_damage[1];
-                    overall_damage[Compute.ARC_RIGHTARM][1] = cur_weapon_damage[1];
+                    overall_damage[ComputeArc.ARC_LEFTARM][1] = cur_weapon_damage[1];
+                    overall_damage[ComputeArc.ARC_RIGHTARM][1] = cur_weapon_damage[1];
                 }
             }
 
             // Physical attacks - vibroclaws for BA
             if (entity instanceof BattleArmor) {
 
-                overall_damage[Compute.ARC_360][0] = (hits_by_racksize[number_of_shooters]
+                overall_damage[ComputeArc.ARC_360][0] = (hits_by_racksize[number_of_shooters]
                         * ((BattleArmor) entity).getVibroClaws()
                         * Compute.oddsAbove(gunnery,
                                             entity.hasAbility(OptionsConstants.PILOT_APTITUDE_GUNNERY))) / 100.0;
@@ -471,7 +471,7 @@ public class CEntity {
                 // Increment the total weapons count if the weapon was
                 // allocated to the forward arc. No point counting weapons
                 // that don't get used much.
-                if (cur_weapon_arcs.contains(Compute.ARC_FORWARD)) {
+                if (cur_weapon_arcs.contains(ComputeArc.ARC_FORWARD)) {
                     weapons_count++;
                 }
 
@@ -510,7 +510,7 @@ public class CEntity {
 
                         // Track minimum range modifiers for weapons that
                         // fire into the forward arc
-                        if ((firing_arc == Compute.ARC_FORWARD)
+                        if ((firing_arc == ComputeArc.ARC_FORWARD)
                                 && (i <= weapon_min_range)
                                 && (i < minRangeMods.length)) {
                             minRangeMods[i] += (1 + weapon_min_range) - i;
@@ -535,8 +535,8 @@ public class CEntity {
             // Add the current damage values into the overall damage array for
             // the 360 degree arc. Adjust for number of troopers hitting.
             for (int i = 0; i < cur_weapon_damage.length; i++) {
-                overall_damage[Compute.ARC_360][i] += cur_weapon_damage[i];
-                overall_damage[Compute.ARC_360][i] *= hits_by_racksize[number_of_shooters];
+                overall_damage[ComputeArc.ARC_360][i] += cur_weapon_damage[i];
+                overall_damage[ComputeArc.ARC_360][i] *= hits_by_racksize[number_of_shooters];
             }
 
             // Check for field guns
@@ -571,13 +571,13 @@ public class CEntity {
                         continue;
                     }
 
-                    overall_damage[Compute.ARC_360][i] += cur_weapon_damage[i];
+                    overall_damage[ComputeArc.ARC_360][i] += cur_weapon_damage[i];
                 }
             }
 
             // Copy the total damage into each arc
             for (int cur_arc = FIRST_ARC + 1; cur_arc <= LAST_ARC; cur_arc++) {
-                overall_damage[cur_arc] = overall_damage[Compute.ARC_360];
+                overall_damage[cur_arc] = overall_damage[ComputeArc.ARC_360];
             }
 
         }
@@ -624,7 +624,7 @@ public class CEntity {
         // Change the damage from a per-hex array to a single "weapon"
         // with short/medium/long ranges. For now, just do the forward
         // arc.
-        computeRange(Compute.ARC_FORWARD, overall_heat);
+        computeRange(ComputeArc.ARC_FORWARD, overall_heat);
 
         // Overheating will be based on the optimum firing range
         heat = (heat + heat_at_range) - heat_capacity;
@@ -748,9 +748,9 @@ public class CEntity {
         ArrayList<Integer> arc_list = new ArrayList<>(1);
 
         // Weapons which can fire in any direction
-        if ((mounted_arc == Compute.ARC_360)
-                || (mounted_arc == Compute.ARC_MAINGUN)
-                || (mounted_arc == Compute.ARC_TURRET)) {
+        if ((mounted_arc == ComputeArc.ARC_360)
+                || (mounted_arc == ComputeArc.ARC_MAINGUN)
+                || (mounted_arc == ComputeArc.ARC_TURRET)) {
             for (int i = FIRST_ARC; i <= LAST_ARC; i++) {
                 arc_list.add(i);
             }
@@ -762,15 +762,15 @@ public class CEntity {
             // as well
             if (is_secondary) {
 
-                if (mounted_arc == Compute.ARC_FORWARD) {
+                if (mounted_arc == ComputeArc.ARC_FORWARD) {
 
                     // Mech torso twist
-                    arc_list.add(Compute.ARC_LEFTARM);
-                    arc_list.add(Compute.ARC_RIGHTARM);
+                    arc_list.add(ComputeArc.ARC_LEFTARM);
+                    arc_list.add(ComputeArc.ARC_RIGHTARM);
 
                     // Vehicle turrets
                     if (entity instanceof Tank) {
-                        arc_list.add(Compute.ARC_360);
+                        arc_list.add(ComputeArc.ARC_360);
                     }
 
                 }
@@ -778,12 +778,12 @@ public class CEntity {
                 // Left arm fires into the front and left side,
                 // right arm to the front and right. If the arms
                 // can flip, they both go to the rear as well.
-                if ((mounted_arc == Compute.ARC_LEFTARM)
-                        || (mounted_arc == Compute.ARC_RIGHTARM)) {
+                if ((mounted_arc == ComputeArc.ARC_LEFTARM)
+                        || (mounted_arc == ComputeArc.ARC_RIGHTARM)) {
 
-                    arc_list.add(Compute.ARC_FORWARD);
+                    arc_list.add(ComputeArc.ARC_FORWARD);
                     if ((entity instanceof Mech) && entity.canFlipArms()) {
-                        arc_list.add(Compute.ARC_REAR);
+                        arc_list.add(ComputeArc.ARC_REAR);
                     }
 
                 }

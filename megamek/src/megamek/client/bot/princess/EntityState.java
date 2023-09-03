@@ -14,12 +14,7 @@
 package megamek.client.bot.princess;
 
 import megamek.client.bot.princess.BotGeometry.CoordFacingCombo;
-import megamek.common.BuildingTarget;
-import megamek.common.Coords;
-import megamek.common.Entity;
-import megamek.common.EntityMovementType;
-import megamek.common.MovePath;
-import megamek.common.Targetable;
+import megamek.common.*;
 import megamek.common.options.OptionsConstants;
 
 /**
@@ -30,6 +25,7 @@ import megamek.common.options.OptionsConstants;
  */
 public class EntityState {
     private Coords position;
+    private int boardId;
     private int facing;
     private int secondaryFacing; // to account for torso twists
     private int heat;
@@ -52,6 +48,7 @@ public class EntityState {
         if (target instanceof Entity) { // mechs and planes and tanks etc
             Entity entity = (Entity) target;
             position = entity.getPosition();
+            boardId = entity.getBoardId();
             facing = entity.getFacing();
             hexesMoved = entity.delta_distance;
             heat = entity.heat;
@@ -67,6 +64,7 @@ public class EntityState {
             naturalAptPilot = entity.hasAbility(OptionsConstants.PILOT_APTITUDE_PILOTING);
         } else { // for buildings and such
             position = target.getPosition();
+            boardId = target.getBoardId();
             facing = 0;
             hexesMoved = 0;
             heat = 0;
@@ -87,6 +85,7 @@ public class EntityState {
      */
     EntityState(MovePath path) {
         position = path.getFinalCoords();
+        boardId = path.getFinalBoardId();
         facing = path.getFinalFacing();
         hexesMoved = path.getHexesMoved();
         heat = path.getEntity().heat;
@@ -121,6 +120,14 @@ public class EntityState {
     
     public Coords getPosition() {
         return position;
+    }
+
+    public int getBoardId() {
+        return boardId;
+    }
+
+    public BoardLocation getBoardLocation() {
+        return new BoardLocation(getPosition(), getBoardId());
     }
 
     public int getFacing() {

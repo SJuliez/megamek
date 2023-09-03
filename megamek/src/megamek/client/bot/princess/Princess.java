@@ -1168,7 +1168,7 @@ public class Princess extends BotClient {
         final MoveStep walk = new MoveStep(movePath, type);
         final Hex hex = getHex(mech.getPosition());
         final PilotingRollData target = mech.checkBogDown(walk, movePath.getLastStepMovementType(),
-                hex, mech.getPriorPosition(), mech.getPosition(), hex.getLevel(), false);
+                hex, mech.getPriorPosition().getCoords(), mech.getPosition(), hex.getLevel(), false);
         LogManager.getLogger().info("Need to roll " + target.getValue() + " to get unstuck and our tolerance is " + threshold);
         return (target.getValue() >= threshold);
     }

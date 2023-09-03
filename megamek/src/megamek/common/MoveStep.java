@@ -3187,7 +3187,7 @@ public class MoveStep implements Serializable {
      * possible, just whether the <em>current</em> step is possible.
      */
     public boolean isMovementPossible(Game game, Coords src, int srcEl, CachedEntityState cachedEntityState) {
-        final Hex srcHex = game.getBoard(entity).getHex(src); // @@MultiBoardTODO: replace entity
+        final Hex srcHex = game.getBoard(entity).getHex(src); // @@MultiBoardTODO: replace entity; currently not used for aero though
         final Coords dest = getPosition();
         final Hex destHex = game.getHex(boardLocation);
         final Entity entity = getEntity();

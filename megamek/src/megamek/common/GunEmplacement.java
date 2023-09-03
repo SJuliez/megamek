@@ -148,9 +148,9 @@ public class GunEmplacement extends Tank {
     @Override
     public int getWeaponArc(int weaponId) {
         if (isTurret()) {
-            return Compute.ARC_TURRET;
+            return ComputeArc.ARC_TURRET;
         }
-        return Compute.ARC_FORWARD;
+        return ComputeArc.ARC_FORWARD;
     }
 
     @Override

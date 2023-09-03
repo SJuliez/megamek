@@ -1662,7 +1662,7 @@ public class BattleArmor extends Infantry {
 
     @Override
     public int getWeaponArc(int wn) {
-        return Compute.ARC_360;
+        return ComputeArc.ARC_360;
     }
 
     @Override

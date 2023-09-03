@@ -44,64 +44,7 @@ import static megamek.common.MovePath.MoveStepType.*;
  */
 public class Compute {
 
-    public static final int ARC_360 = 0;
-    public static final int ARC_FORWARD = 1;
-    public static final int ARC_LEFTARM = 2;
-    public static final int ARC_RIGHTARM = 3;
-    public static final int ARC_REAR = 4;
-    public static final int ARC_LEFTSIDE = 5;
-    public static final int ARC_RIGHTSIDE = 6;
-    public static final int ARC_MAINGUN = 7;
-    public static final int ARC_NORTH = 8;
-    public static final int ARC_EAST = 9;
-    public static final int ARC_WEST = 10;
-    public static final int ARC_NOSE = 11;
-    public static final int ARC_LWING = 12;
-    public static final int ARC_RWING = 13;
-    public static final int ARC_LWINGA = 14;
-    public static final int ARC_RWINGA = 15;
-    public static final int ARC_LEFTSIDE_SPHERE = 16;
-    public static final int ARC_RIGHTSIDE_SPHERE = 17;
-    public static final int ARC_LEFTSIDEA_SPHERE = 18;
-    public static final int ARC_RIGHTSIDEA_SPHERE = 19;
-    public static final int ARC_LEFT_BROADSIDE = 20;
-    public static final int ARC_RIGHT_BROADSIDE = 21;
-    public static final int ARC_AFT = 22;
-    public static final int ARC_LEFT_SPHERE_GROUND = 23;
-    public static final int ARC_RIGHT_SPHERE_GROUND = 24;
-    public static final int ARC_TURRET = 25;
-    public static final int ARC_SPONSON_TURRET_LEFT = 26;
-    public static final int ARC_SPONSON_TURRET_RIGHT = 27;
-    public static final int ARC_PINTLE_TURRET_LEFT = 28;
-    public static final int ARC_PINTLE_TURRET_RIGHT = 29;
-    public static final int ARC_PINTLE_TURRET_FRONT = 30;
-    public static final int ARC_PINTLE_TURRET_REAR = 31;
-    public static final int ARC_VGL_FRONT = 32;
-    public static final int ARC_VGL_RF = 33;
-    public static final int ARC_VGL_RR = 34;
-    public static final int ARC_VGL_REAR = 35;
-    public static final int ARC_VGL_LR = 36;
-    public static final int ARC_VGL_LF = 37;
-    // Expanded arcs for Waypoint Launched Capital Missiles
-    public static final int ARC_NOSE_WPL = 38;
-    public static final int ARC_LWING_WPL = 39;
-    public static final int ARC_RWING_WPL = 40;
-    public static final int ARC_LWINGA_WPL = 41;
-    public static final int ARC_RWINGA_WPL = 42;
-    public static final int ARC_LEFTSIDE_SPHERE_WPL = 43;
-    public static final int ARC_RIGHTSIDE_SPHERE_WPL = 44;
-    public static final int ARC_LEFTSIDEA_SPHERE_WPL = 45;
-    public static final int ARC_RIGHTSIDEA_SPHERE_WPL = 46;
-    public static final int ARC_AFT_WPL = 47;
-    public static final int ARC_LEFT_BROADSIDE_WPL = 48;
-    public static final int ARC_RIGHT_BROADSIDE_WPL = 49;
-
     public static int DEFAULT_MAX_VISUAL_RANGE = 1;
-
-    /** Lookup table for vehicular grenade launcher firing arc from facing */
-    private static final int[] VGL_FIRING_ARCS = { ARC_VGL_FRONT, ARC_VGL_RF, ARC_VGL_RR,
-            ARC_VGL_REAR, ARC_VGL_LR, ARC_VGL_LF
-    };
 
     private static MMRandom random = MMRandom.generate(MMRandom.R_DEFAULT);
 
@@ -1738,6 +1681,7 @@ public class Compute {
                 attackPos.add(attacker.getSecondaryPositions().get(key));
             }
         }
+
         if ((target instanceof Dropship) && !target.isAirborne() && !((Entity) target).isSpaceborne()) {
             targetPos = new Vector<>();
             for (final int key : target.getSecondaryPositions().keySet()) {
@@ -1757,8 +1701,9 @@ public class Compute {
 
         if (isGroundToAir(attacker, target) && (target instanceof Entity)) {
             // distance is determined by closest point on flight path
-            distance = attacker.getPosition().distance(getClosestFlightPath(attacker.getId(),
-                    attacker.getPosition(), (Entity) target));
+            BoardLocation closestLocation = getClosestFlightPath(attacker.getId(),
+                    attacker.getBoardLocation(), (Entity) target);
+            distance = attacker.getPosition().distance(closestLocation.getCoords());
 
             // if the ground attacker uses weapon bays and we are on a ground map, then we will divide
             // this distance by 16. This is totally crazy, but I don't see how else to do it. Use
@@ -1822,39 +1767,40 @@ public class Compute {
     }
 
     /**
-     * @param aPos the attacker's position
-     * @param te the target entity
+     * @param attackerLoc the attacker's position
+     * @param target the target entity
      * @return the closest position along <code>te</code>'s flight path to <code>aPos</code>. In
      * the case of multiple equi-distance positions, the first one is picked unless
      * <code>te</code>'s playerPickedPassThrough position is non-null.
      */
-    public static @Nullable Coords getClosestFlightPath(int attackerId, Coords aPos, Entity te) {
-        Coords finalPos = te.getPosition();
-        if (te.getPlayerPickedPassThrough(attackerId) != null) {
-            finalPos = te.getPlayerPickedPassThrough(attackerId);
+    public static @Nullable BoardLocation getClosestFlightPath(int attackerId, BoardLocation attackerLoc, Entity target) {
+        Coords finalTargetPos = target.getPosition();
+        if (target.getPlayerPickedPassThrough(attackerId) != null) {
+            finalTargetPos = target.getPlayerPickedPassThrough(attackerId);
         }
         int distance = Integer.MAX_VALUE;
-        if (finalPos != null) {
-            distance = aPos.distance(finalPos);
+        if ((finalTargetPos != null) && attackerLoc.isOnBoard(target.getBoardId())) {
+            distance = attackerLoc.getCoords().distance(finalTargetPos);
         }
-        // don't return zero distance Coords, but rather the Coords immediately
-        // before this
-        // This is necessary to determine angle of attack and arc information
-        // for direct fly-overs
-        for (Coords c : te.getPassedThrough()) {
-            if (!aPos.equals(c) && (c != null)
+        // don't return zero distance Coords, but rather the Coords immediately before this
+        // This is necessary to determine angle of attack and arc information for direct fly-overs
+        Coords aPos = attackerLoc.getCoords();
+        for (BoardLocation passedThrough : target.getPassedThrough()) {
+            Coords c = passedThrough.getCoords();
+            if (!aPos.equals(c) && (c != null) && attackerLoc.isSameBoardAs(passedThrough)
                 && ((aPos.distance(c) < distance) || (distance == 0))) {
-                finalPos = c;
+                finalTargetPos = c;
                 distance = aPos.distance(c);
             }
         }
-        return finalPos;
+        return new BoardLocation(finalTargetPos, attackerLoc.getBoardId());
     }
 
     public static int getClosestFlightPathFacing(int attackerId,
-            Coords aPos, Entity te) {
+                                                 BoardLocation attackerLoc, Entity te) {
 
         Coords finalPos = te.getPosition();
+        Coords aPos = attackerLoc.getCoords();
         if (te.getPlayerPickedPassThrough(attackerId) != null) {
             finalPos = te.getPlayerPickedPassThrough(attackerId);
         }
@@ -1863,13 +1809,12 @@ public class Compute {
             distance = aPos.distance(finalPos);
         }
         int finalFacing = te.getFacing();
-        // don't return zero distance Coords, but rather the Coords immediately
-        // before this
-        // This is necessary to determine angle of attack and arc information
-        // for direct fly-overs
+        // don't return zero distance Coords, but rather the Coords immediately before this
+        // This is necessary to determine angle of attack and arc information for direct fly-overs
         for (int i = 0; i < te.getPassedThrough().size(); i++) {
-            Coords c = te.getPassedThrough().get(i);
-            if (!aPos.equals(c) && (c != null)
+            BoardLocation passedThrough = te.getPassedThrough().get(i);
+            Coords c = passedThrough.getCoords();
+            if (!aPos.equals(c) && (c != null) && attackerLoc.isSameBoardAs(passedThrough)
                 && ((aPos.distance(c) < distance) || (distance == 0))) {
                 finalFacing = te.getPassedThroughFacing().get(i);
                 finalPos = c;
@@ -2307,10 +2252,10 @@ public class Compute {
             return null;
         }
 
-        boolean curInFrontArc = Compute
+        boolean curInFrontArc = ComputeArc
                 .isInArc(attacker.getPosition(), attacker.getSecondaryFacing(),
                          target, attacker.getForwardArc());
-        boolean curInRearArc = Compute.isInArc(attacker.getPosition(),
+        boolean curInRearArc = ComputeArc.isInArc(attacker.getPosition(),
                                                attacker.getSecondaryFacing(), target, attacker.getRearArc());
         if (!curInRearArc && attacker.hasQuirk(OptionsConstants.QUIRK_POS_MULTI_TRAC)) {
             return null;
@@ -2346,7 +2291,7 @@ public class Compute {
 
                     // Determine primary target
                     if ((primaryTarget == Entity.NONE || !primaryInFrontArc)
-                        && Compute.isInArc(attacker.getPosition(),
+                        && ComputeArc.isInArc(attacker.getPosition(),
                                            attacker.getSecondaryFacing(), pte,
                                            attacker.getForwardArc())) {
                         primaryTarget = prevAttack.getTargetId();
@@ -3835,420 +3780,6 @@ public class Compute {
     }
 
     /**
-     * Checks to see if a target is in arc of the specified weapon, on the
-     * specified entity
-     */
-    public static boolean isInArc(Game game, int attackerId, int weaponId,
-            Targetable t) {
-        Entity ae = game.getEntity(attackerId);
-        if ((ae instanceof Mech)
-            && (((Mech) ae).getGrappled() == t.getId())) {
-            return true;
-        }
-        int facing = ae.isSecondaryArcWeapon(weaponId) ? ae
-                .getSecondaryFacing() : ae.getFacing();
-        if ((ae instanceof Tank)
-            && (ae.getEquipment(weaponId).getLocation() == ((Tank) ae)
-                .getLocTurret2())) {
-            facing = ((Tank) ae).getDualTurretFacing();
-        }
-        if (ae.getEquipment(weaponId).isMechTurretMounted()) {
-            facing = ae.getSecondaryFacing()
-                     + (ae.getEquipment(weaponId).getFacing() % 6);
-        }
-        Coords aPos = ae.getPosition();
-        Vector<Coords> tPosV = new Vector<>();
-        Coords tPos = t.getPosition();
-        // aeros in the same hex in space may still be able to fire at one
-        // another. First I need to translate
-        // their positions to see who was further back
-        if (ae.isSpaceborne()
-            && ae.getPosition().equals(t.getPosition())
-            && ae.isAero() && t.isAero()) {
-            int moveSort = shouldMoveBackHex(ae, (Entity) t);
-            if (moveSort < 0) {
-                aPos = ae.getPriorPosition();
-            }
-            if (moveSort > 0) {
-                tPos = ((Entity) t).getPriorPosition();
-            }
-        }
-
-        // if using advanced AA options, then ground-to-air fire determines arc
-        // by closest position
-        if (isGroundToAir(ae, t) && (t instanceof Entity)) {
-            tPos = getClosestFlightPath(ae.getId(), ae.getPosition(),
-                    (Entity) t);
-        }
-
-        // AMS defending against Ground to Air fire needs to calculate arc based on the closest flight path
-        // Technically it's an AirToGround attack since the AMS is on the aircraft
-        if (isAirToGround(ae, t) && (t instanceof Entity)
-                && (ae.getEquipment(weaponId).getType().hasFlag(WeaponType.F_AMS)
-                        || ae.getEquipment(weaponId).getType().hasFlag(WeaponType.F_AMSBAY))) {
-            Entity te = (Entity) t;
-            aPos = getClosestFlightPath(te.getId(), te.getPosition(),
-                    ae);
-        }
-
-        tPosV.add(tPos);
-        // check for secondary positions
-        if ((t instanceof Entity)
-            && (null != ((Entity) t).getSecondaryPositions())) {
-            for (int key : ((Entity) t).getSecondaryPositions().keySet()) {
-                tPosV.add(((Entity) t).getSecondaryPositions().get(key));
-            }
-        }
-
-        if (CrossBoardAttackHelper.isCrossBoardArtyAttack(ae, t, game)) {
-            // When attacking between two ground boards, replace the attacker and target positions with the positions of
-            // the boards themselves on the atmospheric map
-            // When the ground boards are only connected through a high atmospheric map, the arrangement of
-            // the maps is unkown and the arc cannot be tested; therefore return false in that case, although
-            // a distance could be computed
-            Board attackerAtmoBoard = game.getEnclosingBoard(ae.getBoard());
-            Board targetAtmoBoard = game.getEnclosingBoard(game.getBoard(t.getBoardId()));
-            if (attackerAtmoBoard.getBoardId() == targetAtmoBoard.getBoardId()) {
-                aPos = attackerAtmoBoard.embeddedBoardPosition(ae.getBoardId());
-                tPosV.clear();
-                tPosV.add(attackerAtmoBoard.embeddedBoardPosition(t.getBoardId()));
-            } else {
-                return false;
-            }
-        }
-
-        if (CrossBoardAttackHelper.isOrbitToSurface(ae, t, game)) {
-            // For this attack, the ground row hex enclosing the ground map target must be in arc; replace position
-            Board targetAtmoBoard = game.getEnclosingBoard(game.getBoard(t.getBoardId()));
-            Coords c = ae.getBoard().embeddedBoardPosition(targetAtmoBoard.getBoardId());
-            tPosV.clear();
-            tPosV.add(c);
-        }
-
-        if (isAirToAir(game, ae, t) && !game.onTheSameBoard(ae, t)
-                && (game.onDirectlyConnectedBoards(ae, t) || CrossBoardAttackHelper.onGroundMapsWithinOneAtmoMap(game, ae, t))) {
-            // In A2A attacks between different maps (only ground/ground, ground/atmo or atmo/ground), replace the
-            // position of the unit on the ground map with the position of the ground map itself in the atmo map
-            if (game.isOnGroundMap(ae) && game.isOnAtmosphericMap(t)) {
-                aPos = game.getBoard(t).embeddedBoardPosition(ae.getBoardId());
-            } else if (game.isOnAtmosphericMap(ae) && game.isOnGroundMap(t)) {
-                tPosV.clear();
-                tPosV.add(game.getBoard(ae).embeddedBoardPosition(t.getBoardId()));
-            } else if (game.isOnGroundMap(ae) && game.isOnGroundMap(t)) {
-                // Different ground maps, here replace both positions with their respective atmo map hexes
-                aPos = game.getBoard(t).embeddedBoardPosition(ae.getBoardId());
-                tPosV.clear();
-                tPosV.add(game.getBoard(ae).embeddedBoardPosition(t.getBoardId()));
-            }
-        }
-
-        return Compute.isInArc(aPos, facing, tPosV, ae.getWeaponArc(weaponId));
-    }
-
-    /**
-     * Returns true if the line between source Coords and target goes through
-     * the hex in front of the attacker
-     */
-    public static boolean isThroughFrontHex(Game game, Coords src, Entity t) {
-        Coords dest = t.getPosition();
-        int fa = dest.degree(src) - (t.getFacing() * 60);
-        if (fa < 0) {
-            fa += 360;
-        }
-        return (fa > 330) || (fa < 30);
-    }
-
-    /**
-     * Converts the facing of a vehicular grenade launcher to the corresponding firing arc.
-     *
-     * @param facing The VGL facing returned by {@link Mounted#getFacing()}
-     * @return       The firing arc
-     */
-    public static int firingArcFromVGLFacing(int facing) {
-        return VGL_FIRING_ARCS[facing % 6];
-    }
-
-    public static boolean isInArc(Coords src, int facing, Targetable target,
-                                  int arc) {
-
-        Vector<Coords> tPosV = new Vector<>();
-        tPosV.add(target.getPosition());
-        // check for secondary positions
-        if ((target instanceof Entity)
-            && (null != ((Entity) target).getSecondaryPositions())) {
-            for (int key : ((Entity) target).getSecondaryPositions().keySet()) {
-                tPosV.add(((Entity) target).getSecondaryPositions().get(key));
-            }
-        }
-
-        return isInArc(src, facing, tPosV, arc);
-    }
-
-    public static boolean isInArc(Coords src, int facing, Coords dest, int arc) {
-        Vector<Coords> destV = new Vector<>();
-        destV.add(dest);
-        return isInArc(src, facing, destV, arc);
-    }
-
-    /**
-     * Returns true if the target is in the specified arc. Note: This has to
-     * take vectors of coordinates to account for potential secondary positions
-     *
-     * @param src    the attack coordinates
-     * @param facing the appropriate attacker sfacing
-     * @param destV  A vector of target coordinates
-     * @param arc    the arc
-     */
-    public static boolean isInArc(Coords src, int facing, Vector<Coords> destV,
-                                  int arc) {
-        if ((src == null) || (destV == null)) {
-            return true;
-        }
-
-        // Jay: I have to adjust this to take in vectors of coordinates to
-        // account for secondary positions of the
-        // target - I am fairly certain that secondary positions of the attacker
-        // shouldn't matter because you don't get
-        // to move the angle based on the secondary positions
-
-        // if any of the destination coords are in the right place, then return
-        // true
-        for (Coords dest : destV) {
-            // calculate firing angle
-            int fa = src.degree(dest) - (facing * 60);
-            if (fa < 0) {
-                fa += 360;
-            }
-            // is it in the specifed arc?
-            switch (arc) {
-                case ARC_FORWARD:
-                    if ((fa >= 300) || (fa <= 60)) {
-                        return true;
-                    }
-                    break;
-                case Compute.ARC_RIGHTARM:
-                    if ((fa >= 300) || (fa <= 120)) {
-                        return true;
-                    }
-                    break;
-                case Compute.ARC_LEFTARM:
-                    if ((fa >= 240) || (fa <= 60)) {
-                        return true;
-                    }
-                    break;
-                case ARC_REAR:
-                    if ((fa > 120) && (fa < 240)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RIGHTSIDE:
-                    if ((fa > 60) && (fa <= 120)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LEFTSIDE:
-                    if ((fa < 300) && (fa >= 240)) {
-                        return true;
-                    }
-                    break;
-                case ARC_MAINGUN:
-                    if ((fa >= 240) || (fa <= 120)) {
-                        return true;
-                    }
-                    break;
-                case ARC_360:
-                    return true;
-                case ARC_NORTH:
-                    if ((fa >= 270) || (fa <= 30)) {
-                        return true;
-                    }
-                    break;
-                case ARC_EAST:
-                    if ((fa >= 30) && (fa <= 150)) {
-                        return true;
-                    }
-                    break;
-                case ARC_WEST:
-                    if ((fa >= 150) && (fa <= 270)) {
-                        return true;
-                    }
-                    break;
-                case ARC_NOSE:
-                    if ((fa > 300) || (fa < 60)) {
-                        return true;
-                    }
-                    break;
-                case ARC_NOSE_WPL:
-                    if ((fa > 240) || (fa < 120)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LWING:
-                    if ((fa > 300) || (fa <= 0)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LWING_WPL:
-                    if ((fa > 240) || (fa < 60)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RWING:
-                    if ((fa >= 0) && (fa < 60)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RWING_WPL:
-                    if ((fa > 300) || (fa < 120)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LWINGA:
-                    if ((fa >= 180) && (fa < 240)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LWINGA_WPL:
-                    if ((fa > 120) && (fa < 300)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RWINGA:
-                    if ((fa > 120) && (fa <= 180)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RWINGA_WPL:
-                    if ((fa > 60) && (fa < 240)) {
-                        return true;
-                    }
-                    break;
-                case ARC_AFT:
-                    if ((fa > 120) && (fa < 240)) {
-                        return true;
-                    }
-                    break;
-                case ARC_AFT_WPL:
-                    if ((fa > 60) && (fa < 300)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LEFTSIDE_SPHERE:
-                    if ((fa > 240) || (fa < 0)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LEFTSIDE_SPHERE_WPL:
-                    if ((fa > 180) || (fa < 60)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RIGHTSIDE_SPHERE:
-                    if ((fa > 0) && (fa < 120)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RIGHTSIDE_SPHERE_WPL:
-                    if ((fa > 300) || (fa < 180)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LEFTSIDEA_SPHERE:
-                    if ((fa > 180) && (fa < 300)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LEFTSIDEA_SPHERE_WPL:
-                    if ((fa > 120) && (fa < 360)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RIGHTSIDEA_SPHERE:
-                    if ((fa > 60) && (fa < 180)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RIGHTSIDEA_SPHERE_WPL:
-                    if ((fa > 0) && (fa < 240)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LEFT_BROADSIDE:
-                    if ((fa >= 240) && (fa <= 300)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LEFT_BROADSIDE_WPL:
-                    if ((fa > 180) && (fa <= 360)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RIGHT_BROADSIDE:
-                    if ((fa >= 60) && (fa <= 120)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RIGHT_BROADSIDE_WPL:
-                    if ((fa > 0) && (fa < 180)) {
-                        return true;
-                    }
-                    break;
-                case ARC_LEFT_SPHERE_GROUND:
-                    if ((fa >= 180) && (fa < 360)) {
-                        return true;
-                    }
-                    break;
-                case ARC_RIGHT_SPHERE_GROUND:
-                    if ((fa >= 0) && (fa < 180)) {
-                        return true;
-                    }
-                    break;
-                case ARC_TURRET:
-                    if ((fa >= 330) || (fa <= 30)) {
-                        return true;
-                    }
-                    break;
-                case ARC_SPONSON_TURRET_LEFT:
-                case ARC_PINTLE_TURRET_LEFT:
-                    if ((fa >= 180) || (fa == 0)) {
-                        return true;
-                    }
-                    break;
-                case ARC_SPONSON_TURRET_RIGHT:
-                case ARC_PINTLE_TURRET_RIGHT:
-                    if ((fa >= 0) && (fa <= 180)) {
-                        return true;
-                    }
-                    break;
-                case ARC_PINTLE_TURRET_FRONT:
-                    if ((fa >= 270) || (fa <= 90)) {
-                        return true;
-                    }
-                    break;
-                case ARC_PINTLE_TURRET_REAR:
-                    if ((fa >= 90) && (fa <= 270)) {
-                        return true;
-                    }
-                    break;
-                case ARC_VGL_FRONT:
-                    return (fa >= 270) || (fa <= 90);
-                case ARC_VGL_RF:
-                    return (fa >= 330) || (fa <= 150);
-                case ARC_VGL_RR:
-                    return (fa >= 30) && (fa <= 210);
-                case ARC_VGL_REAR:
-                    return (fa >= 90) && (fa <= 270);
-                case ARC_VGL_LR:
-                    return (fa >= 150) && (fa <= 330);
-                case ARC_VGL_LF:
-                    return (fa >= 210) || (fa <= 30);
-            }
-        }
-        // if we got here then no matches
-        return false;
-    }
-
-    /**
      * checks to see whether the target is within visual range of the entity,
      * but not necessarily LoS
      */
@@ -4323,7 +3854,7 @@ public class Compute {
             // Ground targets pick the closest path to Aeros (TW pg 107)
             if ((te.isAero()) && isGroundToAir(ae, target)) {
                 targetPos = Compute.getClosestFlightPath(ae.getId(),
-                        ae.getPosition(), te);
+                        ae.getBoardLocation(), te).getCoords();
             }
             //Airborne aeros can only see ground targets they overfly, and only at Alt <=8
             if (isAirToGround(ae, target)) {
@@ -4495,7 +4026,7 @@ public class Compute {
             Entity te = (Entity) target;
             distance = te.getPosition().distance(
                     getClosestFlightPath(te.getId(),
-                            te.getPosition(), (Entity) ae));
+                            te.getBoardLocation(), (Entity) ae).getCoords());
             return (distance > minSensorRange) && (distance <= maxSensorRange);
         }
         //This didn't work right for Aeros. Should account for the difference in altitude, not just add the target's altitude to distance
@@ -4766,13 +4297,12 @@ public class Compute {
     }
 
     public static int targetSideTable(Entity attacker, Targetable target) {
-        return Compute
-                .targetSideTable(attacker, target, CalledShot.CALLED_NONE);
+        return targetSideTable(attacker, target, CalledShot.CALLED_NONE);
     }
 
     public static int targetSideTable(Entity attacker, Targetable target,
                                       int called) {
-        Coords attackPos = attacker.getPosition();
+        BoardLocation attackPos = attacker.getBoardLocation();
 
         Entity te = null;
         if (target instanceof Entity) {
@@ -4780,10 +4310,9 @@ public class Compute {
         }
 
         boolean usePrior = false;
-        // aeros in the same hex need to adjust position to get side
-        // table
+        // aeros in the same hex need to adjust position to get side table
         if (isAirToAir(attacker.getGame(), attacker, target)
-            && attackPos.equals(target.getPosition())
+            && attackPos.equals(target.getBoardLocation())
             && attacker.isAero() && target.isAero()) {
             int moveSort = shouldMoveBackHex(attacker, (Entity) target);
             if (moveSort < 0) {
@@ -4795,40 +4324,38 @@ public class Compute {
         // if this is a air to ground attack, then attacker position is given by
         // the direction from which they entered the target hex
         if (isAirToGround(attacker, target)) {
-            attackPos = attacker.passedThroughPrevious(target.getPosition());
+            attackPos = attacker.passedThroughPrevious(target.getBoardLocation());
         }
 
         if (isGroundToAir(attacker, target) && (null != te)) {
-            int facing = Compute.getClosestFlightPathFacing(attacker.getId(),
-                    attackPos, te);
-            Coords pos = Compute.getClosestFlightPath(attacker.getId(),
-                    attackPos, te);
-            return te.sideTable(attackPos, usePrior, facing, pos);
+            int facing = Compute.getClosestFlightPathFacing(attacker.getId(), attackPos, te);
+            BoardLocation pos = Compute.getClosestFlightPath(attacker.getId(), attackPos, te);
+            return te.sideTable(attackPos.getCoords(), usePrior, facing, pos.getCoords());
         }
 
         if ((null != te) && (called == CalledShot.CALLED_LEFT)) {
-            return te.sideTable(attackPos, usePrior, (te.getFacing() + 5) % 6);
+            return te.sideTable(attackPos.getCoords(), usePrior, (te.getFacing() + 5) % 6);
         } else if ((null != te) && (called == CalledShot.CALLED_RIGHT)) {
-            return te.sideTable(attackPos, usePrior, (te.getFacing() + 1) % 6);
+            return te.sideTable(attackPos.getCoords(), usePrior, (te.getFacing() + 1) % 6);
         }
 
-        return target.sideTable(attackPos, usePrior);
+        return target.sideTable(attackPos.getCoords(), usePrior);
     }
 
 
-        /**
-         * Compares the initiative of two aerospace units in the same hex to determine attack angle.
-         * The attack angle is computed as if the unit with the higher initiative were in its previous hex.
-         *
-         * @param e1 The first <code>Entity</code> to compare
-         * @param e2 The second <code>Entity</code> to compare
-         * @return &lt; 0 if the first unit has a higher initiative, &gt; 0 if the second is higher,
-         *         or 0 if one of the units is not an aerospace unit, does not have a valid position,
-         *         or the two units are not in the same hex.
-         */
+    /**
+     * Compares the initiative of two aerospace units in the same hex to determine attack angle.
+     * The attack angle is computed as if the unit with the higher initiative were in its previous hex.
+     *
+     * @param e1 The first <code>Entity</code> to compare
+     * @param e2 The second <code>Entity</code> to compare
+     * @return &lt; 0 if the first unit has a higher initiative, &gt; 0 if the second is higher,
+     *         or 0 if one of the units is not an aerospace unit, does not have a valid position,
+     *         or the two units are not in the same hex.
+     */
     public static int shouldMoveBackHex(Entity e1, Entity e2) {
         if (null == e1.getPosition() || null == e2.getPosition()
-                || !e1.getPosition().equals(e2.getPosition())
+                || !e1.getBoardLocation().equals(e2.getBoardLocation())
                 || !e1.isAero() || !e2.isAero()) {
             return 0;
         }
@@ -4839,7 +4366,7 @@ public class Compute {
         }
         // if all criteria are the same, select randomly
         if (retVal == 0) {
-            retVal = d6() < 4? -1 : 1;
+            retVal = d6() < 4 ? -1 : 1;
         }
         return retVal;
     }
@@ -5204,8 +4731,9 @@ public class Compute {
 
         boolean canTarget = false;
         Coords attackCoords = null;
-        for (Coords c : attacker.getPassedThrough()) {
-            for (Entity target : game.getEntitiesVector(c)) {
+        // @@MultiBoardTODO:
+        for (BoardLocation boardLocation : attacker.getPassedThrough()) {
+            for (Entity target : game.getEntitiesAt(boardLocation)) {
                 if (target.getId() == defender.getId()) {
                     canTarget = true;
                 }
@@ -5213,7 +4741,7 @@ public class Compute {
             if (canTarget) {
                 break;
             }
-            attackCoords = c;
+            attackCoords = boardLocation.getCoords();
         }
         if (null == attackCoords) {
             attackCoords = attacker.getPosition();

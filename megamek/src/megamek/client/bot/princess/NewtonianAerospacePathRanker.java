@@ -117,21 +117,21 @@ public class NewtonianAerospacePathRanker extends BasicPathRanker implements IPa
         // if we are a spheroid, we can fire viably in any direction
         // if we are a fighter or aerodyne DropShip, our most effective arc is forward
         // larger craft are usually bristling with weapons all around
-        int arcToUse = ((IAero) path.getEntity()).isSpheroid() ? Compute.ARC_360 : Compute.ARC_NOSE;
+        int arcToUse = ((IAero) path.getEntity()).isSpheroid() ? ComputeArc.ARC_360 : ComputeArc.ARC_NOSE;
         double vertexCoverage = 1.0;
 
         // the idea here is that, if we have a limited firing arc, the target
         // will likely make an effort to move out of the arc, so it reduces our expected damage
         // we calculate the proportion by looking at the number of "enemy movable area" vertices
         // that are in our main firing arc, compared to the max (6).
-        if (arcToUse != Compute.ARC_360) {
+        if (arcToUse != ComputeArc.ARC_360) {
             int inArcVertexCount = 0;
             ConvexBoardArea movableArea = getPathEnumerator().getUnitMovableAreas().get(enemy.getId());
 
             for (int vertexNum = 0; vertexNum < 6; vertexNum++) {
                 Coords vertex = movableArea.getVertexNum(vertexNum);
 
-                if (vertex != null && Compute.isInArc(finalCoords, path.getFinalFacing(), vertex, arcToUse)) {
+                if (vertex != null && ComputeArc.isInArc(finalCoords, path.getFinalFacing(), vertex, arcToUse)) {
                     inArcVertexCount++;
                 }
             }

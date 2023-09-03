@@ -567,26 +567,26 @@ public interface IAero {
      */
     default int rollArcs(int arc) {
         if (isRolled()) {
-            if (arc == Compute.ARC_LWING) {
-                return Compute.ARC_RWING;
-            } else if (arc == Compute.ARC_RWING) {
-                return Compute.ARC_LWING;
-            } else if (arc == Compute.ARC_LWINGA) {
-                return Compute.ARC_RWINGA;
-            } else if (arc == Compute.ARC_RWINGA) {
-                return Compute.ARC_LWINGA;
-            } else if (arc == Compute.ARC_LEFTSIDE_SPHERE) {
-                return Compute.ARC_RIGHTSIDE_SPHERE;
-            } else if (arc == Compute.ARC_RIGHTSIDE_SPHERE) {
-                return Compute.ARC_LEFTSIDE_SPHERE;
-            } else if (arc == Compute.ARC_LEFTSIDEA_SPHERE) {
-                return Compute.ARC_RIGHTSIDEA_SPHERE;
-            } else if (arc == Compute.ARC_RIGHTSIDEA_SPHERE) {
-                return Compute.ARC_LEFTSIDEA_SPHERE;
-            } else if (arc == Compute.ARC_LEFT_BROADSIDE) {
-                return Compute.ARC_RIGHT_BROADSIDE;
-            } else if (arc == Compute.ARC_RIGHT_BROADSIDE) {
-                return Compute.ARC_LEFT_BROADSIDE;
+            if (arc == ComputeArc.ARC_LWING) {
+                return ComputeArc.ARC_RWING;
+            } else if (arc == ComputeArc.ARC_RWING) {
+                return ComputeArc.ARC_LWING;
+            } else if (arc == ComputeArc.ARC_LWINGA) {
+                return ComputeArc.ARC_RWINGA;
+            } else if (arc == ComputeArc.ARC_RWINGA) {
+                return ComputeArc.ARC_LWINGA;
+            } else if (arc == ComputeArc.ARC_LEFTSIDE_SPHERE) {
+                return ComputeArc.ARC_RIGHTSIDE_SPHERE;
+            } else if (arc == ComputeArc.ARC_RIGHTSIDE_SPHERE) {
+                return ComputeArc.ARC_LEFTSIDE_SPHERE;
+            } else if (arc == ComputeArc.ARC_LEFTSIDEA_SPHERE) {
+                return ComputeArc.ARC_RIGHTSIDEA_SPHERE;
+            } else if (arc == ComputeArc.ARC_RIGHTSIDEA_SPHERE) {
+                return ComputeArc.ARC_LEFTSIDEA_SPHERE;
+            } else if (arc == ComputeArc.ARC_LEFT_BROADSIDE) {
+                return ComputeArc.ARC_RIGHT_BROADSIDE;
+            } else if (arc == ComputeArc.ARC_RIGHT_BROADSIDE) {
+                return ComputeArc.ARC_LEFT_BROADSIDE;
             }
         }
         return arc;
