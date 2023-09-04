@@ -18,7 +18,6 @@ import megamek.MMConstants;
 import megamek.client.Client;
 import megamek.client.TimerSingleton;
 import megamek.client.bot.BotClient;
-import megamek.client.bot.TestBot;
 import megamek.client.bot.princess.BehaviorSettings;
 import megamek.client.bot.princess.Princess;
 import megamek.client.event.BoardViewEvent;
@@ -81,7 +80,7 @@ import java.util.*;
 
 public class ClientGUI extends JPanel implements BoardViewListener,
         ActionListener, ComponentListener, IPreferenceChangeListener {
-    //region Variable Declarations
+    // region Variable Declarations
     private static final long serialVersionUID = 3913466735610109147L;
 
     private static final GUIPreferences GUIP = GUIPreferences.getInstance();
@@ -101,13 +100,13 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      */
     public static final float MAX_GUISCALE = 2.4f;
 
-    //region action commands
-    //region main menu
-    //Note: anything located in menu bars is not located here but in their menu
+    // region action commands
+    // region main menu
+    // Note: anything located in menu bars is not located here but in their menu
     public static final String MAIN_SKIN_NEW = "mainSkinNew";
     public static final String MAIN_QUIT = "mainQuit";
-    //region file menu
-    //game submenu
+    // region file menu
+    // game submenu
     public static final String FILE_GAME_NEW = "fileGameNew";
     public static final String FILE_GAME_SAVE = "fileGameSave";
     public static final String FILE_GAME_LOAD = "fileGameLoad";
@@ -139,7 +138,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     public static final String BOARD_REMOVE_BUILDINGS = "boardRemoveBuildings";
     public static final String BOARD_FLATTEN = "boardFlatten";
 
-    //unit list submenu
+    // unit list submenu
     public static final String FILE_UNITS_REINFORCE = "fileUnitsReinforce";
     public static final String FILE_UNITS_REINFORCE_RAT = "fileUnitsReinforceRAT";
     public static final String FILE_REFRESH_CACHE = "fileRefreshCache";
@@ -148,9 +147,9 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     public static final String FILE_UNITS_SAVE = "fileUnitsSave";
     public static final String FILE_UNITS_PASTE = "fileUnitsPaste";
     public static final String FILE_UNITS_COPY = "fileUnitsCopy";
-    //endregion file menu
+    // endregion file menu
 
-    //region view menu
+    // region view menu
     public static final String VIEW_INCGUISCALE = "viewIncGUIScale";
     public static final String VIEW_DECGUISCALE = "viewDecGUIScale";
     public static final String VIEW_UNIT_DISPLAY = "viewMekDisplay";
@@ -180,19 +179,19 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     public static final String VIEW_PLAYER_SETTINGS = "viewPlayerSettings";
     public static final String VIEW_PLAYER_LIST = "viewPlayerList";
     public static final String VIEW_RESET_WINDOW_POSITIONS = "viewResetWindowPos";
-    //endregion view menu
+    // endregion view menu
 
-    //region fire menu
+    // region fire menu
     public static final String FIRE_SAVE_WEAPON_ORDER = "saveWeaponOrder";
-    //endregion fire menu
+    // endregion fire menu
 
-    //region help menu
+    // region help menu
     public static final String HELP_CONTENTS = "helpContents";
     public static final String HELP_SKINNING = "helpSkinning";
     public static final String HELP_ABOUT = "helpAbout";
     public static final String HELP_RESETNAGS = "helpResetNags";
-    //endregion help menu
-    //endregion action commands
+    // endregion help menu
+    // endregion action commands
 
     public static final String CG_BOARDVIEW = "BoardView";
     public static final String CG_CHATLOUNGE = "ChatLounge";
@@ -337,7 +336,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      */
     private final AudioService audioService = new SoundManager();
 
-    //endregion Variable Declarations
+    // endregion Variable Declarations
 
     /**
      * Construct a client which will display itself in a new frame. It will not
@@ -459,17 +458,13 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         frame.setForeground(SystemColor.menuText);
         List<Image> iconList = new ArrayList<>();
         iconList.add(frame.getToolkit().getImage(
-                new MegaMekFile(Configuration.miscImagesDir(), FILENAME_ICON_16X16).toString()
-        ));
+                new MegaMekFile(Configuration.miscImagesDir(), FILENAME_ICON_16X16).toString()));
         iconList.add(frame.getToolkit().getImage(
-                new MegaMekFile(Configuration.miscImagesDir(), FILENAME_ICON_32X32).toString()
-        ));
+                new MegaMekFile(Configuration.miscImagesDir(), FILENAME_ICON_32X32).toString()));
         iconList.add(frame.getToolkit().getImage(
-                new MegaMekFile(Configuration.miscImagesDir(), FILENAME_ICON_48X48).toString()
-        ));
+                new MegaMekFile(Configuration.miscImagesDir(), FILENAME_ICON_48X48).toString()));
         iconList.add(frame.getToolkit().getImage(
-                new MegaMekFile(Configuration.miscImagesDir(), FILENAME_ICON_256X256).toString()
-        ));
+                new MegaMekFile(Configuration.miscImagesDir(), FILENAME_ICON_256X256).toString()));
         frame.setIconImages(iconList);
     }
 
@@ -728,7 +723,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             getUnitDisplayDialog().setBounds(0, 0, getUnitDisplay().getWidth(), getUnitDisplay().getHeight());
         }
         if (getMiniReportDisplayDialog() != null) {
-            getMiniReportDisplayDialog().setBounds(0, 0, getMiniReportDisplayDialog().getWidth(), getMiniReportDisplayDialog().getHeight());
+            getMiniReportDisplayDialog().setBounds(0, 0, getMiniReportDisplayDialog().getWidth(),
+                    getMiniReportDisplayDialog().getHeight());
         }
         if (getPlayerListDialog() != null) {
             getPlayerListDialog().setBounds(0, 0, getPlayerListDialog().getWidth(), getPlayerListDialog().getHeight());
@@ -951,11 +947,11 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      * and a file for salvage
      */
     public void doSaveUnit() {
-        for (Enumeration<Player> iter = getClient().getGame().getPlayers(); iter.hasMoreElements(); ) {
+        for (Enumeration<Player> iter = getClient().getGame().getPlayers(); iter.hasMoreElements();) {
             Player p = iter.nextElement();
             ArrayList<Entity> l = getClient().getGame().getPlayerEntities(p, false);
             // Be sure to include all units that have retreated.
-            for (Enumeration<Entity> iter2 = getClient().getGame().getRetreatedEntities(); iter2.hasMoreElements(); ) {
+            for (Enumeration<Entity> iter2 = getClient().getGame().getRetreatedEntities(); iter2.hasMoreElements();) {
                 Entity e = iter2.nextElement();
                 if (e.getOwnerId() == p.getId()) {
                     l.add(e);
@@ -1006,7 +1002,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         GUIP.setWindowSizeHeight(frame.getSize().height);
 
         // Minimap Dialog
-        if ((getMiniMapDialog() != null) && ((getMiniMapDialog().getSize().width * getMiniMapDialog().getSize().height) > 0)) {
+        if ((getMiniMapDialog() != null)
+                && ((getMiniMapDialog().getSize().width * getMiniMapDialog().getSize().height) > 0)) {
             GUIP.setMinimapPosX(getMiniMapDialog().getLocation().x);
             GUIP.setMinimapPosY(getMiniMapDialog().getLocation().y);
         }
@@ -1191,7 +1188,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         }
 
         // Make the new panel the focus, if the Client option says so
-        if (GUIP.getFocus() && !(client instanceof TestBot)) {
+        if (GUIP.getFocus() && !(client instanceof BotClient)) {
             curPanel.requestFocus();
         }
     }
@@ -1498,9 +1495,11 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     }
 
     /**
-     * Shows or hides the Minimap based on the given visible. This works independently
+     * Shows or hides the Minimap based on the given visible. This works
+     * independently
      * of the current menu setting, so it should be used only when the Minimap is to
-     * be shown or hidden without regard for the user setting, e.g. hiding it in the lobby
+     * be shown or hidden without regard for the user setting, e.g. hiding it in the
+     * lobby
      * or a report phase.
      * Does not change the menu setting.
      */
@@ -1552,9 +1551,12 @@ public class ClientGUI extends JPanel implements BoardViewListener,
     }
 
     /**
-     * Shows or hides the Unit Display based on the given visible. This works independently
-     * of the current menu setting, so it should be used only when the Unit Display is to
-     * be shown or hidden without regard for the user setting, e.g. hiding it in the lobby
+     * Shows or hides the Unit Display based on the given visible. This works
+     * independently
+     * of the current menu setting, so it should be used only when the Unit Display
+     * is to
+     * be shown or hidden without regard for the user setting, e.g. hiding it in the
+     * lobby
      * or a report phase.
      * Does not change the menu setting.
      */
@@ -1737,13 +1739,17 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      *
      * @param title    the <code>String</code> title of the dialog box.
      * @param question the <code>String</code> question that has a "Yes" or "No"
-     *                 answer. The question will be split across multiple line on the
+     *                 answer. The question will be split across multiple line on
+     *                 the
      *                 '\n' characters.
      * @param choices  the array of <code>String</code> choices that the player can
      *                 select from.
-     * @return The array of the <code>int</code> indexes from the input array that match the
-     * selected choices. If no choices were available, if the player did not select a choice, or if
-     * the player canceled the choice, a <code>null</code> value is returned.
+     * @return The array of the <code>int</code> indexes from the input array that
+     *         match the
+     *         selected choices. If no choices were available, if the player did not
+     *         select a choice, or if
+     *         the player canceled the choice, a <code>null</code> value is
+     *         returned.
      */
     public @Nullable int[] doChoiceDialog(String title, String question, String... choices) {
         ChoiceDialog choice = new ChoiceDialog(frame, title, question, choices);
@@ -1779,7 +1785,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      *
      * @param title    the <code>String</code> title of the dialog box.
      * @param question the <code>String</code> question that has a "Yes" or "No"
-     *                 answer. The question will be split across multiple line on the
+     *                 answer. The question will be split across multiple line on
+     *                 the
      *                 '\n' characters.
      * @return <code>true</code> if yes
      */
@@ -1796,7 +1803,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
      *
      * @param title    the <code>String</code> title of the dialog box.
      * @param question the <code>String</code> question that has a "Yes" or "No"
-     *                 answer. The question will be split across multiple line on the
+     *                 answer. The question will be split across multiple line on
+     *                 the
      *                 '\n' characters.
      * @return the <code>ConfirmDialog</code> containing the player's responses.
      * The dialog will already have been shown to the player, and is
@@ -1897,11 +1905,13 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             if (unitFile != null) {
                 try {
                     // Read the units from the file.
-                    final Vector<Entity> loadedUnits = new MULParser(unitFile, getClient().getGame().getOptions()).getEntities();
+                    final Vector<Entity> loadedUnits = new MULParser(unitFile, getClient().getGame().getOptions())
+                            .getEntities();
 
                     // in the Lounge, set default deployment to "Before Game Start", round 0
                     // but in a game in-progress, deploy at the start of next round
-                    final int deployRound = client.getGame().getRoundCount() + ((client.getGame().getPhase() == GamePhase.LOUNGE) ? 0 : 1);
+                    final int deployRound = client.getGame().getRoundCount()
+                            + ((client.getGame().getPhase() == GamePhase.LOUNGE) ? 0 : 1);
 
                     // Add the units from the file.
                     for (Entity entity : loadedUnits) {
@@ -1921,7 +1931,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
                     if (!loadedUnits.isEmpty()) {
                         client.sendAddEntity(loadedUnits);
-                        String msg = client.getLocalPlayer() + " loaded MUL file for player: " + player.getName() + " [" + loadedUnits.size() + " units]";
+                        String msg = client.getLocalPlayer() + " loaded MUL file for player: " + player.getName() + " ["
+                                + loadedUnits.size() + " units]";
                         client.sendServerChat(Player.PLAYER_NONE, msg);
                         addedUnits = true;
                     }
@@ -1931,7 +1942,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 }
             }
 
-            // If we've added reinforcements, then we need to set the round deployment up again.
+            // If we've added reinforcements, then we need to set the round deployment up
+            // again.
             if (addedUnits && reinforce) {
                 client.getGame().setupRoundDeployment();
                 client.sendResetRoundDeployment();
@@ -2045,7 +2057,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             dlgSaveList = new JFileChooser(".");
             dlgSaveList.setLocation(frame.getLocation().x + 150, frame.getLocation().y + 100);
             dlgSaveList.setDialogTitle(Messages.getString("ClientGUI.saveUnitListFileDialog.title"));
-            FileNameExtensionFilter filter = new FileNameExtensionFilter(Messages.getString("ClientGUI.descriptionMULFiles"), CG_FILEPATHMUL);
+            FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                    Messages.getString("ClientGUI.descriptionMULFiles"), CG_FILEPATHMUL);
             dlgSaveList.setFileFilter(filter);
         }
         // Default to the player's name.
@@ -2269,7 +2282,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         @Override
         public void gameEntityChange(GameEntityChangeEvent e) {
             if ((unitDisplay != null) && (unitDisplay.getCurrentEntity() != null)
-                && (e.getEntity() != null)
+                    && (e.getEntity() != null)
                     && (unitDisplay.getCurrentEntity().getId() == e.getEntity().getId())) {
                 // underlying object may have changed, so reset
                 unitDisplay.displayEntity(e.getEntity());
@@ -2291,12 +2304,12 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                 // opponent got and used one) and if so activates it.
                 reportDisplayResetRerollInitiative();
 
-                if (!(getClient() instanceof TestBot)) {
+                if (!(getClient() instanceof BotClient)) {
                     doAlertDialog(Messages.getString("ClientGUI.dialogTacticalGeniusReport"), e.getReport());
                 }
             } else {
                 // Continued movement after getting up
-                if (!(getClient() instanceof TestBot)) {
+                if (!(getClient() instanceof BotClient)) {
                     doAlertDialog(Messages.getString("ClientGUI.dialogMovementReport"), e.getReport());
                 }
             }
@@ -2316,7 +2329,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
             ArrayList<Entity> living = getClient().getGame().getPlayerEntities(getClient().getLocalPlayer(), false);
 
             // Be sure to include all units that have retreated.
-            for (Enumeration<Entity> iter = getClient().getGame().getRetreatedEntities(); iter.hasMoreElements(); ) {
+            for (Enumeration<Entity> iter = getClient().getGame().getRetreatedEntities(); iter.hasMoreElements();) {
                 Entity ent = iter.nextElement();
                 if (ent.getOwnerId() == getClient().getLocalPlayer().getId()) {
                     living.add(ent);
@@ -2569,7 +2582,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                         }
                     } else {
                         // If input is null, as in the case of pressing the close or cancel buttons...
-                        // Just pick the first target in the list, or server will be left waiting indefinitely.
+                        // Just pick the first target in the list, or server will be left waiting
+                        // indefinitely.
                         client.sendTelemissileTargetCFRResponse(0);
                     }
                     break;
@@ -2600,7 +2614,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                         }
                     } else {
                         // If input IS null, as in the case of pressing the close or cancel buttons...
-                        // Just pick the first target in the list, or server will be left waiting indefinitely.
+                        // Just pick the first target in the list, or server will be left waiting
+                        // indefinitely.
                         client.sendTAGTargetCFRResponse(0);
                     }
                     break;
@@ -2848,7 +2863,8 @@ public class ClientGUI extends JPanel implements BoardViewListener,
                     client, message);
             systemMessage(message.toString());
             // Make this princess a locally owned bot if in the lobby. This way it
-            // can be configured, and it will faithfully press Done when the local player does.
+            // can be configured, and it will faithfully press Done when the local player
+            // does.
             if ((princess != null) && client.getGame().getPhase().isLounge()) {
                 getLocalBots().put(ghostName, princess);
             }
@@ -2865,14 +2881,16 @@ public class ClientGUI extends JPanel implements BoardViewListener,
         Set<String> kickBotNames = rpd.getKickBots();
         for (String botName : kickBotNames) {
             StringBuilder message = new StringBuilder();
-            util.kickBot( botName, client, message);
+            util.kickBot(botName, client, message);
             systemMessage(message.toString());
         }
     }
 
     /**
-     * The ClientGUI is split into the main panel (view) at the top, which takes up the majority of
-     * the view and the "current panel" which has different controls based on the phase.
+     * The ClientGUI is split into the main panel (view) at the top, which takes up
+     * the majority of
+     * the view and the "current panel" which has different controls based on the
+     * phase.
      *
      * @return the panel for the current phase
      */
