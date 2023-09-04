@@ -171,10 +171,10 @@ public class ArtilleryCannonWeaponHandler extends AmmoWeaponHandler {
                     ammoType.getRackSize(), ae.getId());
             return false;
         } else if (ammoType.getMunitionType() == AmmoType.M_SMOKE) {
-            gameManager.deliverArtillerySmoke(new BoardLocation(targetPos, ae.getBoardId()), vPhaseReport);
+            gameManager.deliverArtillerySmoke(new BoardLocation(targetPos, target.getBoardId()), vPhaseReport);
             return false;
         } else if (ammoType.getMunitionType() == AmmoType.M_FAE) {
-            AreaEffectHelper.processFuelAirDamage(targetPos,
+            AreaEffectHelper.processFuelAirDamage(new BoardLocation(targetPos, target.getBoardId()),
                     ammoType, ae, vPhaseReport, gameManager);
 
             return false;
