@@ -68,7 +68,7 @@ public final class ComputeArc {
 
     /**
      * Checks to see if a target is in arc of the specified weapon, on the
-     * specified entity
+     * specified attacker.
      */
     public static boolean isInArc(Game game, int attackerId, int weaponId, Targetable target) {
         Entity attacker = game.getEntity(attackerId);
@@ -90,12 +90,10 @@ public final class ComputeArc {
 
         BoardLocation aPos = attacker.getBoardLocation();
         BoardLocation tPos = target.getBoardLocation();
-        // aeros in the same hex in space may still be able to fire at one
-        // another. First I need to translate
+        // aeros in the same hex in space may still be able to fire at one another. Translate
         // their positions to see who was further back
         if (attacker.isSpaceborne() && aPos.equals(tPos) && attacker.isAero() && target.isAero()) {
-            int moveSort = Compute.shouldMoveBackHex(attacker, (Entity) target);
-            if (moveSort < 0) {
+            if (Compute.shouldMoveBackHex(attacker, target) < 0) {
                 aPos = attacker.getPriorPosition();
             } else {
                 tPos = ((Entity) target).getPriorPosition();

@@ -4314,7 +4314,7 @@ public class Compute {
         if (isAirToAir(attacker.getGame(), attacker, target)
             && attackPos.equals(target.getBoardLocation())
             && attacker.isAero() && target.isAero()) {
-            int moveSort = shouldMoveBackHex(attacker, (Entity) target);
+            int moveSort = shouldMoveBackHex(attacker, target);
             if (moveSort < 0) {
                 attackPos = attacker.getPriorPosition();
             }
@@ -4353,14 +4353,16 @@ public class Compute {
      *         or 0 if one of the units is not an aerospace unit, does not have a valid position,
      *         or the two units are not in the same hex.
      */
-    public static int shouldMoveBackHex(Entity e1, Entity e2) {
+    public static int shouldMoveBackHex(Entity e1, Targetable e2) {
         if (null == e1.getPosition() || null == e2.getPosition()
                 || !e1.getBoardLocation().equals(e2.getBoardLocation())
-                || !e1.isAero() || !e2.isAero()) {
+                || !e1.isAero() || !e2.isAero() || !(e2 instanceof Entity)) {
             return 0;
         }
 
-        int retVal = e1.getUnitType() - e2.getUnitType();
+        Entity entity2 = (Entity) e2;
+
+        int retVal = e1.getUnitType() - entity2.getUnitType();
         if (retVal == 0) {
             retVal = ((IAero) e2).getCurrentVelocity() - ((IAero) e1).getCurrentVelocity();
         }
