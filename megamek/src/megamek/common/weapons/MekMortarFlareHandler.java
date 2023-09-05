@@ -127,7 +127,7 @@ public class MekMortarFlareHandler extends AmmoWeaponHandler {
             }
         }
 
-        gameManager.deliverMortarFlare(targetPos, duration);
+        gameManager.deliverMortarFlare(targetPos, target.getBoardId(), duration);
         return false;
     }
 }

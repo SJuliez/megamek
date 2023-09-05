@@ -97,7 +97,7 @@ public class PushAttackAction extends DisplacementAttackAction {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "You can't target a null entity!");
         }
 
-        Hex attHex = game.getBoard().getHex(ae.getPosition());
+        Hex attHex = game.getHex(ae.getBoardLocation());
         Hex targHex = game.getBoard().getHex(te.getPosition());
 
         if (attHex == null) {

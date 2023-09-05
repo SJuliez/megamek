@@ -2668,7 +2668,7 @@ public class ClientGUI extends JPanel implements BoardViewListener,
 
         // save!
         try (OutputStream os = new FileOutputStream(curfileBoard)) {
-            client.getGame().getBoard().save(os);
+            getActiveBoardView().getBoard().save(os);
         } catch (Exception ex) {
             LogManager.getLogger().error("Failed to save board!", ex);
         }

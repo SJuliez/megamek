@@ -863,4 +863,9 @@ public class Hex implements Serializable {
         }
         return new Hex(hexLevel, terrainString, theme, new Coords(0, 0));
     }
+
+    /** @return True when this hex has the {@link megamek.common.Terrains#FIRE} terrain. */
+    public boolean isBurning() {
+        return containsTerrain(Terrains.FIRE);
+    }
 }

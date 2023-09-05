@@ -215,9 +215,9 @@ public class DfaAttackAction extends DisplacementAttackAction {
         ToHitData toHit = null;
 
         final int attackerElevation = ae.getElevation()
-                                      + game.getBoard().getHex(ae.getPosition()).getLevel();
+                                      + game.getHex(ae.getBoardLocation()).getLevel();
         final int targetElevation = target.getElevation()
-                                    + game.getBoard().getHex(target.getPosition()).getLevel();
+                                    + game.getHex(target.getBoardLocation()).getLevel();
         final int attackerHeight = attackerElevation + ae.getHeight();
 
         // check elevation of target flying VTOL

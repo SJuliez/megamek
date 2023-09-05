@@ -71,8 +71,7 @@ public class WeatherProcessor extends DynamicTerrainProcessor {
 
             // first we need to increment the conditions
             if (conditions.getWeather() == PlanetaryConditions.WE_MOD_SNOW
-                    || conditions.getWeather() == PlanetaryConditions.WE_SNOW_FLURRIES
-                    && game.getBoard().isGroundMap()) {
+                    || conditions.getWeather() == PlanetaryConditions.WE_SNOW_FLURRIES) {
                 modSnowTurn = modSnowTurn + 1;
                 if (modSnowTurn == 9) {
                     lightSnow = true;
@@ -82,8 +81,7 @@ public class WeatherProcessor extends DynamicTerrainProcessor {
                     ice = true;
                 }
             }
-            if (((conditions.getWeather() == PlanetaryConditions.WE_HEAVY_SNOW)
-                    && game.getBoard().isGroundMap())) {
+            if (conditions.getWeather() == PlanetaryConditions.WE_HEAVY_SNOW) {
                 heavySnowTurn = heavySnowTurn + 1;
                 if (heavySnowTurn == 4) {
                     lightSnow = true;
@@ -95,15 +93,13 @@ public class WeatherProcessor extends DynamicTerrainProcessor {
                     ice = true;
                 }
             }
-            if (conditions.getWeather() == PlanetaryConditions.WE_SLEET
-                    && game.getBoard().isGroundMap()) {
+            if (conditions.getWeather() == PlanetaryConditions.WE_SLEET) {
                 sleetTurn = sleetTurn + 1;
                 if (sleetTurn == 14) {
                     ice = true;
                 }
             }
-            if (conditions.getWeather() == PlanetaryConditions.WE_ICE_STORM
-                    && game.getBoard().isGroundMap()) {
+            if (conditions.getWeather() == PlanetaryConditions.WE_ICE_STORM) {
                 iceTurn = iceTurn + 1;
                 if (iceTurn == 9) {
                     ice = true;

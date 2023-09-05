@@ -18,9 +18,9 @@
  */ 
 package megamek.common.util;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import megamek.common.Compute;
+
+import java.util.*;
 
 /** Some utility methods for Collections. */
 public final class CollectionUtil {
@@ -55,5 +55,18 @@ public final class CollectionUtil {
             throw new IllegalArgumentException("The given collection has more than one element.");
         }
         return collection.stream().findFirst().orElseThrow();
+    }
+
+    public static <T> T randomElement(Set<T> set) {
+        return set.stream().skip(new Random().nextInt(set.size())).findFirst().orElse(null);
+    }
+
+    public static <T> T randomElement(List<T> list) {
+        if (list.isEmpty()) {
+            return null;
+        } else {
+            int randomIndex = Compute.randomInt(list.size());
+            return list.get(randomIndex);
+        }
     }
 }

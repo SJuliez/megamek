@@ -99,7 +99,7 @@ public class ThrashAttackAction extends AbstractAttackAction {
         }
 
         // Check terrain.
-        Hex hex = game.getBoard().getHex(ae.getPosition());
+        Hex hex = game.getHex(ae.getBoardLocation());
         if (hex.containsTerrain(Terrains.WOODS)
                 || hex.containsTerrain(Terrains.JUNGLE)
                 || hex.containsTerrain(Terrains.ROUGH)

@@ -101,8 +101,8 @@ public class ProtomechPhysicalAttackAction extends AbstractAttackAction {
             }
         }
 
-        final Hex attHex = game.getBoard().getHex(ae.getPosition());
-        final Hex targHex = game.getBoard().getHex(target.getPosition());
+        final Hex attHex = game.getHex(ae.getBoardLocation());
+        final Hex targHex = game.getHex(target.getBoardLocation());
         if ((attHex == null) || (targHex == null)) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "off board");
         }

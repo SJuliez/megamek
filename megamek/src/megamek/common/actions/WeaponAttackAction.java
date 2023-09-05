@@ -3293,7 +3293,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
             }
 
             // +2 penalty if shooting into or through a burning hex
-            if (LosEffects.hasFireBetween(ae.getPosition(), target.getPosition(), game)) {
+            if (LosEffects.hasFireBetween(ae.getBoardLocation(), target.getBoardLocation(), game)) {
                 toHit.addModifier(2, Messages.getString("WeaponAttackAction.HsmThruFire"));
             }
         }

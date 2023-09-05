@@ -91,7 +91,7 @@ public class AirmechRamAttackAction extends DisplacementAttackAction {
             }
         }
 
-        Hex targHex = game.getBoard().getHex(target.getPosition());
+        Hex targHex = game.getHex(target.getBoardLocation());
         // we should not be using the attacker's hex here since the attacker
         // will end up in
         // the target's hex

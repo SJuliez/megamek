@@ -840,6 +840,10 @@ public class MovePath implements Cloneable, Serializable {
         }
     }
 
+    public BoardLocation getFinalBoardLocation() {
+        return new BoardLocation(getFinalCoords(), getFinalBoardId());
+    }
+
     /**
      * Returns the starting {@link Coords} of this path.
      */

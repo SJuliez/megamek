@@ -1376,19 +1376,13 @@ public class LosEffects {
         return los;
     }
 
-    public static boolean hasFireBetween(Coords start, Coords end, Game game) {
-        ArrayList<Coords> in = Coords.intervening(start, end);
-        for (Coords hex : in) {
-            // ignore off-board hexes
-            if (!game.getBoard().contains(hex)) {
-                continue;
-            }
-
-            if (game.getBoard().getHex(hex).containsTerrain(Terrains.FIRE)) {
-                return true;
-            }
+    public static boolean hasFireBetween(BoardLocation start, BoardLocation end, Game game) {
+        if (!start.isSameBoardAs(end)) {
+            return false;
         }
-        return false;
+        Board board = game.getBoard(start.getBoardId());
+        List<Coords> in = Coords.intervening(start.getCoords(), end.getCoords());
+        return in.stream().filter(board::contains).map(board::getHex).anyMatch(Hex::isBurning);
     }
 
     /**
@@ -1541,7 +1535,7 @@ public class LosEffects {
             lowPos = ai.attackPos;
         }
         //TODO: check if this works right for splits (thinks like expanded partial cover for example)
-        ArrayList<Coords> in = Coords.intervening(lowPos, highPos, true);
+        List<Coords> in = Coords.intervening(lowPos, highPos, true);
         int IntElev = lowElev;
         Coords IntPos = lowPos;
         for (Coords c : in) {

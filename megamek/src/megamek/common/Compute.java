@@ -23,6 +23,7 @@ import megamek.common.enums.BasementType;
 import megamek.common.enums.IlluminationLevel;
 import megamek.common.options.OptionsConstants;
 import megamek.common.util.BoardHelper;
+import megamek.common.util.CollectionUtil;
 import megamek.common.weapons.InfantryAttack;
 import megamek.common.weapons.Weapon;
 import megamek.common.weapons.artillery.ArtilleryCannonWeapon;
@@ -35,6 +36,7 @@ import megamek.server.SmokeCloud;
 import org.apache.logging.log4j.LogManager;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static megamek.common.MovePath.MoveStepType.*;
 
@@ -5446,48 +5448,24 @@ public class Compute {
      * @param weaponId The <code>int</code> ID of the launcher used to fire this volley
      * @return the new target <code>Entity</code>. May return null if no new target available
      */
-    public static @Nullable Entity getSwarmMissileTarget(Game game, int aeId, Coords coords,
+    public static @Nullable Entity getSwarmMissileTarget(Game game, int aeId, BoardLocation boardLocation,
                                                          int weaponId) {
-        Entity tempEntity = null;
-        // first, check the hex of the original target
-        Iterator<Entity> entities = game.getEntities(coords);
-        Vector<Entity> possibleTargets = new Vector<>();
-        while (entities.hasNext()) {
-            tempEntity = entities.next();
-            if (!tempEntity.getTargetedBySwarm(aeId, weaponId)) {
-                // we found a target
-                possibleTargets.add(tempEntity);
-            }
-        }
-        // if there is at least one target, get a random one of them
+
+        List<Entity> possibleTargets = game.getEntitiesAt(boardLocation).stream()
+                .filter(e -> !e.getTargetedBySwarm(aeId, weaponId))
+                .collect(Collectors.toList());
+
         if (!possibleTargets.isEmpty()) {
-            return possibleTargets
-                    .get(Compute.randomInt(possibleTargets.size()));
+            return CollectionUtil.randomElement(possibleTargets);
         }
-        // loop through adjacent hexes
-        for (int dir = 0; dir <= 5; dir++) {
-            Coords tempcoords = coords.translated(dir);
-            if (!game.getBoard().contains(tempcoords)) {
-                continue;
-            }
-            if (coords.equals(tempcoords)) {
-                continue;
-            }
-            entities = game.getEntities(tempcoords);
-            if (entities.hasNext()) {
-                tempEntity = entities.next();
-                if (!tempEntity.getTargetedBySwarm(aeId, weaponId)) {
-                    // we found a target
-                    possibleTargets.add(tempEntity);
-                }
+
+        for (BoardLocation adjacent : boardLocation.allAdjacent()) {
+            if (game.hasBoardLocation(adjacent)) {
+                possibleTargets.addAll(game.getEntitiesAt(adjacent));
             }
         }
-        // if there is at least one target, get a random one of them
-        if (!possibleTargets.isEmpty()) {
-            return possibleTargets
-                    .get(Compute.randomInt(possibleTargets.size()));
-        }
-        return null;
+
+        return CollectionUtil.randomElement(possibleTargets);
     }
 
     public static @Nullable Coords getFinalPosition(Coords curpos, int... v) {

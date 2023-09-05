@@ -191,7 +191,7 @@ public final class UnitToolTip {
         } else if (target instanceof Entity) {
             return getTargetTipSummaryEntity((Entity) target, client);
         } else if (target instanceof BuildingTarget) {
-            return HexTooltip.getOneLineSummary((BuildingTarget) target, (client != null) ? client.getBoard() : null);
+            return HexTooltip.getOneLineSummary((BuildingTarget) target, (client != null) ? client.getGame().getBoard(target) : null);
         }
         return target.getDisplayName();
     }

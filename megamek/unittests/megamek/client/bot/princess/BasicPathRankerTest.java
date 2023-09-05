@@ -335,9 +335,6 @@ public class BasicPathRankerTest {
         doReturn(1.0)
                .when(testRanker)
                .getMovePathSuccessProbability(any(MovePath.class), any(StringBuilder.class));
-        doReturn(5)
-               .when(testRanker)
-               .distanceToClosestEdge(any(Coords.class), any(Game.class));
         doReturn(20)
                .when(testRanker)
                .distanceToHomeEdge(any(Coords.class), any(CardinalEdge.class), any(Game.class));

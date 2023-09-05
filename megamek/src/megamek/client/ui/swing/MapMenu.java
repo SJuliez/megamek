@@ -385,7 +385,7 @@ public class MapMenu extends JPopupMenu {
 
         if (note != null) {
             item = new JMenuItem(Messages.getString("NoteDialog.delete"));
-            item.addActionListener(e -> client.sendSpecialHexDisplayDelete(coords, finalNote));
+            item.addActionListener(e -> client.sendSpecialHexDisplayDelete(boardLocation, finalNote));
         }
         menu.add(item);
 

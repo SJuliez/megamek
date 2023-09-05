@@ -97,7 +97,7 @@ public class ChargeAttackAction extends DisplacementAttackAction {
         }
 
         Hex srcHex = game.getBoard().getHex(src);
-        Hex targHex = game.getBoard().getHex(target.getPosition());
+        Hex targHex = game.getHex(target.getBoardLocation());
         // we should not be using the attacker's hex here since the attacker
         // will end up in
         // the target's hex

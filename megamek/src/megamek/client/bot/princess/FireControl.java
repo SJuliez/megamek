@@ -286,7 +286,7 @@ public class FireControl {
         }
 
         // terrain modifiers, since "compute" won't let me do these remotely
-        final Hex targetHex = game.getBoard().getHex(targetState.getPosition());
+        final Hex targetHex = game.getHex(targetState.getBoardLocation());
         int woodsLevel = targetHex.terrainLevel(Terrains.WOODS);
         if (targetHex.terrainLevel(Terrains.JUNGLE) > woodsLevel) {
             woodsLevel = targetHex.terrainLevel(Terrains.JUNGLE);
@@ -412,8 +412,8 @@ public class FireControl {
         }
 
         // Check elevation difference.
-        final Hex attackerHex = game.getBoard().getHex(shooterState.getPosition());
-        final Hex targetHex = game.getBoard().getHex(targetState.getPosition());
+        final Hex attackerHex = game.getHex(shooterState.getBoardLocation());
+        final Hex targetHex = game.getHex(targetState.getBoardLocation());
         final int attackerElevation = shooter.getElevation() + attackerHex.getLevel();
         final int attackerHeight = shooter.relHeight() + attackerHex.getLevel();
         final int targetElevation = target.getElevation() + targetHex.getLevel();
@@ -754,7 +754,7 @@ public class FireControl {
                 targetState.getPosition(), false);
 
         // water is a separate los effect
-        final Hex targetHex = game.getBoard().getHex(targetState.getPosition());
+        final Hex targetHex = game.getHex(targetState.getBoardLocation());
         Entity targetEntity = null;
         if (target instanceof Entity) {
             targetEntity = (Entity) target;
@@ -1489,11 +1489,12 @@ public class FireControl {
 
         // Shooting isn't possible if one of us isn't on the board.
         if ((null == shooter.getPosition()) || shooter.isOffBoard() ||
-            !game.getBoard().contains(shooter.getPosition())) {
+            !game.hasBoardLocation(shooter.getBoardLocation())) {
             LogManager.getLogger().error("Shooter's position is NULL/Off Board!");
             return myPlan;
         }
-        if ((null == target.getPosition()) || target.isOffBoard() || !game.getBoard().contains(target.getPosition())) {
+        if ((null == target.getPosition()) || target.isOffBoard()
+                || !game.hasBoardLocation(target.getBoardLocation())) {
             LogManager.getLogger().error("Target's position is NULL/Off Board!");
             return myPlan;
         }
@@ -1566,13 +1567,14 @@ public class FireControl {
         final FiringPlan myPlan = new FiringPlan(target);
 
         // Shooting isn't possible if one of us isn't on the board.
-        if ((null == shooter.getPosition()) || shooter.isOffBoard() ||
-            !game.getBoard().contains(shooter.getPosition())) {
+        if ((null == shooter.getPosition()) || shooter.isOffBoard()
+                || !game.hasBoardLocation(shooter.getBoardLocation())) {
             LogManager.getLogger().error("Shooter's position is NULL/Off Board!");
             return myPlan;
         }
 
-        if ((null == target.getPosition()) || target.isOffBoard() || !game.getBoard().contains(target.getPosition())) {
+        if ((null == target.getPosition()) || target.isOffBoard()
+                || !game.hasBoardLocation(target.getBoardLocation())) {
             LogManager.getLogger().error("Target's position is NULL/Off Board!");
             return myPlan;
         }
@@ -1704,12 +1706,13 @@ public class FireControl {
         final FiringPlan myPlan = new FiringPlan(target);
 
         // Shooting isn't possible if one of us isn't on the board.
-        if ((null == shooter.getPosition()) || shooter.isOffBoard() ||
-            !game.getBoard().contains(shooter.getPosition())) {
+        if ((null == shooter.getPosition()) || shooter.isOffBoard()
+                || !game.hasBoardLocation(shooter.getBoardLocation())) {
             LogManager.getLogger().error("Shooter's position is NULL/Off Board!");
             return myPlan;
         }
-        if ((null == target.getPosition()) || target.isOffBoard() || !game.getBoard().contains(target.getPosition())) {
+        if ((null == target.getPosition()) || target.isOffBoard()
+                || !game.hasBoardLocation(target.getBoardLocation())) {
             LogManager.getLogger().error("Target's position is NULL/Off Board!");
             return myPlan;
         }

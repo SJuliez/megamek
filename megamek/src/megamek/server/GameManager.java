@@ -926,13 +926,14 @@ public class GameManager implements IGameManager {
                 game.setupRoundDeployment();
                 break;
             case SPECIAL_HEX_DISPLAY_DELETE:
-                game.getBoard().removeSpecialHexDisplay((Coords) packet.getObject(0),
-                        (SpecialHexDisplay) packet.getObject(1));
+                var boardLocation = (BoardLocation) packet.getObject(0);
+                var specialHexDisplay = (SpecialHexDisplay) packet.getObject(1);
+                game.removeSpecialHexDisplay(boardLocation, specialHexDisplay);
                 sendSpecialHexDisplayPackets();
                 break;
             case SPECIAL_HEX_DISPLAY_APPEND:
-                BoardLocation boardLocation = (BoardLocation) packet.getObject(0);
-                SpecialHexDisplay specialHexDisplay = (SpecialHexDisplay) packet.getObject(1);
+                boardLocation = (BoardLocation) packet.getObject(0);
+                specialHexDisplay = (SpecialHexDisplay) packet.getObject(1);
                 game.addSpecialHexDisplay(boardLocation, specialHexDisplay);
                 sendSpecialHexDisplayPackets();
                 break;
@@ -1106,7 +1107,12 @@ public class GameManager implements IGameManager {
             if (game.canRiseToSpaceMap(entity) && (entity.getAltitude() == 11)) {
                 // Rise to the space map, TW p.78
                 int oldBoard = entity.getBoardId();
-                entity.setCurrentBoard(entity.getBoard().getEnclosingBoardId());
+                if (game.isOnAtmosphericMap(entity)) {
+                    entity.setCurrentBoard(entity.getBoard().getEnclosingBoardId());
+                } else {
+                    oldBoard = entity.getBoard().getEnclosingBoardId();
+                    entity.setCurrentBoard(game.getEnclosingBoard(game.getBoard(oldBoard)).getBoardId());
+                }
                 Coords boardPosition = entity.getBoard().embeddedBoardPosition(oldBoard);
                 List<Coords> adjacentPositions = boardPosition.allAdjacent();
                 Board spaceBoard = entity.getBoard();
@@ -3626,9 +3632,9 @@ public class GameManager implements IGameManager {
         }
     }
 
-    private void applyDropShipLandingDamage(Coords centralPos, Entity killer) {
+    private void applyDropShipLandingDamage(BoardLocation centralPosition, Entity killer) {
         // first cycle through hexes to figure out final elevation
-        Hex centralHex = game.getBoard().getHex(centralPos);
+        Hex centralHex = game.getHex(centralPosition);
         if (null == centralHex) {
             // shouldn't happen
             return;
@@ -3638,22 +3644,22 @@ public class GameManager implements IGameManager {
                 && !centralHex.containsTerrain(Terrains.ROAD)) {
             finalElev--;
         }
-        Vector<Coords> positions = new Vector<>();
-        positions.add(centralPos);
-        for (int i = 0; i < 6; i++) {
-            Coords pos = centralPos.translated(i);
-            Hex hex = game.getBoard().getHex(pos);
-            if (null == hex) {
+        List<BoardLocation> affectedPositions = new ArrayList<>();
+        affectedPositions.add(centralPosition);
+        for (BoardLocation adjacent : centralPosition.allAdjacent()) {
+            Hex hex = game.getHex(adjacent);
+            if (hex == null) {
                 continue;
             }
             if (hex.getLevel() < finalElev) {
                 finalElev = hex.getLevel();
             }
-            positions.add(pos);
+            affectedPositions.add(adjacent);
         }
+
         // ok now cycle through hexes and make all changes
-        for (Coords pos : positions) {
-            Hex hex = game.getBoard().getHex(pos);
+        for (BoardLocation affectedPosition : affectedPositions) {
+            Hex hex = game.getHex(affectedPosition);
             hex.setLevel(finalElev);
             // get rid of woods and replace with rough
             if (hex.containsTerrain(Terrains.WOODS) || hex.containsTerrain(Terrains.JUNGLE)) {
@@ -3662,13 +3668,13 @@ public class GameManager implements IGameManager {
                 hex.removeTerrain(Terrains.FOLIAGE_ELEV);
                 hex.addTerrain(new Terrain(Terrains.ROUGH, 1));
             }
-            sendChangedHex(pos);
+            sendChangedHex(affectedPosition);
         }
 
-        applyDropShipProximityDamage(centralPos, killer);
+        applyDropShipProximityDamage(centralPosition, killer);
     }
 
-    private void applyDropShipProximityDamage(Coords centralPos, Entity killer) {
+    private void applyDropShipProximityDamage(BoardLocation centralPos, Entity killer) {
         applyDropShipProximityDamage(centralPos, false, 0, killer);
     }
 
@@ -3678,33 +3684,32 @@ public class GameManager implements IGameManager {
      *
      * @param centralPos - the Coords for the central position of the DropShip
      */
-    private void applyDropShipProximityDamage(Coords centralPos, boolean rearArc, int facing,
+    private void applyDropShipProximityDamage(BoardLocation centralPos, boolean rearArc, int facing,
                                               Entity killer) {
         Vector<Integer> alreadyHit = new Vector<>();
 
         // anything in the central hex or adjacent hexes is destroyed
         Hashtable<Coords, Vector<Entity>> positionMap = game.getPositionMap();
-        for (Entity en : game.getEntitiesVector(centralPos)) {
+        for (Entity en : game.getEntitiesAt(centralPos)) {
             if (!en.isAirborne()) {
                 addReport(destroyEntity(en, "DropShip proximity damage", false, false));
                 alreadyHit.add(en.getId());
             }
         }
-        Building bldg = game.getBoard().getBuildingAt(centralPos);
+        Building bldg = game.getBuildingAt(centralPos);
         if (null != bldg) {
-            collapseBuilding(bldg, positionMap, centralPos, vPhaseReport);
+            collapseBuilding(bldg, positionMap, centralPos.getCoords(), vPhaseReport);
         }
-        for (int i = 0; i < 6; i++) {
-            Coords pos = centralPos.translated(i);
-            for (Entity en : game.getEntitiesVector(pos)) {
+        for (BoardLocation adjacent : centralPos.allAdjacent()) {
+            for (Entity en : game.getEntitiesAt(adjacent)) {
                 if (!en.isAirborne()) {
                     addReport(destroyEntity(en, "DropShip proximity damage", false, false));
                 }
                 alreadyHit.add(en.getId());
             }
-            bldg = game.getBoard().getBuildingAt(pos);
+            bldg = game.getBuildingAt(adjacent);
             if (null != bldg) {
-                collapseBuilding(bldg, positionMap, pos, vPhaseReport);
+                collapseBuilding(bldg, positionMap, adjacent.getCoords(), vPhaseReport);
             }
         }
 
@@ -3712,13 +3717,12 @@ public class GameManager implements IGameManager {
         // ok now I need to look at the damage rings - start at 2 and go to 7
         for (int i = 2; i < 8; i++) {
             int damageDice = (8 - i) * 2;
-            List<Coords> ring = centralPos.allAtDistance(i);
+            List<Coords> ring = centralPos.getCoords().allAtDistance(i);
             for (Coords pos : ring) {
-                if (rearArc && !ComputeArc.isInArc(centralPos, facing, pos, ComputeArc.ARC_AFT)) {
+                if (rearArc && !ComputeArc.isInArc(centralPos.getCoords(), facing, pos, ComputeArc.ARC_AFT)) {
                     continue;
                 }
-                BoardLocation currentLocation = new BoardLocation(pos, killer.getBoardId());
-                alreadyHit = artilleryDamageHex(currentLocation, centralPos, damageDice, null, killer.getId(),
+                alreadyHit = artilleryDamageHex(new BoardLocation(pos, centralPos.getBoardId()), centralPos.getCoords(), damageDice, null, killer.getId(),
                         killer, null, false, 0, vPhaseReport, false,
                         alreadyHit, true);
             }
@@ -3950,7 +3954,7 @@ public class GameManager implements IGameManager {
                 // Flying units unload to the same elevation as the flying
                 // transport
                 unit.setElevation(elevation);
-            } else if (game.getBoard().getBuildingAt(pos) != null) {
+            } else if (game.getBoard(unloader).getBuildingAt(pos) != null) {
                 // non-flying unit unloaded from a flying onto a building
                 // -> sit on the roof
                 unit.setElevation(hex.terrainLevel(Terrains.BLDG_ELEV));
@@ -4319,7 +4323,7 @@ public class GameManager implements IGameManager {
         // Spheroid - facing
         // Aerodyne - opposite of facing
         // http://www.classicbattletech.com/forums/index.php?topic=65600.msg1568089#new
-        if (game.getBoard().isGroundMap() && (null != curPos)) {
+        if (game.getBoard(entity).isGroundMap() && (null != curPos)) {
             boolean selected = false;
             int count;
             int max = 0;
@@ -4339,9 +4343,9 @@ public class GameManager implements IGameManager {
                     int dir = (facing + i) % 6;
                     Coords newPos = curPos.translated(dir, 2);
                     count = 0;
-                    if (game.getBoard().contains(newPos)) {
-                        Hex newHex = game.getBoard().getHex(newPos);
-                        Building bldg = game.getBoard().getBuildingAt(newPos);
+                    if (game.getBoard(entity).contains(newPos)) {
+                        Hex newHex = game.getBoard(entity).getHex(newPos);
+                        Building bldg = game.getBoard(entity).getBuildingAt(newPos);
                         boolean danger = newHex.containsTerrain(Terrains.WATER)
                                 || newHex.containsTerrain(Terrains.MAGMA)
                                 || (null != bldg);
@@ -4362,9 +4366,9 @@ public class GameManager implements IGameManager {
                     }
                     newPos = newPos.translated((dir + 2) % 6);
                     count = 0;
-                    if (game.getBoard().contains(newPos)) {
-                        Hex newHex = game.getBoard().getHex(newPos);
-                        Building bldg = game.getBoard().getBuildingAt(newPos);
+                    if (game.getBoard(entity).contains(newPos)) {
+                        Hex newHex = game.getBoard(entity).getHex(newPos);
+                        Building bldg = game.getBoard(entity).getBuildingAt(newPos);
                         boolean danger = newHex.containsTerrain(Terrains.WATER)
                                 || newHex.containsTerrain(Terrains.MAGMA)
                                 || (null != bldg);
@@ -4630,7 +4634,7 @@ public class GameManager implements IGameManager {
         while (!entity.isDoomed() && (distance > 0)) {
             nextPos = curPos.translated(direction);
             // Is the next hex off the board?
-            if (!game.getBoard().contains(nextPos)) {
+            if (!game.getBoard(entity).contains(nextPos)) {
 
                 // Can the entity skid off the map?
                 if (game.getOptions().booleanOption(OptionsConstants.BASE_PUSH_OFF_BOARD)) {
@@ -4668,7 +4672,7 @@ public class GameManager implements IGameManager {
                 break;
             }
 
-            Hex nextHex = game.getBoard().getHex(nextPos);
+            Hex nextHex = game.getBoard(entity).getHex(nextPos);
             distance -= nextHex.movementCost(entity) + 1;
             // By default, the unit is going to fall to the floor of the next
             // hex
@@ -4744,7 +4748,7 @@ public class GameManager implements IGameManager {
             }
 
             if (nextHex.containsTerrain(Terrains.BLDG_ELEV)) {
-                Building bldg = game.getBoard().getBuildingAt(nextPos);
+                Building bldg = game.getBoard(entity).getBuildingAt(nextPos);
 
                 if (bldg.getType() == Building.WALL) {
                     crashedIntoTerrain = true;
@@ -4783,7 +4787,7 @@ public class GameManager implements IGameManager {
 
             if (crashedIntoTerrain) {
                 if (nextHex.containsTerrain(Terrains.BLDG_ELEV)) {
-                    Building bldg = game.getBoard().getBuildingAt(nextPos);
+                    Building bldg = game.getBoard(entity).getBuildingAt(nextPos);
 
                     // If you crash into a wall you want to stop in the hex
                     // before the wall not in the wall
@@ -4838,7 +4842,7 @@ public class GameManager implements IGameManager {
                             || nextHex.containsTerrain(Terrains.JUNGLE)) {
                         addReport(destroyEntity(entity, "could not land in crash site"));
                     } else if (elevation < nextHex.terrainLevel(Terrains.BLDG_ELEV)) {
-                        Building bldg = game.getBoard().getBuildingAt(nextPos);
+                        Building bldg = game.getBoard(entity).getBuildingAt(nextPos);
 
                         // If you crash into a wall you want to stop in the hex
                         // before the wall not in the wall
@@ -4945,7 +4949,7 @@ public class GameManager implements IGameManager {
             if (nextElevation < nextHex.terrainLevel(Terrains.BLDG_ELEV)) {
                 // We will only run into the building if its at a higher level,
                 // otherwise we skid over the roof
-                bldg = game.getBoard().getBuildingAt(nextPos);
+                bldg = game.getBoard(entity).getBuildingAt(nextPos);
             }
             boolean bldgSuffered = false;
             boolean stopTheSkid = false;
@@ -5201,7 +5205,7 @@ public class GameManager implements IGameManager {
                 // and add it to the list of affected buildings.
                 if (bldg.getCurrentCF(nextPos) > 0) {
                     stopTheSkid = true;
-                    if (bldg.rollBasement(nextPos, game.getBoard(), vPhaseReport)) {
+                    if (bldg.rollBasement(nextPos, game.getBoard(entity), vPhaseReport)) {
                         sendChangedHex(nextPos);
                         Vector<Building> buildings = new Vector<>();
                         buildings.add(bldg);
@@ -5226,7 +5230,7 @@ public class GameManager implements IGameManager {
             skidDistance++;
 
             // Check for collapse of any building the entity might be on
-            Building roof = game.getBoard().getBuildingAt(nextPos);
+            Building roof = game.getBoard(entity).getBuildingAt(nextPos);
             if (roof != null) {
                 if (checkForCollapse(roof, game.getPositionMap(), nextPos, true, vPhaseReport)) {
                     break; // stop skidding if the building collapsed
@@ -5437,7 +5441,7 @@ public class GameManager implements IGameManager {
     private boolean processFailedVehicleManeuver(Entity entity, Coords curPos, int turnDirection,
                                                  MoveStep prevStep, boolean isBackwards, EntityMovementType lastStepMoveType, int distance,
                                                  int modifier, int marginOfFailure) {
-        Hex curHex = game.getBoard().getHex(curPos);
+        Hex curHex = game.getBoard(entity).getHex(curPos);
         if (entity.getMovementMode() == EntityMovementMode.WHEELED
                 && !curHex.containsTerrain(Terrains.PAVEMENT)) {
             modifier += 2;
@@ -5745,7 +5749,7 @@ public class GameManager implements IGameManager {
             return vReport;
         }
 
-        if (game.getBoard().isLowAtmosphereMap()) {
+        if (game.getBoard(entity).isLowAtmosphereMap()) {
             r = new Report(9393, Report.PUBLIC);
             r.indent();
             r.addDesc(entity);
@@ -5759,7 +5763,7 @@ public class GameManager implements IGameManager {
         // checks for all of them
         List<Coords> coords = new ArrayList<>();
         coords.add(c);
-        Hex h = game.getBoard().getHex(c);
+        Hex h = game.getBoard(entity).getHex(c);
         int crateredElevation;
         boolean containsWater = false;
         if (h.containsTerrain(Terrains.WATER)) {
@@ -5771,10 +5775,10 @@ public class GameManager implements IGameManager {
         if (entity instanceof Dropship) {
             for (int i = 0; i < 6; i++) {
                 Coords adjCoords = c.translated(i);
-                if (!game.getBoard().contains(adjCoords)) {
+                if (!game.getBoard(entity).contains(adjCoords)) {
                     continue;
                 }
-                Hex adjHex = game.getBoard().getHex(adjCoords);
+                Hex adjHex = game.getBoard(entity).getHex(adjCoords);
                 coords.add(adjCoords);
                 if (adjHex.containsTerrain(Terrains.WATER)) {
                     if (containsWater) {
@@ -5803,7 +5807,7 @@ public class GameManager implements IGameManager {
             int crash_damage = orig_crash_damage;
             int direction = entity.getFacing();
             // first check for buildings
-            Building bldg = game.getBoard().getBuildingAt(hitCoords);
+            Building bldg = game.getBoard(entity).getBuildingAt(hitCoords);
             if ((null != bldg) && (bldg.getType() == Building.HARDENED)) {
                 crash_damage *= 2;
             }
@@ -5913,7 +5917,7 @@ public class GameManager implements IGameManager {
             }
 
             // reduce woods
-            h = game.getBoard().getHex(hitCoords);
+            h = game.getBoard(entity).getHex(hitCoords);
             if (h.containsTerrain(Terrains.WOODS)) {
                 if (entity instanceof Dropship) {
                     h.removeTerrain(Terrains.WOODS);
@@ -5982,7 +5986,7 @@ public class GameManager implements IGameManager {
         }
 
         // Check for watery death
-        h = game.getBoard().getHex(c);
+        h = game.getBoard(entity).getHex(c);
         if (h.containsTerrain(Terrains.WATER) && !entity.isDestroyed()
                 && !entity.isDoomed()) {
             int lethalDepth;
@@ -6227,7 +6231,7 @@ public class GameManager implements IGameManager {
             a.setCurrentVelocity(1);
             a.liftOff(1);
             if (entity instanceof Dropship) {
-                applyDropShipProximityDamage(md.getFinalCoords(), true, md.getFinalFacing(), entity);
+                applyDropShipProximityDamage(md.getFinalBoardLocation(), true, md.getFinalFacing(), entity);
             }
             checkForTakeoffDamage(a);
             entity.setPosition(entity.getPosition().translated(entity.getFacing(), a.getTakeOffLength()));
@@ -6243,7 +6247,7 @@ public class GameManager implements IGameManager {
                 a.setCurrentVelocity(0);
                 a.liftOff(1);
                 if (entity instanceof Dropship) {
-                    applyDropShipProximityDamage(md.getFinalCoords(), (Dropship) a);
+                    applyDropShipProximityDamage(md.getFinalBoardLocation(), (Dropship) a);
                 }
                 checkForTakeoffDamage(a);
             }
@@ -6272,7 +6276,7 @@ public class GameManager implements IGameManager {
                     md.getFinalFacing(), true);
             attemptLanding(entity, rollTarget);
             if (entity instanceof Dropship) {
-                applyDropShipLandingDamage(md.getFinalCoords(), (Dropship) a);
+                applyDropShipLandingDamage(md.getFinalBoardLocation(), (Dropship) a);
             }
             a.land();
             entity.setPosition(md.getFinalCoords());
@@ -8238,7 +8242,7 @@ public class GameManager implements IGameManager {
                 // it falls into the lower hex. The caveat is if it already fell from some other PSR in this
                 // invocation of processMovement, then it can't fall again.
                 if ((entity instanceof Mech)
-                        && (curHex.getLevel() < game.getBoard().getHex(lastPos).getLevel())
+                        && (curHex.getLevel() < game.getBoard(step.getBoardId()).getHex(lastPos).getLevel())
                         && !entity.hasFallen()) {
                     rollTarget = entity.getBasePilotingRoll(overallMoveType);
                     rollTarget.addModifier(0, "moving backwards over an elevation change");
@@ -8739,7 +8743,7 @@ public class GameManager implements IGameManager {
                 entity.setSwarmAttackerId(Entity.NONE);
                 swarmer.setSwarmTargetId(Entity.NONE);
 
-                Hex curHex = game.getBoard().getHex(curPos);
+                Hex curHex = game.getBoard(entity).getHex(curPos);
 
                 // Did the infantry fall into water?
                 if (curHex.terrainLevel(Terrains.WATER) > 0) {
@@ -10075,13 +10079,13 @@ public class GameManager implements IGameManager {
     /**
      * Creates an artillery flare of the given radius above the target
      */
-    public void deliverArtilleryFlare(Coords coords, int radius) {
-        Flare flare = new Flare(coords, 5, radius, Flare.F_DRIFTING);
+    public void deliverArtilleryFlare(Coords coords, int boardId, int radius) {
+        Flare flare = new Flare(coords, boardId, 5, radius, Flare.F_DRIFTING);
         game.addFlare(flare);
     }
 
-    public void deliverMortarFlare(Coords coords, int duration) {
-        Flare flare = new Flare(coords, duration, 1, Flare.F_IGNITED);
+    public void deliverMortarFlare(Coords coords, int boardId, int duration) {
+        Flare flare = new Flare(coords, boardId, duration, 1, Flare.F_IGNITED);
         game.addFlare(flare);
     }
 
@@ -10115,7 +10119,7 @@ public class GameManager implements IGameManager {
         r.add(coords.getBoardNum());
         vPhaseReport.add(r);
         createSmoke(boardLocation, SmokeCloud.SMOKE_LIGHT, 3);
-        Hex hex = game.getBoard().getHex(coords);
+        Hex hex = game.getHex(boardLocation);
         hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_LIGHT));
         sendChangedHex(boardLocation);
     }
@@ -10135,7 +10139,7 @@ public class GameManager implements IGameManager {
         r.add(coords.getBoardNum());
         vPhaseReport.add(r);
         createSmoke(boardLocation, SmokeCloud.SMOKE_CHAFF_LIGHT, 1);
-        Hex hex = game.getBoard().getHex(coords);
+        Hex hex = game.getHex(boardLocation);
         hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_CHAFF_LIGHT));
         sendChangedHex(boardLocation);
     }
@@ -10239,7 +10243,7 @@ public class GameManager implements IGameManager {
             vPhaseReport.addAll(vDamageReport);
         }
         for (BoardLocation adjacent : boardLocation.allAdjacent()) {
-            if (!game.getBoard().contains(adjacent)) {
+            if (!game.hasBoardLocation(adjacent)) {
                 continue;
             }
             h = game.getHex(adjacent);
@@ -14904,7 +14908,7 @@ public class GameManager implements IGameManager {
                 && ((toHit.getMoS() / 3) >= 1);
 
         // Which building takes the damage?
-        Building bldg = game.getBoard().getBuildingAt(target.getPosition());
+        Building bldg = game.getBuildingAt(target.getBoardLocation());
 
         if (lastEntityId != paa.getEntityId()) {
             // report who is making the attacks
@@ -15168,7 +15172,7 @@ public class GameManager implements IGameManager {
                 && ((toHit.getMoS() / 3) >= 1);
 
         // Which building takes the damage?
-        Building bldg = game.getBoard().getBuildingAt(target.getPosition());
+        Building bldg = game.getBuildingAt(target.getBoardLocation());
 
         if (lastEntityId != ae.getId()) {
             // who is making the attacks
@@ -17111,7 +17115,7 @@ public class GameManager implements IGameManager {
         Coords[] hexes = new Coords[6];
         int[] scores = new int[6];
 
-        Hex curHex = game.getBoard().getHex(ae.getPosition());
+        Hex curHex = game.getHex(ae.getBoardLocation());
         for (int i = 0; i < 6; i++) {
             hexes[i] = ae.getPosition().translated(i);
             scores[i] = 0;
@@ -18228,7 +18232,7 @@ public class GameManager implements IGameManager {
             return;
         }
 
-        final Hex aeHex = game.getBoard().getHex(ae.getPosition());
+        final Hex aeHex = game.getHex(ae.getBoardLocation());
         final Hex teHex = game.getBoard().getHex(daa.getTargetPos());
         final Targetable target = game.getTarget(daa.getTargetType(), daa.getTargetId());
         // get damage, ToHitData and roll from the PhysicalResult
@@ -31190,7 +31194,7 @@ public class GameManager implements IGameManager {
         // Are there any Entities at these coords?
         if (vector != null) {
             // How many levels does this building have in this hex?
-            final Hex curHex = game.getBoard().getHex(coords);
+            final Hex curHex = game.getBoard(bldg).getHex(coords);
             final int bridgeEl = curHex.terrainLevel(Terrains.BRIDGE_ELEV);
             final int numFloors = Math.max(bridgeEl,
                     curHex.terrainLevel(Terrains.BLDG_ELEV));
@@ -31205,7 +31209,7 @@ public class GameManager implements IGameManager {
                 bldg.setCurrentCF(0, coords);
                 bldg.setPhaseCF(0, coords);
                 send(createCollapseBuildingPacket(coords));
-                game.getBoard().collapseBuilding(coords);
+                game.getBoard(bldg).collapseBuilding(coords);
             }
 
             // Sort in elevation order
@@ -31318,7 +31322,7 @@ public class GameManager implements IGameManager {
             bldg.setCurrentCF(0, coords);
             bldg.setPhaseCF(0, coords);
             send(createCollapseBuildingPacket(coords));
-            game.getBoard().collapseBuilding(coords);
+            game.getBoard(bldg).collapseBuilding(coords);
         }
         // if more than half of the hexes are gone, collapse all
         if (bldg.getCollapsedHexCount() > (bldg.getOriginalHexCount() / 2)) {

@@ -41,7 +41,7 @@ public class FixElevationCommand extends ServerCommand {
         int countbad = 0;
         for (Entity entity : gameManager.getGame().getEntitiesVector()) {
             if (entity.fixElevation()) {
-                Building bldg = gameManager.getGame().getBoard().getBuildingAt(entity.getPosition());
+                Building bldg = gameManager.getGame().getBuildingAt(entity.getBoardLocation());
                 if (bldg != null) {
                     gameManager.checkForCollapse(bldg, gameManager.getGame().getPositionMap(), entity.getPosition(), true, gameManager.getvPhaseReport());
                 }

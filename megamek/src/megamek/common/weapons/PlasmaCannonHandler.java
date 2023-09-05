@@ -153,7 +153,7 @@ public class PlasmaCannonHandler extends AmmoWeaponHandler {
         } else if (damageableCoverType == LosEffects.DAMAGABLE_COVER_BUILDING) {
             // Normal damage
             Targetable origTarget = target;
-            target = new BuildingTarget(coverLoc, game.getBoard(), false);
+            target = new BuildingTarget(coverLoc, game.getBoard(origTarget), false);
             hits = calcHits(vPhaseReport);
             // Plasma Cannons do double damage per-hit to buildings
             int nDamage = 2 * hits;

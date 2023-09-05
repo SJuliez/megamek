@@ -76,7 +76,7 @@ public class LRMSwarmHandler extends LRMHandler {
         }
 
         // Which building takes the damage?
-        Building bldg = game.getBoard().getBuildingAt(target.getPosition());
+        Building bldg = game.getBuildingAt(target.getBoardLocation());
 
         // Report weapon attack and its to-hit value.
         Report r = new Report(3115);
@@ -260,7 +260,7 @@ public class LRMSwarmHandler extends LRMHandler {
         Report.addNewline(vPhaseReport);
         if (swarmMissilesNowLeft > 0) {
             Entity swarmTarget = Compute.getSwarmMissileTarget(game,
-                    ae.getId(), target.getPosition(), waa.getWeaponId());
+                    ae.getId(), target.getBoardLocation(), waa.getWeaponId());
             boolean stoppedByECM = ComputeECM.isAffectedByECM(ae,
                     target.getPosition(), target.getPosition())
                     && !(this instanceof LRMSwarmIHandler);
@@ -365,7 +365,7 @@ public class LRMSwarmHandler extends LRMHandler {
         }
 
         Entity swarmTarget = Compute.getSwarmMissileTarget(game, ae.getId(),
-                target.getPosition(), waa.getWeaponId());
+                target.getBoardLocation(), waa.getWeaponId());
         boolean stoppedByECM = ComputeECM.isAffectedByECM(ae,
                 target.getPosition(), target.getPosition())
                 && !(this instanceof LRMSwarmIHandler);

@@ -30,6 +30,7 @@ import megamek.common.net.enums.PacketCommand;
 import megamek.common.net.packets.Packet;
 import megamek.common.options.GameOptions;
 import megamek.common.options.OptionsConstants;
+import megamek.common.util.CollectionUtil;
 import megamek.common.weapons.AttackHandler;
 import megamek.server.SmokeCloud;
 import megamek.server.victory.Victory;
@@ -1152,7 +1153,7 @@ public class Game extends AbstractGame implements Serializable {
                 case Targetable.TYPE_BUILDING:
                 case Targetable.TYPE_BLDG_IGNITE:
                 case Targetable.TYPE_BLDG_TAG:
-                    if (getBoard().getBuildingAt(BuildingTarget.idToLocation(nID)) != null) {
+                    if (getBuildingAt(BuildingTarget.idToLocation(nID)) != null) {
                         return new BuildingTarget(BuildingTarget.idToLocation(nID), board, nType);
                     } else {
                         return null;
@@ -1497,7 +1498,9 @@ public class Game extends AbstractGame implements Serializable {
      * @param c The coordinates to check
      * @return the {@link Entity} <code>List</code>
      */
+    @Deprecated
     public List<Entity> getEntitiesVector(Coords c) {
+        LogManager.getLogger().error("Dont use this. Must use boardlocations");
         return getEntitiesVector(c, false);
     }
 
@@ -1508,7 +1511,9 @@ public class Game extends AbstractGame implements Serializable {
      * @param ignore Flag that determines whether the ability to target is ignored
      * @return the {@link Entity} <code>List</code>
      */
+    @Deprecated
     public synchronized List<Entity> getEntitiesVector(Coords c, boolean ignore) {
+        LogManager.getLogger().error("Dont use this. Must use boardlocations");
         // checkPositionCacheConsistency();
         // Make sure the look-up is initialized
         if (entityPosLookup.isEmpty() && !inGameTWEntities().isEmpty()) {
@@ -1646,30 +1651,25 @@ public class Game extends AbstractGame implements Serializable {
      * possible target is there
      *
      * @param c The <code>Coords</code> of the hex in which the accidental fall from above happens
-     * @param ignore The entity who is falling, so shouldn't be returned
+     * @param fallingEntity The entity who is falling, so shouldn't be returned
      * @return The <code>Entity</code> that should be an AFFA target.
      */
-    public @Nullable Entity getAffaTarget(Coords c, Entity ignore) {
-        Vector<Entity> vector = new Vector<>();
+    public @Nullable Entity getAffaTarget(Coords c, Entity fallingEntity) {
+        List<Entity> targets = new ArrayList<>();
+        Board board = getBoard(fallingEntity);
         if (board.contains(c)) {
             Hex hex = board.getHex(c);
-            for (Entity entity : getEntitiesVector(c)) {
+            for (Entity entity : getEntitiesAt(c, board.getBoardId())) {
                 if (entity.isTargetable()
                         && ((entity.getElevation() == 0) // Standing on hex surface
                                 || (entity.getElevation() == -hex.depth())) // Standing on hex floor
                         && (entity.getAltitude() == 0)
-                        && !(entity instanceof Infantry) && (entity != ignore)) {
-                    vector.addElement(entity);
+                        && !(entity instanceof Infantry) && (entity != fallingEntity)) {
+                    targets.add(entity);
                 }
             }
         }
-
-        if (!vector.isEmpty()) {
-            int count = vector.size();
-            int random = Compute.randomInt(count);
-            return vector.elementAt(random);
-        }
-        return null;
+        return CollectionUtil.randomElement(targets);
     }
 
     /**
@@ -3205,7 +3205,7 @@ public class Game extends AbstractGame implements Serializable {
                     if (str > 0) {
                         int dir = planetaryConditions.getWindDirection();
                         flare.position = flare.position.translated(dir, (str > 1) ? (str - 1) : str);
-                        if (getBoard().contains(flare.position)) {
+                        if (getBoard(flare.boardId).contains(flare.position)) {
                             r = new Report(5236);
                             r.add(flare.position.getBoardNum());
                             r.newlines = 0;
@@ -3644,6 +3644,10 @@ public class Game extends AbstractGame implements Serializable {
         return getBoard(boardLocation.getBoardId());
     }
 
+    public @Nullable Board getBoard(Building building) {
+        return getBoard(building.getBoardId());
+    }
+
     public boolean hasBoardLocation(@Nullable BoardLocation boardLocation) {
         return hasBoardLocation(boardLocation.getCoords(), boardLocation.getBoardId());
     }
@@ -3661,15 +3665,19 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public void addSpecialHexDisplay(BoardLocation boardLocation, SpecialHexDisplay shd) {
-        getBoard(boardLocation).addSpecialHexDisplay(boardLocation.getCoords(), shd);
-    }
-
-    public void addSpecialHexDisplay(Coords coords, MapType mapType, SpecialHexDisplay shd) {
-        getBoard(mapType).addSpecialHexDisplay(coords, shd);
+        addSpecialHexDisplay(boardLocation.getCoords(), boardLocation.getBoardId(), shd);
     }
 
     public void addSpecialHexDisplay(Coords coords, int boardId, SpecialHexDisplay shd) {
-        addSpecialHexDisplay(new BoardLocation(coords, boardId), shd);
+       getBoard(boardId).addSpecialHexDisplay(coords, shd);
+    }
+
+    public void removeSpecialHexDisplay(BoardLocation boardLocation, SpecialHexDisplay shd) {
+        removeSpecialHexDisplay(boardLocation.getCoords(), boardLocation.getBoardId(), shd);
+    }
+
+    public void removeSpecialHexDisplay(Coords coords, int boardId, SpecialHexDisplay shd) {
+        getBoard(boardId).removeSpecialHexDisplay(coords, shd);
     }
 
     public void receiveBoard(int boardId, Board board) {
@@ -3919,6 +3927,8 @@ public class Game extends AbstractGame implements Serializable {
     public boolean canRiseToSpaceMap(Entity entity) {
         // @@MultiBoardTODO: all aero?
         // @@MultiBoardTODO: clean up board / map wording
-        return (entity instanceof Aero) && entity.getCurrentMapType().isLowAtmo() && hasEnclosingBoard(entity.getBoardId());
+        return (entity instanceof Aero) && hasEnclosingBoard(entity.getBoardId()) &&
+                (entity.getCurrentMapType().isLowAtmo()
+                        || (entity.getCurrentMapType().isGround() && hasEnclosingBoard(getEnclosingBoard(entity.getBoard()))));
     }
 }

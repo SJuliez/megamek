@@ -1411,7 +1411,7 @@ public class BoardEditor extends JPanel
 
     // When we resize a board, implant the old board's hexes where they should be in the new board
     public Board implantOldBoard(Game game, int west, int north, int east, int south) {
-        Board oldBoard = game.getBoard();
+        Board oldBoard = game.getBoard(0);
         for (int x = 0; x < oldBoard.getWidth(); x++) {
             for (int y = 0; y < oldBoard.getHeight(); y++) {
                 int newX = x + west;

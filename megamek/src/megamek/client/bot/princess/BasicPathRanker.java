@@ -232,7 +232,7 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
         
         // if the target is infantry protected by a building, we have to fire at the building instead. 
         if (losEffects.infantryProtected()) {
-            actualTarget = new BuildingTarget(targetState.getPosition(), game.getBoard(), false);
+            actualTarget = new BuildingTarget(targetState.getPosition(), game.getBoard(actualTarget), false);
             targetState = new EntityState(actualTarget);            
         }
 
@@ -270,7 +270,7 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
 
         // If I don't have range, I can't do damage.
         // exception: I might, if I'm an aero on a ground map attacking a ground unit because aero unit ranges are a "special case"
-        boolean aeroAttackingGroundUnitOnGroundMap = me.isAirborne() && !enemy.isAero() && game.getBoard().isGroundMap();
+        boolean aeroAttackingGroundUnitOnGroundMap = me.isAirborne() && !enemy.isAero() && game.isOnGroundMap(me);
 
         int maxRange = getOwner().getMaxWeaponRange(me, enemy.isAirborne());
         if (distance > maxRange && !aeroAttackingGroundUnitOnGroundMap) {
@@ -392,7 +392,7 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
 
         Targetable closest = findClosestEnemy(movingUnit, movingUnit.getPosition(), game, false);
         Coords toFace = closest == null ?
-                        game.getBoard().getCenter() :
+                        game.getBoard(movingUnit).getCenter() :
                         closest.getPosition();
         int desiredFacing = (toFace.direction(movingUnit.getPosition()) + 3) % 6;
         int currentFacing = path.getFinalFacing();
@@ -498,7 +498,7 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
 
             // Skip units not actually on the board.
             if (enemy.isOffBoard() || (enemy.getPosition() == null)
-                    || !game.getBoard().contains(enemy.getPosition())) {
+                    || !game.getBoard(movingUnit).contains(enemy.getPosition())) {
                 continue;
             }
 
@@ -650,7 +650,7 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
             Targetable target = fireControlState.getAdditionalTargets().get(i);
             
             if (target.isOffBoard() || (target.getPosition() == null)
-                    || !game.getBoard().contains(target.getPosition())) {
+                    || !game.getBoard(path.getEntity()).contains(target.getPosition())) {
                 continue; // Skip targets not actually on the board.
             }
             
@@ -702,25 +702,6 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
         return closest.getPosition().distance(position);
     }
 
-    /**
-     * Gives the distance to the closest edge
-     */
-    int distanceToClosestEdge(Coords position, Game game) {
-       int width = game.getBoard().getWidth();
-        int height = game.getBoard().getHeight();
-        int minimum = position.getX();
-        if ((width - position.getX()) < minimum) {
-            minimum = position.getX();
-        }
-        if (position.getY() < minimum) {
-            minimum = position.getY();
-        }
-        if ((height - position.getY()) < minimum) {
-            minimum = height - position.getY();
-        }
-        return minimum;
-    }
-
     double checkPathForHazards(MovePath path, Entity movingUnit, Game game) {
         StringBuilder logMsg = new StringBuilder("Checking Path (")
                 .append(path.toString()).append(") for hazards.");
@@ -745,10 +726,10 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
             if (path.isJumping()) {
                 logMsg.append("\n\tJumping");
                 Coords endCoords = path.getFinalCoords();
-                Hex endHex = game.getBoard().getHex(endCoords);
+                Hex endHex = game.getBoard(movingUnit).getHex(endCoords);
                 return checkHexForHazards(endHex, movingUnit, true,
                                           path.getLastStep(), true,
-                                          path, game.getBoard(), logMsg);
+                                          path, game.getBoard(path.getLastStep().getBoardId()), logMsg);
             }
 
             double totalHazard = 0;
@@ -759,11 +740,11 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
                 if ((coords == null) || coords.equals(previousCoords)) {
                     continue;
                 }
-                Hex hex = game.getBoard().getHex(coords);
+                Hex hex = game.getBoard(step.getBoardId()).getHex(coords);
                 totalHazard += checkHexForHazards(hex, movingUnit,
                                                   lastStep.equals(step), step,
                                                   false, path,
-                                                  game.getBoard(), logMsg);
+                                                  game.getBoard(step.getBoardId()), logMsg);
                 previousCoords = coords;
             }
 

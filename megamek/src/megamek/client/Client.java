@@ -1315,8 +1315,8 @@ public class Client implements IClientCommandHandler {
         send(new Packet(PacketCommand.SPECIAL_HEX_DISPLAY_APPEND, boardLocation, shd));
     }
 
-    public void sendSpecialHexDisplayDelete(Coords c, SpecialHexDisplay shd) {
-        send(new Packet(PacketCommand.SPECIAL_HEX_DISPLAY_DELETE, c, shd));
+    public void sendSpecialHexDisplayDelete(BoardLocation boardLocation, SpecialHexDisplay shd) {
+        send(new Packet(PacketCommand.SPECIAL_HEX_DISPLAY_DELETE, boardLocation, shd));
     }
 
     /**

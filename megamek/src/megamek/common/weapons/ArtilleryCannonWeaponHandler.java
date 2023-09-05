@@ -160,7 +160,7 @@ public class ArtilleryCannonWeaponHandler extends AmmoWeaponHandler {
             } else {
                 radius = 1;
             }
-            gameManager.deliverArtilleryFlare(targetPos, radius);
+            gameManager.deliverArtilleryFlare(targetPos, target.getBoardId(), radius);
             return false;
         } else if (ammoType.getMunitionType() == AmmoType.M_DAVY_CROCKETT_M) {
             // The appropriate term here is "Bwahahahahaha..."

@@ -65,7 +65,7 @@ public class InfantryPathFinder {
             infantryPaths.addAll(rotatedPaths);
             
             // add "flee" option if we haven't done anything else
-            if (game.getBoard().isOnBoardEdge(startingEdge.getFinalCoords())
+            if (game.getBoard(startingEdge.getFinalBoardId()).isOnBoardEdge(startingEdge.getFinalCoords())
                     && startingEdge.getStepVector().isEmpty()) {
                 MovePath fleePath = startingEdge.clone();
                 fleePath.addStep(MoveStepType.FLEE);
@@ -124,7 +124,7 @@ public class InfantryPathFinder {
             // are we going into a building?
             // are we going onto a bridge?
             // make sure we're adjusting facing relative to the unit's current facing
-            Hex destinationHex = game.getBoard().getHexInDir(startingPath.getFinalCoords(), 
+            Hex destinationHex = game.getBoard(startingPath.getFinalBoardId()).getHexInDir(startingPath.getFinalCoords(),
                     FireControl.correctFacing(startingPath.getFinalFacing() + direction));
             
             // if we're going off board, we may as well not bother continuing

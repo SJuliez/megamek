@@ -44,7 +44,7 @@ public class InfantryPathRanker extends BasicPathRanker implements IPathRanker {
             
             // Skip units not actually on the board.
             if (enemy.isOffBoard() || (enemy.getPosition() == null) 
-                    || !game.getBoard().contains(enemy.getPosition())) {
+                    || !game.getBoard(movingUnit).contains(enemy.getPosition())) {
                 continue;
             }
             

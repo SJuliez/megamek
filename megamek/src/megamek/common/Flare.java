@@ -28,6 +28,7 @@ import java.io.Serializable;
 public class Flare implements Serializable {
     private static final long serialVersionUID = 451911245389504483L;
     public Coords position;
+    public int boardId;
     public int turnsToBurn;
     public final int radius;
     public int flags;
@@ -35,8 +36,9 @@ public class Flare implements Serializable {
     public static int F_IGNITED = 1;
     public static int F_DRIFTING = 2;
 
-    public Flare(Coords position, int turnsToBurn, int radius, int flags) {
+    public Flare(Coords position, int boardId, int turnsToBurn, int radius, int flags) {
         this.position = position;
+        this.boardId = boardId;
         this.turnsToBurn = turnsToBurn;
         this.radius = radius;
         this.flags = flags;
