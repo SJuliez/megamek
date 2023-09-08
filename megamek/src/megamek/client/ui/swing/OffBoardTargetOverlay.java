@@ -133,10 +133,10 @@ public class OffBoardTargetOverlay implements IDisplayable {
                 checkCoords = checkCoords.translated(0, checkCoords.getY() + 10);
                 break;
             case SOUTH:
-                checkCoords = checkCoords.translated(3, getCurrentGame().getBoard(MapType.GROUND).getHeight() - checkCoords.getY() + 10);
+                checkCoords = checkCoords.translated(3, getCurrentGame().getBoard(artilleryWeapon.getEntity()).getHeight() - checkCoords.getY() + 10);
                 break;
             case EAST:
-                translationDistance = ((getCurrentGame().getBoard(MapType.GROUND).getWidth() - checkCoords.getX()) / 2) + 5;
+                translationDistance = ((getCurrentGame().getBoard(artilleryWeapon.getEntity()).getWidth() - checkCoords.getX()) / 2) + 5;
                 checkCoords = checkCoords.translated(1, translationDistance).translated(2, translationDistance);
                 break;
             case WEST:

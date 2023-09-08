@@ -1523,15 +1523,13 @@ public class Princess extends BotClient {
             // reset strategic targets
             fireControlState.setAdditionalTargets(new ArrayList<>());
             for (final BoardLocation strategicTarget : getStrategicBuildingTargets()) {
-                if (null == game.getBoard().getBuildingAt(strategicTarget)) {
-                    fireControlState.getAdditionalTargets().add(
-                            getAppropriateTarget(strategicTarget));
+                if (null == game.getBuildingAt(strategicTarget)) {
+                    fireControlState.getAdditionalTargets().add(getAppropriateTarget(strategicTarget));
                     sendChat("No building to target in Hex " +
                              strategicTarget.toFriendlyString() +
                              ", targeting for clearing.", Level.INFO);
                 } else {
-                    fireControlState.getAdditionalTargets().add(
-                            getAppropriateTarget(strategicTarget));
+                    fireControlState.getAdditionalTargets().add(getAppropriateTarget(strategicTarget));
                     sendChat("Building in Hex " +
                              strategicTarget.toFriendlyString() +
                              " designated strategic target.", Level.INFO);

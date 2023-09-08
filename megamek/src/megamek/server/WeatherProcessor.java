@@ -131,7 +131,7 @@ public class WeatherProcessor extends DynamicTerrainProcessor {
                         if (currentHex.terrainLevel(Terrains.FIRE)
                                 == Terrains.FIRE_LVL_NORMAL) {
                             if (conditions.putOutFire()) {
-                                gameManager.removeFire(currentCoords, "weather conditions");
+                                gameManager.removeFire(currentCoords, board.getBoardId(), "weather conditions");
                             }
                             // Downgrade Inferno fires so they can burn out
                         } else if (currentHex.terrainLevel(Terrains.FIRE)
@@ -144,7 +144,7 @@ public class WeatherProcessor extends DynamicTerrainProcessor {
                         } else if (currentHex.terrainLevel(Terrains.FIRE)
                                 == Terrains.FIRE_LVL_INFERNO_BOMB) {
                             if (currentHex.getFireTurn() > 30) {
-                                gameManager.removeFire(currentCoords,
+                                gameManager.removeFire(currentCoords, board.getBoardId(),
                                         "inferno bomb burning out");
                             }
                         }

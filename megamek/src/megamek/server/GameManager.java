@@ -4251,8 +4251,7 @@ public class GameManager implements IGameManager {
         // launching from an OOC vessel causes damage
         // same thing if faster than 2 velocity in atmosphere
         if ((((Aero) unloader).isOutControlTotal() && !unit.isDoomed())
-                || ((((Aero) unloader).getCurrentVelocity() > 2) && !game
-                .getBoard().isSpaceMap())) {
+                || ((((Aero) unloader).getCurrentVelocity() > 2) && !game.getBoard(unloader).isSpaceMap())) {
             int damageRoll = Compute.d6(2);
             int damage = damageRoll * 10;
             r = new Report(9385);
@@ -5302,7 +5301,7 @@ public class GameManager implements IGameManager {
                 r.add(entity.getDisplayName(), true);
                 addReport(r);
                 // check for quicksand
-                addReport(checkQuickSand(nextPos));
+                addReport(checkQuickSand(nextPos, step.getBoardId()));
                 // check for accidental stacking violation
                 Entity violation = Compute.stackingViolation(game, entity.getId(), curPos, entity.climbMode());
                 if (violation != null) {
@@ -6030,7 +6029,7 @@ public class GameManager implements IGameManager {
         OffBoardDirection fleeDirection;
         if (movePath.getFinalCoords().getY() <= 0) {
             fleeDirection = OffBoardDirection.NORTH;
-        } else if (movePath.getFinalCoords().getY() >= (getGame().getBoard().getHeight() - 1)) {
+        } else if (movePath.getFinalCoords().getY() >= (getGame().getBoard(movePath.getFinalBoardId()).getHeight() - 1)) {
             fleeDirection = OffBoardDirection.SOUTH;
         } else if (movePath.getFinalCoords().getX() <= 0) {
             fleeDirection = OffBoardDirection.WEST;
@@ -7736,7 +7735,7 @@ public class GameManager implements IGameManager {
                     r.subject = entity.getId();
                     addReport(r);
                     // check for quicksand
-                    addReport(checkQuickSand(curPos));
+                    addReport(checkQuickSand(curPos, step.getBoardId()));
                     // check for accidental stacking violation
                     Entity violation = Compute.stackingViolation(game,
                             entity.getId(), curPos, entity.climbMode());
@@ -8880,7 +8879,7 @@ public class GameManager implements IGameManager {
                         r.subject = entity.getId();
                         addReport(r);
                         // check for quicksand
-                        addReport(checkQuickSand(curPos));
+                        addReport(checkQuickSand(curPos, entity.getBoardId()));
                     } else if (!entity.hasETypeFlag(Entity.ETYPE_INFANTRY)) {
                         rollTarget = new PilotingRollData(entity.getId(),
                                 5, "entering boggy terrain");
@@ -8896,7 +8895,7 @@ public class GameManager implements IGameManager {
                             r.subject = entity.getId();
                             addReport(r);
                             // check for quicksand
-                            addReport(checkQuickSand(curPos));
+                            addReport(checkQuickSand(curPos, entity.getBoardId()));
                         }
                     }
                 }
@@ -10273,13 +10272,13 @@ public class GameManager implements IGameManager {
         }
     }
 
-    public void deliverScreen(Coords coords, Vector<Report> vPhaseReport) {
-        Hex h = game.getBoard().getHex(coords);
+    public void deliverScreen(BoardLocation boardLocation, Vector<Report> vPhaseReport) {
+        Hex h = game.getHex(boardLocation);
         Report r;
         Report.addNewline(vPhaseReport);
         r = new Report(9070, Report.PUBLIC);
         r.indent(2);
-        r.add(coords.getBoardNum());
+        r.add(boardLocation.getBoardNum());
         vPhaseReport.add(r);
         // use level to count the number of screens (since level does not matter
         // in space)
@@ -10290,7 +10289,7 @@ public class GameManager implements IGameManager {
         } else {
             h.addTerrain(new Terrain(Terrains.SCREEN, 1));
         }
-        sendChangedHex(coords);
+        sendChangedHex(boardLocation);
     }
 
     /**
@@ -10393,7 +10392,7 @@ public class GameManager implements IGameManager {
      */
     public Vector<Report> deliverInfernoMissiles(Entity ae, Targetable t, int missiles, int called,
                                                  boolean areaEffect) {
-        Hex hex = game.getBoard().getHex(t.getPosition());
+        Hex hex = game.getHex(t.getBoardLocation());
         Report r;
         Vector<Report> vPhaseReport = new Vector<>();
         int attId = Entity.NONE;
@@ -10403,7 +10402,7 @@ public class GameManager implements IGameManager {
         switch (t.getTargetType()) {
             case Targetable.TYPE_HEX_ARTILLERY:
                 // used for BA inferno explosion
-                for (Entity e : game.getEntitiesVector(t.getPosition())) {
+                for (Entity e : game.getEntitiesAt(t.getBoardLocation())) {
                     if (e.getElevation() > hex.terrainLevel(Terrains.BLDG_ELEV)) {
                         r = new Report(6685);
                         r.subject = e.getId();
@@ -10422,8 +10421,8 @@ public class GameManager implements IGameManager {
                         }
                     }
                 }
-                if (game.getBoard().getBuildingAt(t.getPosition()) != null) {
-                    Vector<Report> vBuildingReport = damageBuilding(game.getBoard().getBuildingAt(t.getPosition()),
+                if (game.getBuildingAt(t.getBoardLocation()) != null) {
+                    Vector<Report> vBuildingReport = damageBuilding(game.getBuildingAt(t.getBoardLocation()),
                             2 * missiles, t.getPosition());
                     for (Report report : vBuildingReport) {
                         report.subject = attId;
@@ -10434,7 +10433,7 @@ public class GameManager implements IGameManager {
             case Targetable.TYPE_HEX_CLEAR:
             case Targetable.TYPE_HEX_IGNITE:
                 // Report that damage applied to terrain, if there's TF to damage
-                Hex h = game.getBoard().getHex(t.getPosition());
+                Hex h = game.getHex(t.getBoardLocation());
                 if ((h != null) && h.hasTerrainFactor()) {
                     r = new Report(3384);
                     r.indent(2);
@@ -10449,7 +10448,7 @@ public class GameManager implements IGameManager {
                 break;
             case Targetable.TYPE_BLDG_IGNITE:
             case Targetable.TYPE_BUILDING:
-                Vector<Report> vBuildingReport = damageBuilding(game.getBoard().getBuildingAt(t.getPosition()),
+                Vector<Report> vBuildingReport = damageBuilding(game.getBuildingAt(t.getBoardLocation()),
                         2 * missiles, t.getPosition());
                 for (Report report : vBuildingReport) {
                     report.subject = attId;
@@ -10457,7 +10456,7 @@ public class GameManager implements IGameManager {
                 vPhaseReport.addAll(vBuildingReport);
 
                 // For each missile, check to see if it hits a unit in this hex
-                for (Entity e : game.getEntitiesVector(t.getPosition())) {
+                for (Entity e : game.getEntitiesAt(t.getBoardLocation())) {
                     if (e.getElevation() > hex.terrainLevel(Terrains.BLDG_ELEV)) {
                         continue;
                     }
@@ -11314,9 +11313,10 @@ public class GameManager implements IGameManager {
 
             // Bug 954272: Mines shouldn't work underwater, and BMRr says
             // Vibrabombs are mines
-            if (game.getBoard().getHex(mf.getCoords()).containsTerrain(Terrains.WATER)
-                    && !game.getBoard().getHex(mf.getCoords()).containsTerrain(Terrains.PAVEMENT)
-                    && !game.getBoard().getHex(mf.getCoords()).containsTerrain(Terrains.ICE)) {
+            Hex hex = game.getHex(mf.getBoardLocation());
+            if (hex.containsTerrain(Terrains.WATER)
+                    && !hex.containsTerrain(Terrains.PAVEMENT)
+                    && !hex.containsTerrain(Terrains.ICE)) {
                 continue;
             }
 
@@ -12758,7 +12758,7 @@ public class GameManager implements IGameManager {
                 r.add(entity.getDisplayName(), true);
                 vReport.add(r);
                 // check for quicksand
-                vReport.addAll(checkQuickSand(c));
+                vReport.addAll(checkQuickSand(c, entity.getBoardId()));
             }
         }
         return vReport;
@@ -16976,7 +16976,7 @@ public class GameManager implements IGameManager {
             ae.setPosition(pos);
             ae.setElevation(te.getElevation());
             te.setFacing((ae.getFacing() + 3) % 6);
-            addReport(doSetLocationsExposure(ae, game.getBoard().getHex(pos), false, ae.getElevation()));
+            addReport(doSetLocationsExposure(ae, game.getBoard(te).getHex(pos), false, ae.getElevation()));
         }
 
         ae.setGrappleSide(aeGrappleSide);
@@ -17119,7 +17119,7 @@ public class GameManager implements IGameManager {
         for (int i = 0; i < 6; i++) {
             hexes[i] = ae.getPosition().translated(i);
             scores[i] = 0;
-            Hex hex = game.getBoard().getHex(hexes[i]);
+            Hex hex = game.getBoard(ae).getHex(hexes[i]);
             if (hex.containsTerrain(Terrains.MAGMA)) {
                 scores[i] += 10;
             }
@@ -17202,7 +17202,7 @@ public class GameManager implements IGameManager {
         Report r;
 
         // Which building takes the damage?
-        Building bldg = game.getBoard().getBuildingAt(caa.getTargetPos());
+        Building bldg = game.getBoard(target).getBuildingAt(caa.getTargetPos());
 
         // is the attacker dead? because that sure messes up the calculations
         if (ae == null) {
@@ -17392,7 +17392,7 @@ public class GameManager implements IGameManager {
         Report r;
 
         // Which building takes the damage?
-        Building bldg = game.getBoard().getBuildingAt(caa.getTargetPos());
+        Building bldg = game.getBoard(target).getBuildingAt(caa.getTargetPos());
 
         // is the attacker dead? because that sure messes up the calculations
         if (ae == null) {
@@ -17896,7 +17896,7 @@ public class GameManager implements IGameManager {
         final boolean targetInBuilding = Compute.isInBuilding(game, te);
 
         // Which building takes the damage?
-        Building bldg = game.getBoard().getBuildingAt(te.getPosition());
+        Building bldg = game.getBoard(te).getBuildingAt(te.getPosition());
 
         // The building shields all units from a certain amount of damage.
         // The amount is based upon the building's CF at the phase's start.
@@ -18233,7 +18233,7 @@ public class GameManager implements IGameManager {
         }
 
         final Hex aeHex = game.getHex(ae.getBoardLocation());
-        final Hex teHex = game.getBoard().getHex(daa.getTargetPos());
+        final Hex teHex = game.getBoard(ae).getHex(daa.getTargetPos());
         final Targetable target = game.getTarget(daa.getTargetType(), daa.getTargetId());
         // get damage, ToHitData and roll from the PhysicalResult
         int damage = pr.damage;
@@ -18251,7 +18251,7 @@ public class GameManager implements IGameManager {
             // because some units (Sylph, submarines) can be at ANY elevation
             // underwater, and VTOLs can be well above the surface.
             te = (Entity) target;
-            Hex hex = game.getBoard().getHex(te.getPosition());
+            Hex hex = game.getHex(te.getBoardLocation());
             if (hex.containsTerrain(Terrains.WATER)) {
                 if (te.relHeight() < 0) {
                     damage = (int) Math.ceil(damage * 0.5f);
@@ -18428,7 +18428,7 @@ public class GameManager implements IGameManager {
         if ((target.getTargetType() == Targetable.TYPE_BUILDING)
                 || (target.getTargetType() == Targetable.TYPE_FUEL_TANK)) {
             // Which building takes the damage?
-            Building bldg = game.getBoard().getBuildingAt(daa.getTargetPos());
+            Building bldg = game.getBoard(target).getBuildingAt(daa.getTargetPos());
 
             // The building takes the full brunt of the attack.
             Vector<Report> buildingReport = damageBuilding(bldg, damage, target.getPosition());
@@ -20708,7 +20708,7 @@ public class GameManager implements IGameManager {
                                 r.addDesc(e);
                                 r.add(loss);
                                 vReport.add(r);
-                                Hex hex = game.getBoard().getHex(e.getPosition());
+                                Hex hex = game.getHex(e.getBoardLocation());
                                 int elevation = Math.max(0, hex.terrainLevel(Terrains.BLDG_ELEV));
                                 if (e.getElevation() - loss <= elevation) {
                                     crashAirMech(e, target, vReport);
@@ -22616,7 +22616,7 @@ public class GameManager implements IGameManager {
                             r.subject = te_n;
                             r.add(te.getLocationName(blownOffLocation));
                             vDesc.addElement(r);
-                            Hex h = game.getBoard().getHex(te.getPosition());
+                            Hex h = game.getHex(te.getBoardLocation());
                             if (null != h) {
                                 if (te instanceof BipedMech) {
                                     if (!h.containsTerrain(Terrains.ARMS)) {
@@ -23491,7 +23491,7 @@ public class GameManager implements IGameManager {
                 continue;
             }
 
-            Coords entityPos = entity.getPosition();
+            final Coords entityPos = entity.getPosition();
             if (entityPos == null) {
                 // maybe its loaded?
                 Entity transport = game.getEntity(entity.getTransportId());
@@ -23522,7 +23522,7 @@ public class GameManager implements IGameManager {
 
             int damage = damages[range];
 
-            if (allowShelter && canShelter(entityPos, position, entity.relHeight())) {
+            if (allowShelter && canShelter(entity.getBoardLocation(), position, entity.relHeight())) {
                 if (isSheltered()) {
                     r = new Report(6545);
                     r.addDesc(entity);
@@ -23564,7 +23564,7 @@ public class GameManager implements IGameManager {
                 if (allowShelter) {
                     final int absHeight = (transporter == null ? e.relHeight()
                             : transporter.relHeight());
-                    if (canShelter(entityPos, position, absHeight)) {
+                    if (canShelter(new BoardLocation(entityPos, e.getBoardId()), position, absHeight)) {
                         if (isSheltered()) {
                             r = new Report(6545);
                             r.addDesc(e);
@@ -23615,10 +23615,11 @@ public class GameManager implements IGameManager {
      * @return a <code>boolean</code> value indicating if the entity of the
      * given height can find shelter
      */
-    public boolean canShelter(Coords entityPosition, Coords position, int entityAbsHeight) {
+    public boolean canShelter(BoardLocation entityPosition, Coords position, int entityAbsHeight) {
         // What is the next hex in the direction of the blast?
-        Coords shelteringCoords = Coords.nextHex(entityPosition, position);
-        Hex shelteringHex = game.getBoard().getHex(shelteringCoords);
+        Board board = game.getBoard(entityPosition);
+        Coords shelteringCoords = Coords.nextHex(entityPosition.getCoords(), position);
+        Hex shelteringHex = board.getHex(shelteringCoords);
 
         // This is an error condition. It really shouldn't ever happen.
         if (shelteringHex == null) {
@@ -23636,7 +23637,7 @@ public class GameManager implements IGameManager {
         }
 
         // Get the absolute height of the unit relative to level 0.
-        entityAbsHeight += game.getBoard().getHex(entityPosition).getLevel();
+        entityAbsHeight += board.getHex(entityPosition.getCoords()).getLevel();
 
         // Now find the height that needs to be sheltered, and compare.
         return entityAbsHeight < shelterLevel;
@@ -23714,7 +23715,7 @@ public class GameManager implements IGameManager {
         if (vDesc == null) {
             vDesc = new Vector<>();
         }
-        Coords position = boardLocation.getCoords();
+        final Coords position = boardLocation.getCoords();
 
         // First, crater the terrain.
         // All terrain, units, buildings... EVERYTHING in here is just gone.
@@ -23734,11 +23735,11 @@ public class GameManager implements IGameManager {
             // Iterate through the hexes.
             for (Coords myHexCoords: hexSet) {
                 // ignore out of bounds coordinates
-                if (!game.getBoard().contains(myHexCoords)) {
+                if (!game.getBoard(boardLocation).contains(myHexCoords)) {
                     continue;
                 }
 
-                Hex myHex = game.getBoard().getHex(myHexCoords);
+                Hex myHex = game.getBoard(boardLocation).getHex(myHexCoords);
                 // In each hex, first, sink the terrain if necessary.
                 myHex.setLevel((myHex.getLevel() - curDepth));
 
@@ -23828,14 +23829,14 @@ public class GameManager implements IGameManager {
 
         // This ISN'T part of the blast, but if there's ANYTHING in the ground
         // zero hex, destroy it.
-        Building tmpB = game.getBoard().getBuildingAt(position);
+        Building tmpB = game.getBuildingAt(boardLocation);
         if (tmpB != null) {
             r = new Report(2415);
             r.add(tmpB.getName());
             addReport(r);
             tmpB.setCurrentCF(0, position);
         }
-        Hex gzHex = game.getBoard().getHex(position);
+        Hex gzHex = game.getHex(boardLocation);
         if (gzHex.containsTerrain(Terrains.WATER)) {
             gzHex.setLevel(gzHex.floor());
         }
@@ -23854,11 +23855,11 @@ public class GameManager implements IGameManager {
                 // Iterate through the hexes.
                 for (Coords myHexCoords : hexSet) {
                     // ignore out of bounds coordinates
-                    if (!game.getBoard().contains(myHexCoords)) {
+                    if (!game.getBoard(boardLocation).contains(myHexCoords)) {
                         continue;
                     }
 
-                    Hex myHex = game.getBoard().getHex(myHexCoords);
+                    Hex myHex = game.getBoard(boardLocation).getHex(myHexCoords);
 
                     // For each 3000 damage, water level is reduced by 1.
                     if ((damageAtRange >= 3000) && (myHex.containsTerrain(Terrains.WATER))) {
@@ -23958,7 +23959,7 @@ public class GameManager implements IGameManager {
 
         // Check to see if the infantry is in a protective structure.
         boolean inHardenedBuilding = (Compute.isInBuilding(game, entity)
-                && (game.getBoard().getHex(entity.getPosition()).terrainLevel(Terrains.BUILDING) == 4));
+                && (game.getHex(entity.getBoardLocation()).terrainLevel(Terrains.BUILDING) == 4));
 
         // Roll 2d6.
         int roll = Compute.d6(2);
@@ -24014,7 +24015,7 @@ public class GameManager implements IGameManager {
             } else if (entity instanceof Infantry) {
                 // Standard infantry are auto-killed in this band, unless
                 // they're in a building.
-                if (game.getBoard().getHex(entity.getPosition()).containsTerrain(Terrains.BUILDING)) {
+                if (game.getHex(entity.getBoardLocation()).containsTerrain(Terrains.BUILDING)) {
                     // 50% casualties, rounded up.
                     int damage = (int) (Math.ceil((entity.getInternal(Infantry.LOC_INFANTRY)) / 2.0));
                     vDesc.addAll(damageEntity(entity, new HitData(
@@ -24055,7 +24056,7 @@ public class GameManager implements IGameManager {
                     vDesc.addAll(applyCriticalHit(entity, 0, null, false, 0, false));
                 }
             } else if (entity instanceof Infantry) {
-                if (game.getBoard().getHex(entity.getPosition()).containsTerrain(Terrains.BUILDING)) {
+                if (game.getHex(entity.getBoardLocation()).containsTerrain(Terrains.BUILDING)) {
                     // 25% casualties, rounded up.
                     int damage = (int) (Math.ceil((entity.getInternal(Infantry.LOC_INFANTRY)) / 4.0));
                     vDesc.addAll(damageEntity(entity, new HitData(Infantry.LOC_INFANTRY), damage, true));
@@ -26500,7 +26501,7 @@ public class GameManager implements IGameManager {
         int hits;
         if (rollNumber) {
             if (null != coords) {
-                hex = game.getBoard().getHex(coords);
+                hex = game.getHex(en.getBoardLocation());
             }
             r = new Report(6305);
             r.subject = en.getId();
@@ -27356,9 +27357,9 @@ public class GameManager implements IGameManager {
         // if using battlefield wreckage rules, then the destruction of this unit might convert the
         // hex to rough
         Coords curPos = entity.getPosition();
-        Hex entityHex = game.getBoard().getHex(curPos);
+        Hex entityHex = game.getHex(entity.getBoardLocation());
         if (game.getOptions().booleanOption(OptionsConstants.ADVANCED_TACOPS_BATTLE_WRECK)
-                && (entityHex != null) && game.getBoard().isGroundMap()
+                && (entityHex != null) && game.getBoard(entity).isGroundMap()
                 && !((entity instanceof Infantry) || (entity instanceof Protomech))) {
             // large support vees will create ultra rough, otherwise rough
             if (entity instanceof LargeSupportTank) {
@@ -27784,7 +27785,7 @@ public class GameManager implements IGameManager {
             // If we are in a basement, we are at a negative elevation, and so
             // setting newElevation = 0 will cause us to "fall up"
         } else if ((entity.getMovementMode() != EntityMovementMode.VTOL)
-                && (game.getBoard().getBuildingAt(fallPos) != null)) {
+                && (game.getBoard(entity).getBuildingAt(fallPos) != null)) {
             newElevation = entity.getElevation();
         }
         // HACK: if the destination hex is water, assume that the fall height given is
@@ -27796,7 +27797,7 @@ public class GameManager implements IGameManager {
         // only do these basement checks if we didn't fall onto the building
         // from above
         if (intoBasement) {
-            Building bldg = game.getBoard().getBuildingAt(fallPos);
+            Building bldg = game.getBoard(entity).getBuildingAt(fallPos);
             BasementType basement = bldg.getBasement(fallPos);
             if (!basement.isNone() && !basement.isOneDeepNormalInfantryOnly()
                     && (entity.getElevation() == 0) && (bldg.getBasementCollapsed(fallPos))) {
@@ -27964,7 +27965,7 @@ public class GameManager implements IGameManager {
                 r.add(entity.getDisplayName(), true);
                 vPhaseReport.add(r);
                 // check for quicksand
-                vPhaseReport.addAll(checkQuickSand(fallPos));
+                vPhaseReport.addAll(checkQuickSand(fallPos, entity.getBoardId()));
             }
         }
 
@@ -28071,7 +28072,7 @@ public class GameManager implements IGameManager {
         // came from
         if (checkCollapse && !handlingBasement) {
 
-            checkForCollapse(game.getBoard().getBuildingAt(fallPos),
+            checkForCollapse(game.getBoard(entity).getBuildingAt(fallPos),
                     game.getPositionMap(), fallPos, false, vPhaseReport);
         }
 
@@ -28173,7 +28174,7 @@ public class GameManager implements IGameManager {
         boolean fallToSurface = false;
         // on ice
         int toSubtract = 0;
-        Hex currHex = game.getBoard().getHex(entity.getPosition());
+        Hex currHex = game.getBoard(entity).getHex(entity.getPosition());
         if (currHex.containsTerrain(Terrains.ICE)
                 && (entity.getElevation() != -currHex.depth())) {
             fallToSurface = true;
@@ -28414,20 +28415,22 @@ public class GameManager implements IGameManager {
     /**
      * remove fire from a hex
      *
-     * @param fireCoords
-     * @param reason
+     * @param coords The location to extinguish
+     * @param boardId The board
+     * @param reason The reason to report
      */
-    public void removeFire(Coords fireCoords, String reason) {
-        Hex hex = game.getBoard().getHex(fireCoords);
+    public void removeFire(Coords coords, int boardId, String reason) {
+        BoardLocation boardLocation = new BoardLocation(coords, boardId);
+        Hex hex = game.getHex(boardLocation);
         if (null == hex) {
             return;
         }
         hex.removeTerrain(Terrains.FIRE);
         hex.resetFireTurn();
-        sendChangedHex(fireCoords);
+        sendChangedHex(boardLocation);
         // fire goes out
         Report r = new Report(5170, Report.PUBLIC);
-        r.add(fireCoords.getBoardNum());
+        r.add(boardLocation.getBoardNum());
         r.add(reason);
         addReport(r);
     }
@@ -30276,12 +30279,17 @@ public class GameManager implements IGameManager {
     /**
      * Creates a packet containing a hex, and the coordinates it goes at.
      */
+    @Deprecated
     private Packet createHexChangePacket(Coords coords, Hex hex) {
         return new Packet(PacketCommand.CHANGE_HEX, coords, hex);
     }
 
     private Packet createHexChangePacket(BoardLocation boardLocation, Hex hex) {
         return new Packet(PacketCommand.CHANGE_HEX, boardLocation, hex);
+    }
+
+    private Packet createHexChangePacket(Coords coords, int boardId, Hex hex) {
+        return createHexChangePacket(new BoardLocation(coords, boardId), hex);
     }
 
     public void sendSmokeCloudAdded(SmokeCloud cloud) {
@@ -30291,8 +30299,14 @@ public class GameManager implements IGameManager {
     /**
      * Sends notification to clients that the specified hex has changed.
      */
+    @Deprecated
     public void sendChangedHex(Coords coords) {
+        LogManager.getLogger().error("Dont use this. Send by boardLocation");
         send(createHexChangePacket(coords, game.getBoard().getHex(coords)));
+    }
+
+    public void sendChangedHex(Coords coords, int boardId) {
+        sendChangedHex(new BoardLocation(coords, boardId));
     }
 
     public void sendChangedHex(BoardLocation boardLocation) {
@@ -30898,7 +30912,7 @@ public class GameManager implements IGameManager {
         // Are there any Entities at these coords?
         if (vector != null) {
             // How many levels does this building have in this hex?
-            final Hex curHex = game.getBoard().getHex(coords);
+            final Hex curHex = game.getBoard(bldg).getHex(coords);
             final int numFloors = Math.max(0, curHex.terrainLevel(Terrains.BLDG_ELEV));
             final int bridgeEl = curHex.terrainLevel(Terrains.BRIDGE_ELEV);
             int numLoads = numFloors;
@@ -31082,7 +31096,7 @@ public class GameManager implements IGameManager {
         if (bldg.getBasement(coords).isNone()) {
             return;
         } else {
-            bldg.collapseBasement(coords, game.getBoard(), vPhaseReport);
+            bldg.collapseBasement(coords, game.getBoard(bldg), vPhaseReport);
         }
 
         // Are there any Entities at these coords?
@@ -32303,7 +32317,7 @@ public class GameManager implements IGameManager {
                         entity.addPilotingModifierForTerrain(rollTarget, step);
                         int gravMod = game.getPlanetaryConditions()
                                 .getGravityPilotPenalty();
-                        if ((gravMod != 0) && !game.getBoard().isSpaceMap()) {
+                        if ((gravMod != 0) && !game.getBoard(step.getBoardId()).isSpaceMap()) {
                             rollTarget.addModifier(gravMod, game
                                     .getPlanetaryConditions().getGravity()
                                     + "G gravity");
@@ -32497,8 +32511,9 @@ public class GameManager implements IGameManager {
                         false));
             } else {
                 // Add the pilot as an infantry unit on the battlefield.
-                if (game.getBoard().contains(targetCoords)) {
+                if (game.getBoard(entity).contains(targetCoords)) {
                     pilot.setPosition(targetCoords);
+                    pilot.setCurrentBoard(entity.getBoardId());
                     // report safe ejection
                     r = new Report(6400);
                     r.subject = entity.getId();
@@ -32526,7 +32541,7 @@ public class GameManager implements IGameManager {
                 }
                 if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_EJECTED_PILOTS_FLEE)
                         // Don't create a pilot entity on low-atmospheric maps
-                        || game.getBoard().isLowAtmosphereMap()) {
+                        || game.getBoard(entity).isLowAtmosphereMap()) {
                     game.removeEntity(pilot.getId(),
                             IEntityRemovalConditions.REMOVE_IN_RETREAT);
                     send(createRemoveEntityPacket(pilot.getId(),
@@ -32555,7 +32570,7 @@ public class GameManager implements IGameManager {
                 }
             }
         } // End entity-is-Mek or fighter
-        else if (game.getBoard().contains(entity.getPosition())
+        else if (game.getBoard(entity).contains(entity.getPosition())
                 && (entity instanceof Tank)) {
             EjectedCrew crew = new EjectedCrew(entity);
             // Need to set game manually; since game.addEntity not called yet
@@ -32903,7 +32918,7 @@ public class GameManager implements IGameManager {
             rollTarget.addModifier(entity.getOInternal(Mech.LOC_HEAD) - entity.getInternal(Mech.LOC_HEAD),
                     "Head Internal Structure Damage");
         }
-        Hex targetHex = game.getBoard().getHex(targetCoords);
+        Hex targetHex = game.getBoard(entity).getHex(targetCoords);
         //Terrain modifiers should only apply if the unit is on the ground...
         if (!entity.isSpaceborne() && !entity.isAirborne()) {
             if (targetHex != null) {
@@ -33007,10 +33022,11 @@ public class GameManager implements IGameManager {
                 // First get coords then loop over some targets
                 Coords tmpCoords = e.getPosition();
                 Coords targetCoords = null;
-                while (!game.getBoard().contains(targetCoords)) {
+                while (!game.getBoard(e).contains(targetCoords)) {
                     targetCoords = Compute.scatter(tmpCoords, (Compute.d6(1) / 2));
-                    if (game.getBoard().contains(targetCoords)) {
+                    if (game.getBoard(e).contains(targetCoords)) {
                         guerrilla.setPosition(targetCoords);
+                        guerrilla.setCurrentBoard(e.getBoardId());
                         break;
                     }
                 }
@@ -33081,8 +33097,9 @@ public class GameManager implements IGameManager {
             // make him not get a move this turn
             pilot.setDone(true);
             // Add the pilot as an infantry unit on the battlefield.
-            if (game.getBoard().contains(targetCoords)) {
+            if (game.getBoard(entity).contains(targetCoords)) {
                 pilot.setPosition(targetCoords);
+                pilot.setCurrentBoard(entity.getBoardId());
             }
             pilot.setCommander(entity.isCommander());
             // Update the entity
@@ -33110,8 +33127,9 @@ public class GameManager implements IGameManager {
             // Make them not get a move this turn
             crew.setDone(true);
             // Place on board
-            if (game.getBoard().contains(entity.getPosition())) {
+            if (game.getBoard(entity).contains(entity.getPosition())) {
                 crew.setPosition(entity.getPosition());
+                crew.setCurrentBoard(entity.getBoardId());
             }
             // Update the entity
             entityUpdate(crew.getId());
@@ -33302,7 +33320,7 @@ public class GameManager implements IGameManager {
             rollTarget = entity.getBasePilotingRoll();
             entity.addPilotingModifierForTerrain(rollTarget);
             // apart from swamp & liquid magma, -1 modifier
-            Hex hex = game.getBoard().getHex(entity.getPosition());
+            Hex hex = game.getHex(entity.getBoardLocation());
             hex.getUnstuckModifier(entity.getElevation(), rollTarget);
             // okay, print the info
             r = new Report(2340);
@@ -33425,16 +33443,16 @@ public class GameManager implements IGameManager {
     /**
      * check to see if a swamp hex becomes quicksand
      */
-    private Vector<Report> checkQuickSand(Coords c) {
+    private Vector<Report> checkQuickSand(Coords c, int boardId) {
         Vector<Report> vDesc = new Vector<>();
         Report r;
-        Hex hex = game.getBoard().getHex(c);
+        Hex hex = game.getBoard(boardId).getHex(c);
         if (hex.terrainLevel(Terrains.SWAMP) == 1) {
             if (Compute.d6(2) == 12) {
                 // better find a rope
                 hex.removeTerrain(Terrains.SWAMP);
                 hex.addTerrain(new Terrain(Terrains.SWAMP, 2));
-                sendChangedHex(c);
+                sendChangedHex(c, boardId);
                 r = new Report(2440);
                 r.indent(1);
                 vDesc.add(r);
@@ -33619,8 +33637,8 @@ public class GameManager implements IGameManager {
                 || ((te.getMovementMode() == EntityMovementMode.WIGE) && (te.getElevation() == 0)))
                 && (te.isMovementHitPending() || (te.getWalkMP() <= 0))
                 // HACK: Have to check for *pending* hit here and below.
-                && (game.getBoard().getHex(te.getPosition()).terrainLevel(Terrains.WATER) > 0)
-                && !game.getBoard().getHex(te.getPosition()).containsTerrain(Terrains.ICE))) {
+                && (game.getHex(te.getBoardLocation()).terrainLevel(Terrains.WATER) > 0)
+                && !game.getHex(te.getBoardLocation()).containsTerrain(Terrains.ICE))) {
             vDesc.addAll(destroyEntity(te, "a watery grave", false));
         }
         // ...while immobile WiGEs crash.
@@ -33715,7 +33733,7 @@ public class GameManager implements IGameManager {
         addReport(r);
 
         // if we are on an atmospheric map or the entity is off the map for some reason
-        if (game.getBoard().isLowAtmosphereMap() || entity.getPosition() == null) {
+        if (game.getBoard(entity).isLowAtmosphereMap() || entity.getPosition() == null) {
             // then just remove the entity
             // TODO : for this and when the unit scatters off the board, we should really still
             // TODO : apply damage before we remove, but this causes all kinds of problems for
@@ -33748,7 +33766,7 @@ public class GameManager implements IGameManager {
             r.indent();
             r.newlines = 0;
             addReport(r);
-            if (!game.getBoard().contains(c)) {
+            if (!game.getBoard(entity).contains(c)) {
                 r = new Report(2386);
                 r.subject = entity.getId();
                 addReport(r);
@@ -33764,7 +33782,7 @@ public class GameManager implements IGameManager {
 
             // do fall damage from accidental fall
             //set elevation to fall height above ground or building roof
-            Hex hex = game.getBoard().getHex(entity.getPosition());
+            Hex hex = game.getHex(entity.getBoardLocation());
             int bldgElev = hex.containsTerrain(Terrains.BLDG_ELEV)
                     ? hex.terrainLevel(Terrains.BLDG_ELEV) : 0;
             entity.setElevation(fallHeight + bldgElev);
@@ -33777,12 +33795,12 @@ public class GameManager implements IGameManager {
             }
         } else {
             // set entity to expected elevation
-            Hex hex = game.getBoard().getHex(entity.getPosition());
+            Hex hex = game.getHex(entity.getBoardLocation());
             int bldgElev = hex.containsTerrain(Terrains.BLDG_ELEV)
                     ? hex.terrainLevel(Terrains.BLDG_ELEV) : 0;
             entity.setElevation(bldgElev);
 
-            Building bldg = game.getBoard().getBuildingAt(entity.getPosition());
+            Building bldg = game.getBuildingAt(entity.getBoardLocation());
             if (bldg != null) {
                 // whoops we step on the roof
                 checkBuildingCollapseWhileMoving(bldg, entity, entity.getPosition());
@@ -34205,12 +34223,12 @@ public class GameManager implements IGameManager {
                     r.subject = inf.getId();
                     addReport(r);
                     // fortification complete - add to map
-                    Hex hex = game.getBoard().getHex(c);
+                    Hex hex = game.getHex(inf.getBoardLocation());
                     hex.addTerrain(new Terrain(Terrains.FORTIFIED, 1));
-                    sendChangedHex(c);
+                    sendChangedHex(inf.getBoardLocation());
                     // Clear the dig in for any units in same hex, since they
                     // get it for free by fort
-                    for (Entity ent2 : game.getEntitiesVector(c)) {
+                    for (Entity ent2 : game.getEntitiesAt(inf.getBoardLocation())) {
                         if (ent2 instanceof Infantry) {
                             Infantry inf2 = (Infantry) ent2;
                             inf2.setDugIn(Infantry.DUG_IN_NONE);
@@ -34230,13 +34248,13 @@ public class GameManager implements IGameManager {
                     r.subject = tnk.getId();
                     addReport(r);
                     // Fort complete, now add it to the map
-                    Hex hex = game.getBoard().getHex(c);
+                    Hex hex = game.getHex(tnk.getBoardLocation());
                     hex.addTerrain(new Terrain(Terrains.FORTIFIED, 1));
-                    sendChangedHex(c);
+                    sendChangedHex(tnk.getBoardLocation());
                     tnk.setDugIn(Tank.DUG_IN_NONE);
                     // Clear the dig in for any units in same hex, since they
                     // get it for free by fort
-                    for (Entity ent2 : game.getEntitiesVector(c)) {
+                    for (Entity ent2 : game.getEntitiesAt(tnk.getBoardLocation())) {
                         if (ent2 instanceof Infantry) {
                             Infantry inf2 = (Infantry) ent2;
                             inf2.setDugIn(Infantry.DUG_IN_NONE);

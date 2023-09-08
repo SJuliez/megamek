@@ -94,7 +94,7 @@ public class ScreenLauncherHandler extends AmmoWeaponHandler {
 
         // deliver screen
         Coords coords = target.getPosition();
-        gameManager.deliverScreen(coords, vPhaseReport);
+        gameManager.deliverScreen(target.getBoardLocation(), vPhaseReport);
 
         // damage any entities in the hex
         for (Entity entity :  game.getEntitiesVector(coords)) {

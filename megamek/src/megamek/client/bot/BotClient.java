@@ -559,22 +559,19 @@ public abstract class BotClient extends Client {
         }
     }
 
-    public double getMassOfAllInBuilding(final Game game, final Coords coords) {
+    public double getMassOfAllInBuilding(final Game game, final BoardLocation boardLocation) {
         double mass = 0;
-
-        // Add the mass of anyone else standing in/on this building.
-        final Hex hex = game.getBoard().getHex(coords);
-        final int buildingElevation = hex.terrainLevel(Terrains.BLDG_ELEV);
-        final int bridgeElevation = hex.terrainLevel(Terrains.BRIDGE_ELEV);
-        Iterator<Entity> crowd = game.getEntities(coords);
-        while (crowd.hasNext()) {
-            Entity e = crowd.next();
-
-            if (buildingElevation >= e.getElevation() || bridgeElevation >= e.getElevation()) {
-                mass += e.getWeight();
+        final Hex hex = game.getHex(boardLocation);
+        if (hex != null) {
+            final int buildingElevation = hex.terrainLevel(Terrains.BLDG_ELEV);
+            final int bridgeElevation = hex.terrainLevel(Terrains.BRIDGE_ELEV);
+            for (Entity e : game.getEntitiesAt(boardLocation)) {
+                //FIXME: This will include units under a bridge
+                if ((buildingElevation >= e.getElevation()) || (bridgeElevation >= e.getElevation())) {
+                    mass += e.getWeight();
+                }
             }
         }
-
         return mass;
     }
 

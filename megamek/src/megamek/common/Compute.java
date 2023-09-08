@@ -5444,7 +5444,7 @@ public class Compute {
      *
      * @param game The current {@link Game}
      * @param aeId The attacking <code>Entity</code>
-     * @param coords
+     * @param boardLocation The location of the original target
      * @param weaponId The <code>int</code> ID of the launcher used to fire this volley
      * @return the new target <code>Entity</code>. May return null if no new target available
      */

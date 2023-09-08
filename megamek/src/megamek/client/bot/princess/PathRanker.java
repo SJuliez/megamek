@@ -423,7 +423,8 @@ public abstract class PathRanker implements IPathRanker {
         // If we're jumping onto a building, make sure it can support our weight.
         if (path.isJumping()) {
             final Coords finalCoords = path.getFinalCoords();
-            final Building building = game.getBoard().getBuildingAt(finalCoords);
+            final BoardLocation finalLocation = path.getFinalBoardLocation();
+            final Building building = game.getBuildingAt(finalLocation);
             if (building == null) {
                 return false;
             }
@@ -432,7 +433,7 @@ public abstract class PathRanker implements IPathRanker {
             double mass = path.getEntity().getWeight() + 10;
 
             // Add the mass of anyone else standing in/on this building.
-            mass += owner.getMassOfAllInBuilding(game, finalCoords);
+            mass += owner.getMassOfAllInBuilding(game, finalLocation);
 
             return (mass > building.getCurrentCF(finalCoords));
         }
@@ -448,7 +449,7 @@ public abstract class PathRanker implements IPathRanker {
             }
 
             // Add the mass of anyone else standing in/on this building.
-            double fullMass = mass + owner.getMassOfAllInBuilding(game, step.getPosition());
+            double fullMass = mass + owner.getMassOfAllInBuilding(game, step.getBoardLocation());
 
             if (fullMass > building.getCurrentCF(step.getPosition())) {
                 return true;

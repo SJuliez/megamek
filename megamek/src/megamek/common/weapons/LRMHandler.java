@@ -270,7 +270,7 @@ public class LRMHandler extends MissileWeaponHandler {
         // ELRMs only hit with half their rack size rounded up at minimum range.
         // Ignore this for space combat. 1 hex is 18km across.
         if (wtype instanceof ExtendedLRMWeapon
-                && !game.getBoard().isSpaceMap()
+                && !game.getBoard(target).isSpaceMap()
                 && (nRange <= wtype.getMinimumRange())) {
             rackSize = rackSize / 2 + rackSize % 2;
             minRangeELRMAttack = true;

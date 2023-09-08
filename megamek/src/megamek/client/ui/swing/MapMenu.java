@@ -269,10 +269,9 @@ public class MapMenu extends JPopupMenu {
     }
 
     private @Nullable JMenuItem createChargeMenuItem() {
-        if (!client.getGame().getEntities(coords).hasNext()) {
+        if (client.getGame().getEntitiesAt(boardLocation).isEmpty()) {
             return null;
         }
-
         JMenuItem item = new JMenuItem(Messages.getString("MovementDisplay.butCharge"));
         item.setActionCommand(MovementDisplay.MoveCommand.MOVE_CHARGE.getCmd());
         item.addActionListener(this::plotCourse);
@@ -280,10 +279,9 @@ public class MapMenu extends JPopupMenu {
     }
 
     private @Nullable JMenuItem createDFAJMenuItem() {
-        if (!client.getGame().getEntities(coords).hasNext()) {
+        if (client.getGame().getEntitiesAt(boardLocation).isEmpty()) {
             return null;
         }
-
         JMenuItem item = new JMenuItem(Messages.getString("MovementDisplay.butDfa"));
         item.setActionCommand(MovementDisplay.MoveCommand.MOVE_DFA.getCmd());
         item.addActionListener(this::plotCourse);

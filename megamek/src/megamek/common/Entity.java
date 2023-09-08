@@ -11865,6 +11865,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             if (mounted.getType() instanceof Weapon) {
                 ((Weapon) mounted.getType()).adaptToGameOptions(game.getOptions());
             }
+            // @@MultiBoardTODO:
             mounted.setModesForMapType();
         }
 

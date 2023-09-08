@@ -874,8 +874,6 @@ public class Game extends AbstractGame implements Serializable {
 
     public synchronized void setEntitiesVector(List<Entity> entities) {
         // checkPositionCacheConsistency();
-//        this.entities.clear();
-//        this.entities.addAll(entities);
         reindexEntities(entities);
         resetEntityPositionLookup();
         processGameEvent(new GameEntityNewEvent(this, entities));
@@ -1468,6 +1466,7 @@ public class Game extends AbstractGame implements Serializable {
      * @param currentEntity the entity that is firing
      */
     public Entity getFirstEnemyEntity(Coords c, Entity currentEntity) {
+        // @@MultiBoardTODO:
         for (Entity entity : inGameTWEntities()) {
             if (c.equals(entity.getPosition()) && entity.isTargetable()
                 && entity.isEnemyOf(currentEntity)) {
@@ -1480,14 +1479,20 @@ public class Game extends AbstractGame implements Serializable {
     /**
      * Returns an Enumeration of the active entities at the given coordinates.
      */
+    @Deprecated
     public Iterator<Entity> getEntities(Coords c) {
+        LogManager.getLogger().error("Dont use this. Must use boardlocations");
+        // @@MultiBoardTODO:
         return getEntities(c, false);
     }
 
     /**
      * Returns an Enumeration of the active entities at the given coordinates.
      */
+    @Deprecated
     public Iterator<Entity> getEntities(Coords c, boolean ignore) {
+        LogManager.getLogger().error("Dont use this. Must use boardlocations");
+        // @@MultiBoardTODO:
         return getEntitiesVector(c, ignore).iterator();
     }
 
@@ -1501,6 +1506,7 @@ public class Game extends AbstractGame implements Serializable {
     @Deprecated
     public List<Entity> getEntitiesVector(Coords c) {
         LogManager.getLogger().error("Dont use this. Must use boardlocations");
+        // @@MultiBoardTODO:
         return getEntitiesVector(c, false);
     }
 
@@ -1513,6 +1519,7 @@ public class Game extends AbstractGame implements Serializable {
      */
     @Deprecated
     public synchronized List<Entity> getEntitiesVector(Coords c, boolean ignore) {
+        // @@MultiBoardTODO:
         LogManager.getLogger().error("Dont use this. Must use boardlocations");
         // checkPositionCacheConsistency();
         // Make sure the look-up is initialized
@@ -3878,7 +3885,7 @@ public class Game extends AbstractGame implements Serializable {
     /**
      * Returns a list of IDs of all enclosing boards of the given board. These are at most two other boards;
      * for a ground board, the enclosing atmospheric board (if present) and that one's enclosing high-atmo
-     * map (if present). For an atmospheric map, this will be at most the enclosing high-atmo map (if present);
+     * map (if present). For an atmospheric map, this will be at most the enclosing high-altitude map (if present);
      * for any space map, the returned List will be empty.
      *
      * @param boardId The board to find enclosed boards for

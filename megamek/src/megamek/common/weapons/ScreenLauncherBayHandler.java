@@ -100,7 +100,7 @@ public class ScreenLauncherBayHandler extends AmmoBayWeaponHandler {
         for (int i = 0; i < weapon.getBayWeapons().size(); i++) {
             // deliver screen
             Coords coords = target.getPosition();
-            gameManager.deliverScreen(coords, vPhaseReport);
+            gameManager.deliverScreen(target.getBoardLocation(), vPhaseReport);
             // damage any entities in the hex
             for (Entity entity : game.getEntitiesVector(coords)) {
                 // if fighter squadron all fighters are damaged

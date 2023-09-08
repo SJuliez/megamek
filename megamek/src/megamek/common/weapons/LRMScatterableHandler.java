@@ -95,7 +95,7 @@ public class LRMScatterableHandler extends MissileWeaponHandler {
                     return true;
                 }
             }
-            if (game.getBoard().contains(coords)) {
+            if (game.getBoard(target).contains(coords)) {
                 // misses and scatters to another hex
                 int reportNr = mineDelivery ? 3197 : 3195;
                 Report r = new Report(reportNr, whoReport);
