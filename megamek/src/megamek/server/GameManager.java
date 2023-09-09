@@ -31586,7 +31586,7 @@ public class GameManager implements IGameManager {
                 } else if ((curCF < startingCF) && (damage > damageThresh)) {
                     // need to check for crits
                     // don't bother unless we have some gun emplacements
-                    Vector<GunEmplacement> guns = game.getGunEmplacements(coords);
+                    List<GunEmplacement> guns = game.getGunEmplacements(coords, bldg.getBoardId());
                     if (!guns.isEmpty()) {
                         vPhaseReport.addAll(criticalGunEmplacement(guns, bldg, coords));
                     }
@@ -31597,7 +31597,7 @@ public class GameManager implements IGameManager {
         return vPhaseReport;
     }
 
-    private Vector<Report> criticalGunEmplacement(Vector<GunEmplacement> guns, Building bldg,
+    private Vector<Report> criticalGunEmplacement(List<GunEmplacement> guns, Building bldg,
                                                   Coords coords) {
         Vector<Report> vDesc = new Vector<>();
         Report r;

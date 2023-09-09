@@ -624,42 +624,40 @@ public interface IAero {
 
     default String hasRoomForHorizontalTakeOff() {
         // walk along the hexes in the facing of the unit
-        Hex hex = ((Entity) this).getBoard().getHex(((Entity) this).getPosition());
+        Entity entity = (Entity) this;
+        Board board = entity.getBoard();
+        Hex hex = board.getHex(entity.getPosition());
         int elev = hex.getLevel();
-        int facing = ((Entity) this).getFacing();
+        int facing = entity.getFacing();
         String lenString = " (" + getTakeOffLength() + " hexes required)";
         // dropships need a strip three hexes wide
         Vector<Coords> startingPos = new Vector<>();
-        startingPos.add(((Entity) this).getPosition());
+        startingPos.add(entity.getPosition());
         if (this instanceof Dropship) {
-            startingPos.add(((Entity) this).getPosition().translated((facing + 4) % 6));
-            startingPos.add(((Entity) this).getPosition().translated((facing + 2) % 6));
+            startingPos.add(entity.getPosition().translated((facing + 4) % 6));
+            startingPos.add(entity.getPosition().translated((facing + 2) % 6));
         }
         for (Coords pos : startingPos) {
             for (int i = 0; i < getTakeOffLength(); i++) {
                 pos = pos.translated(facing);
                 // check for buildings
-                if (((Entity) this).getBoard().getBuildingAt(pos) != null) {
+                if (board.getBuildingAt(pos) != null) {
                     return "Buildings in the way" + lenString;
                 }
                 // no units in the way
-                for (Entity en : ((Entity) this).getGame().getEntitiesVector(pos)) {
-                    if (en.equals(this)) {
-                        continue;
-                    }
-
-                    if (!en.isAirborne()) {
+                for (Entity other : entity.getGame().getEntitiesAt(pos, board)) {
+                    if (!equals(other) && !other.isAirborne()) {
                         return "Ground units in the way" + lenString;
                     }
                 }
-                hex = ((Entity) this).getBoard().getHex(pos);
+                hex = board.getHex(pos);
                 // if the hex is null, then we are offboard. Don't let units
                 // take off offboard.
                 if (null == hex) {
                     return "Not enough room on map" + lenString;
                 }
                 if (!hex.isClearForTakeoff()) {
-                    return "Unacceptable terrain for landing" + lenString;
+                    return "Unacceptable terrain for takeoff" + lenString;
                 }
                 if (hex.getLevel() != elev) {
                     return "Runway must contain no elevation change" + lenString;
@@ -672,31 +670,33 @@ public interface IAero {
 
     default String hasRoomForHorizontalLanding() {
         // walk along the hexes in the facing of the unit
-        Hex hex = ((Entity) this).getBoard().getHex(((Entity) this).getPosition());
+        Entity entity = (Entity) this;
+        Board board = entity.getBoard();
+        Hex hex = board.getHex(entity.getPosition());
         int elev = hex.getLevel();
-        int facing = ((Entity) this).getFacing();
+        int facing = entity.getFacing();
         String lenString = " (" + getLandingLength() + " hexes required)";
         // dropships need a a landing strip three hexes wide
         Vector<Coords> startingPos = new Vector<>();
-        startingPos.add(((Entity) this).getPosition());
+        startingPos.add(entity.getPosition());
         if (this instanceof Dropship) {
-            startingPos.add(((Entity) this).getPosition().translated((facing + 5) % 6));
-            startingPos.add(((Entity) this).getPosition().translated((facing + 1) % 6));
+            startingPos.add(entity.getPosition().translated((facing + 5) % 6));
+            startingPos.add(entity.getPosition().translated((facing + 1) % 6));
         }
         for (Coords pos : startingPos) {
             for (int i = 0; i < getLandingLength(); i++) {
                 pos = pos.translated(facing);
                 // check for buildings
-                if (((Entity) this).getBoard().getBuildingAt(pos) != null) {
+                if (board.getBuildingAt(pos) != null) {
                     return "Buildings in the way" + lenString;
                 }
                 // no units in the way
-                for (Entity en : ((Entity) this).getGame().getEntitiesVector(pos)) {
+                for (Entity en : entity.getGame().getEntitiesAt(pos, board)) {
                     if (!en.isAirborne()) {
                         return "Ground units in the way" + lenString;
                     }
                 }
-                hex = ((Entity) this).getBoard().getHex(pos);
+                hex = board.getHex(pos);
                 // if the hex is null, then we are offboard. Don't let units
                 // land offboard.
                 if (null == hex) {
@@ -716,17 +716,19 @@ public interface IAero {
     }
 
     default String hasRoomForVerticalLanding() {
-        Coords pos = ((Entity) this).getPosition();
-        if (((Entity) this).getBoard().getBuildingAt(pos) != null) {
+        Entity entity = (Entity) this;
+        Board board = entity.getBoard();
+        Coords pos = entity.getPosition();
+        if (board.getBuildingAt(pos) != null) {
             return "Buildings in the way";
         }
         // no units in the way
-        for (Entity en : ((Entity) this).getGame().getEntitiesVector(pos)) {
+        for (Entity en : entity.getGame().getEntitiesAt(pos, board)) {
             if (!en.isAirborne()) {
                 return "Ground units in the way";
             }
         }
-        Hex hex = ((Entity) this).getBoard().getHex(pos);
+        Hex hex = board.getHex(pos);
         // if the hex is null, then we are offboard. Don't let units
         // land offboard.
         if (null == hex) {

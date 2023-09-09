@@ -1568,12 +1568,8 @@ public class Game extends AbstractGame implements Serializable {
         return getEntitiesVector().stream().filter(entity -> entity.isOnBoard(boardId)).collect(toList());
     }
 
-    /** @return A List of units at the given coords on the ground map. */
-    @Deprecated
-    public List<Entity> getEntitiesAt(Coords c) {
-        LogManager.getLogger().error("Dont call getEntitiesAt(c)", new Exception());
-        new Exception().getStackTrace();
-        return getEntitiesAt(c, 0);
+    public List<Entity> getEntitiesAt(Coords c, Board board) {
+        return getEntitiesAt(c, board.getBoardId());
     }
 
     /** @return A List of units at the given coords on the map corresponding to the given mapType. */
@@ -1624,19 +1620,21 @@ public class Game extends AbstractGame implements Serializable {
      * @param c The coordinates to check
      * @return the {@link GunEmplacement} <code>Vector</code>
      */
-    public Vector<GunEmplacement> getGunEmplacements(Coords c) {
-        Vector<GunEmplacement> vector = new Vector<>();
+    public List<GunEmplacement> getGunEmplacements(BoardLocation boardLocation) {
+        return getGunEmplacements(boardLocation.getCoords(), boardLocation.getBoardId());
+    }
 
-        // Only build the list if the coords are on the board.
-        if (board.contains(c)) {
-            for (Entity entity : getEntitiesVector(c, true)) {
-                if (entity.hasETypeFlag(Entity.ETYPE_GUN_EMPLACEMENT)) {
-                    vector.addElement((GunEmplacement) entity);
-                }
-            }
-        }
-
-        return vector;
+    /**
+     * Return a Vector of gun emplacements at Coords <code>c</code>
+     *
+     * @param c The coordinates to check
+     * @return the {@link GunEmplacement} <code>Vector</code>
+     */
+    public List<GunEmplacement> getGunEmplacements(Coords c, int boardId) {
+        return getEntitiesAt(c, boardId).stream()
+                .filter(e -> e instanceof GunEmplacement)
+                .map(e -> (GunEmplacement) e)
+                .collect(toList());
     }
 
     /**

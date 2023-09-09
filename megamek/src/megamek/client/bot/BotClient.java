@@ -580,22 +580,22 @@ public abstract class BotClient extends Client {
      * method iterates through the list of Coords and returns the first Coords
      * that does not have a stacking violation.
      */
-    protected @Nullable Coords getFirstValidCoords(Entity deployedUnit,
-                                                   List<Coords> possibleDeployCoords) {
+    protected @Nullable BoardLocation getFirstValidCoords(Entity deployedUnit,
+                                                   List<BoardLocation> possibleDeployCoords) {
         // Check all of the hexes in order.
-        for (Coords dest : possibleDeployCoords) {
+        for (BoardLocation dest : possibleDeployCoords) {
             Entity violation = Compute.stackingViolation(game, deployedUnit,
-                    dest, deployedUnit.getElevation(), dest, null, deployedUnit.climbMode());
+                    dest.getCoords(), deployedUnit.getElevation(), dest.getCoords(), null, deployedUnit.climbMode());
             // Ignore coords that could cause a stacking violation
             if (violation != null) {
                 continue;
             }
 
             // Make sure we don't overload any buildings in this hex.
-            Building building = game.getBoard().getBuildingAt(dest);
+            Building building = game.getBuildingAt(dest);
             if (null != building) {
                 double mass = getMassOfAllInBuilding(game, dest) + deployedUnit.getWeight();
-                if (mass > building.getCurrentCF(dest)) {
+                if (mass > building.getCurrentCF(dest.getCoords())) {
                     continue;
                 }
             }
@@ -608,11 +608,10 @@ public abstract class BotClient extends Client {
         return null;
     }
 
-    protected List<Coords> getStartingCoordsArray(Entity deployed_ent) {
+    protected List<BoardLocation> getStartingCoordsArray(Entity deployed_ent) {
         int highest_elev, lowest_elev, weapon_count;
         double av_range, ideal_elev;
         double adjusted_damage, max_damage, total_damage;
-        Board board = game.getBoard();
         Coords highestHex;
         List<RankedCoords> validCoords = new LinkedList<>();
         Vector<Entity> valid_attackers;
@@ -621,12 +620,14 @@ public abstract class BotClient extends Client {
 
         // Create array of hexes in the deployment zone that can be deployed to
         // Check for prohibited terrain, stacking limits
-        for (int x = 0; x <= board.getWidth(); x++) {
-            for (int y = 0; y <= board.getHeight(); y++) {
-                Coords c = new Coords(x, y);
-                if (deployed_ent.getDeploymentZone().canDeployTo(game, c, deployed_ent.getBoardId())
-                    && !deployed_ent.isLocationProhibited(c)) {
-                    validCoords.add(new RankedCoords(c, 0));
+        for (Board board: game.getBoards()) {
+            for (int x = 0; x <= board.getWidth(); x++) {
+                for (int y = 0; y <= board.getHeight(); y++) {
+                    Coords c = new Coords(x, y);
+                    if (deployed_ent.getDeploymentZone().canDeployTo(game, c, board.getBoardId())
+                            && !deployed_ent.isLocationProhibited(c)) {
+                        validCoords.add(new RankedCoords(c, board));
+                    }
                 }
             }
         }
@@ -640,12 +641,12 @@ public abstract class BotClient extends Client {
 
         lowest_elev = Integer.MAX_VALUE;
         for (RankedCoords c : validCoords) {
-            int elev = board.getHex(c.getX(), c.getY()).getLevel();
+            int elev = game.getHex(c.getBoardLocation()).getLevel();
             if (elev > highest_elev) {
-                highest_elev = board.getHex(c.getX(), c.getY()).getLevel();
+                highest_elev = elev;
             }
             if (elev < lowest_elev) {
-                lowest_elev = board.getHex(c.getX(), c.getY()).getLevel();
+                lowest_elev = elev;
             }
         }
 
@@ -708,9 +709,11 @@ public abstract class BotClient extends Client {
 
         for (RankedCoords coord : validCoords) {
 
+            Hex hex = game.getHex(coord.getBoardLocation());
+
             // Calculate the fitness factor for each hex and save it to the array
             // -> Absolute difference between hex elevation and ideal elevation decreases fitness
-            coord.setFitness(-1 * (Math.abs(ideal_elev - board.getHex(coord.getX(), coord.getY()).getLevel())));
+            coord.setFitness(-1 * (Math.abs(ideal_elev - hex.getLevel())));
 
             total_damage = 0.0;
             deployed_ent.setPosition(coord.getCoords());
@@ -775,15 +778,13 @@ public abstract class BotClient extends Client {
                 // -> Trees are good, when they're tall enough
                 // -> Water isn't that great below depth 1 -> this saves actual
                 // ground space for infantry/vehicles (minor)
-                int x = coord.getX();
-                int y = coord.getY();
-                if (board.getHex(x, y).containsTerrain(Terrains.WOODS)
-                        && board.getHex(x, y).terrainLevel(Terrains.FOLIAGE_ELEV) > 1) {
+                if (hex.containsTerrain(Terrains.WOODS)
+                        && hex.terrainLevel(Terrains.FOLIAGE_ELEV) > 1) {
                     coord.fitness += 1;
                 }
-                if (board.getHex(x, y).containsTerrain(Terrains.WATER)) {
-                    if (board.getHex(x, y).depth() > 1) {
-                        coord.fitness -= board.getHex(x, y).depth();
+                if (hex.containsTerrain(Terrains.WATER)) {
+                    if (hex.depth() > 1) {
+                        coord.fitness -= hex.depth();
                     }
                 }
                 // If building, make sure not too heavy to safely move out of
@@ -798,15 +799,15 @@ public abstract class BotClient extends Client {
                 // infantry
                 // rough is nice, too
                 // -> Massed infantry is more effective, so try to cluster them
-                if (board.getHex(coord.getX(), coord.getY()).containsTerrain(
+                if (hex.containsTerrain(
                         Terrains.ROUGH)) {
                     coord.fitness += 1.5;
                 }
-                if (board.getHex(coord.getX(), coord.getY()).containsTerrain(
+                if (hex.containsTerrain(
                         Terrains.WOODS)) {
                     coord.fitness += 2;
                 }
-                if (board.getHex(coord.getX(), coord.getY()).containsTerrain(
+                if (hex.containsTerrain(
                         Terrains.BUILDING)) {
                     coord.fitness += 4;
                 }
@@ -839,7 +840,7 @@ public abstract class BotClient extends Client {
                 // Not sure why bot tries to deploy infantry in water, it SHOULD
                 // be caught by the isHexProhibited method when
                 // selecting hexes, but sometimes it has a mind of its own so...
-                if (board.getHex(coord.getX(), coord.getY()).containsTerrain(
+                if (hex.containsTerrain(
                         Terrains.WATER)) {
                     coord.fitness -= 10;
                 }
@@ -851,7 +852,7 @@ public abstract class BotClient extends Client {
                 // Tracked vehicle
                 // -> Trees increase fitness
                 if (deployed_ent.getMovementMode() == EntityMovementMode.TRACKED) {
-                    if (board.getHex(coord.getX(), coord.getY()).containsTerrain(Terrains.WOODS)) {
+                    if (hex.containsTerrain(Terrains.WOODS)) {
                         coord.fitness += 2;
                     }
                 }
@@ -863,7 +864,7 @@ public abstract class BotClient extends Client {
                 // -> Water in hex increases fitness, hover vehicles have an
                 // advantage in water areas
                 if (deployed_ent.getMovementMode() == EntityMovementMode.HOVER) {
-                    if (board.getHex(coord.getX(), coord.getY()).containsTerrain(
+                    if (hex.containsTerrain(
                             Terrains.WATER)) {
                         coord.fitness += 2;
                     }
@@ -877,14 +878,14 @@ public abstract class BotClient extends Client {
             // ->
             // -> Trees increase fitness by +2 (minor)
             if (deployed_ent instanceof Protomech) {
-                if (board.getHex(coord.getX(), coord.getY()).containsTerrain(
+                if (hex.containsTerrain(
                         Terrains.WOODS)) {
                     coord.fitness += 2;
                 }
             }
 
             // Make sure I'm not stuck in a dead-end.
-            coord.fitness += calculateEdgeAccessFitness(deployed_ent, board);
+            coord.fitness += calculateEdgeAccessFitness(deployed_ent, game.getBoard(coord.getBoardId()));
 
             if (coord.fitness > highestFitness) {
                 highestFitness = coord.fitness;
@@ -897,16 +898,17 @@ public abstract class BotClient extends Client {
         // attempt to deploy in the biggest area this unit can access instead
         if (highestFitness < -10) {
             for (RankedCoords rc : validCoords) {
-                rc.fitness += getClusterTracker().getBoardClusterSize(deployed_ent, rc.coords, false);
+                rc.fitness += getClusterTracker().getBoardClusterSize(deployed_ent,
+                        rc.getCoords(), false);
             }
         }
 
         // Now sort the valid array.
         Collections.sort(validCoords);
 
-        List<Coords> result = new ArrayList<>(validCoords.size());
+        List<BoardLocation> result = new ArrayList<>(validCoords.size());
         for (RankedCoords rc : validCoords) {
-            result.add(rc.getCoords());
+            result.add(rc.getBoardLocation());
         }
 
         return result;
@@ -1197,27 +1199,36 @@ public abstract class BotClient extends Client {
     }
 
     private static class RankedCoords implements Comparable<RankedCoords> {
-        private Coords coords;
+        private final BoardLocation boardLocation;
         private double fitness;
 
-        RankedCoords(Coords coords, double fitness) {
-            if (coords == null) {
-                throw new IllegalArgumentException("Coords cannot be null.");
-            }
-            this.coords = coords;
+        RankedCoords(Coords coords, int boardId, double fitness) {
+            this(new BoardLocation(coords, boardId), fitness);
+        }
+
+        RankedCoords(Coords coords, Board board, double fitness) {
+            this(new BoardLocation(coords, board.getBoardId()), fitness);
+        }
+
+        RankedCoords(Coords coords, Board board) {
+            this(new BoardLocation(coords, board.getBoardId()), 0);
+        }
+
+        RankedCoords(BoardLocation boardLocation, double fitness) {
+            this.boardLocation = boardLocation;
             this.fitness = fitness;
         }
 
-        public Coords getCoords() {
-            return coords;
+        public BoardLocation getBoardLocation() {
+            return boardLocation;
         }
 
-        @SuppressWarnings("unused")
-        public void setCoords(Coords coords) {
-            if (coords == null) {
-                throw new IllegalArgumentException("Coords cannot be null.");
-            }
-            this.coords = coords;
+        public int getBoardId() {
+            return boardLocation.getBoardId();
+        }
+
+        public Coords getCoords() {
+            return boardLocation.getCoords();
         }
 
         public double getFitness() {
@@ -1238,35 +1249,25 @@ public abstract class BotClient extends Client {
             }
 
             RankedCoords coords1 = (RankedCoords) o;
-
-            if (Double.compare(coords1.fitness, fitness) != 0) {
-                return false;
-            }
-            //noinspection RedundantIfStatement
-            if (!coords.equals(coords1.coords)) {
-                return false;
-            }
-
-            return true;
+            return (coords1.fitness == fitness) && coords1.boardLocation.equals(boardLocation);
         }
 
         @Override
         public int hashCode() {
-            long temp = Double.doubleToLongBits(fitness);
-            return 31 * coords.hashCode() + (int) (temp ^ (temp >>> 32));
+            return Objects.hash(boardLocation, fitness);
         }
 
         @Override
         public String toString() {
-            return String.format("RankedCoords { coords=%s, fitness=%f }", coords, fitness);
+            return String.format("RankedCoords { location=%s, fitness=%f }", boardLocation, fitness);
         }
 
         int getX() {
-            return coords.getX();
+            return boardLocation.getCoords().getX();
         }
 
         int getY() {
-            return coords.getY();
+            return boardLocation.getCoords().getY();
         }
 
         @Override

@@ -237,7 +237,7 @@ public class NewtonianAerospacePathRanker extends BasicPathRanker implements IPa
     private static OffBoardDirection calculateOffBoardDirection(Entity entity, Coords startingCoords, int[] vectors) {
         Coords nextCoords = Compute.getFinalPosition(startingCoords, vectors);
         int availableThrust = entity.getRunMP();
-        Board board = entity.getGame().getBoard();
+        Board board = entity.getBoard();
         OffBoardDirection offBoardDirection = OffBoardDirection.NONE;
 
         // step one: check if the position is out of bounds by more than the unit has available thrust

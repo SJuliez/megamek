@@ -19,6 +19,9 @@ public class BoardLocation implements Serializable {
     private final int boardId;
 
     public BoardLocation(Coords coords, int boardId) {
+        if (coords == null) {
+            throw new IllegalArgumentException("Coords cannot be null.");
+        }
         this.coords = coords;
         this.boardId = boardId;
     }

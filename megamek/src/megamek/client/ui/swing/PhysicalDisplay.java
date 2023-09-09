@@ -1335,7 +1335,7 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
         }
 
         if (clientgui.getClient().isMyTurn() && (b.getCoords() != null) && (ce() != null)) {
-            final Targetable targ = chooseTarget(b.getCoords());
+            final Targetable targ = chooseTarget(b.getBoardLocation());
             target(targ);
         }
     }
@@ -1343,24 +1343,18 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
     /**
      * Have the player select a target from the entities at the given coords.
      *
-     * @param pos - the <code>Coords</code> containing targets.
+     * @param boardLocation - the <code>Coords</code> containing targets.
      */
-    private Targetable chooseTarget(Coords pos) {
+    private Targetable chooseTarget(BoardLocation boardLocation) {
         final Game game = clientgui.getClient().getGame();
         // Assume that we have *no* choice.
         Targetable choice = null;
 
-        // Get the available choices.
-        Iterator<Entity> choices = game.getEntities(pos);
-
-        // Convert the choices into a List of targets.
-        List<Targetable> targets = new ArrayList<>();
+        List<Targetable> targets = new ArrayList<>(game.getEntitiesAt(boardLocation));
+        targets.remove(ce());
         boolean friendlyFire = game.getOptions().booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE);
-        while (choices.hasNext()) {
-            choice = choices.next();
-            if (!ce().equals(choice) && (friendlyFire || choice.isEnemyOf(ce()))) {
-                targets.add(choice);
-            }
+        if (!friendlyFire) {
+            targets.removeIf(t -> !t.isEnemyOf(ce()));
         }
         targets.sort((o1, o2) -> {
             boolean enemy1 = o1.isEnemyOf(ce());
@@ -1375,13 +1369,13 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
         });
 
         // Is there a building in the hex?
-        Building bldg = game.getBoard(ce()).getBuildingAt(pos);
+        Building bldg = game.getBuildingAt(boardLocation);
         if (bldg != null) {
-            targets.add(new BuildingTarget(ce().getBoardLocation(), game.getBoard(ce()), false));
+            targets.add(new BuildingTarget(boardLocation, game.getBoard(boardLocation), false));
         }
 
         // Is the attacker targeting its own hex?
-        if (ce().getPosition().equals(pos)) {
+        if (ce().getBoardLocation().equals(boardLocation)) {
             // Add any iNarc pods attached to the entity.
             Iterator<INarcPod> pods = ce().getINarcPodsAttached();
             while (pods.hasNext()) {
@@ -1398,7 +1392,7 @@ public class PhysicalDisplay extends AttackPhaseDisplay {
             // If we have multiple choices, display a selection dialog.
             choice = TargetChoiceDialog.showSingleChoiceDialog(clientgui.getFrame(),
                     "PhysicalDisplay.ChooseTargetDialog.title",
-                    Messages.getString("PhysicalDisplay.ChooseTargetDialog.message", pos.getBoardNum()),
+                    Messages.getString("PhysicalDisplay.ChooseTargetDialog.message", boardLocation.getBoardNum()),
                     targets, clientgui, ce());
         }
 

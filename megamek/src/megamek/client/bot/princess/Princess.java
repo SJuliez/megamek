@@ -392,13 +392,13 @@ public class Princess extends BotClient {
         }
         
         // get a list of all coordinates to which we can deploy
-        final List<Coords> startingCoords = getStartingCoordsArray(game.getEntity(entityNum));
+        final List<BoardLocation> startingCoords = getStartingCoordsArray(game.getEntity(entityNum));
         if (startingCoords.isEmpty()) {
             LogManager.getLogger().error("No valid locations to deploy " + getEntity(entityNum).getDisplayName());
         }
 
         // get the coordinates I can deploy on
-        final Coords deployCoords = getFirstValidCoords(getEntity(entityNum), startingCoords);
+        final BoardLocation deployCoords = getFirstValidCoords(getEntity(entityNum), startingCoords);
         if (null == deployCoords) {
             // if I cannot deploy anywhere, then I get rid of the entity instead so that we may go about our business                
             LogManager.getLogger().error("getCoordsAround gave no location for "
@@ -414,8 +414,8 @@ public class Princess extends BotClient {
         // specifically, face the last deployed enemy.
         int decentFacing = -1;
         for (final Entity e : getEnemyEntities()) {
-            if (e.isDeployed() && !e.isOffBoard()) {
-                decentFacing = deployCoords.direction(e.getPosition());
+            if (e.isDeployed() && !e.isOffBoard() && e.getBoardId() == deployCoords.getBoardId()) {
+                decentFacing = deployCoords.getCoords().direction(e.getPosition());
                 break;
             }
         }
@@ -423,19 +423,18 @@ public class Princess extends BotClient {
         // if I haven't found a decent facing, then at least face towards 
         // the center of the board
         if (-1 == decentFacing) {
-            final Coords center = new Coords(game.getBoard().getWidth() / 2,
-                                       game.getBoard().getHeight() / 2);
-            decentFacing = deployCoords.direction(center);
+            final Coords center = new Coords(game.getBoard(deployCoords).getWidth() / 2,
+                                       game.getBoard(deployCoords).getHeight() / 2);
+            decentFacing = deployCoords.getCoords().direction(center);
         }
 
         final Entity deployEntity = game.getEntity(entityNum);
-        final Hex deployHex = game.getBoard(deployEntity).getHex(deployCoords);
-
+        final Hex deployHex = game.getHex(deployCoords);
         int deployElevation = getDeployElevation(deployEntity, deployHex);
 
         // Compensate for hex elevation where != 0...
         deployElevation -= deployHex.getLevel();
-        deploy(entityNum, new BoardLocation(deployCoords, deployEntity.getBoardId()), decentFacing, deployElevation);
+        deploy(entityNum, deployCoords, decentFacing, deployElevation);
     }
     
     /**
@@ -456,10 +455,10 @@ public class Princess extends BotClient {
      * It's possible to return null, which indicates that there are no valid hexes for the given unit to deploy into.
      */
     @Override
-    protected @Nullable Coords getFirstValidCoords(final Entity deployedUnit,
-                                         final List<Coords> possibleDeployCoords) {
+    protected @Nullable BoardLocation getFirstValidCoords(final Entity deployedUnit,
+                                         final List<BoardLocation> possibleDeployCoords) {
         if (Entity.ETYPE_GUN_EMPLACEMENT == (deployedUnit.getEntityType() & Entity.ETYPE_GUN_EMPLACEMENT)) {
-            final List<Coords> validCoords = calculateTurretDeploymentLocations(
+            final List<BoardLocation> validCoords = calculateTurretDeploymentLocations(
                     (GunEmplacement) deployedUnit, possibleDeployCoords);
             if (!validCoords.isEmpty()) {
                 return validCoords.get(0);
@@ -479,11 +478,11 @@ public class Princess extends BotClient {
      * @param possibleDeployCoords The coordinates being considered for deployment
      * @return The first valid deployment coordinates.
      */
-    private Coords calculateAdvancedAerospaceDeploymentCoords(final Entity deployedUnit,
-                                                              final List<Coords> possibleDeployCoords) {
-        for (Coords coords : possibleDeployCoords) {
-            if (!NewtonianAerospacePathRanker.willFlyOffBoard(deployedUnit, coords)) {
-                return coords;
+    private BoardLocation calculateAdvancedAerospaceDeploymentCoords(final Entity deployedUnit,
+                                                              final List<BoardLocation> possibleDeployCoords) {
+        for (BoardLocation boardLocation : possibleDeployCoords) {
+            if (!NewtonianAerospacePathRanker.willFlyOffBoard(deployedUnit, boardLocation.getCoords())) {
+                return boardLocation;
             }
         }
         
@@ -501,23 +500,23 @@ public class Princess extends BotClient {
      * @param deployedUnit The unit to check
      * @param possibleDeployCoords The list of possible deployment coordinates
      */
-    private List<Coords> calculateTurretDeploymentLocations(final GunEmplacement deployedUnit,
-                                                            final List<Coords> possibleDeployCoords) {
+    private List<BoardLocation> calculateTurretDeploymentLocations(final GunEmplacement deployedUnit,
+                                                            final List<BoardLocation> possibleDeployCoords) {
         // algorithm:
         // get all hexes in deployment zone with buildings
         // for each building, if deploying on the roof does not cause a stacking violation, add it to the list
         // sort the list in decreasing order based on CF then height
-        final List<Coords> turretDeploymentLocations = new Vector<>();
+        final List<BoardLocation> turretDeploymentLocations = new Vector<>();
 
-        for (final Coords coords : possibleDeployCoords) {
-            final Building building = game.getBoard().getBuildingAt(coords);
-            final Hex hex = game.getBoard().getHex(coords);
+        for (final BoardLocation coords : possibleDeployCoords) {
+            final Building building = game.getBuildingAt(coords);
+            final Hex hex = game.getHex(coords);
 
             if (null != building) {
                 final int buildingHeight = hex.terrainLevel(Terrains.BLDG_ELEV);
                 
                 // check stacking violation at the roof level
-                final Entity violation = Compute.stackingViolation(game, deployedUnit, coords, buildingHeight, coords,
+                final Entity violation = Compute.stackingViolation(game, deployedUnit, coords.getCoords(), buildingHeight, coords.getCoords(),
                         null, deployedUnit.climbMode());
                 // Ignore coords that could cause a stacking violation
                 if (null == violation) {
@@ -535,16 +534,16 @@ public class Princess extends BotClient {
      * @param coords The location of the building being considered.
      * @return An "arbitrary" utility number
      */
-    private int calculateTurretDeploymentValue(final Coords coords) {
+    private int calculateTurretDeploymentValue(final BoardLocation coords) {
         // algorithm: a building is valued by the following formula:
         //      (CF + height * 2) / # turrets placed on the roof
         //      This way, we will generally favor unpopulated higher CF buildings, 
         //      but have some wiggle room in case of a really tall high CF building
         final Building building = game.getBoard().getBuildingAt(coords);
-        final Hex hex = game.getBoard().getHex(coords);
+        final Hex hex = game.getHex(coords);
         final int turretCount = 1 + game.getGunEmplacements(coords).size();
 
-        return (building.getCurrentCF(coords) + hex.terrainLevel(Terrains.BLDG_ELEV) * 2) / turretCount;
+        return (building.getCurrentCF(coords.getCoords()) + hex.terrainLevel(Terrains.BLDG_ELEV) * 2) / turretCount;
     }
     
     @Override
