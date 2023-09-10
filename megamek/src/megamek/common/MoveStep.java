@@ -26,10 +26,7 @@ import megamek.common.util.BoardHelper;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.TreeMap;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * A single step in the entity's movement. Since the path planner uses shallow
@@ -3315,36 +3312,19 @@ public class MoveStep implements Serializable {
 
         // The entity is trying to load. Check for a valid move.
         if (type == MoveStepType.LOAD) {
-            // Find the unit being loaded.
-            Entity other = null;
-            Iterator<Entity> entities = game.getEntities(src);
-            while (entities.hasNext()) {
-
-                // Is the other unit friendly and not the current entity?
-                other = entities.next();
-                if (!entity.getOwner().isEnemyOf(other.getOwner())
-                        && !entity.equals(other)) {
-
-                    // The moving unit should be able to load the other unit.
-                    if (!entity.canLoad(other)) {
-                        return false;
-                    }
-
-                    // The other unit should be able to have a turn.
-                    if (!other.isLoadableThisTurn()) {
-                        return false;
-                    }
-
-                    // We can stop looking.
+            // See if there is a loadable unit
+            boolean found = false;
+            for (Entity possibleLoadee: game.getEntitiesAt(src, getBoardId())) {
+                if ((possibleLoadee != null) && !entity.isEnemyOf(possibleLoadee) && !entity.equals(possibleLoadee)
+                        && entity.canLoad(possibleLoadee) && possibleLoadee.isLoadableThisTurn()) {
+                    // The moving unit should be able to load the other unit and the other should be able to have a turn
+                    found = true;
                     break;
                 }
-                // Nope. Discard it.
-                other = null;
-
-            } // Check the next entity in this position.
+            }
 
             // We were supposed to find someone to load.
-            if (other == null) {
+            if (!found) {
                 return false;
             }
 

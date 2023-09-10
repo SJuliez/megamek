@@ -1151,8 +1151,9 @@ public class Game extends AbstractGame implements Serializable {
                 case Targetable.TYPE_BUILDING:
                 case Targetable.TYPE_BLDG_IGNITE:
                 case Targetable.TYPE_BLDG_TAG:
-                    if (getBuildingAt(BuildingTarget.idToLocation(nID)) != null) {
-                        return new BuildingTarget(BuildingTarget.idToLocation(nID), board, nType);
+                    BoardLocation location = BuildingTarget.idToLocation(nID);
+                    if (getBuildingAt(location) != null) {
+                        return new BuildingTarget(location, getBoard(location), nType);
                     } else {
                         return null;
                     }
@@ -1443,37 +1444,8 @@ public class Game extends AbstractGame implements Serializable {
         }
     }
 
-    /**
-     * Returns the first entity at the given coordinate, if any. Only returns
-     * targetable (non-dead) entities.
-     *
-     * @param c the coordinates to search at
-     */
-    public Entity getFirstEntity(Coords c) {
-        for (Entity entity : inGameTWEntities()) {
-            if (c.equals(entity.getPosition()) && entity.isTargetable()) {
-                return entity;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Returns the first enemy entity at the given coordinate, if any. Only
-     * returns targetable (non-dead) entities.
-     *
-     * @param c the coordinates to search at
-     * @param currentEntity the entity that is firing
-     */
-    public Entity getFirstEnemyEntity(Coords c, Entity currentEntity) {
-        // @@MultiBoardTODO:
-        for (Entity entity : inGameTWEntities()) {
-            if (c.equals(entity.getPosition()) && entity.isTargetable()
-                && entity.isEnemyOf(currentEntity)) {
-                return entity;
-            }
-        }
-        return null;
+    public boolean hasTargetableEnemyAt(BoardLocation boardLocation, Entity attacker) {
+        return getEntitiesAt(boardLocation).stream().filter(Entity::isTargetable).anyMatch(attacker::isEnemyOf);
     }
 
     /**
@@ -1570,6 +1542,18 @@ public class Game extends AbstractGame implements Serializable {
 
     public List<Entity> getEntitiesAt(Coords c, Board board) {
         return getEntitiesAt(c, board.getBoardId());
+    }
+
+    public List<Entity> getTargetableEntitiesAt(BoardLocation boardLocation) {
+        return getTargetableEntitiesAt(boardLocation.getCoords(), boardLocation.getBoardId());
+    }
+
+    public List<Entity> getTargetableEntitiesAt(Coords c, Board board) {
+        return getTargetableEntitiesAt(c, board.getBoardId());
+    }
+
+    public List<Entity> getTargetableEntitiesAt(Coords c, int boardId) {
+        return getEntitiesAt(c, boardId).stream().filter(Entity::isTargetable).collect(toList());
     }
 
     /** @return A List of units at the given coords on the map corresponding to the given mapType. */
@@ -3270,8 +3254,8 @@ public class Game extends AbstractGame implements Serializable {
     // a shortcut function for determining whether vectored movement is
     // applicable
     public boolean useVectorMove() {
-        return getOptions().booleanOption(OptionsConstants.ADVAERORULES_ADVANCED_MOVEMENT)
-               && board.isSpaceMap();
+        // @@MultiBoardTODO: only in space but not high-altitude? can only answer for each entity
+        return getOptions().booleanOption(OptionsConstants.ADVAERORULES_ADVANCED_MOVEMENT);
     }
 
     /**

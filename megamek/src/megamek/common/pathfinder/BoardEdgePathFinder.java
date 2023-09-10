@@ -17,6 +17,7 @@ package megamek.common.pathfinder;
 import megamek.common.*;
 import megamek.common.MovePath.MoveStepType;
 import megamek.common.annotations.Nullable;
+import megamek.common.util.BoardHelper;
 
 import java.util.*;
 
@@ -57,7 +58,7 @@ public class BoardEdgePathFinder {
      * @return the Board.START_ constant representing the "opposite" edge
      */
     private int determineOppositeEdge(Entity entity) {
-        Board board = entity.getGame().getBoard();
+        Board board = entity.getBoard();
 
         // the easiest part is if the entity is supposed to start on a particular edge. Just return the opposite edge.
         int oppositeEdge = board.getOppositeEdge(entity.getStartingPos());
@@ -113,13 +114,13 @@ public class BoardEdgePathFinder {
             case Board.START_S:
                 return 3;
             case Board.START_E:
-                if (entity.getPosition().getY() < entity.getGame().getBoard().getHeight() / 2) {
+                if (entity.getPosition().getY() < entity.getBoard().getHeight() / 2) {
                     return 2;
                 } else {
                     return 1;
                 }
             case Board.START_W:
-                if (entity.getPosition().getY() < entity.getGame().getBoard().getHeight() / 2) {
+                if (entity.getPosition().getY() < entity.getBoard().getHeight() / 2) {
                     return 4;
                 } else {
                     return 5;
@@ -487,11 +488,8 @@ public class BoardEdgePathFinder {
      * @return Whether or not the given move path is "legal" in the context of this pathfinder.
      */
     protected MoveLegalityIndicator isLegalMove(MovePath movePath) {
-        Coords dest = movePath.getFinalCoords();
-        Board board = movePath.getGame().getBoard();
-        Hex destHex = board.getHex(dest);
-        Building destinationBuilding = board.getBuildingAt(dest);
-        
+        Hex destHex = movePath.getGame().getHex(movePath.getFinalBoardLocation());
+        Building destinationBuilding = movePath.getGame().getBuildingAt(movePath.getFinalBoardLocation());
         return isLegalMove(movePath, destHex, destinationBuilding);
     }
 
@@ -506,7 +504,7 @@ public class BoardEdgePathFinder {
      */
     private MoveLegalityIndicator isLegalMove(MovePath movePath, Hex destHex, Building destinationBuilding) {        
         Coords dest = movePath.getFinalCoords();
-        Board board = movePath.getGame().getBoard();
+        Board board = movePath.getGame().getBoard(movePath.getFinalBoardId());
         Coords src = movePath.getSecondLastStep().getPosition();
         Hex srcHex = board.getHex(src);
         Entity entity = movePath.getEntity();
@@ -654,9 +652,9 @@ public class BoardEdgePathFinder {
             case Board.START_N:
                 return coords.getY() == 0;
             case Board.START_S:
-                return coords.getY() == movePath.getGame().getBoard().getHeight() - 1;
+                return coords.getY() == movePath.getGame().getBoard(movePath.getFinalBoardId()).getHeight() - 1;
             case Board.START_E:
-                return coords.getX() == movePath.getGame().getBoard().getWidth() - 1;
+                return coords.getX() == movePath.getGame().getBoard(movePath.getFinalBoardId()).getWidth() - 1;
             case Board.START_W:
                 return coords.getX() == 0;
             default:

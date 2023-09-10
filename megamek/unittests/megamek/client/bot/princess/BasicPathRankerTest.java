@@ -337,7 +337,7 @@ public class BasicPathRankerTest {
                .getMovePathSuccessProbability(any(MovePath.class), any(StringBuilder.class));
         doReturn(20)
                .when(testRanker)
-               .distanceToHomeEdge(any(Coords.class), any(CardinalEdge.class), any(Game.class));
+               .distanceToHomeEdge(any(BoardLocation.class), any(CardinalEdge.class), any(Game.class));
         doReturn(12.0)
                .when(testRanker)
                .distanceToClosestEnemy(any(Entity.class), any(Coords.class), any(Game.class));
@@ -718,7 +718,7 @@ public class BasicPathRankerTest {
         assertRankedPathEquals(expected, actual);
         doReturn(10)
                .when(testRanker)
-               .distanceToHomeEdge(any(Coords.class), any(CardinalEdge.class), any(Game.class));
+               .distanceToHomeEdge(any(BoardLocation.class), any(CardinalEdge.class), any(Game.class));
         expected = new RankedPath(-51.25, mockPath, "Calculation: {fall mod ["
                 + LOG_DECIMAL.format(0) + " = " + LOG_DECIMAL.format(0) + " * "
                 + LOG_DECIMAL.format(100) + "] + braveryMod [" + LOG_DECIMAL.format(-6.25)
@@ -738,7 +738,7 @@ public class BasicPathRankerTest {
         }
         doReturn(30)
                .when(testRanker)
-               .distanceToHomeEdge(any(Coords.class), any(CardinalEdge.class), any(Game.class));
+               .distanceToHomeEdge(any(BoardLocation.class), any(CardinalEdge.class), any(Game.class));
         expected = new RankedPath(-51.25, mockPath, "Calculation: {fall mod ["
                 + LOG_DECIMAL.format(0) + " = " + LOG_DECIMAL.format(0) + " * "
                 + LOG_DECIMAL.format(100) + "] + braveryMod [" + LOG_DECIMAL.format(-6.25)
@@ -757,7 +757,7 @@ public class BasicPathRankerTest {
         }
         doReturn(20)
                .when(testRanker)
-               .distanceToHomeEdge(nullable(Coords.class), any(CardinalEdge.class), any(Game.class));
+               .distanceToHomeEdge(nullable(BoardLocation.class), any(CardinalEdge.class), any(Game.class));
         when(mockPrincess.wantsToFallBack(eq(mockMover))).thenReturn(false);
         when(mockMover.isCrippled()).thenReturn(false);
 

@@ -375,17 +375,14 @@ public class PathEnumerator {
 
     private void adjustPathForBridge(MovePath path) {
         boolean needsAdjust = false;
-        for (Coords c : path.getCoordsSet()) {
-            Hex hex = getGame().getBoard().getHex(c);
+        for (MoveStep step : path.getStepVector()) {
+            Hex hex = getGame().getHex(step.getBoardLocation());
             if ((hex != null) && hex.containsTerrain(Terrains.BRIDGE)) {
-                if (getGame().getBoard().getBuildingAt(c).getCurrentCF(c) >=
-                    path.getEntity().getWeight()) {
+                if (getGame().getBuildingAt(step.getBoardLocation()).getCurrentCF(step.getPosition()) >=
+                        path.getEntity().getWeight()) {
                     needsAdjust = true;
-                    break;
-                } else {
-                    needsAdjust = false;
-                    break;
                 }
+                break;
             }
         }
         if (!needsAdjust) {
@@ -490,7 +487,7 @@ public class PathEnumerator {
                 return mapHasBridges.get();
             }
 
-            mapHasBridges = new AtomicBoolean(getGame().getBoard().containsBridges());
+            mapHasBridges = new AtomicBoolean(getGame().getBoards().stream().anyMatch(Board::containsBridges));
         }
 
         return mapHasBridges.get();

@@ -3149,7 +3149,7 @@ public class FireControl {
                     continue;
                 }
                 
-                for (Entity ent : shooter.getGame().getEntitiesVector(intervening, true)) {
+                for (Entity ent : shooter.getGame().getEntitiesAt(intervening, shooter.getBoardId())) {
                     // don't count ourselves, or the target if it's already lit itself up
                     // or the target if it will be lit up by a previously declared search light
                     if ((ent.getId() == shooter.getId()) || ent.isIlluminated()) {

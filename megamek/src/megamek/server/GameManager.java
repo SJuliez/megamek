@@ -4954,12 +4954,11 @@ public class GameManager implements IGameManager {
             boolean stopTheSkid = false;
             // Does the next hex contain an entities?
             // ASSUMPTION: hurt EVERYONE in the hex.
-            Iterator<Entity> targets = game.getEntities(nextPos);
-            if (targets.hasNext()) {
+            List<Entity> targets = game.getTargetableEntitiesAt(nextPos, step.getBoardId());
+            if (!targets.isEmpty()) {
                 List<Entity> avoidedChargeUnits = new ArrayList<>();
                 boolean skidChargeHit = false;
-                while (targets.hasNext()) {
-                    Entity target = targets.next();
+                for (Entity target: targets) {
 
                     if ((target.getElevation() > (nextElevation + entity.getHeight()))
                             || (target.relHeight() < nextElevation)) {
@@ -5068,9 +5067,10 @@ public class GameManager implements IGameManager {
                             resolveChargeDamage(entity, target, toHit, direction);
                             // HACK: set the entity's location
                             // to the original hex again, for the other targets
-                            if (targets.hasNext()) {
-                                entity.setPosition(curPos);
-                            }
+                            // @@MultiBoardTODO: necessary? no setPosition before here
+//                            if (targets.hasNext()) {
+//                                entity.setPosition(curPos);
+//                            }
                             bldgSuffered = true;
                             skidChargeHit = true;
                             // The skid ends here if the target lives.
@@ -5205,7 +5205,7 @@ public class GameManager implements IGameManager {
                 if (bldg.getCurrentCF(nextPos) > 0) {
                     stopTheSkid = true;
                     if (bldg.rollBasement(nextPos, game.getBoard(entity), vPhaseReport)) {
-                        sendChangedHex(nextPos);
+                        sendChangedHex(nextPos, entity.getBoardId());
                         Vector<Building> buildings = new Vector<>();
                         buildings.add(bldg);
                         sendChangedBuildings(buildings);
@@ -5964,7 +5964,7 @@ public class GameManager implements IGameManager {
                     h.addTerrain(new Terrain(Terrains.WATER, crateredElevation, false, 0));
                 }
             }
-            sendChangedHex(hitCoords);
+            sendChangedHex(hitCoords, entity.getBoardId());
         }
 
         // check for a stacking violation - which should only happen in the
@@ -6773,8 +6773,8 @@ public class GameManager implements IGameManager {
 
                 // if out of control, check for possible collision
                 if (didMove && a.isOutControlTotal()) {
-                    Iterator<Entity> targets = game.getEntities(step.getPosition());
-                    if (targets.hasNext()) {
+                    List<Entity> targets = game.getTargetableEntitiesAt(step.getBoardLocation());
+                    if (!targets.isEmpty()) {
                         // Somebody here so check to see if there is a collision
                         int checkRoll = Compute.d6(2);
                         // TODO : change this to 11 for Large Craft
@@ -6793,8 +6793,8 @@ public class GameManager implements IGameManager {
                             Vector<Integer> potentialSmallCraft = new Vector<>();
                             Vector<Integer> potentialASF = new Vector<>();
 
-                            while (targets.hasNext()) {
-                                int id = targets.next().getId();
+                            for (Entity target: targets) {
+                                int id = target.getId();
                                 Entity ce = game.getEntity(id);
                                 // if we are in atmosphere and not the same altitude
                                 // then skip
@@ -7433,7 +7433,7 @@ public class GameManager implements IGameManager {
             if (isOnGround && curHex.containsTerrain(Terrains.BUILDING)) {
                 Building bldg = game.getBoard(entity).getBuildingAt(curPos);
                 if (bldg.rollBasement(curPos, game.getBoard(entity), vPhaseReport)) {
-                    sendChangedHex(curPos);
+                    sendChangedHex(curPos, step.getBoardId());
                     Vector<Building> buildings = new Vector<>();
                     buildings.add(bldg);
                     sendChangedBuildings(buildings);
@@ -7703,7 +7703,7 @@ public class GameManager implements IGameManager {
                     createSmoke(curPos, entity.getBoardId(), SmokeCloud.SMOKE_CHAFF_LIGHT, 1);
                     Hex hex = game.getBoard(entity).getHex(curPos);
                     hex.addTerrain(new Terrain(Terrains.SMOKE, SmokeCloud.SMOKE_CHAFF_LIGHT));
-                    sendChangedHex(curPos);
+                    sendChangedHex(curPos, step.getBoardId());
                     r = new Report(2512)
                             .addDesc(entity)
                             .subject(entity.getId());
@@ -7995,42 +7995,24 @@ public class GameManager implements IGameManager {
             if (step.getType() == MovePath.MoveStepType.LOAD) {
 
                 // Find the unit being loaded.
-                Entity loaded = null;
-                Iterator<Entity> entities = game.getEntities(curPos);
-                while (entities.hasNext()) {
-
-                    // Is the other unit friendly and not the current entity?
-                    loaded = entities.next();
-
-                    // This should never ever happen, but just in case...
-                    if (loaded.equals(null)) {
-                        continue;
-                    }
-
-                    if (!entity.isEnemyOf(loaded) && !entity.equals(loaded)) {
+                boolean found = false;
+                List<Entity> entities = game.getEntitiesAt(curPos, step.getBoardId());
+                for (Entity loaded: entities) {
+                    if ((loaded != null) && !entity.isEnemyOf(loaded) && !entity.equals(loaded)) {
                         // The moving unit should be able to load the other
                         // unit and the other should be able to have a turn.
-                        if (!entity.canLoad(loaded) || !loaded.isLoadableThisTurn()) {
-                            // Something is fishy in Denmark.
-                            LogManager.getLogger().error(entity.getShortName() + " can not load " + loaded.getShortName());
-                            loaded = null;
-                        } else {
+                        if (entity.canLoad(loaded) && loaded.isLoadableThisTurn()) {
                             // Have the deployed unit load the indicated unit.
                             loadUnit(entity, loaded, loaded.getTargetBay());
-
+                            found = true;
                             // Stop looking.
                             break;
                         }
-
-                    } else {
-                        // Nope. Discard it.
-                        loaded = null;
                     }
-
-                } // Handle the next entity in this hex.
+                }
 
                 // We were supposed to find someone to load.
-                if (loaded == null) {
+                if (!found) {
                     LogManager.getLogger().error("Could not find unit for " + entity.getShortName() + " to load in " + curPos);
                 }
 
@@ -11508,12 +11490,8 @@ public class GameManager implements IGameManager {
      * @param mf The <code>Minefield</code> to explode
      */
     private void explodeVibrabomb(Minefield mf, Vector<Report> vBoomReport, Integer entityToExclude) {
-        Iterator<Entity> targets = game.getEntities(mf.getCoords());
         Report r;
-
-        while (targets.hasNext()) {
-            Entity entity = targets.next();
-
+        for (Entity entity: game.getTargetableEntitiesAt(mf.getBoardLocation())) {
             // Airborne entities wont get hit by the mines...
             if (entity.isAirborne()) {
                 continue;
@@ -12517,7 +12495,7 @@ public class GameManager implements IGameManager {
                 && (entity.getElevation() == 0)) {
             bldg = game.getBoard(entity).getBuildingAt(dest);
             if (bldg.rollBasement(dest, game.getBoard(entity), vPhaseReport)) {
-                sendChangedHex(dest);
+                sendChangedHex(dest, bldg.getBoardId());
                 Vector<Building> buildings = new Vector<>();
                 buildings.add(bldg);
                 sendChangedBuildings(buildings);
@@ -13009,7 +12987,7 @@ public class GameManager implements IGameManager {
         Building bldg = game.getBoard(boardLocation).getBuildingAt(entity.getPosition());
         if ((bldg != null)) {
             if (bldg.rollBasement(entity.getPosition(), game.getBoard(boardLocation), vPhaseReport)) {
-                sendChangedHex(entity.getPosition());
+                sendChangedHex(entity.getPosition(), bldg.getBoardId());
                 Vector<Building> buildings = new Vector<>();
                 buildings.add(bldg);
                 sendChangedBuildings(buildings);
@@ -14332,7 +14310,7 @@ public class GameManager implements IGameManager {
         if (curHex.terrainLevel(Terrains.ARMS) > 0) {
             clubType = EquipmentType.get(EquipmentTypeLookup.LIMB_CLUB);
             curHex.addTerrain(new Terrain(Terrains.ARMS, curHex.terrainLevel(Terrains.ARMS) - 1));
-            sendChangedHex(entity.getPosition());
+            sendChangedHex(entity.getBoardLocation());
             r = new Report(3035);
             r.subject = entity.getId();
             r.addDesc(entity);
@@ -14342,7 +14320,7 @@ public class GameManager implements IGameManager {
         else if (curHex.terrainLevel(Terrains.LEGS) > 0) {
             clubType = EquipmentType.get(EquipmentTypeLookup.LIMB_CLUB);
             curHex.addTerrain(new Terrain(Terrains.LEGS, curHex.terrainLevel(Terrains.LEGS) - 1));
-            sendChangedHex(entity.getPosition());
+            sendChangedHex(entity.getBoardLocation());
             r = new Report(3040);
             r.subject = entity.getId();
             r.addDesc(entity);
@@ -14707,7 +14685,7 @@ public class GameManager implements IGameManager {
                 magma.setTerrainFactor(tf);
             }
         }
-        sendChangedHex(c);
+        sendChangedHex(c, boardId);
 
         // any attempt to clear an heavy industrial hex may cause an explosion
         checkExplodeIndustrialZone(c, boardId, vPhaseReport);
@@ -22622,7 +22600,7 @@ public class GameManager implements IGameManager {
                                 } else {
                                     h.addTerrain(new Terrain(Terrains.LEGS, h.terrainLevel(Terrains.LEGS) + 1));
                                 }
-                                sendChangedHex(te.getPosition());
+                                sendChangedHex(te.getBoardLocation());
                             }
                         }
 
@@ -23745,7 +23723,7 @@ public class GameManager implements IGameManager {
                 myHex.removeAllTerrains();
                 myHex.clearExits();
 
-                sendChangedHex(myHexCoords);
+                sendChangedHex(myHexCoords, boardLocation.getBoardId());
             }
 
             // Lastly, if the next distance is a multiple of 2...
@@ -23893,7 +23871,7 @@ public class GameManager implements IGameManager {
                         }
                     }
 
-                    sendChangedHex(myHexCoords);
+                    sendChangedHex(myHexCoords, boardLocation.getBoardId());
                 }
 
                 // Initialize for the next iteration.
@@ -26584,7 +26562,7 @@ public class GameManager implements IGameManager {
                             hex.addTerrain(new Terrain(Terrains.LEGS, hex.terrainLevel(Terrains.LEGS) + 1));
                         }
                     }
-                    sendChangedHex(en.getPosition());
+                    sendChangedHex(en.getBoardLocation());
                     return vDesc;
                 } else if ((loc == Mech.LOC_RARM) || (loc == Mech.LOC_LARM)) {
                     CriticalSlot cs = en.getCritical(loc, 0);
@@ -26611,7 +26589,7 @@ public class GameManager implements IGameManager {
                             hex.addTerrain(new Terrain(Terrains.ARMS, hex.terrainLevel(Terrains.ARMS) + 1));
                         }
                     }
-                    sendChangedHex(en.getPosition());
+                    sendChangedHex(en.getBoardLocation());
                     return vDesc;
                 } else if (loc == Mech.LOC_HEAD) {
                     // head blown off
@@ -27358,11 +27336,11 @@ public class GameManager implements IGameManager {
             if (entity instanceof LargeSupportTank) {
                 if (entityHex.terrainLevel(Terrains.ROUGH) < 2) {
                     entityHex.addTerrain(new Terrain(Terrains.ROUGH, 2));
-                    sendChangedHex(curPos);
+                    sendChangedHex(entity.getBoardLocation());
                 }
             } else if ((entity.getWeight() >= 40) && !entityHex.containsTerrain(Terrains.ROUGH)) {
                 entityHex.addTerrain(new Terrain(Terrains.ROUGH, 1));
-                sendChangedHex(curPos);
+                sendChangedHex(entity.getBoardLocation());
             }
         }
 
@@ -30272,17 +30250,8 @@ public class GameManager implements IGameManager {
     /**
      * Creates a packet containing a hex, and the coordinates it goes at.
      */
-    @Deprecated
-    private Packet createHexChangePacket(Coords coords, Hex hex) {
-        return new Packet(PacketCommand.CHANGE_HEX, coords, hex);
-    }
-
     private Packet createHexChangePacket(BoardLocation boardLocation, Hex hex) {
         return new Packet(PacketCommand.CHANGE_HEX, boardLocation, hex);
-    }
-
-    private Packet createHexChangePacket(Coords coords, int boardId, Hex hex) {
-        return createHexChangePacket(new BoardLocation(coords, boardId), hex);
     }
 
     public void sendSmokeCloudAdded(SmokeCloud cloud) {
@@ -30292,12 +30261,6 @@ public class GameManager implements IGameManager {
     /**
      * Sends notification to clients that the specified hex has changed.
      */
-    @Deprecated
-    public void sendChangedHex(Coords coords) {
-        LogManager.getLogger().error("Dont use this. Send by boardLocation");
-        send(createHexChangePacket(coords, game.getBoard().getHex(coords)));
-    }
-
     public void sendChangedHex(Coords coords, int boardId) {
         sendChangedHex(new BoardLocation(coords, boardId));
     }
@@ -31155,7 +31118,7 @@ public class GameManager implements IGameManager {
             bldg.setCurrentCF(runningCFTotal, coords);
             bldg.setPhaseCF(runningCFTotal, coords);
         }
-        sendChangedHex(coords);
+        sendChangedHex(coords, bldg.getBoardId());
         Vector<Building> buildings = new Vector<>();
         buildings.add(bldg);
         sendChangedBuildings(buildings);
@@ -31211,7 +31174,7 @@ public class GameManager implements IGameManager {
             if (topFloor && numFloors > 1) {
                 curHex.removeTerrain(Terrains.BLDG_ELEV);
                 curHex.addTerrain(new Terrain(Terrains.BLDG_ELEV, numFloors - 1));
-                sendChangedHex(coords);
+                sendChangedHex(coords, bldg.getBoardId());
             } else {
                 bldg.setCurrentCF(0, coords);
                 bldg.setPhaseCF(0, coords);

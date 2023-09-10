@@ -123,7 +123,7 @@ public class DestructionAwareDestinationPathfinder extends BoardEdgePathFinder {
         int bestDistance = Integer.MAX_VALUE;
         
         for (Coords coords : destinationRegion) {
-            if (!entity.getGame().getBoard().contains(coords)) {
+            if (!entity.getBoard().contains(coords)) {
                 continue;
             }
             
@@ -212,8 +212,8 @@ public class DestructionAwareDestinationPathfinder extends BoardEdgePathFinder {
                 (child.isJumping() && (Math.abs(mli.elevationChange) > child.getCachedEntityState().getJumpMP())) ||
                 (child.getEntity().getMaxElevationDown() == Entity.UNLIMITED_JUMP_DOWN) && (Math.abs(mli.elevationChange) > child.getEntity().getMaxElevationChange());
         
-        boolean destinationUseBridge = child.getGame().getBoard().getHex(destinationCoords).getTerrain(Terrains.BRIDGE) != null;
-        int destHexElevation = calculateUnitElevationInHex(child.getGame().getBoard().getHex(destinationCoords), 
+        boolean destinationUseBridge = child.getGame().getBoard(child.getFinalBoardId()).getHex(destinationCoords).getTerrain(Terrains.BRIDGE) != null;
+        int destHexElevation = calculateUnitElevationInHex(child.getGame().getBoard(child.getFinalBoardId()).getHex(destinationCoords),
                 child.getEntity(), child.getEntity().getMovementMode() == EntityMovementMode.HOVER, child.getCachedEntityState().isAmphibious(),
                 destinationUseBridge);
         
@@ -227,7 +227,7 @@ public class DestructionAwareDestinationPathfinder extends BoardEdgePathFinder {
         
         // let's avoid pathing through buildings containing our immobile units - 
         // they're not going to get out of the way and we can probably do better than killing our own guys
-        if (!child.isJumping() && friendlyFireCheck(child.getEntity(), child.getGame(), child.getFinalCoords(), false)) {
+        if (!child.isJumping() && friendlyFireCheck(child.getEntity(), child.getGame(), child.getFinalBoardLocation(), false)) {
             return;
         }
         
@@ -252,12 +252,13 @@ public class DestructionAwareDestinationPathfinder extends BoardEdgePathFinder {
      * Utility function that returns true if an attack on the building in the given coordinates
      * will result in damage to friendly units. Computation is cached as it is somewhat expensive to perform for each possible path node.
      */
-    private boolean friendlyFireCheck(Entity shooter, Game game, Coords position, boolean includeMobileUnits) {
+    private boolean friendlyFireCheck(Entity shooter, Game game, BoardLocation boardLocation, boolean includeMobileUnits) {
+        Coords position = boardLocation.getCoords();
         if (friendlyFireCheckResults.containsKey(position)) {
             return friendlyFireCheckResults.get(position);
         }
         
-        Building building = game.getBoard().getBuildingAt(position);
+        Building building = game.getBuildingAt(boardLocation);
         
         // no building, no problem
         if (building == null) {
@@ -268,7 +269,7 @@ public class DestructionAwareDestinationPathfinder extends BoardEdgePathFinder {
         // check if there are any entities in the building that meet the following criteria:
         // - is friendly
         // - if we care only about mobile units, has no MP 
-        for (Entity entity : game.getEntitiesVector(position, true)) {
+        for (Entity entity : game.getEntitiesAt(boardLocation)) {
             if (!entity.isEnemyOf(shooter)
                     && (includeMobileUnits || (entity.getWalkMP(MPCalculationSetting.STANDARD) == 0))) {
                 friendlyFireCheckResults.put(position, true);
@@ -285,7 +286,7 @@ public class DestructionAwareDestinationPathfinder extends BoardEdgePathFinder {
      * breached legs and effectively immobilize it.
      */
     private boolean underwaterLegBreachCheck(BulldozerMovePath path) {        
-        Hex hex = path.getGame().getBoard().getHex(path.getFinalCoords());
+        Hex hex = path.getGame().getHex(path.getFinalBoardLocation());
         
         // investigate: do we want quad mechs with a single breached leg
         // to risk this move? Currently not, but if we did, this is probably where
@@ -305,7 +306,7 @@ public class DestructionAwareDestinationPathfinder extends BoardEdgePathFinder {
 
         /**
          * Constructor - initializes the destination edge.
-         * @param targetRegion Destination edge
+         * @param destination Destination edge
          */
         public AStarComparator(Coords destination) {
             this.destination = destination;
@@ -318,7 +319,7 @@ public class DestructionAwareDestinationPathfinder extends BoardEdgePathFinder {
          */
         @Override
         public int compare(BulldozerMovePath first, BulldozerMovePath second) {
-            Board board = first.getGame().getBoard();
+            Board board = first.getGame().getBoard(first.getFinalBoardId());
             boolean backwards = false;
             int h1 = first.getFinalCoords().distance(destination)
                     + ShortestPathFinder.getLevelDiff(first, destination, board, false)

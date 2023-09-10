@@ -344,15 +344,18 @@ public abstract class PathRanker implements IPathRanker {
      * Returns distance to the unit's home edge.
      * Gives the distance to the closest edge
      *
-     * @param position Final coordinates of the proposed move.
+     * @param boardLocation Final coordinates of the proposed move.
      * @param homeEdge Unit's home edge.
      * @param game The current {@link Game}
      * @return The distance to the unit's home edge.
      */
     @Override
-    public int distanceToHomeEdge(Coords position, CardinalEdge homeEdge, Game game) {
-        int width = game.getBoard().getWidth();
-        int height = game.getBoard().getHeight();
+    public int distanceToHomeEdge(BoardLocation boardLocation, CardinalEdge homeEdge, Game game) {
+        Board board = game.getBoard(boardLocation);
+        Coords position = boardLocation.getCoords();
+        int width = board.getWidth();
+        int height = board.getHeight();
+
 
         int distance;
         switch (homeEdge) {
@@ -443,7 +446,7 @@ public abstract class PathRanker implements IPathRanker {
         final Enumeration<MoveStep> steps = path.getSteps();
         while (steps.hasMoreElements()) {
             final MoveStep step = steps.nextElement();
-            final Building building = game.getBoard().getBuildingAt(step.getPosition());
+            final Building building = game.getBuildingAt(step.getBoardLocation());
             if (building == null) {
                 continue;
             }
@@ -477,7 +480,7 @@ public abstract class PathRanker implements IPathRanker {
                 continue;
             }
             Coords friendPosition = friend.getPosition();
-            if ((friendPosition == null) || !game.getBoard().contains(friendPosition)) {
+            if ((friendPosition == null) || !game.hasBoardLocation(friend.getBoardLocation())) {
                 continue;
             }
 

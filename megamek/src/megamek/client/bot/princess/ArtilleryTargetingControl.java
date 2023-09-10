@@ -107,7 +107,7 @@ public class ArtilleryTargetingControl {
     private double calculateDamageValueForHex(int damage, Coords coords, Entity shooter, Game game, Princess owner) {
         double value = 0;
         
-        for (Entity entity : game.getEntitiesVector(coords, true)) {
+        for (Entity entity : game.getEntitiesAt(coords, shooter.getBoardId())) {
             // ignore aircraft for now, and also transported entities
             if (entity.isAirborne() || entity.isAirborneVTOLorWIGE() || entity.getTransportId() != Entity.NONE) {
                 continue;

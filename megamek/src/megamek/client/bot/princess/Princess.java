@@ -1087,7 +1087,7 @@ public class Princess extends BotClient {
             return false;
         } else if (!entity.canFlee()) {
             return false;
-        } else if (0 < getPathRanker(entity).distanceToHomeEdge(entity.getPosition(),
+        } else if (0 < getPathRanker(entity).distanceToHomeEdge(entity.getBoardLocation(),
                 getHomeEdge(entity), getGame())) {
             return false;
         } else if (!getFleeBoard() && !(entity.isCrippled() && getForcedWithdrawal())) {
@@ -1165,7 +1165,7 @@ public class Princess extends BotClient {
         // How likely are we to get unstuck.
         final MoveStepType type = MoveStepType.FORWARDS;
         final MoveStep walk = new MoveStep(movePath, type);
-        final Hex hex = getHex(mech.getPosition());
+        final Hex hex = game.getHex(mech.getBoardLocation());
         final PilotingRollData target = mech.checkBogDown(walk, movePath.getLastStepMovementType(),
                 hex, mech.getPriorPosition().getCoords(), mech.getPosition(), hex.getLevel(), false);
         LogManager.getLogger().info("Need to roll " + target.getValue() + " to get unstuck and our tolerance is " + threshold);
@@ -1174,10 +1174,6 @@ public class Princess extends BotClient {
 
     boolean getBooleanOption(final String name) {
         return getGame().getOptions().booleanOption(name);
-    }
-
-    protected Hex getHex(final Coords coords) {
-        return getBoard().getHex(coords);
     }
 
     @Override

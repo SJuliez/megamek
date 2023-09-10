@@ -429,7 +429,7 @@ public class BasicPathRanker extends PathRanker implements IPathRanker {
         
         if (behaviorType == BehaviorType.ForcedWithdrawal ||
                 behaviorType == BehaviorType.MoveToDestination) {
-            int newDistanceToHome = distanceToHomeEdge(path.getFinalCoords(),
+            int newDistanceToHome = distanceToHomeEdge(path.getFinalBoardLocation(),
                                                        getOwner().getHomeEdge(movingUnit),
                                                        game);
             double selfPreservation = getOwner().getBehaviorSettings()

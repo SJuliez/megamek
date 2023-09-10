@@ -54,7 +54,7 @@ public class InfantryFireControl extends FireControl {
         double maxInfantryWeaponDamage = 0;
         Entity shooter = shooterPath.getEntity();
         Entity target = targetPath.getEntity();
-        Hex targetHex = target.getGame().getBoard().getHex(targetPath.getFinalCoords());
+        Hex targetHex = target.getGame().getHex(targetPath.getFinalBoardLocation());
 
         // some preliminary computations
         // whether the target is an infantry platoon
@@ -127,8 +127,8 @@ public class InfantryFireControl extends FireControl {
                     // Otherwise, we take the regular weapon damage and divide
                     // it by the building "toughness level"
                     // case 3
-                    damage = weaponType.getDamage() * shooter.getGame().getBoard()
-                            .getBuildingAt(targetPath.getFinalCoords()).getDamageReductionFromOutside();
+                    damage = weaponType.getDamage() * shooter.getGame()
+                            .getBuildingAt(targetPath.getFinalBoardLocation()).getDamageReductionFromOutside();
                 }
 
                 maxFGDamage += damage;
@@ -165,11 +165,11 @@ public class InfantryFireControl extends FireControl {
         
         // Shooting isn't possible if one of us isn't on the board.
         if ((null == shooter.getPosition()) || shooter.isOffBoard()
-                || !game.getBoard().contains(shooter.getPosition())) {
+                || !game.hasBoardLocation(shooter.getBoardLocation())) {
             LogManager.getLogger().error("Shooter's position is NULL/Off Board!");
             return bestPlan;
         }
-        if ((null == target.getPosition()) || target.isOffBoard() || !game.getBoard().contains(target.getPosition())) {
+        if ((null == target.getPosition()) || target.isOffBoard() || !game.hasBoardLocation(target.getBoardLocation())) {
             LogManager.getLogger().error("Target's position is NULL/Off Board!");
             return bestPlan;
         }

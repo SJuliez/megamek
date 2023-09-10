@@ -44,7 +44,7 @@ public class EntityWreckHelper {
         //  for units that were destroyed by ejection rather than unit destruction
         //  for units on top of a bridge (looks kind of stupid)
         
-        if (entity.getGame().getBoard().isSpaceMap() ||
+        if (entity.getBoard().isSpaceMap() ||
                 (entity instanceof Mech) ||
                 (entity instanceof Infantry) ||
                 (entity instanceof GunEmplacement) ||
@@ -68,7 +68,7 @@ public class EntityWreckHelper {
                 (entity.getMovementMode() != EntityMovementMode.VTOL) && 
                 (entity.getEngine().getEngineType() == Engine.COMBUSTION_ENGINE) &&
                 entity.isPermanentlyImmobilized(false) &&
-                !entity.getGame().getBoard().isSpaceMap() &&
+                !entity.getBoard().isSpaceMap() &&
                 !entityOnBridge(entity);
     }
     
@@ -80,7 +80,7 @@ public class EntityWreckHelper {
                 ((entity.getMovementMode() == EntityMovementMode.WHEELED) ||
                 (entity.getMovementMode() == EntityMovementMode.TRACKED)) && 
                 entity.getSecondaryPositions().isEmpty() &&
-                !entity.getGame().getBoard().isSpaceMap() &&
+                !entity.getBoard().isSpaceMap() &&
                 !entityOnBridge(entity);
     }
     
@@ -133,7 +133,7 @@ public class EntityWreckHelper {
      * Utility function that determines if the entity is on a bridge
      */
     public static boolean entityOnBridge(Entity entity) {   
-        Hex hex = entity.getGame().getBoard().getHex(entity.getPosition());
+        Hex hex = entity.getGame().getHex(entity.getBoardLocation());
         if (hex != null) {
             boolean hexHasBridge = hex.containsTerrain(Terrains.BRIDGE_CF);
             

@@ -3,11 +3,7 @@ package megamek.client.bot.princess;
 import java.util.ArrayList;
 import java.util.List;
 
-import megamek.common.Coords;
-import megamek.common.Entity;
-import megamek.common.Game;
-import megamek.common.MovePath;
-import megamek.common.Targetable;
+import megamek.common.*;
 
 public interface IPathRanker {
 
@@ -27,12 +23,12 @@ public interface IPathRanker {
      * Returns distance to the unit's home edge.
      * Gives the distance to the closest edge
      *
-     * @param position Final coordinates of the proposed move.
+     * @param boardLocation Final coordinates of the proposed move.
      * @param homeEdge Unit's home edge.
      * @param game The current {@link Game}
      * @return The distance, in hexes to the unit's home edge.
      */
-    int distanceToHomeEdge(Coords position, CardinalEdge homeEdge, Game game);
+    int distanceToHomeEdge(BoardLocation boardLocation, CardinalEdge homeEdge, Game game);
     
     /**
      * Returns the best path of a list of ranked paths.

@@ -1705,9 +1705,9 @@ public class BoardUtilities {
      */
     public static CardinalEdge getClosestEdge(Entity entity) {
         int distanceToWest = entity.getPosition().getX();
-        int distanceToEast = entity.getGame().getBoard().getWidth() - entity.getPosition().getX();
+        int distanceToEast = entity.getBoard().getWidth() - entity.getPosition().getX();
         int distanceToNorth = entity.getPosition().getY();
-        int distanceToSouth = entity.getGame().getBoard().getHeight() - entity.getPosition().getY();
+        int distanceToSouth = entity.getBoard().getHeight() - entity.getPosition().getY();
 
         boolean closerWestThanEast = distanceToWest < distanceToEast;
         boolean closerNorthThanSouth = distanceToNorth < distanceToSouth;
@@ -1728,7 +1728,7 @@ public class BoardUtilities {
      * @return the Board.START_ constant representing the "opposite" edge
      */
     public static CardinalEdge determineOppositeEdge(Entity entity) {
-        Board board = entity.getGame().getBoard();
+        Board board = entity.getBoard();
 
         // the easiest part is if the entity is supposed to start on a particular edge. Just return the opposite edge.
         int oppositeEdge = board.getOppositeEdge(entity.getStartingPos());

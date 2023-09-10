@@ -484,8 +484,8 @@ public class ServerHelper {
             if (roll >= rollTarget) {
                 hex.removeTerrain(Terrains.MAGMA);
                 hex.addTerrain(new Terrain(Terrains.MAGMA, 2));
-                gameManager.sendChangedHex(curPos);
-                for (Entity en : entity.getGame().getEntitiesVector(curPos)) {
+                gameManager.sendChangedHex(curPos, entity.getBoardId());
+                for (Entity en : entity.getGame().getEntitiesAt(curPos, entity.getBoardId())) {
                     if (en != entity) {
                         gameManager.doMagmaDamage(en, false);
                     }
@@ -610,7 +610,7 @@ public class ServerHelper {
         // Get all hidden units in probe range
         List<Entity> hiddenUnits = new ArrayList<>();
         for (Coords coords : detectorCoords.allAtDistanceOrLess(probeRange)) {
-            for (Entity entity : game.getEntitiesVector(coords, true)) {
+            for (Entity entity : game.getEntitiesAt(coords, detector.getBoardId())) {
                 if (entity.isHidden() && entity.isEnemyOf(detector)) {
                     hiddenUnits.add(entity);
                 }

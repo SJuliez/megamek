@@ -381,6 +381,7 @@ public class Client implements IClientCommandHandler {
      * Shortcut to game.board
      */
     public Board getBoard() {
+        // @@MultiBoardTODO:
         return game.getBoard();
     }
 
