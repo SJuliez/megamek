@@ -112,6 +112,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
     // is the shift key held?
     private boolean turnMode = false;
     private boolean assaultDropPreference = false;
+    private int plannedElevation;
 
     /** Creates and lays out a new deployment phase display for the specified client. */
     public DeploymentDisplay(ClientGUI clientgui) {
@@ -182,6 +183,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         clientgui.getBoardView().cursor(null);
         // RACE : if player clicks fast enough, ce() is null.
         if (null != ce()) {
+            plannedElevation = ce().getElevation();
             setTurnEnabled(true);
             butDone.setEnabled(false);
             clientgui.getBoardView().markDeploymentHexesFor(ce());
@@ -331,9 +333,6 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
         // If elevation was set in lounge, try to preserve it
         // Server.processDeployment will adjust elevation, so we want to account for this
         Hex hex = game.getBoard().getHex(en.getPosition());
-        if ((en instanceof VTOL) && (elevation >= 1)) {
-            elevation = Math.max(0, elevation - (hex.ceiling() - hex.getLevel() + 1));
-        }
         // Deploy grounded WiGEs on the roof of a building, and airborne at least one elevation above the roof.
         if ((en.getMovementMode() == EntityMovementMode.WIGE) && hex.containsTerrain(Terrains.BLDG_ELEV)) {
             int minElev = hex.terrainLevel(Terrains.BLDG_ELEV);
@@ -484,6 +483,7 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
                 && !ce().hasETypeFlag(Entity.ETYPE_GUN_EMPLACEMENT)
                 && !ce().isNaval()
                 && deployhex.containsAnyTerrainOf(Terrains.PAVEMENT, Terrains.ROAD, Terrains.BRIDGE_ELEV);
+        int elevationAboveTerrain = deployhex.ceiling() - deployhex.getLevel() + 1;
         String title, msg;
         if ((ce().getPosition() != null) && (shiftheld || turnMode)) { // turn
             ce().setFacing(ce().getPosition().direction(moveto));
@@ -499,7 +499,8 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
             JOptionPane.showMessageDialog(clientgui, msg, title, JOptionPane.WARNING_MESSAGE);
             return;
         } else if (!(board.isLegalDeployment(moveto, ce()) || assaultDropPreference)
-                || (ce().isLocationProhibited(moveto) && !isTankOnPavement)) {
+                || (ce().isLocationProhibited(moveto) && !isTankOnPavement
+                && (!isVTOL || ce().isLocationProhibited(moveto, elevationAboveTerrain)))) {
             msg = Messages.getString("DeploymentDisplay.cantDeployInto", ce().getShortName(), moveto.getBoardNum());
             title = Messages.getString("DeploymentDisplay.alertDialog.title");
             JOptionPane.showMessageDialog(clientgui.frame, msg, title, JOptionPane.ERROR_MESSAGE);
@@ -535,11 +536,11 @@ public class DeploymentDisplay extends StatusBarPhaseDisplay {
                         || (ce().getMovementMode() == EntityMovementMode.HOVER)) {
                     ce().setElevation(0);
                 } else if (isVTOL) {
-                    // VTOLs go to elevation 1... unless set in the Lounge.
-                    // or if mechanized BA, since VTOL movement is then illegal
-                    if ((ce().getElevation() < 1) && (ce().getExternalUnits().size() <= 0)) {
-                        ce().setElevation(1);
+                    int minimumElevation = deployhex.ceiling() - deployhex.getLevel();
+                    if (ce().isLocationProhibited(moveto, minimumElevation)) {
+                        minimumElevation++;
                     }
+                    ce().setElevation(Math.max(plannedElevation, minimumElevation));
                 } else {
                     // everything else goes to elevation 0, or on the floor of a
                     // water hex, except non-mechanized SCUBA infantry, which have a max depth of 2.

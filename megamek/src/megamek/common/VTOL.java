@@ -135,7 +135,9 @@ public class VTOL extends Tank implements IBomber {
             return true;
         }
 
-        return false;
+        return (hex.containsTerrain(Terrains.WOODS)
+                || hex.containsTerrain(Terrains.JUNGLE))
+                && (hex.ceiling() - hex.getLevel()) >= currElevation;
     }
 
     /*

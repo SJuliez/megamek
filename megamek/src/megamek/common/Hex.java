@@ -276,7 +276,8 @@ public class Hex implements Serializable {
 
     /**
      * @return the highest level that features in this hex extend to. Above this level is assumed
-     * to be air. This assumes a ground map.
+     * to be air. This assumes a ground map. The value is an absolute elevation, i.e. the level of
+     * the hex is included.
      */
     public int ceiling() {
         return ceiling(false);

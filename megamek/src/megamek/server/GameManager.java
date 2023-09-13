@@ -12777,7 +12777,6 @@ public class GameManager implements IGameManager {
             // We should let players pick, but this simplifies a lot.
             // Only do it for VTOLs, though; assume everything else is on the
             // ground.
-            entity.setElevation((hex.ceiling() - hex.getLevel()) + 1);
             while ((Compute.stackingViolation(game, entity, coords, null, entity.climbMode()) != null)
                     && (entity.getElevation() <= 50)) {
                 entity.setElevation(entity.getElevation() + 1);
