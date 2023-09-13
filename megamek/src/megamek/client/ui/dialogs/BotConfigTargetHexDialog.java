@@ -60,7 +60,7 @@ public class BotConfigTargetHexDialog extends AbstractButtonDialog {
             if (clientGui.getClient().getGame().getPhase().isLounge()) {
                 board = clientGui.chatlounge.getPossibleGameBoard(true);
             } else {
-                board = clientGui.getClient().getBoard();
+                board = null;
             }
         } else {
             board = null;

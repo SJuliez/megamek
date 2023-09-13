@@ -822,7 +822,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         setRamEnabled(ce.canRam());
 
         if (isInfantry) {
-            setClearEnabled(clientgui.getClient().getGame().containsMinefield(ce.getPosition()));
+            setClearEnabled(clientgui.getClient().getGame().hasMinefieldAt(ce.getBoardLocation()));
         } else {
             setClearEnabled(false);
         }
@@ -4749,8 +4749,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             gear = MovementDisplay.GEAR_LONGEST_WALK;
         } else if (actionCmd.equals(MoveCommand.MOVE_CLEAR.getCmd())) {
             clear();
-            if (!clientgui.getClient().getGame()
-                    .containsMinefield(ce.getPosition())) {
+            if (!clientgui.getClient().getGame().hasMinefieldAt(ce.getBoardLocation())) {
                 clientgui.doAlertDialog(Messages
                         .getString("MovementDisplay.CantClearMinefield"),
                         Messages.getString("MovementDisplay.NoMinefield"));

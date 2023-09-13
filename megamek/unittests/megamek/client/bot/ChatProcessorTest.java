@@ -113,7 +113,7 @@ public class ChatProcessorTest {
 
         final Board mockBoard = mock(Board.class);
         when(mockBoard.contains(any(Coords.class))).thenReturn(true);
-        when(MOCK_GAME.getBoard()).thenReturn(mockBoard);
+        when(MOCK_GAME.getBoard(any(Integer.class))).thenReturn(mockBoard);
 
         // Test the 'flee' command sent by a teammate.
         GamePlayerChatEvent mockChatEvent = mock(GamePlayerChatEvent.class);

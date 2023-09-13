@@ -98,7 +98,7 @@ public class PushAttackAction extends DisplacementAttackAction {
         }
 
         Hex attHex = game.getHex(ae.getBoardLocation());
-        Hex targHex = game.getBoard().getHex(te.getPosition());
+        Hex targHex = game.getBoard(target).getHex(te.getPosition());
 
         if (attHex == null) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Entity #" + ae.getId() + " does not know its position.");
@@ -114,7 +114,7 @@ public class PushAttackAction extends DisplacementAttackAction {
         final boolean targetInBuilding = Compute.isInBuilding(game, te);
         Building bldg = null;
         if (targetInBuilding) {
-            bldg = game.getBoard().getBuildingAt(te.getPosition());
+            bldg = game.getBoard(target).getBuildingAt(te.getPosition());
         }
         ToHitData toHit;
 
@@ -229,7 +229,7 @@ public class PushAttackAction extends DisplacementAttackAction {
         if (targetInBuilding) {
             if (!Compute.isInBuilding(game, ae)) {
                 return new ToHitData(TargetRoll.IMPOSSIBLE, "Target is inside building");
-            } else if (!game.getBoard().getBuildingAt(ae.getPosition()).equals(bldg)) {
+            } else if (!game.getBoard(ae).getBuildingAt(ae.getPosition()).equals(bldg)) {
                 return new ToHitData(TargetRoll.IMPOSSIBLE, "Target is inside different building");
             }
         }

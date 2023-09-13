@@ -187,7 +187,7 @@ public class FireControlTest {
 
         mockGame = mock(Game.class);
         when(mockGame.getOptions()).thenReturn(mockGameOptions);
-        when(mockGame.getBoard()).thenReturn(mockBoard);
+        when(mockGame.getBoard(any(Integer.class))).thenReturn(mockBoard);
 
         mockTarget = mock(BipedMech.class);
         when(mockTarget.getDisplayName()).thenReturn("mock target");

@@ -29,14 +29,11 @@ public class RulerCommand extends ClientCommand {
                 client,
                 "ruler",
                 "Show Line of Sight (LOS) information between two points of the map. " +
-                        "Usage: #ruler x1 y1 x2 y2 [elev1 [elev2]]. " +
+                        "Usage: #ruler boardId x1 y1 x2 y2 [elev1 [elev2]]. " +
                         "Where x1, y1 and x2, y2 are the coordinates of the tiles, and the optional elev " +
                         "numbers are the elevations of the targets over the terrain. " +
                         "If elev is not given 1 is assumed which is for standing mechs. " +
-                        "Prone mechs and most other units are at elevation 0. " +
-                        "cur hex can be given as the start hex, which will use the client's current hex. " +
-                        "eg; #ruler cur hex x2 y2, or as a short form #ruler x2 y2, " +
-                        "in which case elevation can't be used.");
+                        "Prone mechs and most other units are at elevation 0. ");
     }
 
     @Override
@@ -47,48 +44,41 @@ public class RulerCommand extends ClientCommand {
             String toHit1 = "", toHit2 = "";
             ToHitData thd;
 
-            if (args.length == 3) {
-                start = client.getCurrentHex();
-                end = new Coords(Integer.parseInt(args[1]) - 1, Integer.parseInt(args[2]) - 1);
-            } else {
-                if (args[1].equals("cur")) {
-                    start = client.getCurrentHex();
-                } else {
-                    start = new Coords(Integer.parseInt(args[1]) - 1, Integer.parseInt(args[2]) - 1);
+            int boardId = Integer.parseInt(args[1]);
+            start = new Coords(Integer.parseInt(args[2]) - 1, Integer.parseInt(args[3]) - 1);
+            end = new Coords(Integer.parseInt(args[4]) - 1, Integer.parseInt(args[5]) - 1);
+            if (args.length > 5) {
+                try {
+                    elev1 = Integer.parseInt(args[6]);
+                } catch (NumberFormatException e) {
+                    // leave at default value
                 }
-                end = new Coords(Integer.parseInt(args[3]) - 1, Integer.parseInt(args[4]) - 1);
-                if (args.length > 5) {
+                if (args.length > 6) {
                     try {
-                        elev1 = Integer.parseInt(args[5]);
+                        elev1 = Integer.parseInt(args[7]);
                     } catch (NumberFormatException e) {
                         // leave at default value
-                    }
-                    if (args.length > 6) {
-                        try {
-                            elev1 = Integer.parseInt(args[6]);
-                        } catch (NumberFormatException e) {
-                            // leave at default value
-                        }
                     }
                 }
             }
 
-            thd = LosEffects.calculateLos(getClient().getGame(),
+            Game game = getClient().getGame();
+            thd = LosEffects.calculateLos(game,
                     LosEffects.buildAttackInfo(start, end, elev1, elev2,
-                            getClient().getBoard().getHex(start).floor(),
-                            getClient().getBoard().getHex(end).floor(), MapType.GROUND)
-            ).losModifiers(getClient().getGame());
+                            game.getBoard(boardId).getHex(start).floor(),
+                            game.getBoard(boardId).getHex(end).floor(), MapType.GROUND)
+            ).losModifiers(game);
 
             if (thd.getValue() != TargetRoll.IMPOSSIBLE) {
                 toHit1 = thd.getValue() + " because ";
             }
             toHit1 += thd.getDesc();
 
-            thd = LosEffects.calculateLos(getClient().getGame(),
+            thd = LosEffects.calculateLos(game,
                     LosEffects.buildAttackInfo(end, start, elev2, elev1,
-                            getClient().getBoard().getHex(end).floor(),
-                            getClient().getBoard().getHex(start).floor(), MapType.GROUND)
-            ).losModifiers(getClient().getGame());
+                            game.getBoard().getHex(end).floor(),
+                            game.getBoard().getHex(start).floor(), MapType.GROUND)
+            ).losModifiers(game);
 
             if (thd.getValue() != TargetRoll.IMPOSSIBLE) {
                 toHit2 = thd.getValue() + " because  ";
@@ -96,11 +86,11 @@ public class RulerCommand extends ClientCommand {
             toHit2 += thd.getDesc();
 
             return "The ToHit from hex (" + (start.getX() + 1) + ", "
-                   + (start.getY() + 1) + ") at elevation " + elev1 + " to ("
-                   + (end.getX() + 1) + ", " + (end.getY() + 1) + ") at elevation "
-                   + elev2 + " has a range of " + start.distance(end)
-                   + " and a modifier of " + toHit1
-                   + " and return fire has a modifier of " + toHit2 + ".";
+                    + (start.getY() + 1) + ") at elevation " + elev1 + " to ("
+                    + (end.getX() + 1) + ", " + (end.getY() + 1) + ") at elevation "
+                    + elev2 + " has a range of " + start.distance(end)
+                    + " and a modifier of " + toHit1
+                    + " and return fire has a modifier of " + toHit2 + ".";
         } catch (Exception ignored) {
 
         }

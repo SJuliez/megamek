@@ -5891,8 +5891,8 @@ public class Compute {
         return entities;
     }
 
-    public static boolean isInUrbanEnvironment(Game game, Coords unitPOS) {
-        Hex unitHex = game.getBoard().getHex(unitPOS);
+    public static boolean isInUrbanEnvironment(Game game, BoardLocation unitPOS) {
+        Hex unitHex = game.getHex(unitPOS);
 
         if (unitHex.containsTerrain(Terrains.PAVEMENT)
                 || unitHex.containsTerrain(Terrains.BUILDING)
@@ -5902,10 +5902,10 @@ public class Compute {
 
         // loop through adjacent hexes
         for (int dir = 0; dir <= 5; dir++) {
-            Coords adjCoords = unitPOS.translated(dir);
-            Hex adjHex = game.getBoard().getHex(adjCoords);
+            BoardLocation adjCoords = unitPOS.translated(dir);
+            Hex adjHex = game.getHex(adjCoords);
 
-            if (!game.getBoard().contains(adjCoords)) {
+            if (!game.hasBoardLocation(adjCoords)) {
                 continue;
             }
             if (unitPOS.equals(adjCoords)) {

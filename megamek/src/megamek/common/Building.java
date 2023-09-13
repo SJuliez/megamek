@@ -124,7 +124,7 @@ public class Building implements Serializable {
         private static final long serialVersionUID = -6655782801564155668L;
         public int damage;
         public int playerId;
-        public Coords pos;
+        public BoardLocation pos;
         /**
          * A UUID to keep track of the identify of this demolition charge.
          * Since we could have multiple charges in the same building hex, we
@@ -134,7 +134,7 @@ public class Building implements Serializable {
          */
         public UUID uuid = UUID.randomUUID();
 
-        public DemolitionCharge(int playerId, int damage, Coords p) {
+        public DemolitionCharge(int playerId, int damage, BoardLocation p) {
             this.damage = damage;
             this.playerId = playerId;
             this.pos = p;
@@ -669,7 +669,7 @@ public class Building implements Serializable {
         burning.put(coords, onFire);
     }
 
-    public void addDemolitionCharge(int playerId, int damage, Coords pos) {
+    public void addDemolitionCharge(int playerId, int damage, BoardLocation pos) {
         DemolitionCharge charge = new DemolitionCharge(playerId, damage, pos);
         demolitionCharges.add(charge);
     }

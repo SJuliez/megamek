@@ -330,15 +330,15 @@ public class Princess extends BotClient {
         return strategicBuildingTargets;
     }
 
-    public void addStrategicBuildingTarget(final Coords coords) {
-        if (null == coords) {
+    public void addStrategicBuildingTarget(final BoardLocation boardLocation) {
+        if (null == boardLocation) {
             throw new NullPointerException("Coords is null.");
         }
-        if (!getGame().getBoard().contains(coords)) {
-            LogManager.getLogger().warn("Board does not contain " + coords.toFriendlyString());
+        if (!getGame().hasBoardLocation(boardLocation)) {
+            LogManager.getLogger().warn("Board does not contain " + boardLocation.toFriendlyString());
             return;
         }
-        getStrategicBuildingTargets().add(new BoardLocation(coords, 0));
+        getStrategicBuildingTargets().add(boardLocation);
     }
 
     public Set<Integer> getPriorityUnitTargets() {
@@ -353,7 +353,7 @@ public class Princess extends BotClient {
         if (null == game.getBoard(boardId).getBuildingAt(strategicTarget)) {
             return new HexTarget(strategicTarget, boardId, Targetable.TYPE_HEX_CLEAR);
         } else {
-            return new BuildingTarget(strategicTarget, game.getBoard(), false);
+            return new BuildingTarget(strategicTarget, game.getBoard(boardId), false);
         }
     }
 
@@ -531,19 +531,19 @@ public class Princess extends BotClient {
     
     /**
      * Helper function that calculates the "utility" of placing a turret at the given coords
-     * @param coords The location of the building being considered.
+     * @param boardLocation The location of the building being considered.
      * @return An "arbitrary" utility number
      */
-    private int calculateTurretDeploymentValue(final BoardLocation coords) {
+    private int calculateTurretDeploymentValue(final BoardLocation boardLocation) {
         // algorithm: a building is valued by the following formula:
         //      (CF + height * 2) / # turrets placed on the roof
         //      This way, we will generally favor unpopulated higher CF buildings, 
         //      but have some wiggle room in case of a really tall high CF building
-        final Building building = game.getBoard().getBuildingAt(coords);
-        final Hex hex = game.getHex(coords);
-        final int turretCount = 1 + game.getGunEmplacements(coords).size();
+        final Building building = game.getBuildingAt(boardLocation);
+        final Hex hex = game.getHex(boardLocation);
+        final int turretCount = 1 + game.getGunEmplacements(boardLocation).size();
 
-        return (building.getCurrentCF(coords.getCoords()) + hex.terrainLevel(Terrains.BLDG_ELEV) * 2) / turretCount;
+        return (building.getCurrentCF(boardLocation.getCoords()) + hex.terrainLevel(Terrains.BLDG_ELEV) * 2) / turretCount;
     }
     
     @Override
@@ -1291,14 +1291,10 @@ public class Princess extends BotClient {
             // their buildings, similar to the turret check
             // pre-movement(infantry can move so we only set target buildings
             // after they do).
-            final Enumeration<Building> buildings = game.getBoard().getBuildings();
-            while (buildings.hasMoreElements()) {
-                final Building bldg = buildings.nextElement();
-                final Enumeration<Coords> bldgCoords = bldg.getCoords();
-                while (bldgCoords.hasMoreElements()) {
-                    final Coords coords = bldgCoords.nextElement();
-                    for (final Entity entity : game.getEntitiesVector(coords)) {
-                        final BuildingTarget bt = new BuildingTarget(coords, game.getBoard(), false);
+            for (Building bldg : game.getBuildings()) {
+                for (Coords coords: bldg.getCoordsList()) {
+                    for (final Entity entity : game.getEntitiesAt(coords, bldg.getBoardId())) {
+                        final BuildingTarget bt = new BuildingTarget(coords, game.getBoard(bldg.getBoardId()), false);
                         // Want to target buildings with hostile infantry / BA inside them, since
                         // there's no other way to attack them.
                         if (isEnemyInfantry(entity, coords) && Compute.isInBuilding(game, entity)
@@ -1532,19 +1528,17 @@ public class Princess extends BotClient {
             }
 
             // Pick up on any turrets and shoot their buildings as well.
-            final Enumeration<Building> buildings = game.getBoard(MapType.GROUND).getBuildings();
-            while (buildings.hasMoreElements()) {
-                final Building bldg = buildings.nextElement();
-                final Enumeration<Coords> bldgCoords = bldg.getCoords();
-                while (bldgCoords.hasMoreElements()) {
-                    final Coords coords = bldgCoords.nextElement();
-                    for (final Entity entity : game.getEntitiesVector(coords, true)) {
-                        final Targetable bt = getAppropriateTarget(coords, 0);
-                        
-                        if (isEnemyGunEmplacement(entity, coords)) {
-                            fireControlState.getAdditionalTargets().add(bt);
-                            sendChat("Building in Hex " + coords.toFriendlyString()
-                                    + " designated target due to Gun Emplacement.", Level.INFO);
+            for (Board board: game.getBoards()) {
+                for (Building bldg: board.getBuildingsVector()) {
+                    for (Coords coords: bldg.getCoordsList()) {
+                        for (Entity entity : game.getEntitiesAt(coords, bldg.getBoardId())) {
+                            final Targetable bt = getAppropriateTarget(coords, bldg.getBoardId());
+
+                            if (isEnemyGunEmplacement(entity, coords)) {
+                                fireControlState.getAdditionalTargets().add(bt);
+                                sendChat("Building in Hex " + coords.toFriendlyString()
+                                        + " designated target due to Gun Emplacement.", Level.INFO);
+                            }
                         }
                     }
                 }
@@ -1587,13 +1581,11 @@ public class Princess extends BotClient {
             boardClusterTracker = new BoardClusterTracker();
 
             // Pick up any turrets and add their buildings to the strategic targets list.
-            final Enumeration<Building> buildings = getGame().getBoard().getBuildings();
-            while (buildings.hasMoreElements()) {
-                final Building bldg = buildings.nextElement();
+            for (Building bldg : game.getBuildings()) {
                 final Enumeration<Coords> bldgCoords = bldg.getCoords();
                 while (bldgCoords.hasMoreElements()) {
                     final Coords coords = bldgCoords.nextElement();
-                    for (final Entity entity : game.getEntitiesVector(coords, true)) {
+                    for (final Entity entity : game.getEntitiesAt(coords, bldg.getBoardId())) {
                         if (isEnemyGunEmplacement(entity, coords)) {
                             getStrategicBuildingTargets().add(entity.getBoardLocation());
                             sendChat("Building in Hex " + coords.toFriendlyString()

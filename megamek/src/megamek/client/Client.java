@@ -26,7 +26,6 @@ import megamek.client.generator.skillGenerators.AbstractSkillGenerator;
 import megamek.client.generator.skillGenerators.ModifiedTotalWarfareSkillGenerator;
 import megamek.client.ui.IClientCommandHandler;
 import megamek.client.ui.swing.GUIPreferences;
-import megamek.client.ui.swing.boardview.BoardView;
 import megamek.client.ui.swing.tileset.MMStaticDirectoryManager;
 import megamek.common.*;
 import megamek.common.Building.DemolitionCharge;
@@ -375,14 +374,6 @@ public class Client implements IClientCommandHandler {
      */
     public int getNextDeployableEntityNum(int entityId) {
         return game.getNextDeployableEntityNum(getMyTurn(), entityId);
-    }
-
-    /**
-     * Shortcut to game.board
-     */
-    public Board getBoard() {
-        // @@MultiBoardTODO:
-        return game.getBoard();
     }
 
     /**
@@ -1142,7 +1133,10 @@ public class Client implements IClientCommandHandler {
 
     @SuppressWarnings("unchecked")
     protected void receiveBuildingCollapse(Packet packet) {
-        game.getBoard().collapseBuilding((Vector<Coords>) packet.getObject(0));
+        var locations = (List<BoardLocation>) packet.getObject(0);
+        for (BoardLocation boardLocation : locations) {
+            game.getBoard(boardLocation).collapseBuilding(boardLocation.getCoords());
+        }
     }
 
     /**
@@ -1871,15 +1865,6 @@ public class Client implements IClientCommandHandler {
      */
     public Coords getCurrentHex() {
         return currentHex;
-    }
-
-    /**
-     * Set the Current Hex, used by client commands for the visually impaired
-     */
-    public void setCurrentHex(Hex hex) {
-        if (hex != null) {
-            currentHex = hex.getCoords();
-        }
     }
 
     public void setCurrentHex(Coords hex) {

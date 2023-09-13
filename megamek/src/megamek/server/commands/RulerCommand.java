@@ -1,10 +1,7 @@
 package megamek.server.commands;
 
-import megamek.common.Coords;
-import megamek.common.LosEffects;
+import megamek.common.*;
 import megamek.common.LosEffects.AttackInfo;
-import megamek.common.TargetRoll;
-import megamek.common.ToHitData;
 import megamek.server.GameManager;
 import megamek.server.Server;
 
@@ -18,7 +15,11 @@ public class RulerCommand extends ServerCommand {
 
     public RulerCommand(Server server, GameManager gameManager) {
         super(server, "ruler",
-                "Show Line of Sight (LOS) information between two points of the map. Usage: /ruler x1 y1 x2 y2 [elev1 [elev2]]. Where x1, y1 and x2, y2 are the coordinates of the tiles, and the optional elev numbers are the elevations of the targets over the terrain. If elev is not given 1 is assumed which is for standing mechs. Prone mechs and most other units are at elevation 0.");
+                "Show Line of Sight (LOS) information between two points of the map. " +
+                        "Usage: /ruler boardId x1 y1 x2 y2 [elev1 [elev2]]. Where x1, y1 and x2, y2 are the " +
+                        "coordinates of the tiles, and the optional elev numbers are the elevations of the " +
+                        "targets over the terrain. If elev is not given 1 is assumed which is for standing mechs. " +
+                        "Prone mechs and most other units are at elevation 0.");
         this.gameManager = gameManager;
     }
 
@@ -32,33 +33,33 @@ public class RulerCommand extends ServerCommand {
         try {
             int elev1 = 1, elev2 = 1;
             String toHit1 = "", toHit2 = "";
-
-            Coords start = new Coords(Integer.parseInt(args[1]) - 1, Integer.parseInt(args[2]) - 1);
-            Coords end = new Coords(Integer.parseInt(args[3]) - 1, Integer.parseInt(args[4]) - 1);
-            if (args.length > 5) {
+            int boardId = Integer.parseInt(args[1]);
+            Coords start = new Coords(Integer.parseInt(args[2]) - 1, Integer.parseInt(args[3]) - 1);
+            Coords end = new Coords(Integer.parseInt(args[4]) - 1, Integer.parseInt(args[5]) - 1);
+            if (args.length > 6) {
                 try {
-                    elev1 = Integer.parseInt(args[5]);
+                    elev1 = Integer.parseInt(args[6]);
                 } catch (NumberFormatException ignored) {
                     // leave at default value
                 }
 
-                if (args.length > 6) {
+                if (args.length > 7) {
                     try {
-                        elev1 = Integer.parseInt(args[6]);
+                        elev1 = Integer.parseInt(args[7]);
                     } catch (NumberFormatException ignored) {
                         // leave at default value
                     }
                 }
             }
 
-            ToHitData thd = LosEffects.calculateLos(gameManager.getGame(), buildAttackInfo(start, end, elev1, elev2))
+            ToHitData thd = LosEffects.calculateLos(gameManager.getGame(), buildAttackInfo(start, end, elev1, elev2, boardId))
                     .losModifiers(gameManager.getGame());
             if (thd.getValue() != TargetRoll.IMPOSSIBLE) {
                 toHit1 = thd.getValue() + " because ";
             }
             toHit1 += thd.getDesc();
 
-            thd = LosEffects.calculateLos(gameManager.getGame(), buildAttackInfo(end, start, elev2, elev1))
+            thd = LosEffects.calculateLos(gameManager.getGame(), buildAttackInfo(end, start, elev2, elev1, boardId))
                     .losModifiers(gameManager.getGame());
             if (thd.getValue() != TargetRoll.IMPOSSIBLE) {
                 toHit2 = thd.getValue() + " because ";
@@ -84,14 +85,16 @@ public class RulerCommand extends ServerCommand {
      * @param h2 the height of the target tile to shoot for.
      * @return an attackInfo object that describes the applicable modifiers.
      */
-    private AttackInfo buildAttackInfo(Coords c1, Coords c2, int h1, int h2) {
+    private AttackInfo buildAttackInfo(Coords c1, Coords c2, int h1, int h2, int boardId) {
         AttackInfo ai = new AttackInfo();
         ai.attackPos = c1;
+        ai.attackerLocation = new BoardLocation(c1, boardId);
+        ai.targetLocation = new BoardLocation(c2, boardId);
         ai.targetPos = c2;
         ai.attackHeight = h1;
         ai.targetHeight = h2;
-        ai.attackAbsHeight = gameManager.getGame().getBoard().getHex(c1).floor() + h1;
-        ai.targetAbsHeight = gameManager.getGame().getBoard().getHex(c2).floor() + h2;
+        ai.attackAbsHeight = gameManager.getGame().getBoard(boardId).getHex(c1).floor() + h1;
+        ai.targetAbsHeight = gameManager.getGame().getBoard(boardId).getHex(c2).floor() + h2;
         return ai;
     }
 }

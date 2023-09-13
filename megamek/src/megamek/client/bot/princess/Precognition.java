@@ -167,7 +167,13 @@ public class Precognition implements Runnable {
                     getGame().addSmokeCloud(cloud);
                     break;
                 case CHANGE_HEX:
-                    getGame().getBoard().setHex((Coords) c.getObject(0), (Hex) c.getObject(1));
+                    Hex hex = (Hex) c.getObject(1);
+                    if (c.getObject(0) instanceof BoardLocation) {
+                        BoardLocation boardLocation = (BoardLocation) c.getObject(0);
+                        game.getBoard(boardLocation).setHex(boardLocation.getCoords(), hex);
+                    } else {
+                        // Deprecated
+                    }
                     break;
                 case CHANGE_HEXES:
                     var hexUpdates = (Map<BoardLocation, Hex>) c.getObject(0);
@@ -769,13 +775,17 @@ public class Precognition implements Runnable {
     }
 
     @SuppressWarnings("unchecked")
-    private void receiveBuildingUpdate(Packet packet) {
-        getGame().getBoard().updateBuildings((Vector<Building>) packet.getObject(0));
+    protected void receiveBuildingUpdate(Packet packet) {
+        var updatedBuildings = (Vector<Building>) packet.getObject(0);
+        game.getGroundBoards().forEach(board -> board.updateBuildings(updatedBuildings));
     }
 
     @SuppressWarnings("unchecked")
-    private void receiveBuildingCollapse(Packet packet) {
-        getGame().getBoard().collapseBuilding((Vector<Coords>) packet.getObject(0));
+    protected void receiveBuildingCollapse(Packet packet) {
+        var locations = (List<BoardLocation>) packet.getObject(0);
+        for (BoardLocation boardLocation : locations) {
+            game.getBoard(boardLocation).collapseBuilding(boardLocation.getCoords());
+        }
     }
 
     /**

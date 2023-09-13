@@ -374,7 +374,7 @@ public class BasicPathRankerTest {
         when(mockGameOptions.booleanOption(eq(OptionsConstants.ALLOWED_NO_CLAN_PHYSICAL))).thenReturn(false);
 
         final Game mockGame = mock(Game.class);
-        when(mockGame.getBoard()).thenReturn(mockBoard);
+        when(mockGame.getBoard(any(Integer.class))).thenReturn(mockBoard);
         when(mockGame.getOptions()).thenReturn(mockGameOptions);
         when(mockGame.getArtilleryAttacks()).thenReturn(Collections.emptyEnumeration());
         when(mockPrincess.getGame()).thenReturn(mockGame);
@@ -908,7 +908,7 @@ public class BasicPathRankerTest {
         when(mockBoard.contains(any(Coords.class))).thenReturn(true);
 
         final Game mockGame = mock(Game.class);
-        when(mockGame.getBoard()).thenReturn(mockBoard);
+        when(mockGame.getBoard(any(Integer.class))).thenReturn(mockBoard);
 
         final Entity mockFriend1 = mock(BipedMech.class);
         when(mockFriend1.getId()).thenReturn(myId);
@@ -1131,7 +1131,7 @@ public class BasicPathRankerTest {
 
         final Game mockGame = mock(Game.class);
 
-        when(mockGame.getBoard()).thenReturn(mockBoard);
+        when(mockGame.getBoard(any(Integer.class))).thenReturn(mockBoard);
         final GameOptions mockGameOptions = mock(GameOptions.class);
         when(mockGame.getOptions()).thenReturn(mockGameOptions);
         when(mockGameOptions.booleanOption(anyString())).thenReturn(false);
@@ -1193,7 +1193,7 @@ public class BasicPathRankerTest {
         final Game mockGame = mock(Game.class);
 
         final Board mockBoard = mock(Board.class);
-        when(mockGame.getBoard()).thenReturn(mockBoard);
+        when(mockGame.getBoard(any(Integer.class))).thenReturn(mockBoard);
         when(mockBoard.getHex(eq(testFinalCoords))).thenReturn(mockFinalHex);
         when(mockBoard.getHex(eq(testCoordsOne))).thenReturn(mockHexOne);
         when(mockBoard.getHex(eq(testCoordsTwo))).thenReturn(mockHexTwo);

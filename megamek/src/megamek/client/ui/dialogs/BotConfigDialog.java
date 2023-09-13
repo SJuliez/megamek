@@ -786,23 +786,23 @@ public class BotConfigDialog extends AbstractButtonDialog implements ActionListe
 
             String content;
             boolean invalid = true;
-            if (value instanceof Coords) {
-                Coords coords = (Coords) value;
-                content = Messages.getString("BotConfigDialog.hexListIntro", coords.getX() + 1, coords.getY() + 1);
+            if (value instanceof BoardLocation) {
+                var boardLocation = (BoardLocation) value;
+                content = Messages.getString("BotConfigDialog.hexListIntro", boardLocation.getCoords().getX() + 1, boardLocation.getCoords().getY() + 1);
                 if (client != null) {
-                    Board board = client.getBoard();
+                    Board board = client.getGame().getBoard(boardLocation);
                     if (client.getGame().getPhase().isLounge()) {
                         board = clientGui.chatlounge.getPossibleGameBoard(true);
                     }
                     if (board == null) {
                         content += Messages.getString("BotConfigDialog.hexListNoMp");
-                    } else if (!board.contains(coords)) {
+                    } else if (!board.contains(boardLocation)) {
                         content += Messages.getString("BotConfigDialog.hexListOuts");
-                    } else if (!board.getHex(coords).containsAnyTerrainOf(BUILDING, FUEL_TANK, BRIDGE)) {
+                    } else if (!board.getHex(boardLocation.getCoords()).containsAnyTerrainOf(BUILDING, FUEL_TANK, BRIDGE)) {
                         content += Messages.getString("BotConfigDialog.hexListNoBg");
                     } else {
-                        final Hex hex = board.getHex(coords);
-                        final Building bldg = board.getBuildingAt(coords);
+                        final Hex hex = board.getHex(boardLocation.getCoords());
+                        final Building bldg = board.getBuildingAt(boardLocation);
                         if (hex.containsTerrain(BUILDING)) {
                             content += Messages.getString("BotConfigDialog.hexListBldg", Building.typeName(bldg.getType()),
                                     Building.className(bldg.getBldgClass()), hex.terrainLevel(BLDG_ELEV), hex.terrainLevel(BLDG_CF));

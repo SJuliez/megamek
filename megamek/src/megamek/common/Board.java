@@ -1277,22 +1277,6 @@ public class Board implements Serializable {
     }
 
     /**
-     * Collapse a vector of building hexes.
-     *
-     * @param coords the <code>Vector</code> of <code>Coord</code> objects to be collapsed.
-     */
-    public void collapseBuilding(Vector<Coords> coords) {
-        // Walk through the vector of coords.
-        Enumeration<Coords> loop = coords.elements();
-        while (loop.hasMoreElements()) {
-            final Coords other = loop.nextElement();
-
-            // Update the building.
-            this.collapseBuilding(other);
-        }
-    }
-
-    /**
      * The given building hex has collapsed. Remove it from the board and replace it with rubble.
      *
      * @param coords the <code>Building</code> that has collapsed.

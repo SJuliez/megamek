@@ -12700,7 +12700,7 @@ public class GameManager implements IGameManager {
                                                               Coords dest, int elev) {
         Vector<Report> vPhaseReport = new Vector<>();
         boolean boom = checkVibrabombs(entity, dest, true, vPhaseReport);
-        if (game.containsMinefield(dest)) {
+        if (game.hasMinefieldAt(new BoardLocation(dest, entity.getBoardId()))) {
             boom = enterMinefield(entity, dest, elev, true, vPhaseReport) || boom;
         }
 
@@ -18145,7 +18145,7 @@ public class GameManager implements IGameManager {
         // Check for touched-off explosives
         Vector<Building> updatedBuildings = new Vector<>();
         for (Building.DemolitionCharge charge : explodingCharges) {
-            Building bldg = game.getBoard().getBuildingAt(charge.pos);
+            Building bldg = game.getBuildingAt(charge.pos);
             if (bldg == null) { // Shouldn't happen...
                 continue;
             }
@@ -18154,7 +18154,7 @@ public class GameManager implements IGameManager {
             Report r = new Report(4272, Report.PUBLIC);
             r.add(bldg.getName());
             addReport(r);
-            Vector<Report> dmgReports = damageBuilding(bldg, charge.damage, " explodes for ", charge.pos);
+            Vector<Report> dmgReports = damageBuilding(bldg, charge.damage, " explodes for ", charge.pos.getCoords());
             for (Report rep : dmgReports) {
                 rep.indent();
                 addReport(rep);
@@ -18176,9 +18176,9 @@ public class GameManager implements IGameManager {
                 r.addDesc(inf);
                 addReport(r);
             } else {
-                Building building = game.getBoard().getBuildingAt(ae.getPosition());
+                Building building = game.getBuildingAt(ae.getBoardLocation());
                 if (building != null) {
-                    building.addDemolitionCharge(ae.getOwner().getId(), pr.damage, ae.getPosition());
+                    building.addDemolitionCharge(ae.getOwner().getId(), pr.damage, ae.getBoardLocation());
                     Report r = new Report(4275);
                     r.subject = inf.getId();
                     r.addDesc(inf);
@@ -25792,7 +25792,7 @@ public class GameManager implements IGameManager {
         Vector<Report> vDesc = new Vector<>();
 
         lam.setPosition(pos);
-        Hex hex = game.getBoard().getHex(pos);
+        Hex hex = game.getBoard(lam).getHex(pos);
         if (hex.containsTerrain(Terrains.BLDG_ELEV)) {
             lam.setElevation(hex.terrainLevel(Terrains.BLDG_ELEV));
         } else {
@@ -25849,7 +25849,7 @@ public class GameManager implements IGameManager {
         Vector<Report> vDesc = new Vector<>();
 
         en.setPosition(pos);
-        Hex hex = game.getBoard().getHex(pos);
+        Hex hex = en.getBoard().getHex(pos);
         if (hex.containsTerrain(Terrains.BLDG_ELEV)) {
             en.setElevation(hex.terrainLevel(Terrains.BLDG_ELEV));
         } else {
@@ -25880,7 +25880,7 @@ public class GameManager implements IGameManager {
     private Vector<Report> forceLandVTOLorWiGE(Tank en) {
         Vector<Report> vDesc = new Vector<>();
         PilotingRollData psr = en.getBasePilotingRoll();
-        Hex hex = game.getBoard().getHex(en.getPosition());
+        Hex hex = game.getHex(en.getBoardLocation());
         if (en instanceof VTOL) {
             psr.addModifier(4, "VTOL making forced landing");
         } else {
@@ -31178,7 +31178,7 @@ public class GameManager implements IGameManager {
             } else {
                 bldg.setCurrentCF(0, coords);
                 bldg.setPhaseCF(0, coords);
-                send(createCollapseBuildingPacket(coords));
+                send(createCollapseBuildingPacket(coords, bldg.getBoardId()));
                 game.getBoard(bldg).collapseBuilding(coords);
             }
 
@@ -31291,7 +31291,7 @@ public class GameManager implements IGameManager {
             // Update the building.
             bldg.setCurrentCF(0, coords);
             bldg.setPhaseCF(0, coords);
-            send(createCollapseBuildingPacket(coords));
+            send(createCollapseBuildingPacket(coords, bldg.getBoardId()));
             game.getBoard(bldg).collapseBuilding(coords);
         }
         // if more than half of the hexes are gone, collapse all
@@ -31309,10 +31309,18 @@ public class GameManager implements IGameManager {
      * @param coords - the <code>Coords</code> that has collapsed.
      * @return a <code>Packet</code> for the command.
      */
-    private Packet createCollapseBuildingPacket(Coords coords) {
-        Vector<Coords> coordsV = new Vector<>();
-        coordsV.addElement(coords);
-        return createCollapseBuildingPacket(coordsV);
+    private Packet createCollapseBuildingPacket(Coords coords, int boardId) {
+        return createCollapseBuildingPacket(new BoardLocation(coords, boardId));
+    }
+
+    /**
+     * Tell the clients to replace the given building with rubble hexes.
+     *
+     * @param coords - the <code>Coords</code> that has collapsed.
+     * @return a <code>Packet</code> for the command.
+     */
+    private Packet createCollapseBuildingPacket(BoardLocation coords) {
+        return createCollapseBuildingPacket(new ArrayList<>(List.of(coords)));
     }
 
     /**
@@ -31322,7 +31330,7 @@ public class GameManager implements IGameManager {
      *               collapsed.
      * @return a <code>Packet</code> for the command.
      */
-    private Packet createCollapseBuildingPacket(Vector<Coords> coords) {
+    private Packet createCollapseBuildingPacket(List<BoardLocation> coords) {
         return new Packet(PacketCommand.BLDG_COLLAPSE, coords);
     }
 

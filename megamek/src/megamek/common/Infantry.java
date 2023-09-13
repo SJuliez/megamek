@@ -329,7 +329,7 @@ public class Infantry extends Entity {
 
     /** Creates a local platoon for Urban Guerrilla. */
     public void createLocalSupport() {
-        if (Compute.isInUrbanEnvironment(game, getPosition())) {
+        if (Compute.isInUrbanEnvironment(game, getBoardLocation())) {
             setIsCallingSupport(true);
             canCallSupport = false;
         }

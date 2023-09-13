@@ -484,7 +484,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
                 mpL3.setString(Messages.getString("GeneralInfoMapSet.mpL3"));
             }
         }
-        if ((en.getGame() != null) && en.getGame().getBoard().isSpaceMap()) {
+        if ((en.getGame() != null) && en.getBoard().isSpaceMap()) {
             elevationL.setVisible(false);
             elevationR.setVisible(false);
         }

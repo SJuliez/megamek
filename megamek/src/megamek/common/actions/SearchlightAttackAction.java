@@ -150,7 +150,7 @@ public class SearchlightAttackAction extends AbstractAttackAction {
 
         ArrayList<Coords> intervening = Coords.intervening(apos, tpos);
         for (Coords c : intervening) {
-            if (game.getBoard().contains(c)) {
+            if (game.getBoard(attacker).contains(c)) {
                 hexesAdded |= game.addIlluminatedPosition(c);
             }
         }

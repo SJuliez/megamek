@@ -2,7 +2,9 @@ package megamek.client.commands;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import megamek.client.Client;
 import megamek.common.Coords;
@@ -45,24 +47,14 @@ public class ShowTileCommand extends ClientCommand {
     @Override
     public String run(String[] args) {
         try {
-            int i = 3;
+            int i = 2;
             String str, report = "";
-            Coords coord;
-            if ((args.length >= 1) && directions.contains(args[0].toUpperCase())) {
-                i = 1;
-                coord = getClient().getCurrentHex().translated(args[0]);
-            } else if ((args.length > 1) && directions.contains(args[1].toUpperCase()) ) {
-                i = 2;
-                coord = getClient().getCurrentHex().translated(args[1]);
-            } else {
-                coord = new Coords(Integer.parseInt(args[1]) - 1, Integer
-                        .parseInt(args[2]) - 1);
-            }
+            Coords coord = new Coords(Integer.parseInt(args[0]) - 1, Integer.parseInt(args[1]) - 1);
+            int boardId = Integer.parseInt(args[2]);
             Hex hex;
 
             do {
-                hex = getClient().getGame().getBoard().getHex(coord);
-                getClient().setCurrentHex(hex);
+                hex = getClient().getGame().getBoard(boardId).getHex(coord);
                 if (hex != null) {
                     str = "Details for hex (" + (coord.getX() + 1) + ", "
                           + (coord.getY() + 1) + ") : " + hex;
@@ -70,12 +62,10 @@ public class ShowTileCommand extends ClientCommand {
                     // if we are not playing in double-blind mode also list the
                     // units in this tile.
                     if (!getClient().getGame().getOptions().booleanOption(OptionsConstants.ADVANCED_DOUBLE_BLIND)) {
-                        Iterator<Entity> entList = getClient().getGame().getEntities(coord);
-                        if (entList.hasNext()) {
-                            str = str + "; Contains entities: " + entList.next().getId();
-                            while (entList.hasNext()) {
-                                str = str + ", " + entList.next().getId();
-                            }
+                        List<Integer> entityIds = getClient().getGame().getEntityIDsAt(coord, boardId);
+                        List<String> idStrings = entityIds.stream().map(String::valueOf).collect(Collectors.toList());
+                        if (!entityIds.isEmpty()) {
+                            str += "; Contains entities: " + String.join(", ", idStrings);
                         }
                     }
 

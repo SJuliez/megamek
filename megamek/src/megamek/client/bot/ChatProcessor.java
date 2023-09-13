@@ -16,6 +16,7 @@ package megamek.client.bot;
 
 import megamek.client.bot.princess.*;
 import megamek.codeUtilities.StringUtility;
+import megamek.common.BoardLocation;
 import megamek.common.Coords;
 import megamek.common.Game;
 import megamek.common.Player;
@@ -404,15 +405,16 @@ public class ChatProcessor {
 
             int x = Integer.parseInt(hex.substring(0, 2)) - 1;
             int y = Integer.parseInt(hex.substring(2, 4)) - 1;
+            int boardId = Integer.parseInt(hex.substring(4, 6));
             Coords coords = new Coords(x, y);
-            if (!princess.getGame().getBoard().contains(coords)) {
+            if (!princess.getGame().getBoard(boardId).contains(coords)) {
                 msg = "Board does not have hex " + hex;
                 LogManager.getLogger().warn(msg + "\n" + chatEvent.getMessage());
                 princess.sendChat(msg);
                 return;
             }
 
-            princess.addStrategicBuildingTarget(coords);
+            princess.addStrategicBuildingTarget(new BoardLocation(coords, boardId));
             msg = "Hex " + hex + " added to strategic targets list.";
             princess.sendChat(msg);
         }

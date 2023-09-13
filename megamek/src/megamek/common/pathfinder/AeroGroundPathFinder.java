@@ -271,7 +271,7 @@ public class AeroGroundPathFinder {
 
         boolean firstTurn = true;
         while (straightLine.getFinalVelocityLeft() > 0 &&
-                game.getBoard().contains(straightLine.getFinalCoords())) {
+                game.getBoard(straightLine.getFinalBoardId()).contains(straightLine.getFinalCoords())) {
 
             // little dirty hack to get around the problem where if this is the first step of a path
             // we have no last step

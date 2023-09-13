@@ -788,7 +788,7 @@ public abstract class BotClient extends Client {
                     }
                 }
                 // If building, make sure not too heavy to safely move out of
-                coord.fitness -= potentialBuildingDamage(coord.getX(), coord.getY(),
+                coord.fitness -= potentialBuildingDamage(coord.getBoardLocation(),
                                                          deployed_ent);
             }
 
@@ -870,7 +870,7 @@ public abstract class BotClient extends Client {
                     }
                 }
                 // If building, make sure not too heavy to safely move out of.
-                coord.fitness -= potentialBuildingDamage(coord.getX(), coord.getY(),
+                coord.fitness -= potentialBuildingDamage(coord.getBoardLocation(),
                                                          deployed_ent);
             }
 
@@ -940,9 +940,9 @@ public abstract class BotClient extends Client {
         }
     }
 
-    private double potentialBuildingDamage(int x, int y, Entity entity) {
-        Coords coords = new Coords(x, y);
-        Building building = game.getBoard().getBuildingAt(coords);
+    private double potentialBuildingDamage(BoardLocation boardLocation, Entity entity) {
+        Coords coords = boardLocation.getCoords();
+        Building building = game.getBuildingAt(boardLocation);
         if (building == null) {
             return 0;
         }
@@ -1168,12 +1168,6 @@ public abstract class BotClient extends Client {
 
     public void endOfTurnProcessing() {
         // Do nothing;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected void receiveBuildingCollapse(Packet packet) {
-        game.getBoard().collapseBuilding((Vector<Coords>) packet.getObject(0));
     }
 
     /**

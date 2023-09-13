@@ -469,6 +469,7 @@ public abstract class PathRanker implements IPathRanker {
         int xTotal = 0;
         int yTotal = 0;
         int friendOnBoardCount = 0;
+        int myBoardId = game.getEntity(myId).getBoardId();
 
         for (Entity friend : friends) {
             if (friend.getId() == myId) {
@@ -476,7 +477,7 @@ public abstract class PathRanker implements IPathRanker {
             }
 
             // Skip any friends not on the board.
-            if (friend.isOffBoard()) {
+            if (friend.isOffBoard() || friend.getBoardId() != myBoardId) {
                 continue;
             }
             Coords friendPosition = friend.getPosition();
@@ -497,7 +498,7 @@ public abstract class PathRanker implements IPathRanker {
         int yCenter = Math.round(yTotal / friendOnBoardCount);
         Coords center = new Coords(xCenter, yCenter);
 
-        if (!game.getBoard().contains(center)) {
+        if (!game.getBoard(myBoardId).contains(center)) {
             LogManager.getLogger().error("Center of ally group " + center.toFriendlyString()
                     + " not within board boundaries.");
             return null;

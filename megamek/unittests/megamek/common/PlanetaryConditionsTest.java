@@ -123,7 +123,7 @@ public class PlanetaryConditionsTest {
         planetaryConditions = new PlanetaryConditions();
         planetaryConditions.setTemperature(100);
         when(mockGame.getPlanetaryConditions()).thenReturn(planetaryConditions);
-        when(mockGame.getBoard()).thenReturn(mockBoard);
+        when(mockGame.getBoard(any(Integer.class))).thenReturn(mockBoard);
         when(mockBoard.getHex(any())).thenReturn(mockHex);
         when(mockHex.containsTerrain(Terrains.BLDG_ELEV)).thenReturn(true);
         when(mockHex.containsTerrain(Terrains.BUILDING)).thenReturn(true);

@@ -96,7 +96,7 @@ public class ChargeAttackAction extends DisplacementAttackAction {
             }
         }
 
-        Hex srcHex = game.getBoard().getHex(src);
+        Hex srcHex = game.getBoard(target).getHex(src);
         Hex targHex = game.getHex(target.getBoardLocation());
         // we should not be using the attacker's hex here since the attacker
         // will end up in
@@ -121,7 +121,7 @@ public class ChargeAttackAction extends DisplacementAttackAction {
             targetElevation = target.getElevation() + targHex.getLevel();
         }
         final int targetHeight = targetElevation + target.getHeight();
-        Building bldg = game.getBoard().getBuildingAt(getTargetPos());
+        Building bldg = game.getBoard(target).getBuildingAt(getTargetPos());
         ToHitData toHit;
         boolean targIsBuilding = ((getTargetType() == Targetable.TYPE_FUEL_TANK)
                 || (getTargetType() == Targetable.TYPE_BUILDING));
@@ -210,7 +210,7 @@ public class ChargeAttackAction extends DisplacementAttackAction {
             && Compute.isInBuilding(game, te)) {
             if (!Compute.isInBuilding(game, ae)) {
                 return new ToHitData(TargetRoll.IMPOSSIBLE, "Target is inside building");
-            } else if (!game.getBoard().getBuildingAt(ae.getPosition()).equals(bldg)) {
+            } else if (!game.getBoard(ae).getBuildingAt(ae.getPosition()).equals(bldg)) {
                 return new ToHitData(TargetRoll.IMPOSSIBLE, "Target is inside different building");
             }
         }

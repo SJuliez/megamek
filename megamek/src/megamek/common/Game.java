@@ -193,25 +193,12 @@ public class Game extends AbstractGame implements Serializable {
         return board;
     }
 
-    // @@MultiBoardTODO:
-    public Board getBoard(MapType mapType) {
-        LogManager.getLogger().error("Dont call getboard(MapType)", new Exception());
-        new Exception().getStackTrace();
-        return new Board();
-    }
-
-    public Board getBoard(Targetable entity) {
-        return gameBoards.get(entity.getBoardId());
+    public Board getBoard(Targetable targetable) {
+        return gameBoards.get(targetable.getBoardId());
     }
 
     public List<Board> getBoards() {
         return new ArrayList<>(gameBoards.values());
-    }
-
-    @Deprecated
-    // @@MultiBoardTODO:
-    public boolean containsMinefield(Coords coords) {
-        return minefields.containsKey(coords);
     }
 
     public boolean hasMinefieldAt(BoardLocation boardLocation) {
@@ -224,8 +211,7 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     public int minefieldCountAt(BoardLocation boardLocation) {
-        Vector<Minefield> mfs = minefields.get(boardLocation);
-        return (mfs == null) ? 0 : mfs.size();
+        return getMinefields(boardLocation).size();
     }
 
     /**
@@ -1449,26 +1435,6 @@ public class Game extends AbstractGame implements Serializable {
     }
 
     /**
-     * Returns an Enumeration of the active entities at the given coordinates.
-     */
-    @Deprecated
-    public Iterator<Entity> getEntities(Coords c) {
-        LogManager.getLogger().error("Dont use this. Must use boardlocations");
-        // @@MultiBoardTODO:
-        return getEntities(c, false);
-    }
-
-    /**
-     * Returns an Enumeration of the active entities at the given coordinates.
-     */
-    @Deprecated
-    public Iterator<Entity> getEntities(Coords c, boolean ignore) {
-        LogManager.getLogger().error("Dont use this. Must use boardlocations");
-        // @@MultiBoardTODO:
-        return getEntitiesVector(c, ignore).iterator();
-    }
-
-    /**
      * Return an {@link Entity} <code>List</code> at {@link Coords} <code>c</code>, checking if
      * they can be targetted.
      *
@@ -1478,6 +1444,7 @@ public class Game extends AbstractGame implements Serializable {
     @Deprecated
     public List<Entity> getEntitiesVector(Coords c) {
         LogManager.getLogger().error("Dont use this. Must use boardlocations");
+        new Exception().getStackTrace();
         // @@MultiBoardTODO:
         return getEntitiesVector(c, false);
     }
@@ -1491,6 +1458,7 @@ public class Game extends AbstractGame implements Serializable {
      */
     @Deprecated
     public synchronized List<Entity> getEntitiesVector(Coords c, boolean ignore) {
+        new Exception().getStackTrace();
         // @@MultiBoardTODO:
         LogManager.getLogger().error("Dont use this. Must use boardlocations");
         // checkPositionCacheConsistency();
@@ -1582,6 +1550,10 @@ public class Game extends AbstractGame implements Serializable {
         return result;
     }
 
+    public List<Integer> getEntityIDsAt(Coords c, int boardId) {
+        return getEntitiesAt(c, boardId).stream().map(Entity::getId).collect(toList());
+    }
+
     /**
      * Convenience function that gets a list of all off-board enemy entities.
      * @param player
@@ -1601,7 +1573,7 @@ public class Game extends AbstractGame implements Serializable {
     /**
      * Return a Vector of gun emplacements at Coords <code>c</code>
      *
-     * @param c The coordinates to check
+     * @param boardLocation The coordinates to check
      * @return the {@link GunEmplacement} <code>Vector</code>
      */
     public List<GunEmplacement> getGunEmplacements(BoardLocation boardLocation) {
@@ -3620,6 +3592,14 @@ public class Game extends AbstractGame implements Serializable {
         } else {
             return null;
         }
+    }
+
+    public List<Building> getBuildings() {
+        List<Building> result = new ArrayList<>();
+        for (Board board : getBoards()) {
+            result.addAll(board.getBuildingsVector());
+        }
+        return result;
     }
 
     /**

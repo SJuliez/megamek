@@ -27,8 +27,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -54,7 +53,7 @@ public class ComputeECMTest {
         
         // Mock the game
         Game mockGame = mock(Game.class);
-        when(mockGame.getBoard()).thenReturn(mockBoard);
+        when(mockGame.getBoard(any(Integer.class))).thenReturn(mockBoard);
         when(mockGame.getSmokeCloudList()).thenReturn(new ArrayList<>());
         when(mockGame.getOptions()).thenReturn(mockOptions);
         when(mockGame.getPlayer(anyInt())).thenReturn(mockPlayer);
@@ -202,7 +201,7 @@ public class ComputeECMTest {
         
         // Mock the game
         Game mockGame = mock(Game.class);
-        when(mockGame.getBoard()).thenReturn(mockBoard);
+        when(mockGame.getBoard(any(Integer.class))).thenReturn(mockBoard);
         when(mockGame.getSmokeCloudList()).thenReturn(new ArrayList<>());
         when(mockGame.getOptions()).thenReturn(mockOptions);
         
@@ -435,7 +434,7 @@ public class ComputeECMTest {
         
         // Mock the game
         Game mockGame = mock(Game.class);
-        when(mockGame.getBoard()).thenReturn(mockBoard);
+        when(mockGame.getBoard(any(Integer.class))).thenReturn(mockBoard);
         when(mockGame.getSmokeCloudList()).thenReturn(new ArrayList<>());
         when(mockGame.getOptions()).thenReturn(mockOptions);
         

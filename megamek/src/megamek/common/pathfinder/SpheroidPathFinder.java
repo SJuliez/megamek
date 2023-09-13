@@ -94,7 +94,7 @@ public class SpheroidPathFinder {
             visitedCoords.clear();
             
             // add "flee" option if we haven't done anything else
-            if (game.getBoard().isOnBoardEdge(startingEdge.getFinalCoords())
+            if (game.getBoard(startingEdge.getFinalBoardId()).isOnBoardEdge(startingEdge.getFinalCoords())
                     && startingEdge.getStepVector().isEmpty()) {
                 MovePath fleePath = startingEdge.clone();
                 fleePath.addStep(MoveStepType.FLEE);

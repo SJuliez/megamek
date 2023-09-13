@@ -78,7 +78,7 @@ public class BulldozerMovePath extends MovePath {
     @Override
     public MovePath addStep(final MoveStepType type) {
         BulldozerMovePath mp = (BulldozerMovePath) super.addStep(type);
-        Hex hex = mp.getGame().getBoard().getHex(mp.getFinalCoords());
+        Hex hex = mp.getGame().getBoard(mp.getFinalBoardId()).getHex(mp.getFinalCoords());
         int hexWaterDepth = ((hex != null) && hex.containsTerrain(Terrains.WATER)) ?
                 hex.depth() : Integer.MIN_VALUE;
         
@@ -171,7 +171,7 @@ public class BulldozerMovePath extends MovePath {
      * to a form through which the current unit can move
      */
     public static int calculateLevelingCost(Coords finalCoords, Entity entity) {
-        Board board = entity.getGame().getBoard();
+        Board board = entity.getBoard();
         Hex destHex = board.getHex(finalCoords);
         int levelingCost = CANNOT_LEVEL;
         

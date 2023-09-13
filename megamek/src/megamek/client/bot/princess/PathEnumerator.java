@@ -294,7 +294,7 @@ public class PathEnumerator {
             // calculate bounding area for move
             ConvexBoardArea myArea = new ConvexBoardArea();
             myArea.addCoordFacingCombos(getUnitPotentialLocations().get(
-                    mover.getId()).iterator(), owner.getBoard());
+                    mover.getId()).iterator(), mover.getBoard());
             getUnitMovableAreas().put(mover.getId(), myArea);
 
             return true;

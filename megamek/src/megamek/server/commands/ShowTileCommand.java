@@ -1,6 +1,8 @@
 package megamek.server.commands;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import megamek.common.Coords;
 import megamek.common.Entity;
@@ -20,7 +22,8 @@ public class ShowTileCommand extends ServerCommand {
 
     public ShowTileCommand(Server server, GameManager gameManager) {
         super(server, "tile",
-                "print the information about a tile into the chat window. Usage: /tile 01 01 whih would show the details for the hex numbered 01 01.");
+                "print the information about a tile into the chat window. " +
+                        "Usage: /tile boardId 01 01 whih would show the details for the hex numbered 01 01.");
         this.gameManager = gameManager;
     }
 
@@ -34,11 +37,12 @@ public class ShowTileCommand extends ServerCommand {
         try {
             int i = 3;
             String str = "";
-            Coords coord = new Coords(Integer.parseInt(args[1]) - 1, Integer.parseInt(args[2]) - 1);
+            int boardId = Integer.parseInt(args[1]);
+            Coords coord = new Coords(Integer.parseInt(args[2]) - 1, Integer.parseInt(args[3]) - 1);
             Hex hex;
 
             do {
-                hex = gameManager.getGame().getBoard().getHex(coord);
+                hex = gameManager.getGame().getBoard(boardId).getHex(coord);
                 if (hex != null) {
                     str = "Details for hex (" + (coord.getX() + 1) + ", "
                           + (coord.getY() + 1) + ") : " + hex;
@@ -47,12 +51,10 @@ public class ShowTileCommand extends ServerCommand {
                     // units in this tile.
                     if (!server.getGame().getOptions().booleanOption(
                             OptionsConstants.ADVANCED_DOUBLE_BLIND)) {
-                        Iterator<Entity> entList = gameManager.getGame().getEntities(coord);
-                        if (entList.hasNext()) {
-                            str = str + "; Contains entities: " + entList.next().getId();
-                            while (entList.hasNext()) {
-                                str = str + ", " + entList.next().getId();
-                            }
+                        List<Integer> entityIds = gameManager.getGame().getEntityIDsAt(coord, boardId);
+                        List<String> idStrings = entityIds.stream().map(String::valueOf).collect(Collectors.toList());
+                        if (!entityIds.isEmpty()) {
+                            str += "; Contains entities: " + String.join(", ", idStrings);
                         }
                     }
 

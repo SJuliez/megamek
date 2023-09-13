@@ -77,7 +77,7 @@ public abstract class AbstractWreckSprite extends Sprite {
         // if the entity is underwater or would sink underwater, we want to make the wreckage translucent
         // so it looks like it sunk
         boolean entityIsUnderwater = (entity.relHeight() < 0) ||
-                ((entity.relHeight() >= 0) && entity.getGame().getBoard().getHex(entity.getPosition()).containsTerrain(Terrains.WATER)) &&
+                ((entity.relHeight() >= 0) && entity.getBoard().getHex(entity.getPosition()).containsTerrain(Terrains.WATER)) &&
                 !EntityWreckHelper.entityOnBridge(entity);
         
         if (entityIsUnderwater) {
@@ -120,7 +120,7 @@ public abstract class AbstractWreckSprite extends Sprite {
         
         if (EntityWreckHelper.displayDevastation(entity)) {
             // objects in space should not have craters
-            wreck = entity.getGame().getBoard().isSpaceMap() ?
+            wreck = entity.getBoard().isSpaceMap() ?
                     bv.tileManager.wreckMarkerFor(entity, secondaryPos) :
                     bv.tileManager.getCraterFor(entity, secondaryPos);
         } else {

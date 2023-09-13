@@ -33,7 +33,10 @@ public class DeployCommand extends ClientCommand {
         super(
                 client,
                 "deploy",
-                "This command deploys a given unit to the specified hex. Usage: '#deploy unit x y facing' where unit is the unit id number and x and y are the coordinates of the hex, and facing is the direction it's looking in. #deploy without any options will provide legal deployment zones.");
+                "This command deploys a given unit to the specified hex. " +
+                        "Usage: '#deploy unit boardId x y facing' where unit is the unit id number and x and y " +
+                        "are the coordinates of the hex, and facing is the direction it's looking in. #deploy " +
+                        "without any options will provide legal deployment zones.");
     }
 
     /*
@@ -45,15 +48,15 @@ public class DeployCommand extends ClientCommand {
     @Override
     public String run(String[] args) {
         if (args.length == 1) {
-            getClient().getBoard();
             return "The legal deployment zone is: " + legalDeploymentZone();
         } else if (args.length == 5) {
             int id = Integer.parseInt(args[1]);
-            Coords coord = new Coords(Integer.parseInt(args[2]) - 1, Integer
-                    .parseInt(args[3]) - 1);
-            int nFacing = getDirection(args[4]);
+            int boardId = Integer.parseInt(args[2]);
+            Coords coord = new Coords(Integer.parseInt(args[3]) - 1, Integer
+                    .parseInt(args[4]) - 1);
+            int nFacing = getDirection(args[5]);
 
-            getClient().deploy(id, new BoardLocation(coord, 0), nFacing, 0);
+            getClient().deploy(id, new BoardLocation(coord, boardId), nFacing, 0);
             return "Unit " + id + " deployed to " + coord.toFriendlyString()
                     + ". (this is assuming it worked. No error checking done.)";
         }
@@ -62,28 +65,16 @@ public class DeployCommand extends ClientCommand {
     }
 
     public String legalDeploymentZone() {
-        int width = getClient().getBoard().getWidth();
-        int height = getClient().getBoard().getHeight();
         int nDir = getClient().getLocalPlayer().getStartingPos();
-        int minx = 0;
-        int maxx = width;
-        int miny = 0;
-        int maxy = height;
         String deep = "";
         if (nDir > 10) {
             // Deep deployment, the board is effectively smaller
             nDir -= 10;
             deep = "Deep ";
-            minx = width / 5;
-            maxx -= width / 5;
-            miny = height / 5;
-            maxy -= height / 5;
         }
         switch (nDir) {
             case 0: // Any
-                return deep + "Deploy nearly anywhere. MinX: " + (minx + 1)
-                        + " MinY: " + (miny + 1) + " MaxX: " + (maxx + 1)
-                        + " MaxY: " + (maxy + 1);
+                return deep + "Deploy nearly anywhere.";
             case 1: // NW
                 return deep + "Deploy NW.";
             case 2: // N
@@ -103,11 +94,7 @@ public class DeployCommand extends ClientCommand {
             case 9: // Edge
                 return deep + "Deploy at any edge.";
             case 10: // Centre
-                return deep + "Deploy in the center. MinX: "
-                        + (Math.max(minx, width / 3) + 1) + " MinY: "
-                        + (Math.max(miny, height / 3) + 1) + " MaxX: "
-                        + (Math.min(maxx, 2 * width / 3) + 1) + " MaxY: "
-                        + (Math.min(miny, 2 * height / 3) + 1);
+                return deep + "Deploy in the center.";
             default: // ummm. .
                 return "Something went wrong, unknown deployment schema.";
         }

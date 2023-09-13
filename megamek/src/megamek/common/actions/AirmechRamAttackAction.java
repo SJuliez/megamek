@@ -100,7 +100,7 @@ public class AirmechRamAttackAction extends DisplacementAttackAction {
         final int targetElevation = target.getElevation()
                                     + targHex.getLevel();
         final int targetHeight = targetElevation + target.getHeight();
-        Building bldg = game.getBoard().getBuildingAt(getTargetPos());
+        Building bldg = game.getBoard(target).getBuildingAt(getTargetPos());
         ToHitData toHit = null;
         boolean targIsBuilding = ((getTargetType() == Targetable.TYPE_FUEL_TANK)
                 || (getTargetType() == Targetable.TYPE_BUILDING));
@@ -193,7 +193,7 @@ public class AirmechRamAttackAction extends DisplacementAttackAction {
             if (!Compute.isInBuilding(game, ae)) {
                 return new ToHitData(TargetRoll.IMPOSSIBLE,
                                      "Target is inside building");
-            } else if (!game.getBoard().getBuildingAt(ae.getPosition())
+            } else if (!game.getBoard(target).getBuildingAt(ae.getPosition())
                             .equals(bldg)) {
                 return new ToHitData(TargetRoll.IMPOSSIBLE,
                                      "Target is inside differnt building");
