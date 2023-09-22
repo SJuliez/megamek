@@ -271,7 +271,8 @@ public abstract class BotClient extends Client {
                 boolean stackingViolation = null != Compute.stackingViolation(game, currentEntity.getId(),
                         transport.getPosition(), currentEntity.climbMode());
                 boolean unloadFatal = !currentEntity.isMapTypeAllowed(transport.getCurrentMapType())
-                        || currentEntity.isLocationProhibited(transport.getPosition());
+                        || currentEntity.isLocationProhibited(transport.getPosition())
+                        || currentEntity.isLocationDeadly(transport.getPosition());
 
                 if (!stackingViolation && !unloadFatal) {
                     entitiesToUnload.add(currentEntity.getId());
@@ -625,8 +626,9 @@ public abstract class BotClient extends Client {
                 for (int y = 0; y <= board.getHeight(); y++) {
                     Coords c = new Coords(x, y);
                     if (deployed_ent.getDeploymentZone().canDeployTo(game, c, board.getBoardId())
-                            && !deployed_ent.isLocationProhibited(c)) {
-                        validCoords.add(new RankedCoords(c, board));
+                            && !deployed_ent.isLocationProhibited(c)
+                        && !deployed_ent.isLocationDeadly(c)) {
+                    validCoords.add(new RankedCoords(c, board));
                     }
                 }
             }
@@ -674,10 +676,10 @@ public abstract class BotClient extends Client {
             if (atype.getAmmoType() == AmmoType.T_ATM) {
                 weapon_count++;
                 av_range += 15.0;
-                if (atype.getMunitionType() == AmmoType.M_HIGH_EXPLOSIVE) {
+                if (atype.getMunitionType().contains(AmmoType.Munitions.M_HIGH_EXPLOSIVE)) {
                     av_range -= 6;
                 }
-                if (atype.getMunitionType() == AmmoType.M_EXTENDED_RANGE) {
+                if (atype.getMunitionType().contains(AmmoType.Munitions.M_EXTENDED_RANGE)) {
                     av_range += 12.0;
                 }
             } else if (atype.getAmmoType() == AmmoType.T_MML) {

@@ -348,7 +348,7 @@ public class Princess extends BotClient {
     public Targetable getAppropriateTarget(BoardLocation boardLocation) {
         return getAppropriateTarget(boardLocation.getCoords(), boardLocation.getBoardId());
     }
-    
+
     public Targetable getAppropriateTarget(Coords strategicTarget, int boardId) {
         if (null == game.getBoard(boardId).getBuildingAt(strategicTarget)) {
             return new HexTarget(strategicTarget, boardId, Targetable.TYPE_HEX_CLEAR);
@@ -1238,8 +1238,8 @@ public class Princess extends BotClient {
 
             final long startTime = System.currentTimeMillis();
             getPathRanker(entity).initUnitTurn(entity, getGame());
-            final double fallTolerance =
-                    getBehaviorSettings().getFallShameIndex() / 10d;
+            // fall tolerance range between 0.50 and 1.0
+            final double fallTolerance = getBehaviorSettings().getFallShameIndex() / 20d + 0.50d;
                        
             final List<RankedPath> rankedpaths = getPathRanker(entity).rankPaths(paths,
                     getGame(), getMaxWeaponRange(entity), fallTolerance, getEnemyEntities(),
@@ -1951,7 +1951,8 @@ public class Princess extends BotClient {
                 // this condition is a simple check that we're not unloading infantry into deep space
                 // or into lava or some other such nonsense
                 boolean unloadFatal = !loadedEntity.isMapTypeAllowed(movingEntity.getCurrentMapType())
-                        || loadedEntity.isLocationProhibited(pathEndpoint);
+                        || loadedEntity.isLocationProhibited(pathEndpoint)
+                        || loadedEntity.isLocationDeadly(pathEndpoint);
                 
                 // Unloading a unit may sometimes cause a stacking violation, take that into account when planning
                 boolean unloadIllegal = Compute.stackingViolation(getGame(), loadedEntity, pathEndpoint, movingEntity,

@@ -404,7 +404,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
 
     /** map overlays */
     KeyBindingsOverlay keybindOverlay;
-    PlanetaryConditionsOverlay planetaryConditionsOverlay;
+    public PlanetaryConditionsOverlay planetaryConditionsOverlay;
     public TurnDetailsOverlay turnDetailsOverlay;
 
     /** The coords where the mouse was last. */
@@ -444,7 +444,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
             addDisplayable(keybindOverlay);
         }
 
-        // Avoid showing the planetary Conditions when they can't be used (in the lobby map preview)
+        // Avoid showing the planetary Conditions when they can't be used (in the lobby map preview or board editor)
         if (controller != null) {
             planetaryConditionsOverlay = new PlanetaryConditionsOverlay(this);
             addDisplayable(planetaryConditionsOverlay);
@@ -1845,6 +1845,17 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 if (board.contains(c) && en_Deployer.getDeploymentZone().canDeployTo(game, c, boardId) &&
                         !en_Deployer.isLocationProhibited(c)) {
                     drawHexBorder(g, getHexLocation(c), Color.yellow);
+                }
+            }
+        }
+
+        for (int i = 0; i < drawHeight; i++) {
+            for (int j = 0; j < drawWidth; j++) {
+                Coords c = new Coords(j + drawX, i + drawY);
+                if (board.isLegalDeployment(c, en_Deployer) &&
+                        !en_Deployer.isLocationProhibited(c) &&
+                        en_Deployer.isLocationDeadly(c)) {
+                    drawHexBorder(g, getHexLocation(c), GUIP.getWarningColor());
                 }
             }
         }
@@ -5735,7 +5746,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
                 String rows = row;
 
                 if (!wSprite.entity.getCrew().isEjected()) {
-                    String sPilot = PilotToolTip.getPilotTipShort(wSprite.entity, GUIP.getshowPilotPortraitTT()).toString();
+                    String sPilot = PilotToolTip.getPilotTipShort(wSprite.entity, GUIP.getshowPilotPortraitTT(), false).toString();
                     col = "<TD>" + sPilot + "</TD>";
                     row = "<TR>" + col + "</TR>";
                     rows += row;
