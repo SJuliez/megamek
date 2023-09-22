@@ -4984,7 +4984,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
         // See SO p110
         // Start with a flat +2 modifier
         if (wtype instanceof CapitalMissileWeapon
-                && Compute.isGroundToGround(ae, target, game)) {
+                && Compute.isGroundToGround(ae, target, ae.getGame())) {
             toHit.addModifier(2, Messages.getString("WeaponAttackAction.SubCapArtillery"));
             // +3 additional modifier if fired underwater
             if (ae.isUnderwater()) {
@@ -5187,7 +5187,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
 
                 // Fog Specialist
                 if (ae.getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_FOG)
-                        && wtype.hasFlag(WeaponType.F_ENERGY) && !game.getBoard().inSpace()
+                        && wtype.hasFlag(WeaponType.F_ENERGY) && !game.getBoard(ae).isSpaceMap()
                         && (game.getPlanetaryConditions().getFog() == PlanetaryConditions.FOG_HEAVY)) {
                     toHit.addModifier(-1, Messages.getString("WeaponAttackAction.FogSpec"));
                 }
