@@ -250,7 +250,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
             }
 
             // Fire Mode - lots of things have variable modes
-            if (wtype.hasModes()) {
+            if (mounted.hasModes()) {
                 wn.append(' ');
 
                 wn.append(mounted.curMode().getDisplayableName());
@@ -1750,7 +1750,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
             }
             wDamR.setText(damage.toString());
         } else if (wtype.hasFlag(WeaponType.F_ENERGY)
-                   && wtype.hasModes()
+                   && mounted.hasModes()
                    && (unitDisplay.getClientGUI() != null) && unitDisplay.getClientGUI().getClient().getGame().getOptions().booleanOption(
                 OptionsConstants.ADVCOMBAT_TACOPS_ENERGY_WEAPONS)) {
             if (mounted.hasChargedCapacitor() != 0) {
@@ -1787,7 +1787,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
             extremeR = wtype.getWExtremeRange();
         } else if (wtype.hasFlag(WeaponType.F_PDBAY)) {
             //Point Defense bays have a variable range, depending on the mode they're in
-            if (wtype.hasModes() && mounted.curMode().equals("Point Defense")) {
+            if (mounted.hasModes() && mounted.curMode().equals("Point Defense")) {
                 shortR = 1;
                 wShortR.setText("1");
             } else {
@@ -2374,7 +2374,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
             wShortR.setText("1-12");
         } else if (wtype.hasFlag(WeaponType.F_PDBAY)) {
                 //Point Defense bays have a variable range too, depending on the mode they're in
-                if (wtype.hasModes() && weapon.curMode().equals("Point Defense")) {
+                if (weapon.hasModes() && weapon.curMode().equals("Point Defense")) {
                     wShortR.setText("1");
                 } else {
                     wShortR.setText("1-6");
@@ -2599,13 +2599,13 @@ public class WeaponPanel extends PicMap implements ListSelectionListener, Action
         }
         // check for bracketing
         double mult = 1.0;
-        if (wtype.hasModes() && weapon.curMode().equals("Bracket 80%")) {
+        if (weapon.hasModes() && weapon.curMode().equals("Bracket 80%")) {
             mult = 0.8;
         }
-        if (wtype.hasModes() && weapon.curMode().equals("Bracket 60%")) {
+        if (weapon.hasModes() && weapon.curMode().equals("Bracket 60%")) {
             mult = 0.6;
         }
-        if (wtype.hasModes() && weapon.curMode().equals("Bracket 40%")) {
+        if (weapon.hasModes() && weapon.curMode().equals("Bracket 40%")) {
             mult = 0.4;
         }
         avShort = mult * avShort;

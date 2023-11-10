@@ -3785,6 +3785,26 @@ public class GameManager implements IGameManager {
             send(createTurnVectorPacket());
         }
 
+        // Fighter Squadrons may become too big for the bay they're parked in
+        if ((loader instanceof FighterSquadron) && (loader.getTransportId() != Entity.NONE)) {
+            Entity carrier = game.getEntity(loader.getTransportId());
+            Transporter bay = carrier.getBay(loader);
+
+            if (bay.getUnused() < 1) {
+                if (getGame().getPhase().isLounge()) {
+                    // In the lobby, unload the squadron if too big
+                    loader.setTransportId(Entity.NONE);
+                    carrier.unload(loader);
+                    entityUpdate(carrier.getId());
+                } else {
+                    // Outside the lobby, reject the load
+                    entityUpdate(unit.getId());
+                    entityUpdate(loader.getId());
+                    return;
+                }
+            }
+        }
+
         // When loading an Aero into a squadron in the lounge, make sure the
         // loaded aero has the same bomb loadout as the squadron
         // We want to do this before the fighter is loaded: when the fighter
@@ -3792,6 +3812,8 @@ public class GameManager implements IGameManager {
         // adjusted based on the bomb loadout on the fighter.
         if (getGame().getPhase().isLounge() && (loader instanceof FighterSquadron)) {
             ((IBomber) unit).setBombChoices(((FighterSquadron) loader).getBombChoices());
+            ((FighterSquadron) loader).updateSkills();
+            ((FighterSquadron) loader).updateWeaponGroups();
         }
 
         // Load the unit. Do not check for elevation during deployment
@@ -4148,6 +4170,40 @@ public class GameManager implements IGameManager {
             r.choose(true);
             addReport(r);
             // suc = true;
+        }
+    }
+
+    /**
+     * Any aerospace unit that lands in a rough or rubble hex takes landing hear damage.
+     * @param aero         The landing unit
+     * @param vertical     Whether the landing is vertical
+     * @param touchdownPos The coordinates of the hex of touchdown
+     * @param finalPos     The coordinates of the hex in which the unit comes to a stop
+     * @param facing       The facing of the landing unit
+     * @
+     */
+    private void checkLandingTerrainEffects(IAero aero, boolean vertical, Coords touchdownPos, Coords finalPos, int facing) {
+        // Landing in a rough for rubble hex damages landing gear.
+        Set<Coords> landingPositions = aero.getLandingCoords(vertical, touchdownPos, facing);
+        if (landingPositions.stream().map(c -> game.getBoard().getHex(c)).filter(Objects::nonNull)
+                .anyMatch(h -> h.containsTerrain(Terrains.ROUGH) || h.containsTerrain(Terrains.RUBBLE))) {
+            aero.setGearHit(true);
+            Report r = new Report(9125);
+            r.subject = ((Entity) aero).getId();
+            addReport(r);
+        }
+        // Landing in water can destroy or immobilize the unit.
+        Hex hex = game.getBoard().getHex(finalPos);
+        if ((aero instanceof Aero) && hex.containsTerrain(Terrains.WATER) && !hex.containsTerrain(Terrains.ICE)
+                && (hex.terrainLevel(Terrains.WATER) > 0)
+                && !((Entity) aero).hasWorkingMisc(MiscType.F_FLOTATION_HULL)) {
+            if ((hex.terrainLevel(Terrains.WATER) > 1) || !(aero instanceof Dropship)) {
+                Report r = new Report(9702);
+                r.subject(((Entity) aero).getId());
+                r.addDesc((Entity) aero);
+                addReport(r);
+                addReport(destroyEntity((Entity) aero, "landing in deep water"));
+            }
         }
     }
 
@@ -6264,6 +6320,8 @@ public class GameManager implements IGameManager {
             rollTarget = a.checkLanding(md.getLastStepMovementType(), md.getFinalVelocity(),
                     md.getFinalCoords(), md.getFinalFacing(), false);
             attemptLanding(entity, rollTarget);
+            checkLandingTerrainEffects(a, true, md.getFinalCoords(),
+                    md.getFinalCoords().translated(md.getFinalFacing(), a.getLandingLength()), md.getFinalFacing());
             a.land();
             entity.setPosition(md.getFinalCoords().translated(md.getFinalFacing(),
                     a.getLandingLength()));
@@ -6281,6 +6339,7 @@ public class GameManager implements IGameManager {
             if (entity instanceof Dropship) {
                 applyDropShipLandingDamage(md.getFinalBoardLocation(), (Dropship) a);
             }
+            checkLandingTerrainEffects(a, true, md.getFinalCoords(), md.getFinalCoords(), md.getFinalFacing());
             a.land();
             entity.setPosition(md.getFinalCoords());
             entity.setDone(true);
@@ -8822,7 +8881,7 @@ public class GameManager implements IGameManager {
                     }
                 }
             } else if (!(prevStep.climbMode() && curHex.containsTerrain(Terrains.BRIDGE))
-                    && !(entity.getMovementMode() == EntityMovementMode.HOVER)) {
+                    && !(entity.getMovementMode().isHoverOrWiGE())) {
                 rollTarget = entity.checkWaterMove(waterLevel, overallMoveType);
                 if (rollTarget.getValue() != TargetRoll.CHECK_FALSE) {
                     // For falling elevation, Entity must not on hex surface
@@ -29439,6 +29498,14 @@ public class GameManager implements IGameManager {
         if ((oldEntity != null) && (!oldEntity.getOwner().isEnemyOf(game.getPlayer(connIndex)))) {
             game.setEntity(entity.getId(), entity);
             entityUpdate(entity.getId());
+            if (entity.isPartOfFighterSquadron()) {
+                // Update the stats of any Squadrons that the new units are part of
+                FighterSquadron squadron = (FighterSquadron) game.getEntity(entity.getTransportId());
+                squadron.updateSkills();
+                squadron.updateWeaponGroups();
+                squadron.updateSensors();
+                entityUpdate(squadron.getId());
+            }
             // In the chat lounge, notify players of customizing of unit
             if (game.getPhase().isLounge()) {
                 sendServerChat(ServerLobbyHelper.entityUpdateMessage(entity, game));
@@ -29466,6 +29533,14 @@ public class GameManager implements IGameManager {
                 game.setEntity(entity.getId(), entity);
                 sendServerChat(ServerLobbyHelper.entityUpdateMessage(entity, game));
                 newEntities.add(game.getEntity(entity.getId()));
+                if (entity.isPartOfFighterSquadron()) {
+                    // Update the stats of any Squadrons that the new units are part of
+                    FighterSquadron squadron = (FighterSquadron) game.getEntity(entity.getTransportId());
+                    squadron.updateSkills();
+                    squadron.updateWeaponGroups();
+                    squadron.updateSensors();
+                    newEntities.add(squadron);
+                }
             }
         }
         send(new Packet(PacketCommand.ENTITY_MULTIUPDATE, newEntities));
@@ -31973,7 +32048,11 @@ public class GameManager implements IGameManager {
         int damage = 0;
         PhysicalResult pr = new PhysicalResult();
         ToHitData toHit = new ToHitData();
-        pr.roll = Compute.d6(2);
+        if (aaa instanceof PhysicalAttackAction && ae.getCrew() != null) {
+            pr.roll = ae.getCrew().rollPilotingSkill();
+        } else {
+            pr.roll = Compute.d6(2);
+        }
         pr.aaa = aaa;
         if (aaa instanceof BrushOffAttackAction) {
             BrushOffAttackAction baa = (BrushOffAttackAction) aaa;
@@ -31987,7 +32066,11 @@ public class GameManager implements IGameManager {
             damage = BrushOffAttackAction.getDamageFor(ae, BrushOffAttackAction.LEFT);
             pr.damageRight = BrushOffAttackAction.getDamageFor(ae, BrushOffAttackAction.RIGHT);
             baa.setArm(arm);
-            pr.rollRight = Compute.d6(2);
+            if (ae.getCrew() != null) {
+                pr.rollRight = ae.getCrew().rollPilotingSkill();
+            } else {
+                pr.rollRight = Compute.d6(2);
+            }
         } else if (aaa instanceof ChargeAttackAction) {
             ChargeAttackAction caa = (ChargeAttackAction) aaa;
             toHit = caa.toHit(game);
@@ -32077,7 +32160,11 @@ public class GameManager implements IGameManager {
             }
             pr.damageRight = damageRight;
             pr.toHitRight = toHitRight;
-            pr.rollRight = Compute.d6(2);
+            if (ae.getCrew() != null) {
+                pr.rollRight = ae.getCrew().rollPilotingSkill();
+            } else {
+                pr.rollRight = Compute.d6(2);
+            }
         } else if (aaa instanceof PushAttackAction) {
             PushAttackAction paa = (PushAttackAction) aaa;
             toHit = paa.toHit(game);

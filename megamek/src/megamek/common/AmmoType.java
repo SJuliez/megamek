@@ -150,7 +150,7 @@ public class AmmoType extends EquipmentType {
             AmmoType.T_LRM_STREAK, AmmoType.T_LRM_TORPEDO, AmmoType.T_LRM_TORPEDO_COMBO, AmmoType.T_SRM,
             AmmoType.T_SRM_ADVANCED, AmmoType.T_SRM_PRIMITIVE, AmmoType.T_SRM_STREAK, AmmoType.T_SRM_TORPEDO,
             AmmoType.T_MRM, AmmoType.T_ROCKET_LAUNCHER, AmmoType.T_EXLRM, AmmoType.T_MML, AmmoType.T_NLRM, AmmoType.T_MG, AmmoType.T_MG_LIGHT, AmmoType.T_MG_HEAVY,
-            AmmoType.T_NAIL_RIVET_GUN, };
+            AmmoType.T_NAIL_RIVET_GUN, AmmoType.T_ATM, AmmoType.T_IATM, };
 
     /**
      * Contains the set of {@code AmmoType}s which could share ammo (e.g. SRM 2 and
@@ -423,6 +423,12 @@ public class AmmoType extends EquipmentType {
             }
         }
 
+        // ATM Launchers
+        if (((is(T_ATM) && other.is(T_IATM)) || (is(T_IATM) && other.is(T_ATM))) && (getMunitionType() == other.getMunitionType())) {
+	    // Ammo exclusive to iATMs couldn't have the same munition type as standard ATMs
+	    return true;
+        }
+
         // General Launchers
         if (is(other.getAmmoType()) && (getMunitionType().equals(other.getMunitionType()))) {
             return true;
@@ -634,6 +640,7 @@ public class AmmoType extends EquipmentType {
         ArrayList<AmmoType> sniperCannonAmmos = new ArrayList<>(3);
         ArrayList<AmmoType> longTomAmmos = new ArrayList<>(4);
         ArrayList<AmmoType> longTomCannonAmmos = new ArrayList<>(4);
+        ArrayList<AmmoType> baTubeAmmos = new ArrayList<>(2);
         ArrayList<AmmoType> mortarAmmos = new ArrayList<>(4);
         ArrayList<AmmoType> clanMortarAmmos = new ArrayList<>(4);
         ArrayList<AmmoType> lrtAmmos = new ArrayList<>(26);
@@ -1197,7 +1204,9 @@ public class AmmoType extends EquipmentType {
         EquipmentType.addType(AmmoType.createISMRM4Ammo());
         EquipmentType.addType(AmmoType.createISMRM5Ammo());
         EquipmentType.addType(AmmoType.createISBATaserAmmo());
-        EquipmentType.addType(AmmoType.createBATubeArtyAmmo());
+        base = AmmoType.createBATubeArtyAmmo();
+        EquipmentType.addType(base);
+        baTubeAmmos.add(base);
         base = AmmoType.createBAISLRM1Ammo();
         isBaLrmAmmos.add(base);
         EquipmentType.addType(base);
@@ -2637,77 +2646,29 @@ public class AmmoType extends EquipmentType {
         // Create the munition types for Artillery Cannons.
         // These were taken out in TacOps errata, so are unofficial.
         munitions.clear();
-        munitions.add(new MunitionMutator("Cluster", 1, Munitions.M_CLUSTER,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
-                        .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
-                        .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false)
-                        .setClanAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false),
-                "354, TO"));
-
-        munitions.add(new MunitionMutator("Copperhead", 1, Munitions.M_HOMING,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
-                        .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
-                        .setISAdvancement(2640, 2645, DATE_NONE, 2800, 3051)
-                        .setISApproximate(false, false, false, false, false)
-                        .setClanAdvancement(2640, 2645, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH),
-                "354, TO"));
-
-        munitions.add(new MunitionMutator("FASCAM", 1, Munitions.M_FASCAM, new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
-                .setUnofficial(true).setTechRating(RATING_C).setAvailability(RATING_E, RATING_F, RATING_D, RATING_D)
-                .setISAdvancement(2621, 2844, DATE_NONE, 2770, 3051).setISApproximate(false, false, false, false, false)
-                .setClanAdvancement(2621, 2844, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_CHH), "355, TO"));
-
-        munitions.add(new MunitionMutator("Flechette", 1, Munitions.M_FLECHETTE,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_C)
-                        .setAvailability(RATING_E, RATING_F, RATING_D, RATING_D)
-                        .setISAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false)
-                        .setClanAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false),
-                "355, TO"));
-
-        munitions.add(new MunitionMutator("Illumination", 1, Munitions.M_FLARE,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_C)
-                        .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
-                        .setISAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false)
-                        .setClanAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false),
-                "355, TO"));
-
-        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE, new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
-                .setUnofficial(true).setTechRating(RATING_B).setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
-                .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, false, false, false)
-                .setClanAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, false, false, false, false).setStaticTechLevel(SimpleTechLevel.ADVANCED),
-                "356, TO"));
 
         munitions.add(new MunitionMutator("Fuel-Air", 1, Munitions.M_FAE, new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
                 .setUnofficial(false).setTechRating(RATING_C).setAvailability(RATING_E, RATING_F, RATING_E, RATING_E)
                 .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setStaticTechLevel(SimpleTechLevel.ADVANCED),
-                "165, IO"));
+                "159, IO"));
 
         // Walk through both the base types and the
         // mutators, and create munition types.
         AmmoType.createMunitions(sniperCannonAmmos, munitions);
         AmmoType.createMunitions(thumperCannonAmmos, munitions);
-
-        // Make Davy Crockett-Ms for Long Toms, but not Thumper or Sniper.
-        munitions.add(new MunitionMutator("Davy Crocket-M", 5, Munitions.M_DAVY_CROCKETT_M,
-                new TechAdvancement(TECH_BASE_IS).setTechRating(RATING_D)
-                        .setAvailability(RATING_F, RATING_F, RATING_F, RATING_F)
-                        .setISAdvancement(2412, DATE_NONE, DATE_NONE, 2830, 3044)
-                        .setStaticTechLevel(SimpleTechLevel.UNOFFICIAL),
-                "174, IO"));
         AmmoType.createMunitions(longTomCannonAmmos, munitions);
+
+        munitions.clear();
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+                        .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                        .setISAdvancement(3070, 3075, DATE_NONE, DATE_NONE, DATE_NONE)
+                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CS)
+                        .setProductionFactions(F_CS),
+                "375, TO"));
+        AmmoType.createMunitions(baTubeAmmos, munitions);
+
 
         // Create the munition types for SRT launchers.
         munitions.clear();
@@ -3288,7 +3249,6 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "BA Tube Artillery Ammo";
-        // TODO need mutator for Smoke Artillery
         ammo.shortName = "Tube Artillery";
         ammo.setInternalName("ISBATubeArtilleryAmmo");
         ammo.damagePerShot = 1;
@@ -13291,6 +13251,7 @@ public class AmmoType extends EquipmentType {
                 case AmmoType.T_VEHICLE_FLAMER:
                 case AmmoType.T_HEAVY_FLAMER:
                 case AmmoType.T_FLUID_GUN:
+                case AmmoType.T_BA_TUBE:
                     // Add the munition name to the beginning of the display name.
                     nameBuf = new StringBuilder(name);
                     nameBuf.append(" ");
@@ -13419,30 +13380,40 @@ public class AmmoType extends EquipmentType {
                     || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
                     && (munition.getMunitionType().contains(Munitions.M_THUNDER))) {
                 cost *= 2;
+                // TO:AUE, pp.185,197,198: Half the rack size on 7 hexes; standard mines
+                bv = base.rackSize * munition.shots / 5.0 * 4;
             }
 
             if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
                     || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
                     && (munition.getMunitionType().contains(Munitions.M_THUNDER_AUGMENTED))) {
                 cost *= 4;
+                // TO:AUE, pp.185,197,198: Half the rack size on 7 hexes; standard mines
+                bv = Math.ceil(base.rackSize / 2.0) * 7 * munition.shots / 5.0 * 4;
             }
 
             if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
                     || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
                     && (munition.getMunitionType().contains(Munitions.M_THUNDER_INFERNO))) {
                 cost *= 1;
+                // TO:AUE, pp.185,197,198
+                bv = base.rackSize * munition.shots;
             }
 
             if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
                     || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
                     && (munition.getMunitionType().contains(Munitions.M_THUNDER_VIBRABOMB))) {
                 cost *= 2.5;
+                // TO:AUE, pp.185,197,198
+                bv = base.rackSize * munition.shots;
             }
 
             if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
                     || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
                     && (munition.getMunitionType().contains(Munitions.M_THUNDER_ACTIVE))) {
                 cost *= 3;
+                // TO:AUE, pp.185,197,198
+                bv = base.rackSize * munition.shots / 5.0 * 6;
             }
 
             if (munition.getMunitionType().contains(Munitions.M_HOMING)) {
@@ -13454,6 +13425,12 @@ public class AmmoType extends EquipmentType {
 
             if (munition.getMunitionType().contains(Munitions.M_FASCAM)) {
                 cost *= 1.5;
+                // TO:AR, p.152 and TO:AUE, pp.197,198
+                int rackSize = base.getRackSize();
+                if (munition.getAmmoType() == AmmoType.T_ARROW_IV) {
+                    rackSize = munition.isClan() ? 30 : 20;
+                }
+                bv = rackSize * munition.shots / 5.0 * 4;
             }
 
             if (munition.getMunitionType().contains(Munitions.M_INFERNO_IV)) {
@@ -13461,6 +13438,8 @@ public class AmmoType extends EquipmentType {
             }
 
             if (munition.getMunitionType().contains(Munitions.M_VIBRABOMB_IV)) {
+                // TO:AR 152 and TO:AUE 197,198
+                bv = 20 * munition.shots;
                 cost *= 2;
             }
 
