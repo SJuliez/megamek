@@ -185,7 +185,7 @@ public class MissileMineClearanceHandler extends AmmoWeaponHandler {
         adjustReports(newReports);
         vPhaseReport.addAll(newReports);
 
-        for (Entity target : game.getEntitiesVector(targetPos)) {
+        for (Entity target : game.getEntitiesAt(target.getBoardLocation())) {
             // Ignore airborne units
             if (target.isAirborne() || target.isAirborneVTOLorWIGE()) {
                 continue;

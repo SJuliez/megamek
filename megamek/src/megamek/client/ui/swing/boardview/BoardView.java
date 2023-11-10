@@ -5574,7 +5574,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         Entity choice = null;
 
         // Get the available choices.
-        List<Entity> entities = game.getEntitiesVector(pos);
+        List<Entity> entities = game.getTargetableEntitiesAt(pos, boardId);
 
 
         // Do we have a single choice?
@@ -5762,7 +5762,7 @@ public class BoardView extends JPanel implements Scrollable, BoardListener, Mous
         // Maximum number of entities to show in the tooltip
         int maxShown = 4;
 
-        Set<Entity> coordEnts = new HashSet<>(game.getEntitiesVector(mcoords, true));
+        Set<Entity> coordEnts = new HashSet<>(game.getEntitiesAt(mcoords, boardId));
         for (Entity entity: coordEnts) {
             if (!isOnThisBoard(entity)) {
                 continue;

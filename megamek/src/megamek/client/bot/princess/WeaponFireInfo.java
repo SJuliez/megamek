@@ -356,7 +356,7 @@ public class WeaponFireInfo {
     double computeExpectedDamage() {
         // bombs require some special consideration
         if (weapon.isGroundBomb()) {
-            return computeExpectedBombDamage(getShooter(), weapon, getTarget().getPosition());
+            return computeExpectedBombDamage(getShooter(), weapon, getTarget().getBoardLocation());
         }
         
         // bay weapons require special consideration, by looping through all weapons and adding up the damage
@@ -456,7 +456,7 @@ public class WeaponFireInfo {
      * @return The expected damage of the attack.
      */
     private double computeExpectedBombDamage(final Entity shooter, final Mounted weapon,
-                                             final Coords bombedHex) {
+                                             final BoardLocation bombedHex) {
         double damage = 0D; //lol double damage I wish
         
         // for dive attacks, we can pretty much assume that we're going to drop everything we've got on the poor scrubs in this hex
@@ -465,7 +465,7 @@ public class WeaponFireInfo {
                 final int damagePerShot = ((BombType) bomb.getType()).getDamagePerShot();
         
                 // some bombs affect a blast radius, so we take that into account
-                final List<Coords> affectedHexes = new ArrayList<>();
+                final List<BoardLocation> affectedHexes = new ArrayList<>();
                 
                 int blastRadius = BombType.getBombBlastRadius(bomb.getType().getInternalName()); 
                 for (int radius = 0; radius <= blastRadius; radius++) {
@@ -473,8 +473,8 @@ public class WeaponFireInfo {
                 }
                 
                 // now we go through all affected hexes and add up the damage done
-                for (final Coords coords : affectedHexes) {
-                    for (final Entity currentVictim : game.getEntitiesVector(coords)) {                        
+                for (final BoardLocation coords : affectedHexes) {
+                    for (final Entity currentVictim : game.getEntitiesAt(coords)) {
                         if (currentVictim.getOwner().getTeam() != shooter.getOwner().getTeam()) {
                             damage += damagePerShot;
                         } else { // we prefer not to blow up friendlies if we can help it

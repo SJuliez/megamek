@@ -818,12 +818,12 @@ public class SharedUtility {
 
                 // get the total tonnage in each hex
                 double leftTonnage = 0;
-                for (Entity ent : game.getEntitiesVector(left)) {
+                for (Entity ent : game.getEntitiesAt(left, md.getFinalBoardId())) {
                     leftTonnage += ent.getWeight();
                 }
                 
                 double rightTonnage = 0;
-                for (Entity ent : game.getEntitiesVector(right)) {
+                for (Entity ent : game.getEntitiesAt(right, md.getFinalBoardId())) {
                     rightTonnage += ent.getWeight();
                 }
 

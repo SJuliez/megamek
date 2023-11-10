@@ -36,6 +36,7 @@ public class Ruler extends JDialog implements BoardViewListener, IPreferenceChan
     public static Color color1 = Color.cyan;
     public static Color color2 = Color.magenta;
 
+    private int boardId;
     private Coords start;
     private Coords end;
     private Color startColor;
@@ -269,11 +270,13 @@ public class Ruler extends JDialog implements BoardViewListener, IPreferenceChan
         end = null;
     }
 
-    private void addPoint(Coords c) {
+    private void addPoint(BoardLocation boardLocation) {
+        Coords c = boardLocation.getCoords();
+        boardId = boardLocation.getBoardId();
         int absHeight = Integer.MIN_VALUE;
         boolean isMech = false;
         boolean entFound = false;
-        for (Entity ent : client.getGame().getEntitiesVector(c)) {
+        for (Entity ent : client.getGame().getEntitiesAt(boardLocation)) {
             int trAbsheight = ent.relHeight();
             if (trAbsheight > absHeight) {
                 absHeight = trAbsheight;
@@ -386,7 +389,7 @@ public class Ruler extends JDialog implements BoardViewListener, IPreferenceChan
     public void hexMoused(BoardViewEvent b) {
         if ((b.getModifiers() & InputEvent.ALT_DOWN_MASK) != 0) {
             if (b.getType() == BoardViewEvent.BOARD_HEX_CLICKED) {
-                addPoint(b.getCoords());
+                addPoint(b.getBoardLocation());
             }
         }
 

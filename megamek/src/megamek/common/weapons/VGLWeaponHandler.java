@@ -120,7 +120,7 @@ public class VGLWeaponHandler extends AmmoWeaponHandler {
                     vPhaseReport.addAll(dmgReports);
                 }
                 // Delivery an inferno to each entity in the affected hex
-                for (Entity entTarget : game.getEntitiesVector(c)) {
+                for (Entity entTarget : game.getEntitiesAt(c, ae.getBoardId())) {
                     // Infantry in a building take damage when the building is
                     //  targeted, so should be ignored here
                     if (bldg != null && (entTarget instanceof Infantry)
@@ -141,7 +141,7 @@ public class VGLWeaponHandler extends AmmoWeaponHandler {
                 }
             } else { // Assume fragmentation grenade
                 // Damage each Entity in the target coord
-                for (Entity entTarget : game.getEntitiesVector(c)) {
+                for (Entity entTarget : game.getEntitiesAt(c, ae.getBoardId())) {
                     boolean inBuilding = (bldg != null)
                             && Compute.isInBuilding(game, entTarget, c);
 

@@ -2982,7 +2982,7 @@ public class Game extends AbstractGame implements Serializable {
         final ArrayList<Coords> in = Coords.intervening(attackerPos, target);
         Vector<Entity> nemesisTargets = new Vector<>();
         for (Coords c : in) {
-            for (Entity entity : getEntitiesVector(c)) {
+            for (Entity entity : getEntitiesAt(c, attacker.getBoardId())) {
                 if (entity.isINarcedWith(INarcPod.NEMESIS)
                     && !entity.isEnemyOf(attacker)) {
                     nemesisTargets.addElement(entity);

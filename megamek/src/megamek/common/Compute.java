@@ -365,7 +365,8 @@ public class Compute {
             }
 
             // Walk through the entities in the given hex.
-            for (Entity inHex : game.getEntitiesVector(coords)) {
+            // @@MultiBoardTODO: entering can be on another board
+            for (Entity inHex : game.getEntitiesAt(coords, entering.getBoardId())) {
 
                 if (inHex.isAirborne()) {
                     continue;
@@ -460,23 +461,34 @@ public class Compute {
      * in the specified hex. This is only called for stacking purposes, and so
      * does not return true if the enemy unit is currenly making a DFA.
      */
-    public static boolean isEnemyIn(Game game, Entity entity, Coords coords,
+    public static boolean isEnemyIn(Game game, Entity entity, Coords coords, int boardId,
                                     boolean onlyMechs, boolean ignoreInfantry, int enLowEl) {
         int enHighEl = enLowEl + entity.getHeight();
-        for (Entity inHex : game.getEntitiesVector(coords)) {
+        for (Entity inHex : game.getEntitiesAt(coords, boardId)) {
             int inHexAlt = inHex.getAltitude();
             boolean crewOnGround = (inHex instanceof EjectedCrew) && (inHexAlt == 0);
             int inHexEnLowEl = inHex.getElevation();
             int inHexEnHighEl = inHexEnLowEl + inHex.getHeight();
             if ((!onlyMechs || (inHex instanceof Mech))
-                && !(ignoreInfantry && (inHex instanceof Infantry))
-                && inHex.isEnemyOf(entity) && !inHex.isMakingDfa()
-                && (enLowEl <= inHexEnHighEl) && (enHighEl >= inHexEnLowEl)
-                && (!(inHex instanceof EjectedCrew) || (crewOnGround))) {
+                    && !(ignoreInfantry && (inHex instanceof Infantry))
+                    && inHex.isEnemyOf(entity) && !inHex.isMakingDfa()
+                    && (enLowEl <= inHexEnHighEl) && (enHighEl >= inHexEnLowEl)
+                    && (!(inHex instanceof EjectedCrew) || (crewOnGround))) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Returns true if there is any unit that is an enemy of the specified unit
+     * in the specified hex. This is only called for stacking purposes, and so
+     * does not return true if the enemy unit is currenly making a DFA.
+     */
+    public static boolean isEnemyIn(Game game, Entity entity, BoardLocation boardLocation,
+                                    boolean onlyMechs, boolean ignoreInfantry, int enLowEl) {
+        return isEnemyIn(game, entity, boardLocation.getCoords(), boardLocation.getBoardId(),
+                onlyMechs, ignoreInfantry, enLowEl);
     }
 
     /**
@@ -750,13 +762,24 @@ public class Compute {
      * @return valid displacement coords, or null if none
      */
     public static Coords getValidDisplacement(Game game, int entityId,
-            Coords src, int direction) {
+                                              BoardLocation boardLocation, int direction) {
+        return getValidDisplacement(game, entityId, boardLocation.getCoords(), boardLocation.getBoardId(), direction);
+    }
+
+    /**
+     * Gets a valid displacement, from the hexes around src, as close to the
+     * original direction as is possible.
+     *
+     * @return valid displacement coords, or null if none
+     */
+    public static Coords getValidDisplacement(Game game, int entityId,
+            Coords src, int boardId, int direction) {
         // check the surrounding hexes, nearest to the original direction first
         int[] offsets = {0, 1, 5, 2, 4, 3};
         int range = 1;
         // check for a central dropship hex and if so, then displace to a two
         // hex radius
-        for (Entity en : game.getEntitiesVector(src)) {
+        for (Entity en : game.getEntitiesAt(src, boardId)) {
             if ((en instanceof Dropship) && !en.isAirborne()
                 && en.getPosition().equals(src)) {
                 range = 2;
@@ -6051,40 +6074,48 @@ public class Compute {
     /**
      * Builds a list of all adjacent units that can load the given Entity.
      * @param en   The entity to load
-     * @param pos  The coordinates of the hex to load from
+     * @param boardLocation  The coordinates of the hex to load from
      * @param elev The absolute elevation of the unit at the point of loading (surface
      *             of the hex + elevation over the surface)
      * @param game The current {@link Game}
      * @return     All adjacent units that can mount the Entity
      */
-    public static List<Entity> getMountableUnits(Entity en, Coords pos, int elev, Game game) {
+    public static List<Entity> getMountableUnits(Entity en, BoardLocation boardLocation, int elev, Game game) {
         List<Entity> mountable = new ArrayList<>();
         // Expanded to include trains
-
-        // the rules don't say that the unit must be facing loader
-        // so lets take the ring
-        for (Coords c : pos.allAdjacent()) {
-            Hex hex = game.getBoard(en).getHex(c);
+        for (BoardLocation adjacent : boardLocation.allAdjacent()) {
+            Hex hex = game.getHex(adjacent);
             if (null == hex) {
                 continue;
             }
-            for (Entity other : game.getEntitiesVector(c)) {
+            for (Entity other : game.getEntitiesAt(adjacent)) {
                 // Is the other unit friendly and not the current entity?
-                if ((en.getOwner().equals(other.getOwner()) || (en.getOwner()
-                                                                  .getTeam() == other.getOwner().getTeam()))
-                    && !en.equals(other)
-                    && ((other instanceof SmallCraft) || other.getTowing() != Entity.NONE || other.getTowedBy() != Entity.NONE)
-                    && other.canLoad(en)
-                    && !other.isAirborne()
-                    && (Math.abs((hex.getLevel() + other.getElevation())
-                                 - elev) < 3) && !mountable.contains(other)) {
+                if ((en.getOwner().equals(other.getOwner()) || (en.getOwner().getTeam() == other.getOwner().getTeam()))
+                        && !en.equals(other)
+                        && ((other instanceof SmallCraft) || other.getTowing() != Entity.NONE || other.getTowedBy() != Entity.NONE)
+                        && other.canLoad(en)
+                        && !other.isAirborne()
+                        && (Math.abs((hex.getLevel() + other.getElevation()) - elev) < 3)
+                        && !mountable.contains(other)) {
                     mountable.add(other);
                 }
             }
         }
-
         return mountable;
+    }
 
+    /**
+     * Builds a list of all adjacent units that can load the given Entity.
+     * @param en   The entity to load
+     * @param coords  The coordinates of the hex to load from
+     * @param boardId The board id
+     * @param elev The absolute elevation of the unit at the point of loading (surface
+     *             of the hex + elevation over the surface)
+     * @param game The current {@link Game}
+     * @return     All adjacent units that can mount the Entity
+     */
+    public static List<Entity> getMountableUnits(Entity en, Coords coords, int boardId, int elev, Game game) {
+        return getMountableUnits(en, new BoardLocation(coords, boardId), elev, game);
     }
 
     public static boolean allowAimedShotWith(Mounted weapon, AimingMode aimingMode) {

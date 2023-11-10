@@ -403,7 +403,7 @@ public class MapMenu extends JPopupMenu {
 
             JMenu dmgMenu = new JMenu(Messages.getString("Gamemaster.EditDamage"));
             JMenu cfgMenu = new JMenu(Messages.getString("Gamemaster.Configure"));
-            var entities = client.getGame().getEntitiesVector(coords);
+            var entities = client.getGame().getEntitiesAt(boardLocation);
             for (Entity entity : entities ) {
                 dmgMenu.add(createUnitEditorMenuItem(entity));
                 cfgMenu.add(createCustomMechMenuItem(entity));
@@ -1370,7 +1370,7 @@ public class MapMenu extends JPopupMenu {
         Player localPlayer = client.getLocalPlayer();
         boolean friendlyFire = (game.getOptions().booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE));
 
-        for (Entity en : game.getEntitiesVector(coords)) {
+        for (Entity en : game.getTargetableEntitiesAt(boardLocation)) {
             // Only add the unit if it's actually visible
             //  With double blind on, the game may have unseen units
             if ((en.isEnemyOf(myEntity) || friendlyFire) && !en.equals(myEntity)

@@ -114,7 +114,7 @@ class FovHighlightingAndDarkening {
 
             // Determine if any of the entities at the coordinates are illuminated, or if the
             // coordinates are illuminated themselves
-            boolean targetIlluminated = boardView1.game.getEntitiesVector(c).stream().anyMatch(Entity::isIlluminated)
+            boolean targetIlluminated = boardView1.game.getEntitiesAt(c, boardView1.getBoardId()).stream().anyMatch(Entity::isIlluminated)
                     || !IlluminationLevel.determineIlluminationLevel(boardView1.game, c, boardView1.getBoardId()).isNone();
 
             final int max_dist;
@@ -355,7 +355,7 @@ class FovHighlightingAndDarkening {
         // First, we take the tallest unit in the destination hex, if no units are present we use
         // the mechInSecond GUIPref.
         ai.targetHeight = ai.targetAbsHeight = Integer.MIN_VALUE;
-        for (Entity ent : boardView1.game.getEntitiesVector(dest)) {
+        for (Entity ent : boardView1.game.getEntitiesAt(dest, boardView1.getBoardId())) {
             int trAbsheight = dstHex.getLevel() + ent.relHeight();
             if (trAbsheight > ai.targetAbsHeight) {
                 ai.targetHeight = ent.getHeight();

@@ -39,15 +39,7 @@ import javax.swing.JTextArea;
 
 import megamek.client.ui.Messages;
 import megamek.client.ui.SharedUtility;
-import megamek.common.Coords;
-import megamek.common.Entity;
-import megamek.common.Game;
-import megamek.common.Infantry;
-import megamek.common.Mech;
-import megamek.common.Mounted;
-import megamek.common.QuadMech;
-import megamek.common.Targetable;
-import megamek.common.WeaponType;
+import megamek.common.*;
 import megamek.common.actions.TriggerBPodAction;
 
 /**
@@ -266,9 +258,7 @@ public class TriggerBPodDialog extends JDialog implements ActionListener {
             if (pod.isTriggered()) {
 
                 temp.addElement(new TriggerBPodAction(entityId, pod.getNum(),
-                        chooseTarget(
-                                clientgui.getClient().getGame().getEntity(entityId)
-                                        .getPosition()).getId()));
+                        chooseTarget(clientgui.getClient().getGame().getEntity(entityId).getBoardLocation()).getId()));
             }
         }
 
@@ -281,7 +271,7 @@ public class TriggerBPodDialog extends JDialog implements ActionListener {
      * @param pos
      *            - the <code>Coords</code> containing targets.
      */
-    private Entity chooseTarget(Coords pos) {
+    private Entity chooseTarget(BoardLocation pos) {
         final Game game = clientgui.getClient().getGame();
         // Assume that we have *no* choice.
         Entity choice = null;
@@ -290,9 +280,8 @@ public class TriggerBPodDialog extends JDialog implements ActionListener {
 
         // Convert the choices into a List of targets.
         List<Targetable> targets = new ArrayList<>();
-        for (Entity ent : game.getEntitiesVector(pos)) {
-            if (!game.getEntity(entityId).equals(choice)
-                    && (choice instanceof Infantry)) {
+        for (Entity ent : game.getEntitiesAt(pos)) {
+            if (!game.getEntity(entityId).equals(choice) && (choice instanceof Infantry)) {
                 targets.add(ent);
             }
         }

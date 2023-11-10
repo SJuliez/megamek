@@ -81,7 +81,7 @@ public class VTOL extends Tank implements IBomber {
 
     private int[] bombChoices = new int[BombType.B_NUM];
     private Targetable bombTarget = null;
-    private List<Coords> strafingCoords = new ArrayList<>();
+    private final List<BoardLocation> strafingCoords = new ArrayList<>();
 
     @Override
     public PilotingRollData checkSkid(EntityMovementType moveType, Hex prevHex, EntityMovementType overallMoveType,
@@ -285,7 +285,7 @@ public class VTOL extends Tank implements IBomber {
         bombTarget = t;
     }
     
-    public List<Coords> getStrafingCoords() {
+    public List<BoardLocation> getStrafingCoords() {
         return strafingCoords;
     }
 

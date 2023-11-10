@@ -96,7 +96,7 @@ class EntitySprite extends Sprite {
 
     private String getAdjShortName() {
         Coords position = entity.getPosition();
-        boolean multipleUnits = bv.game.getEntitiesVector(position, true).size() > 4;
+        boolean multipleUnits = bv.game.getEntitiesAt(entity.getBoardLocation()).size() > 4;
 
         if (onlyDetectedBySensors()) {
             return Messages.getString("BoardView1.sensorReturn");
@@ -238,7 +238,7 @@ class EntitySprite extends Sprite {
                 bv.getFontMetrics(labelFont).stringWidth(getAdjShortName()) + 4,
                 bv.getFontMetrics(labelFont).getAscent() + 2);
 
-        Coords position = entity.getPosition();
+        final Coords position = entity.getPosition();
         if (bv.game.getEntitiesAt(position.translated("SE"), entity.getBoardId()).isEmpty()) {
             labelRect.setLocation((int) (bv.hex_size.width * 0.55), (int) (0.75 * bv.hex_size.height));
             labelPos = Positioning.RIGHT;
@@ -262,8 +262,8 @@ class EntitySprite extends Sprite {
 
         // If multiple units are present in a hex, fan out the labels
         // In the deployment phase, indexOf returns -1 for the current unit
-        int indexEntity = bv.game.getEntitiesVector(position, true).indexOf(entity);
-        int numEntity = bv.game.getEntitiesVector(position, true).size();
+        int indexEntity = bv.game.getEntitiesAt(entity.getBoardLocation()).indexOf(entity);
+        int numEntity = bv.game.getEntitiesAt(entity.getBoardLocation()).size();
 
         if ((indexEntity != -1) && (numEntity <= 4)) {
             labelRect.y += (bv.getFontMetrics(labelFont).getAscent() + 4) * indexEntity;
@@ -828,7 +828,7 @@ class EntitySprite extends Sprite {
      * as this unit is stacked below it and can still move.
      */
     private boolean shouldIndicateNotDone() {
-        var hexEntities = bv.game.getEntitiesVector(entity.getPosition());
+        var hexEntities = bv.game.getEntitiesAt(entity.getBoardLocation());
         return hexEntities.stream()
                 .filter(e -> hexEntities.indexOf(entity) > hexEntities.indexOf(e))
                 .filter(e -> e.getFacing() == entity.getFacing())

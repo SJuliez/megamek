@@ -4352,7 +4352,7 @@ public class GameManager implements IGameManager {
                         boolean danger = newHex.containsTerrain(Terrains.WATER)
                                 || newHex.containsTerrain(Terrains.MAGMA)
                                 || (null != bldg);
-                        for (Entity unit : game.getEntitiesVector(newPos)) {
+                        for (Entity unit : game.getEntitiesAt(newPos, entity.getBoardId())) {
                             if ((unit.getAltitude() == altitude)
                                     && !unit.isAero()) {
                                 count++;
@@ -4375,7 +4375,7 @@ public class GameManager implements IGameManager {
                         boolean danger = newHex.containsTerrain(Terrains.WATER)
                                 || newHex.containsTerrain(Terrains.MAGMA)
                                 || (null != bldg);
-                        for (Entity unit : game.getEntitiesVector(newPos)) {
+                        for (Entity unit : game.getTargetableEntitiesAt(newPos, entity.getBoardId())) {
                             if ((unit.getAltitude() == altitude) && !unit.isAero()) {
                                 count++;
                             }
@@ -4456,7 +4456,7 @@ public class GameManager implements IGameManager {
             while (bldgCoords.hasMoreElements()) {
                 final Coords coords = bldgCoords.nextElement();
                 // Walk through the entities at these coordinates.
-                for (Entity entity : game.getEntitiesVector(coords)) {
+                for (Entity entity : game.getTargetableEntitiesAt(coords, bldg.getBoardId())) {
                     // Is the entity infantry?
                     if (entity instanceof Infantry) {
                         // Is the infantry dead?
@@ -4781,7 +4781,7 @@ public class GameManager implements IGameManager {
             }
 
             Entity crashDropShip = null;
-            for (Entity en : game.getEntitiesVector(nextPos)) {
+            for (Entity en : game.getTargetableEntitiesAt(nextPos, step.getBoardId())) {
                 if ((en instanceof Dropship) && !en.isAirborne()
                         && (nextAltitude <= (en.relHeight()))) {
                     crashDropShip = en;
@@ -5310,7 +5310,7 @@ public class GameManager implements IGameManager {
                 Entity violation = Compute.stackingViolation(game, entity.getId(), curPos, entity.climbMode());
                 if (violation != null) {
                     // target gets displaced, because of low elevation
-                    Coords targetDest = Compute.getValidDisplacement(game, entity.getId(), curPos,
+                    Coords targetDest = Compute.getValidDisplacement(game, entity.getId(), curPos, entity.getBoardId(),
                             direction);
                     addReport(doEntityDisplacement(violation, curPos, targetDest,
                             new PilotingRollData(violation.getId(), 0, "domino effect")));
@@ -5342,7 +5342,7 @@ public class GameManager implements IGameManager {
         curPos = entity.getPosition();
         Entity target = Compute.stackingViolation(game, entity.getId(), curPos, entity.climbMode());
         while (target != null) {
-            nextPos = Compute.getValidDisplacement(game, target.getId(), target.getPosition(), direction);
+            nextPos = Compute.getValidDisplacement(game, target.getId(), target.getBoardLocation(), direction);
             // ASSUMPTION
             // There should always be *somewhere* that
             // the target can go... last skid hex if
@@ -5844,7 +5844,7 @@ public class GameManager implements IGameManager {
             // ok, now lets cycle through the entities in this spot and
             // potentially
             // damage them
-            for (Entity victim : game.getEntitiesVector(hitCoords)) {
+            for (Entity victim : game.getTargetableEntitiesAt(hitCoords, entity.getBoardId())) {
                 if (victim.getId() == entity.getId()) {
                     continue;
                 }
@@ -5903,7 +5903,7 @@ public class GameManager implements IGameManager {
 
                 if (!victim.isDoomed() && !victim.isDestroyed()) {
                     // entity displacement
-                    Coords dest = Compute.getValidDisplacement(game, victim.getId(), hitCoords, direction);
+                    Coords dest = Compute.getValidDisplacement(game, victim.getId(), hitCoords, victim.getBoardId(), direction);
                     if (null != dest) {
                         doEntityDisplacement(
                                 victim,
@@ -5974,7 +5974,7 @@ public class GameManager implements IGameManager {
         // check for a stacking violation - which should only happen in the
         // case of grounded dropships, because they are not movable
         if (null != Compute.stackingViolation(game, entity.getId(), c, entity.climbMode())) {
-            Coords dest = Compute.getValidDisplacement(game, entity.getId(), c,
+            Coords dest = Compute.getValidDisplacement(game, entity.getId(), c, entity.getBoardId(),
                     Compute.d6() - 1);
             if (null != dest) {
                 doEntityDisplacement(entity, c, dest, null);
@@ -7257,7 +7257,7 @@ public class GameManager implements IGameManager {
             if (step.isVTOLBombingStep()) {
                 ((IBomber) entity).setVTOLBombTarget(step.getTarget(game));
             } else if (step.isStrafingStep() && (entity instanceof VTOL)) {
-                ((VTOL) entity).getStrafingCoords().add(step.getPosition());
+                ((VTOL) entity).getStrafingCoords().add(step.getBoardLocation());
             }
 
             if ((step.getType() == MovePath.MoveStepType.ACC) || (step.getType() == MovePath.MoveStepType.ACCN)) {
@@ -7335,7 +7335,7 @@ public class GameManager implements IGameManager {
                 }
 
                 if (step.getType() == MovePath.MoveStepType.TAKE_COVER) {
-                    if (Infantry.hasValidCover(game, step.getPosition(),
+                    if (Infantry.hasValidCover(game, step.getBoardLocation(),
                             step.getElevation())) {
                         inf.setTakingCover(true);
                     } else {
@@ -7747,7 +7747,7 @@ public class GameManager implements IGameManager {
                         // target gets displaced, because of low elevation
                         int direction = lastPos.direction(curPos);
                         Coords targetDest = Compute.getValidDisplacement(game,
-                                entity.getId(), curPos, direction);
+                                entity.getId(), curPos, entity.getBoardId(), direction);
                         addReport(doEntityDisplacement(violation, curPos,
                                 targetDest,
                                 new PilotingRollData(violation.getId(), 0,
@@ -9112,7 +9112,7 @@ public class GameManager implements IGameManager {
                             prd = null;
                         }
                         Coords targetDest = Compute.getValidDisplacement(game,
-                                violation.getId(), entity.getPosition(), 0);
+                                violation.getId(), entity.getBoardLocation(), 0);
                         if (targetDest != null) {
                             vPhaseReport.addAll(doEntityDisplacement(violation,
                                     entity.getPosition(), targetDest, prd));
@@ -11136,7 +11136,7 @@ public class GameManager implements IGameManager {
             vClearReport.add(r);
             // The detonation damages any units that were also attempting to
             // clear mines in the same hex
-            for (Entity victim : game.getEntitiesVector(mf.getCoords())) {
+            for (Entity victim : game.getTargetableEntitiesAt(mf.getBoardLocation())) {
                 Report rVictim;
                 if (victim.isClearingMinefield()) {
                     rVictim = new Report(2265);
@@ -12331,7 +12331,7 @@ public class GameManager implements IGameManager {
                             prd = null;
                         }
                         Coords targetDest = Compute.getValidDisplacement(game, violation.getId(),
-                                dest, direction);
+                                dest, violation.getBoardId(), direction);
                         if (targetDest != null) {
                             vPhaseReport.addAll(doEntityDisplacement(violation, dest, targetDest, prd));
                             // Update the violating entity's position on the
@@ -12355,7 +12355,7 @@ public class GameManager implements IGameManager {
             }
             // ok, we missed, let's fall into a valid other hex and not cause an
             // AFFA while doing so
-            Coords targetDest = Compute.getValidDisplacement(game, entity.getId(), dest, direction);
+            Coords targetDest = Compute.getValidDisplacement(game, entity.getId(), dest, entity.getBoardId(), direction);
             if (targetDest != null) {
                 vPhaseReport.addAll(doEntityFallsInto(entity, entitySrcElevation, src, targetDest,
                         new PilotingRollData(entity.getId(),
@@ -12382,7 +12382,7 @@ public class GameManager implements IGameManager {
                     prd = null;
                 }
                 // target gets displaced, because of low elevation
-                Coords targetDest = Compute.getValidDisplacement(game, violation.getId(), dest, direction);
+                Coords targetDest = Compute.getValidDisplacement(game, violation.getId(), dest, violation.getBoardId(), direction);
                 vPhaseReport.addAll(doEntityDisplacement(violation, dest, targetDest, prd));
                 // Update the violating entity's position on the client.
                 if (!game.getOutOfGameEntitiesVector().contains(violation)) {
@@ -14135,7 +14135,7 @@ public class GameManager implements IGameManager {
         addReport(r);
 
         // Walk through ALL entities in the triggering entity's hex.
-        for (Entity target : game.getEntitiesVector(entity.getPosition())) {
+        for (Entity target : game.getTargetableEntitiesAt(entity.getBoardLocation())) {
             // Is this an unarmored infantry platoon?
             if (target.isConventionalInfantry()) {
                 // Roll d6-1 for damage.
@@ -14683,7 +14683,7 @@ public class GameManager implements IGameManager {
                 vPhaseReport.add(r);
                 h.removeTerrain(Terrains.MAGMA);
                 h.addTerrain(new Terrain(Terrains.MAGMA, 2));
-                for (Entity en : game.getEntitiesVector(c)) {
+                for (Entity en : game.getTargetableEntitiesAt(c, boardId)) {
                     doMagmaDamage(en, false);
                 }
             } else {
@@ -18373,7 +18373,7 @@ public class GameManager implements IGameManager {
                 if (violation != null) {
                     // target gets displaced
                     targetDest = Compute.getValidDisplacement(game,
-                            violation.getId(), dest, direction);
+                            violation.getId(), dest, ae.getBoardId(), direction);
                     vPhaseReport.addAll(doEntityDisplacement(violation, dest,
                             targetDest, new PilotingRollData(violation.getId(),
                                     0, "domino effect")));
@@ -18454,7 +18454,7 @@ public class GameManager implements IGameManager {
                                 VTOL.CRIT_ROTOR_DESTROYED), false, 0, false));
             }
             // Target entities are pushed away or destroyed.
-            Coords targetDest = Compute.getValidDisplacement(game, te.getId(), dest, direction);
+            Coords targetDest = Compute.getValidDisplacement(game, te.getId(), dest, te.getBoardId(), direction);
             if (targetDest != null) {
                 addReport(doEntityDisplacement(te, dest, targetDest,
                         new PilotingRollData(te.getId(), 2, "hit by death from above")));
@@ -19897,7 +19897,7 @@ public class GameManager implements IGameManager {
             if (entity instanceof TeleMissile) {
                 // check for enemy units
                 Vector<Integer> potTargets = new Vector<>();
-                for (Entity te : getGame().getEntitiesVector(entity.getPosition())) {
+                for (Entity te : game.getTargetableEntitiesAt(entity.getBoardLocation())) {
                     //Telemissiles cannot target fighters or other telemissiles
                     //Fighters don't have a distinctive Etype flag, so we have to do
                     //this by exclusion.
@@ -23165,7 +23165,7 @@ public class GameManager implements IGameManager {
             Entity violation = Compute.stackingViolation(game,
                     passenger.getId(), position, passenger.climbMode());
             if (violation != null) {
-                Coords targetDest = Compute.getValidDisplacement(game, passenger.getId(), position,
+                Coords targetDest = Compute.getValidDisplacement(game, passenger.getId(), position, passenger.getBoardId(),
                         Compute.d6() - 1);
                 addReport(doEntityDisplacement(violation, position, targetDest, null));
                 // Update the violating entity's position on the client.
@@ -33140,7 +33140,7 @@ public class GameManager implements IGameManager {
             boolean pickedUp = false;
             MechWarrior e = (MechWarrior) mechWarriors.next();
             // Check for owner entities first...
-            for (Entity pe : game.getEntitiesVector(e.getPosition())) {
+            for (Entity pe : game.getTargetableEntitiesAt(e.getBoardLocation())) {
                 if (pe.isDoomed() || pe.isShutDown() || pe.getCrew().isUnconscious()
                         || (pe.isAirborne() && !pe.isSpaceborne())
                         || (pe.getElevation() != e.getElevation())
@@ -33169,7 +33169,7 @@ public class GameManager implements IGameManager {
             }
             // Check for allied entities next...
             if (!pickedUp) {
-                for (Entity pe : game.getEntitiesVector(e.getPosition())) {
+                for (Entity pe : game.getTargetableEntitiesAt(e.getBoardLocation())) {
                     if (pe.isDoomed() || pe.isShutDown() || pe.getCrew().isUnconscious()
                             || (pe.isAirborne() && !pe.isSpaceborne())
                             || (pe.getElevation() != e.getElevation())
@@ -33787,7 +33787,7 @@ public class GameManager implements IGameManager {
                     violated = entity;
                 }
                 Coords targetDest = Compute.getValidDisplacement(game, violated.getId(),
-                        violated.getPosition(), Compute.d6() - 1);
+                        violated.getBoardLocation(), Compute.d6() - 1);
                 if (null != targetDest) {
                     doEntityDisplacement(violated, violated.getPosition(), targetDest, null);
                     entityUpdate(violated.getId());

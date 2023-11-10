@@ -311,7 +311,7 @@ public class ArtilleryBayWeaponIndirectHomingHandler extends ArtilleryBayWeaponI
             handleClearDamage(vPhaseReport, bldg, ratedDamage * 2, false);
             ratedDamage -= bldgAbsorbs;
             if (ratedDamage > 0) {
-                for (Entity entity : game.getEntitiesVector(coords)) {
+                for (Entity entity : game.getEntitiesAt(target.getBoardLocation())) {
                     if (!bMissed) {
                         if (entity == entityTarget) {
                             continue; // don't splash the target unless missile

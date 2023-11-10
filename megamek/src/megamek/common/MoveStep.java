@@ -2122,7 +2122,7 @@ public class MoveStep implements Serializable {
                 return;
             }
             // If there's no valid cover, it's illegal
-            if (!Infantry.hasValidCover(game, getPosition(), getElevation())) {
+            if (!Infantry.hasValidCover(game, getBoardLocation(), getElevation())) {
                 return;
             }
             isTakingCover = true;
@@ -3492,14 +3492,14 @@ public class MoveStep implements Serializable {
                 && (type != MoveStepType.DFA)) {
             // can't move a mech into a hex with an enemy mech
             if ((entity instanceof Mech)
-                    && Compute.isEnemyIn(game, entity, dest, true, true,
+                    && Compute.isEnemyIn(game, entity, dest, entity.getBoardId(), true, true,
                     getElevation())) {
                 return false;
             }
 
             // Can't move out of a hex with an enemy unit unless we started
             // there, BUT we're allowed to turn, unload/Disconnect, or go prone.
-            if (Compute.isEnemyIn(game, entity, src, false,
+            if (Compute.isEnemyIn(game, entity, src, entity.getBoardId(), false,
                     entity instanceof Mech, srcEl)
                     && !src.equals(entity.getPosition())
                     && (type != MoveStepType.TURN_LEFT)
@@ -3514,7 +3514,7 @@ public class MoveStep implements Serializable {
             // infantry or a VTOL at high enough elevation
             if (!(entity instanceof Infantry)) {
                 boolean validRoadTrain = false;
-                for (Entity inHex : game.getEntitiesVector(src)) {
+                for (Entity inHex : game.getEntitiesAt(src, getBoardId())) {
                     if (inHex.equals(entity)) {
                         continue;
                     }

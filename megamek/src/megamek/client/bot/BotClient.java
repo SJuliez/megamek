@@ -813,8 +813,7 @@ public abstract class BotClient extends Client {
                         Terrains.BUILDING)) {
                     coord.fitness += 4;
                 }
-                highestHex = coord.getCoords();
-                for (Entity test_ent : game.getEntitiesVector(highestHex)) {
+                for (Entity test_ent : game.getEntitiesAt(coord.getBoardLocation())) {
                     if ((deployed_ent.getOwner().equals(test_ent.getOwner()))
                         && !deployed_ent.equals(test_ent)) {
                         if (test_ent instanceof Infantry) {
@@ -826,8 +825,7 @@ public abstract class BotClient extends Client {
                 boolean foundAdj = false;
                 Player owner = deployed_ent.getOwner();
                 for (int x = 0; x < 6 && !foundAdj; x++) {
-                    highestHex = coord.getCoords().translated(x);
-                    for (Entity test_ent : game.getEntitiesVector(highestHex)) {
+                    for (Entity test_ent : game.getEntitiesAt(coord.getBoardLocation().translated(x))) {
                         if ((owner.equals(test_ent.getOwner()))
                             && !deployed_ent.equals(test_ent)
                             && (test_ent instanceof Infantry)) {

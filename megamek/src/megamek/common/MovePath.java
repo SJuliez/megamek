@@ -592,7 +592,7 @@ public class MovePath implements Cloneable, Serializable {
 
         // Can't move out of a hex with an enemy unit unless we started
         // there, BUT we're allowed to turn, unload/disconnect, or go prone.
-        Coords pos = getEntity().getPosition();
+        BoardLocation pos = getEntity().getBoardLocation();
         boolean isMech = getEntity() instanceof Mech;
         int elev = getEntity().getElevation();
         if (Compute.isEnemyIn(getGame(), getEntity(), pos, false, isMech, elev)) {

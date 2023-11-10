@@ -1950,7 +1950,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
             if (gear == MovementDisplay.GEAR_RAM) {
                 // check if target is valid
-                final Targetable target = chooseTarget(b.getCoords());
+                final Targetable target = chooseTarget(b.getBoardLocation());
                 if ((target == null) || target.equals(ce)
                         || !target.isAero()) {
                     clientgui.doAlertDialog(
@@ -2013,7 +2013,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                 }
             } else if (gear == MovementDisplay.GEAR_CHARGE) {
                 // check if target is valid
-                final Targetable target = chooseTarget(b.getCoords());
+                final Targetable target = chooseTarget(b.getBoardLocation());
                 if ((target == null) || target.equals(ce)) {
                     clientgui.doAlertDialog(
                             Messages.getString(ce.isAirborneVTOLorWIGE()
@@ -2089,7 +2089,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                 return;
             } else if (gear == MovementDisplay.GEAR_DFA) {
                 // check if target is valid
-                final Targetable target = chooseTarget(b.getCoords());
+                final Targetable target = chooseTarget(b.getBoardLocation());
                 if ((target == null) || target.equals(ce)) {
                     clientgui.doAlertDialog(
                             Messages.getString("MovementDisplay.CantDFA"),
@@ -2169,17 +2169,15 @@ public class MovementDisplay extends ActionPhaseDisplay {
         // Infantry - Taking Cover
         if (isInfantry && gOpts.booleanOption(OptionsConstants.ADVANCED_TACOPS_TAKE_COVER)) {
             // Determine the current position of the infantry
-            Coords pos;
+            Coords pos = finalPosition();
             int elevation;
             if (cmd == null) {
-                pos = ce().getPosition();
                 elevation = ce().getElevation();
             } else {
-                pos = cmd.getFinalCoords();
                 elevation = cmd.getFinalElevation();
             }
             getBtn(MoveCommand.MOVE_TAKE_COVER).setEnabled(
-                    Infantry.hasValidCover(game, pos, elevation));
+                    Infantry.hasValidCover(game, new BoardLocation(pos, finalBoardId()), elevation));
         } else {
             getBtn(MoveCommand.MOVE_TAKE_COVER).setEnabled(false);
         }
@@ -2918,7 +2916,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             return;
         }
 
-        final boolean canLoad = game().getEntitiesVector(finalPosition()).stream()
+        final boolean canLoad = game().getTargetableEntitiesAt(finalPosition(), finalBoardId()).stream()
                 .filter(other -> !ce.canTow(other.getId()))
                 .filter(Entity::isLoadableThisTurn)
                 .anyMatch(ce::canLoad);
@@ -2971,7 +2969,8 @@ public class MovementDisplay extends ActionPhaseDisplay {
             mpUsed = cmd.getMpUsed();
         }
         final boolean canMount = isFinalPositionOnBoard() && !ce.isAirborne() && (mpUsed <= Math.ceil(ce.getWalkMP() / 2.0))
-                && !Compute.getMountableUnits(ce, pos, elev + game.getBoard(ce).getHex(pos).getLevel(), game).isEmpty();
+                && !Compute.getMountableUnits(ce, pos, finalBoardId(),
+                elev + game.getBoard(ce).getHex(pos).getLevel(), game).isEmpty();
         setMountEnabled(canMount);
     }
 
@@ -2991,7 +2990,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         setDisconnectEnabled(legalGear && isFinalPositionOnBoard() && canDropTrailerHere);
 
         final boolean canTow = ce.getHitchLocations().stream()
-                .flatMap(c -> game().getEntitiesVector(c).stream())
+                .flatMap(c -> game().getTargetableEntitiesAt(c, ce.getBoardId()).stream())
                 .anyMatch(ce::canTow);
         setTowEnabled(canTow);
     }
@@ -3042,7 +3041,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             elev += hex.getLevel();
         }
 
-        List<Entity> mountableUnits = Compute.getMountableUnits(ce, pos, elev, clientgui.getClient().getGame());
+        List<Entity> mountableUnits = Compute.getMountableUnits(ce, pos, finalBoardId(), elev, clientgui.getClient().getGame());
 
         // Handle error condition.
         if (mountableUnits.isEmpty()) {
@@ -3104,7 +3103,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
         Entity choice = null;
 
         Vector<Entity> choices = new Vector<>();
-        for (Entity other : game.getEntitiesVector(cmd.getFinalCoords())) {
+        for (Entity other : game.getTargetableEntitiesAt(cmd.getFinalCoords(), cmd.getFinalBoardId())) {
             if (other.isLoadableThisTurn() && (ce() != null)
                 && ce().canLoad(other, false)) {
                 choices.addElement(other);
@@ -3219,7 +3218,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
         //We have to account for the positions of the whole train when looking to add new trailers
         for (Coords pos : ce().getHitchLocations()) {
-            for (Entity other : game.getEntitiesVector(pos)) {
+            for (Entity other : game.getTargetableEntitiesAt(pos, ce().getBoardId())) {
                 if (ce() != null && ce().canTow(other.getId())) {
                     choices.add(other);
                 }
@@ -3565,7 +3564,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                 loadeePos = Compute.getFinalPosition(ce.getPosition(), cmd.getFinalVectors());
             }
             boolean isGood = false;
-            for (Entity other : game.getEntitiesVector(loadeePos)) {
+            for (Entity other : game.getTargetableEntitiesAt(loadeePos, cmd.getFinalBoardId())) {
                 // Is the other unit friendly and not the current entity?
                 // must be done with its movement
                 // it also must be same heading and velocity
@@ -3637,7 +3636,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
                                                  cmd.getFinalVectors());
         }
         boolean isGood = false;
-        for (Entity other : game.getEntitiesVector(loadeePos)) {
+        for (Entity other : game.getTargetableEntitiesAt(loadeePos, cmd.getFinalBoardId())) {
             // Is the other unit friendly and not the current entity?
             // must be done with its movement
             // it also must be same heading and velocity
@@ -3995,7 +3994,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             // not where you are, but where you will be
             loadeePos = Compute.getFinalPosition(ce.getPosition(), cmd.getFinalVectors());
         }
-        for (Entity other : game.getEntitiesVector(loadeePos)) {
+        for (Entity other : game.getTargetableEntitiesAt(loadeePos, cmd.getFinalBoardId())) {
             // Is the other unit friendly and not the current entity?
             // must be done with its movement
             // it also must be same heading and velocity
@@ -4071,7 +4070,7 @@ public class MovementDisplay extends ActionPhaseDisplay {
             // not where you are, but where you will be
             loadeePos = Compute.getFinalPosition(ce.getPosition(), cmd.getFinalVectors());
         }
-        for (Entity other : game.getEntitiesVector(loadeePos)) {
+        for (Entity other : game.getTargetableEntitiesAt(loadeePos, cmd.getFinalBoardId())) {
             // Is the other unit friendly and not the current entity?
             // must be done with its movement
             // it also must be same heading and velocity
@@ -4197,9 +4196,10 @@ public class MovementDisplay extends ActionPhaseDisplay {
     /**
      * Have the player select a target from the entities at the given coords.
      *
-     * @param pos - the <code>Coords</code> containing targets.
+     * @param boardLocation - the <code>Coords</code> containing targets.
      */
-    private Targetable chooseTarget(Coords pos) {
+    private Targetable chooseTarget(BoardLocation boardLocation) {
+        Coords pos = boardLocation.getCoords();
         final Game game = clientgui.getClient().getGame();
         final Entity ce = ce();
 
@@ -4210,14 +4210,14 @@ public class MovementDisplay extends ActionPhaseDisplay {
 
         // Convert the choices into a List of targets.
         ArrayList<Targetable> targets = new ArrayList<>();
-        for (Entity ent : game.getEntitiesVector(pos)) {
+        for (Entity ent : game.getTargetableEntitiesAt(pos, boardLocation.getBoardId())) {
             if ((ce == null) || !ce.equals(ent)) {
                 targets.add(ent);
             }
         }
 
         // Is there a building in the hex?
-        Building bldg = clientgui.getClient().getGame().getBoard(ce).getBuildingAt(pos);
+        Building bldg = clientgui.getClient().getGame().getBuildingAt(boardLocation);
         if (bldg != null) {
             targets.add(new BuildingTarget(pos, ce.getBoardId(), clientgui.getClient().getGame().getBoard(ce), false));
         }

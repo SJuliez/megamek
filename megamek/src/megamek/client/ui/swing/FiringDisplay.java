@@ -188,7 +188,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
     /**
      * Keeps track of the Coords that are in a strafing run.
      */
-    private ArrayList<Coords> strafingCoords = new ArrayList<>(5);
+    private final ArrayList<BoardLocation> strafingCoords = new ArrayList<>(5);
 
     /**
      * Creates and lays out a new firing phase display for the specified
@@ -1443,8 +1443,8 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         ToHitData toHit;
         StringBuffer toHitBuff = new StringBuffer();
         setFireEnabled(true);
-        for (Coords c : strafingCoords) {
-            for (Entity t : game.getEntitiesVector(c)) {
+        for (BoardLocation c : strafingCoords) {
+            for (Entity t : game.getEntitiesAt(c)) {
                 // Airborne units cannot be strafed
                 if (t.isAirborne()) {
                     continue;
@@ -1467,7 +1467,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             }
             Building bldg = game.getBoard(ce()).getBuildingAt(c);
             if (bldg != null) {
-                Targetable t = new BuildingTarget(c, ce().getBoardId(), game.getBoard(ce()), false);
+                Targetable t = new BuildingTarget(c, game.getBoard(ce()), false);
                 toHit = WeaponAttackAction.toHit(game, cen, t, weaponId,
                         Entity.LOC_NONE, AimingMode.NONE, true);
                 toHitBuff.append(t.getDisplayName() + ": ");
@@ -1580,14 +1580,14 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
 
         ArrayList<Targetable> targets = new ArrayList<>();
         if (isStrafing) {
-            for (Coords c : strafingCoords) {
-                targets.add(new HexTarget(c, ce().getBoardId(), Targetable.TYPE_HEX_CLEAR));
+            for (BoardLocation c : strafingCoords) {
+                targets.add(new HexTarget(c, Targetable.TYPE_HEX_CLEAR));
                 Building bldg = game.getBoard(ce()).getBuildingAt(c);
                 if (bldg != null) {
-                    targets.add(new BuildingTarget(c, ce().getBoardId(), game.getBoard(ce()), false));
+                    targets.add(new BuildingTarget(c, game.getBoard(ce()), false));
                 }
                 // Target all ground units (non-airborne, VTOLs still count)
-                for (Entity t : game.getEntitiesVector(c)) {
+                for (Entity t : game.getEntitiesAt(c)) {
                     boolean infInBuilding = Compute.isInBuilding(game, t)
                             && (t instanceof Infantry);
                     if (!t.isAirborne() && !infInBuilding) {
@@ -2015,7 +2015,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             clientgui.getBoardView(ce()).addStrafingCoords(target.getPosition());
         } else if ((ce() instanceof VTOL) && !((VTOL) ce()).getStrafingCoords().isEmpty()) {
             strafingCoords.addAll(((VTOL) ce()).getStrafingCoords());
-            strafingCoords.forEach(c -> clientgui.getBoardView(ce()).addStrafingCoords(c));
+            strafingCoords.forEach(c -> clientgui.getBoardView(ce()).addStrafingCoords(c.getCoords()));
             isStrafing = true;
         }
     }
@@ -2118,16 +2118,16 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
             return;
         }
 
-        Coords evtCoords = b.getCoords();
+        BoardLocation evtCoords = b.getBoardLocation();
         if (clientgui.getClient().isMyTurn() && (evtCoords != null)
             && (ce() != null)) {
             if (isStrafing) {
                 if (validStrafingCoord(b.getBoardLocation())) {
                     strafingCoords.add(evtCoords);
-                    clientgui.getBoardView(b.getBoardLocation()).addStrafingCoords(evtCoords);
+                    clientgui.getBoardView(b.getBoardLocation()).addStrafingCoords(evtCoords.getCoords());
                     updateStrafingTargets();
                 }
-            } else if (!evtCoords.equals(ce().getPosition())) {
+            } else if (!evtCoords.equals(ce().getBoardLocation())) {
                 // HACK : sometimes we don't show the target choice window
                 Targetable targ = null;
                 if (showTargetChoice) {
@@ -2153,7 +2153,7 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
                             }
                         }
                         if (!alreadyShotAt) {
-                            entTarg.setPlayerPickedPassThrough(cen, evtCoords);
+                            entTarg.setPlayerPickedPassThrough(cen, evtCoords.getCoords());
                         }
                     }
                     target(targ);
@@ -2644,23 +2644,23 @@ public class FiringDisplay extends AttackPhaseDisplay implements ItemListener, L
         }
 
         // Can't strafe the same hex twice
-        if (strafingCoords.contains(boardLocation.getCoords())) {
+        if (strafingCoords.contains(boardLocation)) {
             return false;
         }
 
         boolean isConsecutive = false;
-        for (Coords c : strafingCoords) {
-            isConsecutive |= (c.distance(boardLocation.getCoords()) == 1);
+        for (BoardLocation c : strafingCoords) {
+            isConsecutive |= (c.getCoords().distance(boardLocation.getCoords()) == 1);
         }
 
         boolean isInaLine = true;
         // If there is only one other coord, then they're linear
         if (strafingCoords.size() > 1) {
             IdealHex newHex = new IdealHex(boardLocation.getCoords());
-            IdealHex start = new IdealHex(strafingCoords.get(0));
+            IdealHex start = new IdealHex(strafingCoords.get(0).getCoords());
             // Define the vector formed by the new coords and the first coords
             for (int i = 1; i < strafingCoords.size(); i++) {
-                IdealHex iHex = new IdealHex(strafingCoords.get(i));
+                IdealHex iHex = new IdealHex(strafingCoords.get(i).getCoords());
                 isInaLine &= iHex.isIntersectedBy(start.cx, start.cy, newHex.cx, newHex.cy);
             }
         }

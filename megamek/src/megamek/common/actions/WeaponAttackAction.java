@@ -4266,7 +4266,7 @@ public class WeaponAttackAction extends AbstractAttackAction implements Serializ
                         break;
                     }
                 }
-                for (Entity en : game.getEntitiesVector(target.getPosition())) {
+                for (Entity en : game.getEntitiesAt(target.getBoardLocation())) {
                     if (!en.isEnemyOf(te) && en.isLargeCraft() && !en.equals((Entity) a)
                             && ((en.getWeight() - te.getWeight()) >= -STRATOPS_SENSOR_SHADOW_WEIGHT_DIFF)) {
                         toHit.addModifier(+1, Messages.getString("WeaponAttackAction.SensorShadow"));

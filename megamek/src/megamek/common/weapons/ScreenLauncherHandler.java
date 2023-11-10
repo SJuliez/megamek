@@ -97,7 +97,7 @@ public class ScreenLauncherHandler extends AmmoWeaponHandler {
         gameManager.deliverScreen(target.getBoardLocation(), vPhaseReport);
 
         // damage any entities in the hex
-        for (Entity entity :  game.getEntitiesVector(coords)) {
+        for (Entity entity :  game.getEntitiesAt(target.getBoardLocation())) {
             // if fighter squadron all fighters are damaged
             if (entity instanceof FighterSquadron) {
                 entity.getSubEntities().forEach(

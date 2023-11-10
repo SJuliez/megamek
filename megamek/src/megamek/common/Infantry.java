@@ -1803,16 +1803,17 @@ public class Infantry extends Entity {
      * @param elevation The elevation (flying or in building)
      * @return True when this infantry has valid conver
      */
-    public static boolean hasValidCover(Game game, Coords pos, int elevation) {
+    public static boolean hasValidCover(Game game, BoardLocation pos, int elevation) {
         // Can't do anything if we don't have a position
         // If elevation > 0, we're either flying, or in a building
         // In either case, we shouldn't be allowed to take cover
-        if ((pos == null) || (elevation > 0)) {
+        if ((pos == null) || (pos.getCoords() == null) || (elevation > 0)) {
+
             return false;
         }
         boolean hasMovedEntity = false;
         // First, look for ground untis in the same hex that have already moved
-        for (Entity e : game.getEntitiesVector(pos)) {
+        for (Entity e : game.getEntitiesAt(pos)) {
             if (e.isDone() && !(e instanceof Infantry) && (e.getElevation() == elevation)) {
                 hasMovedEntity = true;
                 break;
@@ -1824,7 +1825,7 @@ public class Infantry extends Entity {
             Enumeration<Entity> wrecks = game.getWreckedEntities();
             while (wrecks.hasMoreElements()) {
                 Entity e = wrecks.nextElement();
-                if (pos.equals(e.getPosition()) && !(e instanceof Infantry)) {
+                if (pos.equals(e.getBoardLocation()) && !(e instanceof Infantry)) {
                     hasMovedEntity = true;
                 }
             }
