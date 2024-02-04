@@ -292,10 +292,11 @@ public class MoveStep implements Serializable {
     }
 
     public MoveStep(MovePath path, MoveStepType type, boolean noCost,
-                    boolean isManeuver) {
+                    boolean isManeuver, int maneuverType) {
         this(path, type);
         this.noCost = noCost;
         maneuver = isManeuver;
+        this.maneuverType = maneuverType;
     }
 
     public MoveStep(MovePath path, MoveStepType type, int recovery,
@@ -556,12 +557,21 @@ public class MoveStep implements Serializable {
                     .getBoard().getHex(entity.getPosition()).getLevel()) - hex.getLevel();
             int building = hex.terrainLevel(Terrains.BLDG_ELEV);
             int depth = -hex.depth(true);
-            // need to adjust depth for potential ice over water
-            if ((hex.containsTerrain(Terrains.ICE) && hex
-                    .containsTerrain(Terrains.WATER))
-                    || (entity.getMovementMode() == EntityMovementMode.HOVER)) {
-                depth = 0;
+
+            // Set depth to 0 (surface level) in several cases:
+            // 1. Jumping onto ice-covered water hex,
+            // 2. Jumping onto water with Hover move mode,
+            // 3. Jumping onto water with WiGE move mode
+            if (hex.containsTerrain(Terrains.WATER)) {
+                if (
+                    hex.containsTerrain(Terrains.ICE) ||
+                    entity.getMovementMode() == EntityMovementMode.HOVER ||
+                    entity.getMovementMode() == EntityMovementMode.WIGE
+                ) {
+                  depth = 0;
+                }
             }
+
             // grounded DropShips are treated as level 10 buildings for purposes
             // of jumping over
             boolean grdDropship = false;
@@ -581,7 +591,14 @@ public class MoveStep implements Serializable {
                 // infantry can jump into a building
                 setElevation(Math.max(depth, Math.min(building, maxElevation)));
             } else {
-                setElevation(Math.max(depth, building));
+                int subDepth = Math.max(depth, building);
+                // Put jumping Hover or WiGE at their elevation above the substrate level,
+                // or they get implicitly landed (which affects their movement next turn)
+                if (entity.getMovementMode().isHoverOrWiGE()) {
+                    setElevation(elevation + subDepth);
+                } else {
+                    setElevation(subDepth);
+                }
             }
             if (climbMode()
                     && (maxElevation >= hex.terrainLevel(Terrains.BRIDGE_ELEV))) {
@@ -1941,6 +1958,13 @@ public class MoveStep implements Serializable {
                         && (velocity != 0) && (getNTurns() > 1)) {
                     return;
                 }
+
+                // Jumpships cannot change velocity and use attitude jets in the same turn.
+                if ((a instanceof Jumpship) && ((Jumpship) a).hasStationKeepingDrive()
+                        && (prev.getMovementType(false) == EntityMovementType.MOVE_OVER_THRUST)
+                        && ((type == MoveStepType.TURN_LEFT) || (type == MoveStepType.TURN_RIGHT))) {
+                    return;
+                }
             }
 
             // atmosphere has its own rules about turning
@@ -2317,7 +2341,8 @@ public class MoveStep implements Serializable {
         if ((getEntity().getMovementMode() == EntityMovementMode.BIPED_SWIM)
                 || (getEntity().getMovementMode() == EntityMovementMode.QUAD_SWIM)
                 || ((getEntity() instanceof Infantry
-                        && getEntity().getMovementMode() == EntityMovementMode.SUBMARINE))) {
+                        && getEntity().getMovementMode().isSubmarine()
+                        && (currHex.terrainLevel(Terrains.WATER) > 0)))) {
             tmpWalkMP = entity.getActiveUMUCount();
         }
 
@@ -2945,7 +2970,8 @@ public class MoveStep implements Serializable {
         // 0 MP infantry units can move 1 hex
         if (isInfantry
                 && (cachedEntityState.getWalkMP() == 0)
-                && (moveMode != EntityMovementMode.SUBMARINE)
+                && !moveMode.isSubmarine()
+                && !moveMode.isVTOL()
                 && getEntity().getPosition().equals(prev)
                 && (getEntity().getPosition().distance(getPosition()) == 1)
                 && (!isJumping())) {
@@ -3150,6 +3176,8 @@ public class MoveStep implements Serializable {
             } else if (isMechanizedInfantry) {
                 // mechanized infantry pays 1 extra
                 mp += 1;
+            } else if (isInfantry && (((Infantry) entity).getMount() != null)) {
+                mp += ((Infantry) entity).getMount().getSize().buildingMP;
             }
         }
 
@@ -3219,6 +3247,11 @@ public class MoveStep implements Serializable {
 
         // If you want to flee, and you can flee, flee.
         if ((type == MoveStepType.FLEE) && entity.canFlee()) {
+            return true;
+        }
+
+        // Motive hit has immobilized CV, but it still wants to (and can) jump: okay!
+        if (movementType == EntityMovementType.MOVE_JUMP && (entity instanceof Tank) && !entity.isImmobileForJump()) {
             return true;
         }
 

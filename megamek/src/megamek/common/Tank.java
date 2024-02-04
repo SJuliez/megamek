@@ -250,7 +250,7 @@ public class Tank extends Entity {
 
     private static final TechAdvancement TA_COMBAT_VEHICLE = new TechAdvancement(TECH_BASE_ALL)
             .setAdvancement(DATE_NONE, 2470, 2490).setProductionFactions(F_TH)
-            .setTechRating(RATING_E).setAvailability(RATING_C, RATING_C, RATING_C, RATING_B)
+            .setTechRating(RATING_D).setAvailability(RATING_C, RATING_C, RATING_C, RATING_B)
             .setStaticTechLevel(SimpleTechLevel.INTRO);
 
     @Override
@@ -404,7 +404,7 @@ public class Tank extends Entity {
 
     @Override
     public boolean canChangeSecondaryFacing() {
-        return !m_bHasNoTurret && !isTurretLocked(getLocTurret());
+        return !(m_bHasNoTurret || isTurretLocked(getLocTurret()) || getAlreadyTwisted());
     }
 
     @Override
@@ -565,6 +565,23 @@ public class Tank extends Entity {
     @Override
     public boolean isPermanentlyImmobilized(boolean checkCrew) {
         return super.isPermanentlyImmobilized(checkCrew) || isMovementHit();
+    }
+
+    /**
+     * Per https://bg.battletech.com/forums/index.php/topic,78336.msg1869386.html#msg1869386
+     * CVs with working engines and Jump Jets should still have the option to jump during the movement
+     * phase, even if reduced to 0 MP by motive hits, or rolling 12 on the Motive System Damage table.
+     */
+    @Override
+    public boolean isImmobileForJump() {
+        // *Can* jump unless 0 Jump MP, or 1+ Jump MP but engine is critted, or crew unconscious/dead.
+        boolean jumpImmobile = (
+                super.isImmobile(true) ||
+                super.isPermanentlyImmobilized(true) ||
+                (getJumpMP() == 0) ||
+                (isEngineHit())
+        );
+        return jumpImmobile;
     }
 
     @Override
@@ -2359,9 +2376,7 @@ public class Tank extends Entity {
                 // Only one slot each for all jump jets or fuel tanks, added later.
                 continue;
             }
-            if (!((mount.getType() instanceof AmmoType) || Arrays.asList(
-                    EquipmentType.armorNames).contains(
-                    mount.getType().getName()))) {
+            if (!((mount.getType() instanceof AmmoType) || EquipmentType.isArmorType(mount.getType()))) {
                 usedSlots += mount.getType().getTankSlots(this);
             }
         }

@@ -85,6 +85,11 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
     private final JFormattedTextField txtDeploymentOffset = new JFormattedTextField(formatterFactory);
     private final JFormattedTextField txtDeploymentWidth = new JFormattedTextField(formatterFactory);
 
+    private JSpinner spinStartingAnyNWx;
+    private JSpinner spinStartingAnyNWy;
+    private JSpinner spinStartingAnySEx;
+    private JSpinner spinStartingAnySEy;
+
     private final JLabel labDeployShutdown = new JLabel(
             Messages.getString("CustomMechDialog.labDeployShutdown"), SwingConstants.RIGHT);
     private final JCheckBox chDeployShutdown = new JCheckBox();
@@ -472,6 +477,17 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
 
         txtDeploymentOffset.setText(Integer.toString(entity.getStartingOffset(false)));
         txtDeploymentWidth.setText(Integer.toString(entity.getStartingWidth(false)));
+
+        int bh = clientgui.getClient().getMapSettings().getBoardHeight();
+        int bw = clientgui.getClient().getMapSettings().getBoardWidth();
+        int x = Math.min(entity.getStartingAnyNWx(false) + 1, bw);
+        spinStartingAnyNWx.setValue(x);
+        int y = Math.min(entity.getStartingAnyNWy(false) + 1, bh);
+        spinStartingAnyNWy.setValue(y);
+        x = Math.min(entity.getStartingAnySEx(false) + 1, bw);
+        spinStartingAnySEy.setValue(x);
+        y = Math.min(entity.getStartingAnySEy(false) + 1, bh);
+        spinStartingAnySEy.setValue(y);
 
         boolean enableDeploymentZoneControls = choDeploymentZone.isEnabled() && (choDeploymentZone.getSelectedIndex() > 0);
         txtDeploymentOffset.setEnabled(enableDeploymentZoneControls);
@@ -881,6 +897,15 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             entity.setStartingOffset(Integer.parseInt(txtDeploymentOffset.getText()));
             entity.setStartingWidth(Integer.parseInt(txtDeploymentWidth.getText()));
 
+            int x = Math.min((Integer) spinStartingAnyNWx.getValue(), (Integer) spinStartingAnySEx.getValue());
+            int y = Math.min((Integer) spinStartingAnyNWy.getValue(), (Integer) spinStartingAnySEy.getValue());
+            entity.setStartingAnyNWx(x - 1);
+            entity.setStartingAnyNWy(y - 1);
+            x = Math.max((Integer) spinStartingAnyNWx.getValue(), (Integer) spinStartingAnySEx.getValue());
+            y = Math.max((Integer) spinStartingAnyNWy.getValue(), (Integer) spinStartingAnySEy.getValue());
+            entity.setStartingAnySEx(x - 1);
+            entity.setStartingAnySEy(y - 1);
+
             // Should the entity begin the game shutdown?
             if (chDeployShutdown.isSelected() && gameOptions().booleanOption(OptionsConstants.RPG_BEGIN_SHUTDOWN)) {
                 entity.performManualShutdown();
@@ -905,46 +930,13 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         }
 
         // Check validity of units after customization
-        EntityVerifier verifier = EntityVerifier.getInstance(new MegaMekFile(
-                Configuration.unitsDir(), EntityVerifier.CONFIG_FILENAME).getFile());
         for (Entity entity : entities) {
-            TestEntity testEntity = getTestEntity(entity, verifier);
+            TestEntity testEntity = TestEntity.getEntityVerifier(entity);
             int gameTL = TechConstants.getGameTechLevel(client.getGame(), entity.isClan());
             entity.setDesignValid((testEntity == null) || testEntity.correctEntity(new StringBuffer(), gameTL));
         }
 
         setVisible(false);
-    }
-
-    /**
-     * copied from megameklab.util.UnitUtil.getEntityVerifier
-     * @param unit the supplied entity
-     * @param entityVerifier the entity verifier loaded from a UnitVerifierOptions.xml
-     * @return a TestEntity instance for the supplied Entity.
-     */
-    public static TestEntity getTestEntity(Entity unit, EntityVerifier entityVerifier) {
-        // FIXME move the same method from megameklab.util.UnitUtil.getEntityVerifier to common
-        TestEntity testEntity = null;
-        if (unit.hasETypeFlag(Entity.ETYPE_MECH)) {
-            testEntity = new TestMech((Mech) unit, entityVerifier.mechOption, null);
-        } else if (unit.hasETypeFlag(Entity.ETYPE_PROTOMECH)) {
-            testEntity = new TestProtomech((Protomech) unit, entityVerifier.protomechOption, null);
-        } else if (unit.isSupportVehicle()) {
-            testEntity = new TestSupportVehicle(unit, entityVerifier.tankOption, null);
-        } else if (unit.hasETypeFlag(Entity.ETYPE_TANK)) {
-            testEntity = new TestTank((Tank) unit, entityVerifier.tankOption, null);
-        } else if (unit.hasETypeFlag(Entity.ETYPE_SMALL_CRAFT)) {
-            testEntity = new TestSmallCraft((SmallCraft) unit, entityVerifier.aeroOption, null);
-        } else if (unit.hasETypeFlag(Entity.ETYPE_JUMPSHIP)) {
-            testEntity = new TestAdvancedAerospace((Jumpship) unit, entityVerifier.aeroOption, null);
-        } else if (unit.hasETypeFlag(Entity.ETYPE_AERO)) {
-            testEntity = new TestAero((Aero) unit, entityVerifier.aeroOption, null);
-        } else if (unit.hasETypeFlag(Entity.ETYPE_BATTLEARMOR)) {
-            testEntity = new TestBattleArmor((BattleArmor) unit, entityVerifier.baOption, null);
-        } else if (unit.hasETypeFlag(Entity.ETYPE_INFANTRY)) {
-            testEntity = new TestInfantry((Infantry)unit, entityVerifier.infOption, null);
-        }
-        return testEntity;
     }
 
     @Override
@@ -1034,19 +1026,38 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
 
     @Override
     protected Container createCenterPane() {
-        boolean multipleEntities = entities.size() > 1;
+        final Entity entity = entities.get(0);
+        boolean multipleEntities = (entities.size() > 1) || (entity instanceof FighterSquadron);
         boolean quirksEnabled = gameOptions().booleanOption(OptionsConstants.ADVANCED_STRATOPS_QUIRKS);
         boolean partialRepairsEnabled = gameOptions().booleanOption(OptionsConstants.ADVANCED_STRATOPS_PARTIALREPAIRS);
-        final Entity entity = entities.get(0);
         final boolean isMech = entities.stream().allMatch(e -> e instanceof Mech);
         final boolean isShip = entities.stream().allMatch(Entity::isLargeAerospace);
-        final boolean isAero = entities.stream().allMatch(e -> e.isAerospace() && !e.isLargeAerospace());
+        final boolean isAero = entities.stream().allMatch(e -> e.isAero() && !e.isLargeAerospace());
         final boolean isVTOL = entities.stream().allMatch(e -> e.getMovementMode().isVTOL());
         final boolean isWiGE = entities.stream().allMatch(e -> (e instanceof Tank) && e.getMovementMode().isWiGE());
         final boolean isQuadVee = entities.stream().allMatch(e -> e instanceof QuadVee);
         final boolean isLAM = entities.stream().allMatch(e -> e instanceof LandAirMech);
         final boolean isGlider = entities.stream().allMatch(e -> (e instanceof Protomech) && e.getMovementMode().isWiGE());
         boolean eligibleForOffBoard = true;
+
+        int bh = clientgui.getClient().getMapSettings().getBoardHeight();
+        int bw = clientgui.getClient().getMapSettings().getBoardWidth();
+        int x = Math.min(entity.getStartingAnyNWx(false) + 1, bw);
+        SpinnerNumberModel mStartingAnyNWx = new SpinnerNumberModel(x, 0,bw, 1);
+        spinStartingAnyNWx = new JSpinner(mStartingAnyNWx);
+        spinStartingAnyNWx.setValue(x);
+        int y = Math.min(entity.getStartingAnyNWy(false) + 1, bh);
+        SpinnerNumberModel mStartingAnyNWy = new SpinnerNumberModel(y, 0, bh, 1);
+        spinStartingAnyNWy = new JSpinner(mStartingAnyNWy);
+        spinStartingAnyNWy.setValue(y);
+        x = Math.min(entity.getStartingAnySEx(false) + 1, bw);
+        SpinnerNumberModel mStartingAnySEx = new SpinnerNumberModel(x, 0, bw, 1);
+        spinStartingAnySEx = new JSpinner(mStartingAnySEx);
+        spinStartingAnySEx.setValue(x);
+        y = Math.min(entity.getStartingAnySEy(false) + 1, bh);
+        SpinnerNumberModel mStartingAnySEy = new SpinnerNumberModel(y, 0, bh, 1);
+        spinStartingAnySEy = new JSpinner(mStartingAnySEy);
+        spinStartingAnySEy.setValue(y);
 
         for (Entity e : entities) {
             // TODO : This check is good for now, but at some point we want atmospheric flying
@@ -1199,6 +1210,13 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         panDeploy.add(txtDeploymentOffset, GBC.eol());
         panDeploy.add(labDeploymentWidth, GBC.std());
         panDeploy.add(txtDeploymentWidth, GBC.eol());
+
+        panDeploy.add(new JLabel(Messages.getString("CustomMechDialog.labDeploymentAnyNW")), GBC.std());
+        panDeploy.add(spinStartingAnyNWx, GBC.std());
+        panDeploy.add(spinStartingAnyNWy, GBC.eol());
+        panDeploy.add(new JLabel(Messages.getString("CustomMechDialog.labDeploymentAnySE")), GBC.std());
+        panDeploy.add(spinStartingAnySEx, GBC.std());
+        panDeploy.add(spinStartingAnySEy, GBC.eol());
 
         numFormatter.setMinimum(0);
         numFormatter.setCommitsOnValidEdit(true);

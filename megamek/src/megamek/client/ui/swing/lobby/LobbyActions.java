@@ -354,9 +354,11 @@ public class LobbyActions {
         if (editable) {
             c = client().localBots.get(entity.getOwner().getName());
         } else {
-            editable |= entity.getOwnerId() == localPlayer().getId();
+            boolean localGM = localPlayer().isGameMaster();
+            editable |= localGM || entity.getOwnerId() == localPlayer().getId();
             c = client();
         }
+
         // When we customize a single entity's C3 network setting,
         // **ALL** members of the network may get changed.
         Entity c3master = entity.getC3Master();
@@ -493,6 +495,25 @@ public class LobbyActions {
     }
 
     /**
+     * deletes empty force
+     */
+    void forceDeleteEmpty(int forceId) {
+        if (forceId == Force.NO_FORCE) {
+            return;
+        }
+
+        Force force = client().getGame().getForces().getForce(forceId);
+
+        if (force.getChildCount() != 0) {
+            return;
+        }
+
+        List<Force> toDelete = new ArrayList<>();
+        toDelete.add(force);
+        client().sendDeleteForces(toDelete);
+    }
+
+    /**
      * Asks for a name and creates a new top-level force of that name with the
      * selected entities in it.
      */
@@ -517,6 +538,9 @@ public class LobbyActions {
      * as the parentId.
      */
     void forceCreateSub(int parentId) {
+        if (parentId == Force.NO_FORCE) {
+            return;
+        }
         // Ask for a name
         String name = JOptionPane.showInputDialog(frame(), "Choose a force designation");
         if ((name == null) || name.isBlank()) {
@@ -569,7 +593,7 @@ public class LobbyActions {
                 // TODO: The following should ideally be part of setHotLoad in Mounted
                 if (hotLoadOn) {
                     m.setMode("HotLoad");
-                } else if (m.getType().hasModeType("HotLoad")) {
+                } else if (m.hasModeType("HotLoad")) {
                     m.setMode("");
                 }
                 updateCandidates.add(entity);
@@ -629,6 +653,9 @@ public class LobbyActions {
 
     /** Asks for a new name for the provided forceId and applies it. */
     void forceRename(int forceId) {
+        if (forceId == Force.NO_FORCE) {
+            return;
+        }
         Forces forces = game().getForces();
         if (!forces.contains(forceId)) {
             return;
@@ -908,6 +935,9 @@ public class LobbyActions {
      * by the local player and be allied to the force's owner.
      */
     void forceAddEntity(Collection<Entity> entities, int forceId) {
+        if (forceId == Force.NO_FORCE) {
+            return;
+        }
         Forces forces = game().getForces();
         if (!validateUpdate(entities) || !forces.contains(forceId)) {
             return;
@@ -929,6 +959,9 @@ public class LobbyActions {
      * to only assign to team members of the former owner.
      */
     void forceAssignOnly(Collection<Force> forceList, int newOwnerId) {
+        if (newOwnerId == Player.PLAYER_NONE) {
+            return;
+        }
         Player newOwner = game().getPlayer(newOwnerId);
         if (newOwner == null) {
             return;
@@ -954,6 +987,9 @@ public class LobbyActions {
      * all subforces and units.
      */
     void forceAssignFull(Collection<Force> forceList, int newOwnerId) {
+        if (newOwnerId == Player.PLAYER_NONE) {
+            return;
+        }
         Player newOwner = game().getPlayer(newOwnerId);
         if (newOwner == null) {
             return;
@@ -1192,7 +1228,9 @@ public class LobbyActions {
      * player is allowed to change everything.
      */
     boolean isEditable(Entity entity) {
-        return client().localBots.containsKey(entity.getOwner().getName())
+        boolean localGM = client().getLocalPlayer().isGameMaster();
+        return localGM
+                || client().localBots.containsKey(entity.getOwner().getName())
                 || (entity.getOwnerId() == localPlayer().getId())
                 || (entity.partOfForce() && isSelfOrLocalBot(game().getForces().getOwner(entity.getForceId())))
                 || (entity.partOfForce() && isEditable(game().getForces().getForce(entity)));
@@ -1222,7 +1260,8 @@ public class LobbyActions {
      * of the entities are not on his team.
      */
     boolean canSeeAll(Collection<Entity> entities) {
-        if (!isBlindDrop(game()) && !isRealBlindDrop(game())) {
+        boolean localGM = client().getLocalPlayer().isGameMaster();
+        if (localGM || (!isBlindDrop(game()) && !isRealBlindDrop(game()))) {
             return true;
         }
         return entities.stream().noneMatch(this::isLocalEnemy);

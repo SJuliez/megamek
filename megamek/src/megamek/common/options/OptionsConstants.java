@@ -281,6 +281,8 @@ public class OptionsConstants {
     public static final String BASE_LOBBY_AMMO_DUMP = "lobby_ammo_dump";
     public static final String BASE_DUMPING_FROM_ROUND = "dumping_from_round";
     public static final String BASE_SET_ARTY_PLAYER_HOMEEDGE = "set_arty_player_homeedge";
+    public static final String BASE_SET_DEFAULT_TEAM_1 = "set_default_team_1";
+    public static final String BASE_SET_PLAYER_DEPLOYMENT_TO_PLAYER0 = "set_player_deployment_to_player0";
     public static final String BASE_RESTRICT_GAME_COMMANDS = "restrict_game_commands";
     public static final String BASE_DISABLE_LOCAL_SAVE = "disable_local_save";
     public static final String BASE_BRIDGECF = "bridgeCF";
@@ -288,6 +290,7 @@ public class OptionsConstants {
     public static final String BASE_RNG_TYPE = "rng_type";
     public static final String BASE_RNG_LOG = "rng_log";
     public static final String BASE_FLAMER_HEAT = "flamer_heat";
+    public static final String BASE_INFANTRY_DAMAGE_HEAT = "infantry_damage_heat";
     public static final String BASE_INDIRECT_FIRE = "indirect_fire";
     public static final String BASE_BREEZE = "breeze";
     public static final String BASE_RANDOM_BASEMENTS = "random_basements";

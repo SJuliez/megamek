@@ -67,8 +67,6 @@ class LobbyMekPopup {
     static final String LMP_HIDDEN = "HIDDEN";
     static final String LMP_FASSIGNONLY = "FASSIGNONLY";
     static final String LMP_FASSIGN = "FASSIGN";
-    static final String LMP_SAVE_QUIRKS_MODEL = "SAVE_QUIRKS_MODEL";
-    static final String LMP_SAVE_QUIRKS_ALL = "SAVE_QUIRKS_ALL";
     static final String LMP_RAPIDFIREMG_OFF = "RAPIDFIREMG_OFF";
     static final String LMP_RAPIDFIREMG_ON = "RAPIDFIREMG_ON";
     static final String LMP_HOTLOAD_OFF = "HOTLOAD_OFF";
@@ -90,6 +88,7 @@ class LobbyMekPopup {
     static final String LMP_FCREATESUB = "FCREATESUB";
     static final String LMP_FCREATETOP = "FCREATETOP";
     static final String LMP_FCREATEFROM = "FCREATEFROM";
+    static final String LMP_FCDELETEEMPTY = "FCDELETEEMPTY";
     static final String LMP_SBFFORMATION = "SBFFORMATION";
     static final String LMP_DELETE = "DELETE";
     static final String LMP_UNLOADALL = "UNLOADALL";
@@ -116,7 +115,6 @@ class LobbyMekPopup {
         Game game = lobby.game();
         GameOptions opts = game.getOptions();
 
-        boolean optQuirks = opts.booleanOption(OptionsConstants.ADVANCED_STRATOPS_QUIRKS);
         boolean optBurstMG = opts.booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_BURST);
         boolean optLRMHotLoad = opts.booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_HOTLOAD);
         boolean optCapFighters = opts.booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_CAPITAL_FIGHTER);
@@ -134,12 +132,11 @@ class LobbyMekPopup {
         boolean accessibleFighters = accessibleEntities.stream().anyMatch(Entity::isFighter);
         boolean accessibleTransportBays = accessibleEntities.stream().anyMatch(e -> !e.getTransportBays().isEmpty());
         boolean accessibleCarriers = accessibleEntities.stream().anyMatch(e -> !e.getLoadedUnits().isEmpty());
-        boolean accessibleProtomeks = accessibleEntities.stream().anyMatch(e -> e.hasETypeFlag(Entity.ETYPE_PROTOMECH));
 
         // Find what can be done with the selected entities incl. those in selected forces
         boolean anyCarrier = joinedEntities.stream().anyMatch(e -> !e.getLoadedUnits().isEmpty());
         boolean noneEmbarked = joinedEntities.stream().allMatch(e -> e.getTransportId() == Entity.NONE);
-        boolean allProtomeks = joinedEntities.stream().allMatch(e -> e.hasETypeFlag(Entity.ETYPE_PROTOMECH));
+        boolean allProtomeks = !joinedEntities.isEmpty() && joinedEntities.stream().allMatch(e -> e instanceof Protomech);
         boolean anyRFMGOn = joinedEntities.stream().anyMatch(LobbyMekPopup::hasRapidFireMG);
         boolean anyRFMGOff = joinedEntities.stream().anyMatch(LobbyMekPopup::hasNormalFireMG);
         boolean anyHLOn = joinedEntities.stream().anyMatch(LobbyMekPopup::hasHotLoaded);
@@ -187,10 +184,6 @@ class LobbyMekPopup {
 
         if (optBurstMG || optLRMHotLoad) {
             popup.add(equipMenu(anyRFMGOn, anyRFMGOff, anyHLOn, anyHLOff, optLRMHotLoad, optBurstMG, listener, seIds));
-        }
-
-        if (optQuirks) {
-            popup.add(quirksMenu(!entities.isEmpty() && canSeeAll, listener, eIds));
         }
 
         popup.add(ScalingPopup.spacer());
@@ -260,6 +253,13 @@ class LobbyMekPopup {
             }
             menu.add(addMenu);
             menu.add(menuItem("Remove from Force", LMP_FREMOVE + NOINFO + enToken(entities), true, listener));
+        }
+
+        // If exactly one force is selected, offer force options
+        if ((forces.size() == 1) && entities.isEmpty()) {
+            Force force = forces.get(0);
+            boolean editable = lobby.lobbyActions.isEditable(force);
+            menu.add(menuItem("Delete empty Force...", LMP_FCDELETEEMPTY + "|" + foToken(forces) + NOINFO, (editable && force.getChildCount() == 0), listener));
         }
 
         menu.setEnabled(menu.getItemCount() > 0);
@@ -638,17 +638,6 @@ class LobbyMekPopup {
     }
 
     /**
-     * @return the "Quirks" submenu, allowing to save the quirks to the quirks config file.
-     */
-    private static JMenu quirksMenu(boolean enabled, ActionListener listener, String eIds) {
-        JMenu menu = new JMenu(Messages.getString("ChatLounge.popup.quirks"));
-        menu.setEnabled(enabled);
-        menu.add(menuItem("Save Quirks for Chassis", LMP_SAVE_QUIRKS_ALL + NOINFO + eIds, enabled, listener));
-        menu.add(menuItem("Save Quirks for Chassis/Model", LMP_SAVE_QUIRKS_MODEL + NOINFO + eIds, enabled, listener));
-        return menu;
-    }
-
-    /**
      * @return the "Equipment" submenu, allowing hotloading LRMs and setting MGs to rapid fire mode
      */
     private static JMenu equipMenu(boolean anyRFOn, boolean anyRFOff, boolean anyHLOn,
@@ -749,29 +738,31 @@ class LobbyMekPopup {
                 exportSprite(frame, entity, entity.getCamouflageOrElseOwners(), true));
         exportUnitSpriteMenu.add(miCurrentCamouflageAndDamage);
 
-        final JMenuItem miSelectedCamouflage = new JMenuItem(Messages.getString("miSelectedCamouflage.text"));
-        miSelectedCamouflage.setToolTipText(Messages.getString("miSelectedCamouflage.toolTipText"));
-        miSelectedCamouflage.setName("miSelectedCamouflage");
-        miSelectedCamouflage.addActionListener(evt -> {
-            final CamoChooserDialog camoChooserDialog = new CamoChooserDialog(frame, entity.getCamouflageOrElseOwners());
-            if (camoChooserDialog.showDialog().isConfirmed()) {
-                exportSprite(frame, entity, camoChooserDialog.getSelectedItem(), false);
-            }
-        });
-        exportUnitSpriteMenu.add(miSelectedCamouflage);
+        if (!(entity instanceof FighterSquadron)) {
+            final JMenuItem miSelectedCamouflage = new JMenuItem(Messages.getString("miSelectedCamouflage.text"));
+            miSelectedCamouflage.setToolTipText(Messages.getString("miSelectedCamouflage.toolTipText"));
+            miSelectedCamouflage.setName("miSelectedCamouflage");
+            miSelectedCamouflage.addActionListener(evt -> {
+                final CamoChooserDialog camoChooserDialog = new CamoChooserDialog(frame, entity.getCamouflageOrElseOwners());
+                if (camoChooserDialog.showDialog().isConfirmed()) {
+                    exportSprite(frame, entity, camoChooserDialog.getSelectedItem(), false);
+                }
+            });
+            exportUnitSpriteMenu.add(miSelectedCamouflage);
 
-        final JMenuItem miSelectedCamouflageAndCurrentDamage = new JMenuItem(
-                Messages.getString("miSelectedCamouflageAndCurrentDamage.text"));
-        miSelectedCamouflageAndCurrentDamage.setToolTipText(
-                Messages.getString("miSelectedCamouflageAndCurrentDamage.toolTipText"));
-        miSelectedCamouflageAndCurrentDamage.setName("miSelectedCamouflageAndCurrentDamage");
-        miSelectedCamouflageAndCurrentDamage.addActionListener(evt -> {
-            final CamoChooserDialog camoChooserDialog = new CamoChooserDialog(frame, entity.getCamouflageOrElseOwners());
-            if (camoChooserDialog.showDialog().isConfirmed()) {
-                exportSprite(frame, entity, camoChooserDialog.getSelectedItem(), true);
-            }
-        });
-        exportUnitSpriteMenu.add(miSelectedCamouflageAndCurrentDamage);
+            final JMenuItem miSelectedCamouflageAndCurrentDamage = new JMenuItem(
+                    Messages.getString("miSelectedCamouflageAndCurrentDamage.text"));
+            miSelectedCamouflageAndCurrentDamage.setToolTipText(
+                    Messages.getString("miSelectedCamouflageAndCurrentDamage.toolTipText"));
+            miSelectedCamouflageAndCurrentDamage.setName("miSelectedCamouflageAndCurrentDamage");
+            miSelectedCamouflageAndCurrentDamage.addActionListener(evt -> {
+                final CamoChooserDialog camoChooserDialog = new CamoChooserDialog(frame, entity.getCamouflageOrElseOwners());
+                if (camoChooserDialog.showDialog().isConfirmed()) {
+                    exportSprite(frame, entity, camoChooserDialog.getSelectedItem(), true);
+                }
+            });
+            exportUnitSpriteMenu.add(miSelectedCamouflageAndCurrentDamage);
+        }
 
         return exportUnitSpriteMenu;
     }
@@ -801,7 +792,7 @@ class LobbyMekPopup {
 
         // Get the Sprite
         final Image base = MMStaticDirectoryManager.getMechTileset().imageFor(entity);
-        final Image sprite = new EntityImage(base, camouflage, frame, entity).loadPreviewImage(showDamage);
+        final Image sprite = EntityImage.createLobbyIcon(base, camouflage, frame, entity).loadPreviewImage(showDamage);
 
         // Export to File
         try {

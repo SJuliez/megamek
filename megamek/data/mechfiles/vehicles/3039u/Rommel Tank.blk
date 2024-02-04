@@ -32,6 +32,10 @@ Rommel Tank
 IS Level 1
 </type>
 
+<role>
+Juggernaut
+</role>
+
 <motion_type>
 Tracked
 </motion_type>
@@ -116,3 +120,9 @@ TARGETING:TharHes Mars5
 <source>
 TRO: 3039
 </source>
+
+<quirks>
+low_profile
+poor_target_short
+</quirks>
+

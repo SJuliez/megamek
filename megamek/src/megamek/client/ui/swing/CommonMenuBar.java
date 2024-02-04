@@ -61,11 +61,13 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
     private GamePhase phase = GamePhase.UNKNOWN;
 
     // The Game menu
+    private JMenuItem gameStart = new JMenuItem(getString("CommonMenuBar.fileGameStart"));
     private JMenuItem gameLoad = new JMenuItem(getString("CommonMenuBar.fileGameLoad"));
     private JMenuItem gameSave = new JMenuItem(getString("CommonMenuBar.fileGameSave"));
     private JMenuItem gameQSave = new JMenuItem(getString("CommonMenuBar.fileGameQuickSave"));
     private JMenuItem gameQLoad = new JMenuItem(getString("CommonMenuBar.fileGameQuickLoad"));
     private JMenuItem gameSaveServer = new JMenuItem(getString("CommonMenuBar.fileGameSaveServer"));
+    private JMenuItem gameConnect = new JMenuItem(getString("CommonMenuBar.fileGameConnect"));
     private JCheckBoxMenuItem gameRoundReport = new JCheckBoxMenuItem(getString("CommonMenuBar.viewRoundReport"));
     private JMenuItem gameEditBots = new JMenuItem(getString("CommonMenuBar.editBots"));
     private JCheckBoxMenuItem gamePlayerList = new JCheckBoxMenuItem(getString("CommonMenuBar.viewPlayerList"));
@@ -107,6 +109,7 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
     // The View menu
     private JCheckBoxMenuItem viewMinimap = new JCheckBoxMenuItem(getString("CommonMenuBar.viewMinimap"));
     private JCheckBoxMenuItem viewMekDisplay = new JCheckBoxMenuItem(getString("CommonMenuBar.viewMekDisplay"));
+    private JCheckBoxMenuItem viewForceDisplay = new JCheckBoxMenuItem(getString("CommonMenuBar.viewForceDisplay"));
     private JMenuItem viewAccessibilityWindow = new JMenuItem(getString("CommonMenuBar.viewAccessibilityWindow"));
     private JCheckBoxMenuItem viewKeybindsOverlay = new JCheckBoxMenuItem(getString("CommonMenuBar.viewKeyboardShortcuts"));
     private JCheckBoxMenuItem viewPlanetaryConditionsOverlay = new JCheckBoxMenuItem(getString("CommonMenuBar.viewPlanetaryConditions"));
@@ -121,6 +124,7 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
     private JCheckBoxMenuItem toggleFovHighlight = new JCheckBoxMenuItem(getString("CommonMenuBar.viewToggleFovHighlight"));
     private JCheckBoxMenuItem toggleFovDarken = new JCheckBoxMenuItem(getString("CommonMenuBar.viewToggleFovDarken"));
     private JCheckBoxMenuItem toggleFiringSolutions = new JCheckBoxMenuItem(getString("CommonMenuBar.viewToggleFiringSolutions"));
+    private JCheckBoxMenuItem toggleCFWarning = new JCheckBoxMenuItem(getString("CommonMenuBar.viewToggleCFWarning"));
     private JCheckBoxMenuItem viewMovementEnvelope = new JCheckBoxMenuItem(getString("CommonMenuBar.movementEnvelope"));
     private JCheckBoxMenuItem viewTurnDetailsOverlay  = new JCheckBoxMenuItem(getString("CommonMenuBar.turnDetailsOverlay"));
     private JMenuItem viewMovModEnvelope = new JMenuItem(getString("CommonMenuBar.movementModEnvelope"));
@@ -172,11 +176,13 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         JMenu menu = new JMenu(Messages.getString("CommonMenuBar.FileMenu"));
         menu.setMnemonic(VK_F);
         add(menu);
+        initMenuItem(gameStart, menu, FILE_GAME_NEW);
         initMenuItem(gameLoad, menu, FILE_GAME_LOAD, VK_L);
         initMenuItem(gameSave, menu, FILE_GAME_SAVE, VK_S);
         initMenuItem(gameQSave, menu, FILE_GAME_QSAVE);
         initMenuItem(gameQLoad, menu, FILE_GAME_QLOAD);
         initMenuItem(gameSaveServer, menu, FILE_GAME_SAVE_SERVER);
+        initMenuItem(gameConnect, menu, FILE_GAME_CONNECT);
 
         // Create the Unit List sub-menu.
         menu = new JMenu(Messages.getString("CommonMenuBar.GameMenu"));
@@ -259,6 +265,9 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         initMenuItem(gamePlayerList, menu, VIEW_PLAYER_LIST);
         GUIP.setPlayerListEnabled(false);
         gamePlayerList.setSelected(false);
+        initMenuItem(viewForceDisplay, menu, VIEW_FORCE_DISPLAY);
+        GUIP.setForceDisplayEnabled(false);
+        viewForceDisplay.setSelected(false);
         menu.addSeparator();
 
         initMenuItem(viewKeybindsOverlay, menu, VIEW_KEYBINDS_OVERLAY);
@@ -305,6 +314,10 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         toggleFiringSolutions.setToolTipText(Messages.getString("CommonMenuBar.viewToggleFiringSolutionsToolTip"));
         toggleFiringSolutions.setSelected(GUIP.getFiringSolutions());
 
+        initMenuItem(toggleCFWarning, menu, VIEW_TOGGLE_CF_WARNING);
+        toggleCFWarning.setToolTipText(Messages.getString("CommonMenuBar.viewToggleCFWarningToolTip"));
+        toggleCFWarning.setSelected(GUIP.getShowCFWarnings());
+
         /* TODO: moveTraitor = createMenuItem(menu, getString("CommonMenuBar.moveTraitor"), MovementDisplay.MOVE_TRAITOR);  */
 
         // Create the Help menu
@@ -336,6 +349,7 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         viewKeybindsOverlay.setAccelerator(KeyCommandBind.keyStroke(KeyCommandBind.KEY_BINDS));
         viewPlanetaryConditionsOverlay.setAccelerator(KeyCommandBind.keyStroke(KeyCommandBind.PLANETARY_CONDITIONS));
         viewTurnDetailsOverlay.setAccelerator(KeyCommandBind.keyStroke(KeyCommandBind.TURN_DETAILS));
+        viewForceDisplay.setAccelerator(KeyCommandBind.keyStroke(KeyCommandBind.FORCE_DISPLAY));
         viewMekDisplay.setAccelerator(KeyCommandBind.keyStroke(KeyCommandBind.UNIT_DISPLAY));
         viewUnitOverview.setAccelerator(KeyCommandBind.keyStroke(KeyCommandBind.UNIT_OVERVIEW));
         viewLOSSetting.setAccelerator(KeyCommandBind.keyStroke(KeyCommandBind.LOS_SETTING));
@@ -441,6 +455,8 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         boardSourceFile.setEnabled(isBoardEditor);
         gameQLoad.setEnabled(isMainMenu);
         gameLoad.setEnabled(isMainMenu);
+        gameStart.setEnabled(isMainMenu);
+        gameConnect.setEnabled(isMainMenu);
 
         gameSave.setEnabled(isLobby || (isInGame && canSave));
         gameSaveServer.setEnabled(isLobby || (isInGame && canSave));
@@ -479,11 +495,13 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         toggleFovHighlight.setEnabled(isInGameBoardView);
         toggleFovDarken.setEnabled(isInGameBoardView);
         toggleFiringSolutions.setEnabled(isInGameBoardView);
+        toggleCFWarning.setEnabled(isInGameBoardView);
         viewMovementEnvelope.setEnabled(isInGameBoardView);
         viewTurnDetailsOverlay.setEnabled(isInGameBoardView);
         viewMovModEnvelope.setEnabled(isInGameBoardView);
         gameRoundReport.setEnabled((isInGame));
         viewMekDisplay.setEnabled(isInGameBoardView);
+        viewForceDisplay.setEnabled(isInGameBoardView);
         fireSaveWeaponOrder.setEnabled(isInGameBoardView);
     }
 
@@ -532,6 +550,8 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
             setKeyBinds();
         } else if (e.getName().equals(GUIPreferences.UNIT_DISPLAY_ENABLED)) {
             viewMekDisplay.setSelected(GUIP.getUnitDisplayEnabled());
+        } else if (e.getName().equals(GUIPreferences.FORCE_DISPLAY_ENABLED)) {
+            viewForceDisplay.setSelected(GUIP.getForceDisplayEnabled());
         } else if (e.getName().equals(GUIPreferences.MINI_REPORT_ENABLED)) {
             gameRoundReport.setSelected(GUIP.getMiniReportEnabled());
         } else if (e.getName().equals(GUIPreferences.PLAYER_LIST_ENABLED)) {

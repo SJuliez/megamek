@@ -90,6 +90,7 @@ public class EquipmentTypeLookup {
     @EquipmentName public static final String CLAN_MASC = "CLMASC";
     @EquipmentName public static final String SPONSON_TURRET = "SponsonTurret";
     @EquipmentName public static final String PINTLE_TURRET = "PintleTurret";
+    @EquipmentName public static final String MAST_MOUNT = "ISMastMount";
 
     @EquipmentName public static final String AMPHIBIOUS_CHASSIS_MOD = "AmphibiousChassisMod";
     @EquipmentName public static final String ARMORED_CHASSIS_MOD = "ArmoredChassisMod";
@@ -121,6 +122,7 @@ public class EquipmentTypeLookup {
     @EquipmentName public static final String DEMOLITION_CHARGE = "Demolition Charge";
     @EquipmentName public static final String INFANTRY_AMMO = "Infantry Ammo";
     @EquipmentName public static final String INFANTRY_INFERNO_AMMO = "Infantry Inferno Ammo";
+    @EquipmentName public static final String ANTI_MEK_GEAR = "AntiMekGear";
 
     @EquipmentName public static final String AC_BAY = "AC Bay";
     @EquipmentName public static final String AMS_BAY = "AMS Bay";
