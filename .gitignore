@@ -17,9 +17,10 @@ Thumbs.db
 out/
 .idea/
 .vscode/
+.run/
 .classpath
 .project
-.classpath
+.run
 settings_local.gradle
 properties_local.gradle
 
@@ -51,6 +52,11 @@ megamek/userdata/**
 # MUL Files
 *.mul
 
+#Revision
+/megamek/docs/mm-revision.txt
+/megamek/docs/mml-revision.txt
+/megamek/docs/mhq-revision.txt
+
 #MegaMek/data Folders
 /megamek/data/misc/
 /megamek/data/recordsheets/
@@ -66,7 +72,9 @@ megamek/userdata/**
 /megamek/data/images/*_atlas.png
 /megamek/data/images/imgFileAtlasMap.xml
 #Portraits
-/megamek/data/images/portraits/
+/megamek/data/images/portraits/*
+!/megamek/data/images/portraits/Female
+!/megamek/data/images/portraits/Male
 /megamek/data/images/temp/
 !/megamek/data/images/portraits/default.gif
 
@@ -80,8 +88,12 @@ megamek/userdata/**
 /megamek/*.pdf
 /megamek/*.ps
 /megamek/*.png
-/megamek/*.ps
 /megamek/atlasedImages.txt
 /megamek/Entity Issues.txt
 /megamek/apidocs/
 #End MegaMek Other Outputs
+
+/megamek/docs/mm-revision.txt
+/megamek/MegaMek.l4j.ini
+OfficialUnitList.txt
+equipment.txt

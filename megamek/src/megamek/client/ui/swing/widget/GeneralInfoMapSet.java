@@ -15,8 +15,10 @@
 */
 package megamek.client.ui.swing.widget;
 
+import megamek.MMConstants;
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.GUIPreferences;
+import megamek.client.ui.swing.tooltip.UnitToolTip;
 import megamek.common.*;
 import megamek.common.options.*;
 import megamek.common.util.fileUtils.MegaMekFile;
@@ -43,10 +45,13 @@ public class GeneralInfoMapSet implements DisplayMapSet {
             elevationR, fuelR, curSensorsR, visualRangeR;
     private PMMultiLineLabel quirksAndPartReps;
     private Vector<BackGroundDrawer> bgDrawers = new Vector<>();
-    private static final Font FONT_VALUE = new Font("SansSerif", Font.PLAIN,
-            GUIPreferences.getInstance().getInt("AdvancedMechDisplayLargeFontSize"));
-    private static final Font FONT_TITLE = new Font("SansSerif", Font.ITALIC,
-            GUIPreferences.getInstance().getInt("AdvancedMechDisplayLargeFontSize"));
+
+    private static final GUIPreferences GUIP = GUIPreferences.getInstance();
+
+    private static final Font FONT_VALUE = new Font(MMConstants.FONT_SANS_SERIF, Font.PLAIN,
+            GUIP.getUnitDisplayMechLargeFontSize());
+    private static final Font FONT_TITLE = new Font(MMConstants.FONT_SANS_SERIF, Font.ITALIC,
+            GUIP.getUnitDisplayMechLargeFontSize());
     private int yCoord = 1;
 
     /**
@@ -337,17 +342,14 @@ public class GeneralInfoMapSet implements DisplayMapSet {
 
         int heatCap = en.getHeatCapacity();
         int heatCapWater = en.getHeatCapacityWithWater();
-        if (en.getCoolantFailureAmount() > 0) {
-            heatCap -= en.getCoolantFailureAmount();
-            heatCapWater -= en.getCoolantFailureAmount();
-        }
+
         String heatCapacityStr = Integer.toString(heatCap);
 
         if (heatCap < heatCapWater) {
             heatCapacityStr = heatCap + " [" + heatCapWater + "]";
         }
 
-        heatR.color = GUIPreferences.getInstance().getColorForHeat(en.heat, Color.WHITE);
+        heatR.color = GUIP.getColorForHeat(en.heat, Color.WHITE);
         heatR.setString(en.heat
                 + " (" + heatCapacityStr + " " + Messages.getString("GeneralInfoMapSet.capacity") + ")");
 
@@ -389,7 +391,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
             visualRangeR.setVisible(true);
             curSensorsL.setVisible(true);
             visualRangeL.setVisible(true);
-            curSensorsR.setString(en.getSensorDesc());
+            curSensorsR.setString(UnitToolTip.getSensorDesc(en));
             visualRangeR.setString(Integer.toString(Compute.getMaxVisualRange(en, false)));
         } else {
             curSensorsR.setVisible(false);

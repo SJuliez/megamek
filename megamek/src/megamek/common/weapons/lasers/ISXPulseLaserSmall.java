@@ -54,7 +54,7 @@ public class ISXPulseLaserSmall extends PulseLaserWeapon {
         maxRange = RANGE_SHORT;
         shortAV = 3;
         cost = 31000;
-        flags = flags.or(F_BURST_FIRE);
+        flags = flags.or(F_BURST_FIRE).andNot(F_PROTO_WEAPON);;
         rulesRefs = "321, TO";
         //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
@@ -62,5 +62,10 @@ public class ISXPulseLaserSmall extends PulseLaserWeapon {
             .setISAdvancement(DATE_NONE, 3047, 3078, DATE_NONE, DATE_NONE).setPrototypeFactions(F_LC,F_FS)
             .setProductionFactions(F_LC)
             .setStaticTechLevel(SimpleTechLevel.STANDARD);
+    }
+    
+    @Override
+    public boolean isAlphaStrikePointDefense() {
+        return true;
     }
 }

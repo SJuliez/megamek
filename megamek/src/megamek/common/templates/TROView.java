@@ -32,9 +32,12 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static megamek.client.ui.WrapLayout.wordWrap;
 
 /**
  * Fills in a template to produce a unit summary in TRO format.
@@ -53,7 +56,7 @@ public class TROView {
     protected TROView() {
     }
 
-    public static TROView createView(Entity entity, boolean html) {
+    public static TROView createView(Entity entity, ViewFormatting formatting) {
         TROView view;
         if (entity.hasETypeFlag(Entity.ETYPE_MECH)) {
             view = new MechTROView((Mech) entity);
@@ -77,10 +80,10 @@ public class TROView {
         } else {
             view = new TROView();
         }
-        if (null != view.getTemplateFileName(html)) {
+        if (null != view.getTemplateFileName(formatting == ViewFormatting.HTML)) {
             try {
                 view.template = TemplateConfiguration.getInstance()
-                        .getTemplate("tro/" + view.getTemplateFileName(html));
+                        .getTemplate("tro/" + view.getTemplateFileName(formatting == ViewFormatting.HTML));
             } catch (final IOException e) {
                 LogManager.getLogger().error("", e);
             }
@@ -160,27 +163,27 @@ public class TROView {
         model.put("year", String.valueOf(entity.getYear()));
         model.put("techRating", entity.getFullRatingName());
         if (!entity.getFluff().getOverview().isBlank()) {
-            model.put("fluffOverview", entity.getFluff().getOverview());
+            model.put("fluffOverview", wordWrap(entity.getFluff().getOverview(), 200));
         }
 
         if (!entity.getFluff().getCapabilities().isBlank()) {
-            model.put("fluffCapabilities", entity.getFluff().getCapabilities());
+            model.put("fluffCapabilities", wordWrap(entity.getFluff().getCapabilities(), 200));
         }
 
         if (!entity.getFluff().getDeployment().isBlank()) {
-            model.put("fluffDeployment", entity.getFluff().getDeployment());
+            model.put("fluffDeployment", wordWrap(entity.getFluff().getDeployment(), 200));
         }
 
         if (!entity.getFluff().getHistory().isBlank()) {
-            model.put("fluffHistory", entity.getFluff().getHistory());
+            model.put("fluffHistory", wordWrap(entity.getFluff().getHistory(), 200));
         }
 
         if (!entity.getFluff().getManufacturer().isBlank()) {
-            model.put("manufacturerDesc", entity.getFluff().getManufacturer());
+            model.put("manufacturerDesc", wordWrap(entity.getFluff().getManufacturer(), 200));
         }
 
         if (!entity.getFluff().getPrimaryFactory().isBlank()) {
-            model.put("factoryDesc", entity.getFluff().getPrimaryFactory());
+            model.put("factoryDesc", wordWrap(entity.getFluff().getPrimaryFactory(), 200));
         }
     }
 
@@ -196,7 +199,7 @@ public class TROView {
      * @return The fluff display name, which consists of the manufacturer and the
      *         model separated by a space. If either is missing it is left out.
      */
-    protected String formatSystemFluff(EntityFluff.System system, EntityFluff fluff, Supplier<String> altText) {
+    public static String formatSystemFluff(EntityFluff.System system, EntityFluff fluff, Supplier<String> altText) {
         final StringJoiner sj = new StringJoiner(" ");
         if (!fluff.getSystemManufacturer(system).isBlank()) {
             sj.add(fluff.getSystemManufacturer(system));
@@ -213,11 +216,19 @@ public class TROView {
         addEntityFluff(entity);
         model.put("massDesc", NumberFormat.getInstance().format(entity.getWeight())
                 + Messages.getString(entity.getWeight() == 1.0 ? "TROView.ton" : "TROView.tons"));
-        model.put("engineDesc", formatSystemFluff(EntityFluff.System.ENGINE, entity.getFluff(),
-                () -> stripNotes(entity.getEngine().getEngineName())));
+        if (entity.hasEngine()) {
+            model.put("engineDesc", formatSystemFluff(EntityFluff.System.ENGINE, entity.getFluff(),
+                    () -> stripNotes(entity.getEngine().getEngineName())));
+        } else {
+            model.put("engineDesc", "None");
+        }
         if (!entity.isAero()) {
             model.put("cruisingSpeed", entity.getWalkMP() * 10.8);
             model.put("maxSpeed", entity.getRunMP() * 10.8);
+        }
+        if (entity.isMek() || (entity.isProtoMek() && entity.getOriginalJumpMP() > 0)) {
+            model.put("jumpDesc", formatSystemFluff(EntityFluff.System.JUMPJET, entity.getFluff(),
+                    () -> Messages.getString("TROView.Unknown")));
         }
         model.put("armorDesc",
                 formatSystemFluff(EntityFluff.System.ARMOR, entity.getFluff(), () -> formatArmorType(entity, false)));
@@ -231,7 +242,7 @@ public class TROView {
             }
         }
         final List<String> armaments = new ArrayList<>();
-        for (final Map.Entry<String, Integer> entry : weaponCount.entrySet()) {
+        for (final Entry<String, Integer> entry : weaponCount.entrySet()) {
             armaments.add(String.format("%d %s", entry.getValue(), entry.getKey()));
         }
         if (podSpace > 0) {
@@ -253,7 +264,7 @@ public class TROView {
         } else {
             sb.append(Messages.getString("TROView.InnerSphere"));
         }
-        sb.append(" (").append(entity.getStaticTechLevel().toString()).append(")");
+        sb.append(" (").append(entity.getStaticTechLevel().toString()).append(')');
         return sb.toString();
     }
 
@@ -396,6 +407,7 @@ public class TROView {
         final int structure = entity.getStructureType();
         final Map<String, Map<EquipmentKey, Integer>> equipment = new HashMap<>();
         int nameWidth = 20;
+        EquipmentKey eqk;
         for (final Mounted m : entity.getEquipment()) {
             if (skipMount(m, includeAmmo)) {
                 continue;
@@ -414,18 +426,21 @@ public class TROView {
             if (m.isOmniPodMounted() || !entity.isOmni()) {
                 final String loc = formatLocationTableEntry(entity, m);
                 equipment.putIfAbsent(loc, new HashMap<>());
-                equipment.get(loc).merge(new EquipmentKey(m.getType(), m.getSize(), m.isArmored()),
-                        1, Integer::sum);
+                eqk = new EquipmentKey(m.getType(), m.getSize(), m.isArmored(), m.isInternalBomb());
+                equipment.get(loc).merge(eqk,1, Integer::sum);
             }
         }
         final List<Map<String, Object>> eqList = new ArrayList<>();
         for (final String loc : equipment.keySet()) {
-            for (final Map.Entry<EquipmentKey, Integer> entry : equipment.get(loc).entrySet()) {
+            for (final Entry<EquipmentKey, Integer> entry : equipment.get(loc).entrySet()) {
                 final EquipmentType eq = entry.getKey().getType();
                 final int count = equipment.get(loc).get(entry.getKey());
                 String name = stripNotes(entry.getKey().name());
                 if (entry.getKey().isArmored()) {
                     name += " (Armored)";
+                }
+                if (entry.getKey().internalBomb) {
+                    name += " (Int. Bay)";
                 }
                 if (eq instanceof AmmoType) {
                     name = String.format("%s (%d)", name, ((AmmoType) eq).getShots() * count);
@@ -527,7 +542,7 @@ public class TROView {
                 fixedList.add(row);
             } else {
                 boolean firstLine = true;
-                for (final Map.Entry<String, Integer> entry : fixedCount.entrySet()) {
+                for (final Entry<String, Integer> entry : fixedCount.entrySet()) {
                     row = new HashMap<>();
                     if (firstLine) {
                         row.put("location", entity.getLocationName(loc));
@@ -674,16 +689,16 @@ public class TROView {
     }
 
     protected enum Justification {
-        LEFT((str, w) -> String.format("%-" + w + "s", str)), CENTER((str, w) -> {
+        LEFT((str, w) -> String.format("%-" + w + 's', str)), CENTER((str, w) -> {
             if (w > str.length()) {
                 final int rightPadding = Math.max(0, (w - str.length()) / 2);
                 if (rightPadding > 0) {
-                    str = String.format("%-" + (w - rightPadding) + "s", str);
+                    str = String.format("%-" + (w - rightPadding) + 's', str);
                 }
-                return String.format("%" + w + "s", str);
+                return String.format("%" + w + 's', str);
             }
             return str;
-        }), RIGHT((str, w) -> String.format("%" + w + "s", str));
+        }), RIGHT((str, w) -> String.format("%" + w + 's', str));
 
         final private BiFunction<String, Integer, String> pad;
 
@@ -774,15 +789,17 @@ public class TROView {
         private final EquipmentType etype;
         private final double size;
         private final boolean armored;
+        private final boolean internalBomb;
 
         EquipmentKey(EquipmentType etype, double size) {
-            this(etype, size, false);
+            this(etype, size, false, false);
         }
 
-        EquipmentKey(EquipmentType etype, double size, boolean armored) {
+        EquipmentKey(EquipmentType etype, double size, boolean armored, boolean internal) {
             this.etype = etype;
             this.size = size;
             this.armored = armored;
+            this.internalBomb = internal;
         }
 
         String name() {

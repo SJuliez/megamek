@@ -13,7 +13,7 @@ SupportTank
 </UnitType>
 
 <Name>
-Buffel Engineering Support Vehicle VII
+Büffel Engineering Support Vehicle VII
 </Name>
 
 <Model>
@@ -35,6 +35,10 @@ Buffel Engineering Support Vehicle VII
 <type>
 IS Level 3
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Tracked
@@ -97,7 +101,7 @@ Lift Hoist/Arresting Hoist
 </structural_tech_rating>
 
 <source>
-TRO 3075 - Age of War
+TRO: 3075
 </source>
 
 <tonnage>

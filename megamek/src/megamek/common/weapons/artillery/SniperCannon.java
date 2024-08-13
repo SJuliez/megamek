@@ -14,6 +14,8 @@
 package megamek.common.weapons.artillery;
 
 import megamek.common.AmmoType;
+import megamek.common.alphaStrike.AlphaStrikeElement;
+import megamek.common.Mounted;
 import megamek.common.SimpleTechLevel;
 
 /**
@@ -33,6 +35,7 @@ public class SniperCannon extends ArtilleryCannonWeapon {
         addLookupName("CLSniper Cannon");
         addLookupName("CLSniperArtilleryCannon");
         addLookupName("CL Sniper Cannon");
+        sortingName = "Cannon Arty Sniper";
         heat = 10;
         rackSize = 10;
         ammoType = AmmoType.T_SNIPER_CANNON;
@@ -60,4 +63,16 @@ public class SniperCannon extends ArtilleryCannonWeapon {
                 .setPrototypeFactions(F_LC,F_CWF).setProductionFactions(F_LC)
                 .setStaticTechLevel(SimpleTechLevel.ADVANCED);
     }
+
+    @Override
+    public double getBattleForceDamage(int range, Mounted fcs) {
+        if (range == AlphaStrikeElement.SHORT_RANGE) {
+            return 0.83;
+        } else if (range == AlphaStrikeElement.MEDIUM_RANGE) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
 }

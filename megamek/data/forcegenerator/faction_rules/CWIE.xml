@@ -15,9 +15,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocat
 	
 	<toc>
 		<unitType>
-			<option ifDateBetween="3060,3084">null,Mek,Tank,VTOL,Infantry,BattleArmor,Aero,Conventional Fighter,Warship,Dropship,Jumpship</option>
-			<option ifDateBetween="2870,">null,Mek,Tank,VTOL,Infantry,BattleArmor,Aero,Conventional Fighter,Warship,Dropship,Jumpship</option>
-			<option ifDateBetween=",2869">null,Mek,Tank,VTOL,Infantry,Aero,Conventional Fighter,Warship,Dropship,Jumpship</option>
+			<option ifDateBetween="3060,3084">null,Mek,Tank,VTOL,Infantry,BattleArmor,AeroSpaceFighter,Conventional Fighter,Warship,Dropship,Jumpship</option>
+			<option ifDateBetween="2870,">null,Mek,Tank,VTOL,Infantry,BattleArmor,AeroSpaceFighter,Conventional Fighter,Warship,Dropship,Jumpship</option>
+			<option ifDateBetween=",2869">null,Mek,Tank,VTOL,Infantry,AeroSpaceFighter,Conventional Fighter,Warship,Dropship,Jumpship</option>
 		</unitType>
 		
 		<eschelon>
@@ -69,7 +69,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocat
 				chassis="Cameron Battlecruiser">%ELEMENT%</subforce>
 			<subforce fluffName="CWS Implacable"
 				ifDateBetween=",3075"
-				chassis="Black Lion Battlecruiser">%ELEMENT%</subforce>
+				chassis="Black Lion II Battlecruiser">%ELEMENT%</subforce>
 			<subforce fluffName="CWS Full Moon"
 				ifDateBetween=",3120"
 				chassis="Potemkin Troop Cruiser">%ELEMENT%</subforce>

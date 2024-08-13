@@ -30,6 +30,8 @@ import megamek.common.TargetRoll;
 import megamek.common.ToHitData;
 import megamek.common.WeaponType;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.equipment.ArmorType;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.weapons.ppc.CLPlasmaCannon;
 import megamek.common.weapons.ppc.ISPlasmaRifle;
 import megamek.server.GameManager;
@@ -63,8 +65,7 @@ public class PlasmaBayWeaponHandler extends AmmoBayWeaponHandler {
         if (!missed
                 && ((entityTarget instanceof Mech) || (entityTarget instanceof Aero))) {
             int extraHeat = 0;
-            for (int wId : weapon.getBayWeapons()) {
-                Mounted m = ae.getEquipment(wId);
+            for (WeaponMounted m : weapon.getBayWeapons()) {
                 if (!m.isBreached() && !m.isDestroyed() && !m.isJammed()) {
                     WeaponType bayWType = ((WeaponType) m.getType());
                     if (bayWType instanceof ISPlasmaRifle) {
@@ -87,9 +88,8 @@ public class PlasmaBayWeaponHandler extends AmmoBayWeaponHandler {
                    r.add(Math.max(1, extraHeat / 2));
                    r.choose(true);
                    r.add(extraHeat);
-                   r.add(EquipmentType.armorNames
-                           [entityTarget.getArmorType(hit.getLocation())]);
-                } else if (entityTarget.getArmor(hit) > 0 &&  
+                   r.add(ArmorType.forEntity(entityTarget, hit.getLocation()).getName());
+                } else if (entityTarget.getArmor(hit) > 0 &&
                        (entityTarget.getArmorType(hit.getLocation()) == 
                            EquipmentType.T_ARMOR_HEAT_DISSIPATING)) {
                     entityTarget.heatFromExternal += extraHeat / 2;
@@ -97,8 +97,7 @@ public class PlasmaBayWeaponHandler extends AmmoBayWeaponHandler {
                     r.add(extraHeat / 2);
                     r.choose(true);
                     r.add(extraHeat);
-                    r.add(EquipmentType.armorNames
-                            [entityTarget.getArmorType(hit.getLocation())]);
+                    r.add(ArmorType.forEntity(entityTarget, hit.getLocation()).getName());
                 } else {
                     entityTarget.heatFromExternal += extraHeat;
                     r.add(extraHeat);

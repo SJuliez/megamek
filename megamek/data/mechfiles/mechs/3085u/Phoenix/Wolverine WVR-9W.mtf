@@ -1,13 +1,25 @@
-Version:1.0
-Wolverine
-WVR-9W
+chassis:Wolverine
+model:WVR-9W
 mul id:3583
 
 Config:Biped
 TechBase:Inner Sphere
 Era:3073
-Source:Jihad
+source:TRO: 3085
 Rules Level:4
+role:Striker
+
+
+
+quirk:command_mech
+quirk:ext_twist
+quirk:imp_com
+quirk:pro_actuator
+quirk:ubiquitous_clan
+quirk:ubiquitous_is
+quirk:cramped_cockpit
+weaponquirk:jettison_capable:RA:7:Light PPC
+
 
 Mass:55
 Engine:275 XL Engine(IS)
@@ -155,7 +167,7 @@ capabilities:The autocannon, missile system and laser found on most Wolverines a
 
 deployment:This 3077 variant carries a pair of Light PPCs, an MML-5 with Artemis IV, and a single ER medium laser. To coordinate fire with friendly units, it's equipped with an Improved C3 Computer. Seven Improved Jump Jets provide a 210 meter jump range, and the Mech is protected by an experimental CASE II system and Light Ferro-Fibrous armor.
 
-history:A widespread part of every major military, the Wolverine has manufacturing plants scattered throughout the entire Inner Sphere. While certain states-notable the Free Worlds League-have larger numbers of the design, only the Capellans began facing a shortage of the Wolverine after the loss of their Nanking facilities.
+history:A widespread part of every major military, the Wolverine has manufacturing plants scattered throughout the entire Inner Sphere. While certain states-notably the Free Worlds League-have larger numbers of the design, only the Capellans began facing a shortage of the Wolverine after the loss of their Nanking facilities.
 
 manufacturer:Luthien Armor Works 
 primaryfactory:Dieron

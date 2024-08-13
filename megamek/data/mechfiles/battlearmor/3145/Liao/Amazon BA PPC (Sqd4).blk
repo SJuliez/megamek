@@ -21,7 +21,7 @@ Amazon Battle Armor
 </Model>
 
 <mul id:>
-6428
+6429
 </mul id:>
 
 <year>
@@ -31,6 +31,10 @@ Amazon Battle Armor
 <type>
 IS Level 2
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Jump
@@ -63,7 +67,7 @@ IS BA Advanced:Body
 </Squad Equipment>
 
 <source>
-TRO 3145 Capellan Confederation - Late Republic
+TRO: 3145 Capellan Confederation
 </source>
 
 <chassis>
@@ -109,3 +113,8 @@ Foxx Infantry Systems
 <primaryFactory>
 Royal Foxx
 </primaryFactory>
+
+<quirks>
+easy_pilot
+</quirks>
+

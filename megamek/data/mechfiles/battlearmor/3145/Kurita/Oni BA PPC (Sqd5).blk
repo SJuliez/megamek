@@ -36,6 +36,10 @@ Oni Battle Armor
 Mixed (IS Chassis)
 </type>
 
+<role>
+Ambusher
+</role>
+
 <motion_type>
 Jump
 </motion_type>
@@ -65,15 +69,15 @@ SwarmWeaponMek
 StopSwarm
 LegAttack
 ISBASupportPPC:RA
-BA Fire Resistant:LA
-BA Fire Resistant:LA
-BA Fire Resistant:Body
-BA Fire Resistant:Body
-BA Fire Resistant:RA
+Clan BA Fire Resistant:LA
+Clan BA Fire Resistant:LA
+Clan BA Fire Resistant:Body
+Clan BA Fire Resistant:Body
+Clan BA Fire Resistant:RA
 </Squad Equipment>
 
 <source>
-TRO 3145 Draconis Combine - Dark Ages
+TRO: 3145 Draconis Combine
 </source>
 
 <chassis>
@@ -128,3 +132,9 @@ JUMPJET:Unknown
 COMMUNICATIONS:Unknown
 TARGETING:Unknown
 </systemManufacturers>
+
+<quirks>
+fast_reload
+non_standard
+</quirks>
+

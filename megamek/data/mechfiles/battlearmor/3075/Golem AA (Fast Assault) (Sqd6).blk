@@ -21,7 +21,7 @@ Golem Assault Armor
 </Model>
 
 <mul id:>
-4222
+8985
 </mul id:>
 
 <year>
@@ -31,6 +31,10 @@ Golem Assault Armor
 <type>
 Clan Level 2
 </type>
+
+<role>
+Juggernaut
+</role>
 
 <motion_type>
 Jump
@@ -59,7 +63,7 @@ InfantryAssaultRifle:LA:APM
 </Point Equipment>
 
 <source>
-TRO 3075 - Jihad
+TRO: 3075
 </source>
 
 <chassis>

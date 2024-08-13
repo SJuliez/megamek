@@ -130,10 +130,26 @@ public class INarcPod implements Serializable, Targetable {
     }
 
     @Override
-    public int getTargetId() {
+    public int getId() {
         // All INarcPods of the same type from the
         // same team are interchangable targets.
         return ((team << 4) + type);
+    }
+
+    @Override
+    public void setId(int newId) { }
+
+    @Override
+    public int getOwnerId() {
+        return Player.PLAYER_NONE;
+    }
+
+    @Override
+    public void setOwnerId(int newOwnerId) { }
+
+    @Override
+    public int getStrength() {
+        return 0;
     }
 
     @Override
@@ -220,5 +236,15 @@ public class INarcPod implements Serializable, Targetable {
     @Override
     public boolean isEnemyOf(Entity other) {
         return true;
+    }
+
+    @Override
+    public String generalName() {
+        return toString();
+    }
+
+    @Override
+    public String specificName() {
+        return "";
     }
 }

@@ -21,7 +21,7 @@ Fenrir Battle Armor
 </Model>
 
 <mul id:>
-4162
+8618
 </mul id:>
 
 <year>
@@ -31,6 +31,10 @@ Fenrir Battle Armor
 <type>
 Mixed (IS Chassis) Experimental
 </type>
+
+<role>
+Missile Boat
+</role>
 
 <motion_type>
 Leg
@@ -68,7 +72,7 @@ BACL Ammo LRM-5:Body:Shots2#
 </Trooper 4 Equipment>
 
 <source>
-XTRO Steiner - Jihad
+XTR: Steiner
 </source>
 
 <chassis>

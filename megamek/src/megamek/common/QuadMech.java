@@ -18,6 +18,7 @@ package megamek.common;
 
 import megamek.common.enums.AimingMode;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 import megamek.common.preference.PreferenceManager;
 import org.apache.logging.log4j.LogManager;
 
@@ -81,8 +82,8 @@ public class QuadMech extends Mech {
     }
 
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
-        int wmp = getOriginalWalkMP();
+    public int getWalkMP(MPCalculationSetting mpCalculationSetting) {
+        int mp = getOriginalWalkMP();
 
         int legsDestroyed = 0;
         int hipHits = 0;
@@ -97,7 +98,7 @@ public class QuadMech extends Mech {
                     }
                 }
             }
-            wmp = (wmp * (4 - legsDestroyed)) / 4;
+            mp = (mp * (4 - legsDestroyed)) / 4;
         } else {
             for (int i = 0; i < locations(); i++) {
                 if (locationIsLeg(i)) {
@@ -117,103 +118,98 @@ public class QuadMech extends Mech {
             // leg damage effects
             if (legsDestroyed > 0) {
                 if (legsDestroyed == 1) {
-                    wmp--;
+                    mp--;
                 } else if (legsDestroyed == 2) {
-                    wmp = 1;
+                    mp = 1;
                 } else {
-                    wmp = 0;
+                    mp = 0;
                 }
-            }        
-            if (wmp > 0) {
+            }
+            if (mp > 0) {
                 if (hipHits > 0) {
                     if ((game != null) && game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_LEG_DAMAGE)) {
-                        wmp = wmp - (2 * hipHits);
+                        mp = mp - (2 * hipHits);
                     } else {
                         for (int i = 0; i < hipHits; i++) {
-                            wmp = (int) Math.ceil(wmp / 2.0);
+                            mp = (int) Math.ceil(mp / 2.0);
                         }
                     }
                 }
-                wmp -= actuatorHits;
+                mp -= actuatorHits;
             }
         }
 
-        if (!ignoremodulararmor && hasModularArmor()) {
-            wmp--;
+        if (!mpCalculationSetting.ignoreModularArmor && hasModularArmor()) {
+            mp--;
         }
 
-        if (!ignoreheat) {
+        if (!mpCalculationSetting.ignoreHeat) {
             // factor in heat
             if ((game != null) && game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_HEAT)) {
                 if (heat < 30) {
-                    wmp -= (heat / 5);
+                    mp -= (heat / 5);
                 } else if (heat >= 49) {
-                    wmp -= 9;
+                    mp -= 9;
                 } else if (heat >= 43) {
-                    wmp -= 8;
+                    mp -= 8;
                 } else if (heat >= 37) {
-                    wmp -= 7;
+                    mp -= 7;
                 } else if (heat >= 31) {
-                    wmp -= 6;
+                    mp -= 6;
                 } else {
-                    wmp -= 5;
+                    mp -= 5;
                 }
             } else {
-                wmp -= (heat / 5);
-            }
-            // TSM negates some heat but has no benefit for 'Mechs using tracks or QuadVees in vehicle mode.
-            if ((heat >= 9) && hasTSM(false) && legsDestroyed < 2
-                    && movementMode != EntityMovementMode.TRACKED
-                    && movementMode != EntityMovementMode.WHEELED) {
-                wmp += 2;
+                mp -= (heat / 5);
             }
         }
-        if (null != game) {
-            int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
-            if (weatherMod != 0) {
-                wmp = Math.max(wmp + weatherMod, 0);
+
+        // TSM negates some heat, but provides no benefit when using tracks.
+        if (((heat >= 9) || mpCalculationSetting.forceTSM) && hasTSM(false) && (legsDestroyed < 2)
+                && !movementMode.isTracked() && !movementMode.isWheeled()) {
+            if (mpCalculationSetting.forceTSM && mpCalculationSetting.ignoreHeat) {
+                // When forcing TSM but ignoring heat we must assume heat to be 9 to activate TSM, this adds -1 MP!
+                mp += 1;
+            } else {
+                mp += 2;
             }
         }
-        // gravity
-        if (gravity) {
-            wmp = applyGravityEffectsOnMP(wmp);
+
+        if (!mpCalculationSetting.ignoreWeather && (null != game)) {
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
+            mp = Math.max(mp + weatherMod, 0);
+
+            if(getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_WIND)
+                    && conditions.getWeather().isClear()
+                    && conditions.getWind().isTornadoF1ToF3()) {
+                mp += 1;
+            }
         }
-        // For sanity sake...
-        wmp = Math.max(0, wmp);
-        return wmp;
+
+        if (!mpCalculationSetting.ignoreGravity) {
+            mp = applyGravityEffectsOnMP(mp);
+        }
+
+        return Math.max(0, mp);
     }
 
-    /**
-     * @return this mek's running/flank mp modified for leg loss and stuff.
-     */
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMP(MPCalculationSetting mpCalculationSetting) {
         if (countBadLegs() <= 1
                 || (this instanceof QuadVee && getConversionMode() == QuadVee.CONV_MODE_VEHICLE
                 && !convertingNow)) {
-            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            return super.getRunMP(mpCalculationSetting);
+        } else {
+            return getWalkMP(mpCalculationSetting);
         }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor);
-    }
-
-    /**
-     * Returns run MP without considering MASC modified for leg loss and stuff.
-     */
-    @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
-        if (countBadLegs() <= 1
-                || (this instanceof QuadVee && getConversionMode() == QuadVee.CONV_MODE_VEHICLE
-                && !convertingNow)) {
-            return super.getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
-        }
-        return getWalkMP(gravity, ignoreheat);
     }
 
     @Override
     public boolean canChangeSecondaryFacing() {
-        return hasQuirk(OptionsConstants.QUIRK_POS_EXT_TWIST) && !isProne();
+        return hasQuirk(OptionsConstants.QUIRK_POS_EXT_TWIST) && !(isProne() || getAlreadyTwisted());
     }
-    
+
     @Override
     public boolean isValidSecondaryFacing(int dir) {
         int rotate = dir - getFacing();
@@ -266,6 +262,11 @@ public class QuadMech extends Mech {
             default:
                 return Compute.ARC_360;
         }
+    }
+
+    @Override
+    public boolean isQuadMek() {
+        return true;
     }
 
     /**
@@ -457,9 +458,8 @@ public class QuadMech extends Mech {
                     // normal front hits
                     switch (roll) {
                         case 2:
-                            if ((getCrew().hasEdgeRemaining()
-                                    && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_TAC))
-                                    && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
+                                && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                                 result.setUndoneLocation(tac(table, side, Mech.LOC_CT, cover, false));
@@ -483,8 +483,7 @@ public class QuadMech extends Mech {
                         case 11:
                             return new HitData(Mech.LOC_RLEG);
                         case 12:
-                            if ((getCrew().hasEdgeRemaining()
-                                    && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT))) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                                 result.setUndoneLocation(new HitData(Mech.LOC_HEAD));
@@ -495,9 +494,8 @@ public class QuadMech extends Mech {
                 } else if (side == ToHitData.SIDE_REAR) {
                     switch (roll) {
                         case 2:
-                            if ((getCrew().hasEdgeRemaining()
-                                    && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_TAC))
-                                    && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
+                                && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                                 result.setUndoneLocation(tac(table, side, Mech.LOC_CT, cover, true));
@@ -521,8 +519,7 @@ public class QuadMech extends Mech {
                         case 11:
                             return new HitData(Mech.LOC_RARM, true);
                         case 12:
-                            if ((getCrew().hasEdgeRemaining()
-                                    && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT))) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                                 result.setUndoneLocation(new HitData(Mech.LOC_HEAD, true));
@@ -533,9 +530,8 @@ public class QuadMech extends Mech {
                 } else if (side == ToHitData.SIDE_LEFT) {
                     switch (roll) {
                         case 2:
-                            if ((getCrew().hasEdgeRemaining()
-                                    && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_TAC))
-                                    && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
+                                && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                                 result.setUndoneLocation(tac(table, side, Mech.LOC_LT, cover, false));
@@ -559,8 +555,7 @@ public class QuadMech extends Mech {
                         case 11:
                             return new HitData(Mech.LOC_RLEG);
                         case 12:
-                            if ((getCrew().hasEdgeRemaining()
-                                    && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT))) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                                 result.setUndoneLocation(new HitData(Mech.LOC_HEAD));
@@ -571,9 +566,8 @@ public class QuadMech extends Mech {
                 } else if (side == ToHitData.SIDE_RIGHT) {
                     switch (roll) {
                         case 2:
-                            if ((getCrew().hasEdgeRemaining()
-                                    && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_TAC))
-                                    && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
+                                && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                                 result.setUndoneLocation(tac(table, side, Mech.LOC_RT, cover, false));
@@ -597,8 +591,7 @@ public class QuadMech extends Mech {
                         case 11:
                             return new HitData(Mech.LOC_LLEG);
                         case 12:
-                            if ((getCrew().hasEdgeRemaining()
-                                    && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT))) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                                 result.setUndoneLocation(new HitData(Mech.LOC_HEAD));
@@ -638,8 +631,7 @@ public class QuadMech extends Mech {
                     case 5:
                         return new HitData(Mech.LOC_RARM);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                             result.setUndoneLocation(new HitData(Mech.LOC_HEAD, true));
@@ -660,8 +652,7 @@ public class QuadMech extends Mech {
                     case 5:
                         return new HitData(Mech.LOC_RLEG, true);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                             result.setUndoneLocation(new HitData(Mech.LOC_HEAD, true));
@@ -681,8 +672,7 @@ public class QuadMech extends Mech {
                     case 5:
                         return new HitData(Mech.LOC_LLEG);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                             result.setUndoneLocation(new HitData(Mech.LOC_HEAD, true));
@@ -702,8 +692,7 @@ public class QuadMech extends Mech {
                     case 5:
                         return new HitData(Mech.LOC_RLEG);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                             result.setUndoneLocation(new HitData(Mech.LOC_HEAD, true));
@@ -772,8 +761,7 @@ public class QuadMech extends Mech {
             // Swarm attack locations.
             switch (roll) {
                 case 2:
-                    if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                    if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                         getCrew().decreaseEdge();
                         HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                         result.setUndoneLocation(new HitData(Mech.LOC_HEAD, false, effects));
@@ -799,8 +787,7 @@ public class QuadMech extends Mech {
                 case 11:
                     return new HitData(Mech.LOC_LT, false, effects);
                 case 12:
-                    if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                    if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                         getCrew().decreaseEdge();
                         HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                         result.setUndoneLocation(new HitData(Mech.LOC_HEAD, false, effects));
@@ -815,7 +802,7 @@ public class QuadMech extends Mech {
     @Override
     public boolean removePartialCoverHits(int location, int cover, int side) {
         // treat front legs like legs not arms.
-        
+
         // Handle upper cover specially, as treating it as a bitmask will lead
         //  to every location being covered
         if (cover  == LosEffects.COVER_UPPER) {
@@ -826,7 +813,7 @@ public class QuadMech extends Mech {
                 return true;
             }
         }
-        
+
         // left and right cover are from attacker's POV.
         // if hitting front arc, need to swap them
         if (side == ToHitData.SIDE_FRONT) {

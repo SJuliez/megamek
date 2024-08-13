@@ -16,8 +16,8 @@ BattleArmor
 Kishi Ceremonial Armor
 </Name>
 
-<Model>
-(Standard)(Sqd5)
+<model>
+(Sqd5)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ Kishi Ceremonial Armor
 <type>
 IS Level 3
 </type>
+
+<role>
+Scout
+</role>
 
 <motion_type>
 Jump
@@ -66,7 +70,7 @@ IS BA Reflective:Body
 </Squad Equipment>
 
 <source>
-TRO 3145 Draconis Combine - Late Republic
+TRO: 3145 Draconis Combine
 </source>
 
 <chassis>
@@ -121,3 +125,8 @@ JUMPJET:Unknown
 COMMUNICATIONS:Unknown
 TARGETING:Unknown
 </systemManufacturers>
+
+<quirks>
+easy_maintain
+</quirks>
+

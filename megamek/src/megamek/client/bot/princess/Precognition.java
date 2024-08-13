@@ -23,6 +23,8 @@ import megamek.common.event.*;
 import megamek.common.net.packets.Packet;
 import megamek.common.net.enums.PacketCommand;
 import megamek.common.options.GameOptions;
+import megamek.common.planetaryconditions.PlanetaryConditions;
+import megamek.common.Report;
 import megamek.server.SmokeCloud;
 import org.apache.logging.log4j.LogManager;
 
@@ -117,6 +119,7 @@ public class Precognition implements Runnable {
                     final Player player = getPlayer(c.getIntValue(0));
                     if (player != null) {
                         player.setDone(c.getBooleanValue(1));
+                        game.processGameEvent(new GamePlayerChangeEvent(player, player));
                     }
                     break;
                 case PLAYER_ADD:
@@ -193,17 +196,17 @@ public class Precognition implements Runnable {
                     receiveTurns(c);
                     break;
                 case SENDING_BOARD:
-                    receiveBoard(c);
+                    getGame().receiveBoards((Map<Integer, Board>) c.getObject(0));
                     break;
                 case SENDING_ENTITIES:
                     receiveEntities(c);
                     break;
                 case SENDING_REPORTS:
                 case SENDING_REPORTS_TACTICAL_GENIUS:
-                    getGame().addReports((Vector<Report>) c.getObject(0));
+                    getGame().addReports((List<Report>) c.getObject(0));
                     break;
                 case SENDING_REPORTS_ALL:
-                    Vector<Vector<Report>> allReports = (Vector<Vector<Report>>) c.getObject(0);
+                    var allReports = (List<List<Report>>) c.getObject(0);
                     getGame().setAllReports(allReports);
                     break;
                 case ENTITY_ATTACK:
@@ -267,15 +270,48 @@ public class Precognition implements Runnable {
                     GameVictoryEvent gve = new GameVictoryEvent(this, getGame());
                     getGame().processGameEvent(gve);
                     break;
+                case ENTITY_MULTIUPDATE:
+                    receiveEntitiesUpdate(c);
+                    break;
+                case UPDATE_GROUND_OBJECTS:
+                    receiveUpdateGroundObjects(c);
+                    break;
+                case SERVER_GREETING:
+                case SERVER_CORRECT_NAME:
+                case CLOSE_CONNECTION:
+                case SERVER_VERSION_CHECK:
+                case ILLEGAL_CLIENT_VERSION:
+                case LOCAL_PN:
+                case PRINCESS_SETTINGS:
+                case FORCE_UPDATE:
+                case FORCE_DELETE:
+                case SENDING_REPORTS_SPECIAL:
+                case SENDING_MAP_SETTINGS:
+                case END_OF_GAME:
+                case SEND_SAVEGAME:
+                case LOAD_SAVEGAME:
+                case SENDING_AVAILABLE_MAP_SIZES:
+                    LogManager.getLogger().debug("Intentionally ignoring PacketCommand: {}", c.getCommand().name());
+                    break;
                 default:
-                    LogManager.getLogger().error("Attempted to parse unknown PacketCommand of "
-                            + c.getCommand().name());
+                    LogManager.getLogger().error("Attempted to parse unknown PacketCommand: {}", c.getCommand().name());
                     break;
             }
         } catch (Exception ex) {
             LogManager.getLogger().error("", ex);
         } finally {
             GAME_LOCK.unlock();
+        }
+    }
+
+    /**
+     * Update multiple entities from the server. Used only in the lobby phase.
+     */
+    @SuppressWarnings("unchecked")
+    protected void receiveEntitiesUpdate(Packet c) {
+        Collection<Entity> entities = (Collection<Entity>) c.getObject(0);
+        for (Entity entity: entities) {
+            getGame().setEntity(entity.getId(), entity);
         }
     }
 
@@ -772,21 +808,20 @@ public class Precognition implements Runnable {
     @SuppressWarnings("unchecked")
     private void receiveAttack(Packet c) {
         List<EntityAction> vector = (List<EntityAction>) c.getObject(0);
-        int charge = c.getIntValue(1);
+        boolean isCharge = c.getBooleanValue(1);
         boolean addAction = true;
         for (EntityAction ea : vector) {
             int entityId = ea.getEntityId();
-            if ((ea instanceof TorsoTwistAction) && getGame().hasEntity(entityId)) {
+            if ((ea instanceof TorsoTwistAction) && game.hasEntity(entityId)) {
                 TorsoTwistAction tta = (TorsoTwistAction) ea;
-                Entity entity = getGame().getEntity(entityId);
+                Entity entity = game.getEntity(entityId);
                 entity.setSecondaryFacing(tta.getFacing());
-            } else if ((ea instanceof FlipArmsAction)
-                    && getGame().hasEntity(entityId)) {
+            } else if ((ea instanceof FlipArmsAction) && game.hasEntity(entityId)) {
                 FlipArmsAction faa = (FlipArmsAction) ea;
-                Entity entity = getGame().getEntity(entityId);
+                Entity entity = game.getEntity(entityId);
                 entity.setArmsFlipped(faa.getIsFlipped());
-            } else if ((ea instanceof DodgeAction) && getGame().hasEntity(entityId)) {
-                Entity entity = getGame().getEntity(entityId);
+            } else if ((ea instanceof DodgeAction) && game.hasEntity(entityId)) {
+                Entity entity = game.getEntity(entityId);
                 entity.dodging = true;
                 addAction = false;
             } else if (ea instanceof AttackAction) {
@@ -800,10 +835,10 @@ public class Precognition implements Runnable {
 
             if (addAction) {
                 // track in the appropriate list
-                if (charge == 0) {
-                    getGame().addAction(ea);
-                } else if ((charge == 1) && (ea instanceof AttackAction)) {
-                    getGame().addCharge((AttackAction) ea);
+                if (!isCharge) {
+                    game.addAction(ea);
+                } else {
+                    game.addCharge((AttackAction) ea);
                 }
             }
         }
@@ -825,6 +860,9 @@ public class Precognition implements Runnable {
         } catch (Exception ex) {
             LogManager.getLogger().error("", ex);
         }
+    }
 
+    private void receiveUpdateGroundObjects(Packet packet) {
+        game.setGroundObjects((Map<Coords, List<ICarryable>>) packet.getObject(0));
     }
 }

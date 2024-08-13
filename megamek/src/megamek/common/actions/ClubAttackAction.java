@@ -13,6 +13,7 @@
  */
 package megamek.common.actions;
 
+import megamek.client.ui.Messages;
 import megamek.common.Compute;
 import megamek.common.CriticalSlot;
 import megamek.common.Entity;
@@ -26,7 +27,9 @@ import megamek.common.Mounted;
 import megamek.common.TargetRoll;
 import megamek.common.Targetable;
 import megamek.common.ToHitData;
+import megamek.common.equipment.MiscMounted;
 import megamek.common.options.OptionsConstants;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * The attacker makes a club attack on the target. This also covers mech melee
@@ -37,20 +40,20 @@ import megamek.common.options.OptionsConstants;
  */
 public class ClubAttackAction extends PhysicalAttackAction {
     private static final long serialVersionUID = -8744665286254604559L;
-    private Mounted club;
+    private MiscMounted club;
     private int aiming;
     private boolean zweihandering;
 
     /**
      * Creates new ClubAttackAction
      */
-    public ClubAttackAction(int entityId, int targetId, Mounted club,
+    public ClubAttackAction(int entityId, int targetId, MiscMounted club,
                             int aimTable) {
         super(entityId, targetId);
         this.club = club;
         aiming = aimTable;
     }
-    
+
     /**
      * Creates a new club attack
      * @param entityId - id of entity performing the attack
@@ -61,12 +64,12 @@ public class ClubAttackAction extends PhysicalAttackAction {
      * @param zweihandering - a boolean indicating whether the attacker is zweihandering (using both hands)
      */
     public ClubAttackAction(int entityId, int targetType, int targetId,
-                            Mounted club, int aimTable, boolean zweihandering) {
+                            MiscMounted club, int aimTable, boolean zweihandering) {
         super(entityId, targetType, targetId);
         this.club = club;
         aiming = aimTable;
         this.zweihandering = zweihandering;
-        
+
     }
 
     /**
@@ -77,9 +80,9 @@ public class ClubAttackAction extends PhysicalAttackAction {
      * @param zweihandering - a boolean indicating whether the attacker is zweihandering (using both hands)
      * @return an integer of the damage dealt
      */
-    public static int getDamageFor(Entity entity, Mounted club,
+    public static int getDamageFor(Entity entity, MiscMounted club,
             boolean targetInfantry, boolean zweihandering) {
-        MiscType mType = (MiscType) (club.getType());
+        MiscType mType = club.getType();
         int nDamage = (int) Math.floor(entity.getWeight() / 5.0);
         if (mType.hasSubType(MiscType.S_SWORD)) {
             nDamage = (int) (Math.ceil(entity.getWeight() / 10.0) + 1.0);
@@ -147,7 +150,7 @@ public class ClubAttackAction extends PhysicalAttackAction {
         } else if (mType.hasSubType(MiscType.S_SPOT_WELDER)) {
             nDamage = 5;
         }
-        
+
         //SMASH! CamOps, pg. 82
         if (zweihandering) {
             nDamage += (int) Math.floor(entity.getWeight() / 10.0);
@@ -227,13 +230,13 @@ public class ClubAttackAction extends PhysicalAttackAction {
     }
 
     /**
-     * 
+     *
      * @return true if the entity is zweihandering (attacking with both hands)
      */
     public boolean isZweihandering() {
         return zweihandering;
     }
-    
+
     public ToHitData toHit(Game game) {
         return ClubAttackAction.toHit(game, getEntityId(),
                                       game.getTarget(getTargetType(), getTargetId()), getClub(),
@@ -255,8 +258,13 @@ public class ClubAttackAction extends PhysicalAttackAction {
         final Entity ae = game.getEntity(attackerId);
         MiscType clubType;
         // arguments legal?
-        if ((ae == null) || (target == null)) {
-            throw new IllegalArgumentException("Attacker or target not valid");
+        if (ae == null) {
+            LogManager.getLogger().error("Attacker not valid");
+            return new ToHitData(TargetRoll.IMPOSSIBLE, "Attacker not valid");
+        }
+        if (target == null) {
+            LogManager.getLogger().error("target not valid");
+            return new ToHitData(TargetRoll.IMPOSSIBLE, "target not valid");
         }
         if (club == null) {
             throw new IllegalArgumentException("Club is null");
@@ -277,6 +285,13 @@ public class ClubAttackAction extends PhysicalAttackAction {
         if (!(ae instanceof Mech)) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Non-mechs can't club");
         }
+        
+        // if somehow carrying cargo while holding a club
+        if (!((Mech) ae).canFireWeapon(Mech.LOC_LARM) ||
+        		!((Mech) ae).canFireWeapon(Mech.LOC_LARM) ) {
+    		return new ToHitData(TargetRoll.IMPOSSIBLE, 
+    				Messages.getString("WeaponAttackAction.CantFireWhileCarryingCargo"));
+    	}     
 
         // Quads can't club...
         // except for torso mounted industrial tools of course!
@@ -318,7 +333,7 @@ public class ClubAttackAction extends PhysicalAttackAction {
                                     + targHex.getLevel();
         final int targetHeight = targetElevation + target.getHeight();
         final boolean bothArms = (club.getType().hasFlag(MiscType.F_CLUB)
-                                  && ((MiscType) club.getType()).hasSubType(MiscType.S_CLUB)) 
+                                  && ((MiscType) club.getType()).hasSubType(MiscType.S_CLUB))
                     || zweihandering;
         // Cast is safe because non-'Mechs never even get here.
         final boolean hasClaws = ((Mech) ae).hasClaw(Mech.LOC_RARM)
@@ -555,11 +570,18 @@ public class ClubAttackAction extends PhysicalAttackAction {
         return toHit;
     }
 
-    public Mounted getClub() {
+    public MiscMounted getClub() {
         return club;
     }
 
-    public void setClub(Mounted club) {
+    public void setClub(MiscMounted club) {
         this.club = club;
+    }
+
+    @Override
+    public String toSummaryString(final Game game) {
+        final String roll = this.toHit(game).getValueAsString();
+        final String club = this.getClub().getName();
+        return Messages.getString("BoardView1.ClubAttackAction", club, roll);
     }
 }

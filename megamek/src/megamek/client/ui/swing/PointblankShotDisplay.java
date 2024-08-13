@@ -16,7 +16,6 @@ package megamek.client.ui.swing;
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
-import megamek.client.ui.swing.util.CommandAction;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.MegaMekController;
 import megamek.client.ui.swing.widget.MegamekButton;
@@ -26,6 +25,7 @@ import megamek.common.actions.EntityAction;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.enums.AimingMode;
 import megamek.common.enums.GamePhase;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.event.GamePhaseChangeEvent;
 import megamek.common.event.GameTurnChangeEvent;
 import megamek.common.options.OptionsConstants;
@@ -41,7 +41,7 @@ import java.util.*;
 
 /**
  * This display is used for when hidden units are taking pointblank shots.
- * 
+ *
  * @author arlith
  *
  */
@@ -56,7 +56,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
      *
      * @author arlith
      */
-    public static enum FiringCommand implements PhaseCommand {
+    public enum FiringCommand implements PhaseCommand {
         FIRE_TWIST("fireTwist"),
         FIRE_FIRE("fireFire"),
         FIRE_SKIP("fireSkip"),
@@ -74,7 +74,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
          */
         public int priority;
 
-        private FiringCommand(String c) {
+        FiringCommand(String c) {
             cmd = c;
         }
 
@@ -97,6 +97,46 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
         public String toString() {
             return Messages.getString("FiringDisplay." + getCmd());
         }
+
+        public String getHotKeyDesc() {
+            String result = "";
+
+            String msg_left = Messages.getString("Left");
+            String msg_right = Messages.getString("Right");
+            String msg_next= Messages.getString("Next");
+            String msg_previous = Messages.getString("Previous");
+
+
+            switch (this) {
+                case FIRE_TWIST:
+                    result = "<BR>";
+                    result += "&nbsp;&nbsp;" + msg_left + ": " + KeyCommandBind.getDesc(KeyCommandBind.TWIST_LEFT);
+                    result += "&nbsp;&nbsp;" + msg_right + ": " + KeyCommandBind.getDesc(KeyCommandBind.TWIST_RIGHT);
+                    break;
+                case FIRE_FIRE:
+                    result = "<BR>";
+                    result += "&nbsp;&nbsp;" + KeyCommandBind.getDesc(KeyCommandBind.FIRE);
+                    break;
+                case FIRE_SKIP:
+                    result = "<BR>";
+                    result +=  "&nbsp;&nbsp;" + msg_next + ": " + KeyCommandBind.getDesc(KeyCommandBind.NEXT_WEAPON);
+                    result += "&nbsp;&nbsp;" + msg_previous + ": " + KeyCommandBind.getDesc(KeyCommandBind.PREV_WEAPON);
+                    break;
+                case FIRE_MODE:
+                    result = "<BR>";
+                    result += "&nbsp;&nbsp;" + msg_next + ": " + KeyCommandBind.getDesc(KeyCommandBind.NEXT_MODE);
+                    result += "&nbsp;&nbsp;" + msg_previous + ": " + KeyCommandBind.getDesc(KeyCommandBind.PREV_MODE);
+                    break;
+                case FIRE_CANCEL:
+                    result = "<BR>";
+                    result += "&nbsp;&nbsp;" + KeyCommandBind.getDesc(KeyCommandBind.CANCEL);
+                    break;
+                default:
+                    break;
+            }
+
+            return result;
+        }
     }
 
     // buttons
@@ -109,21 +149,8 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
     public PointblankShotDisplay(final ClientGUI clientgui) {
         super(clientgui);
 
-        buttons = new HashMap<>((int) (FiringCommand.values().length * 1.25 + 0.5));
-        for (FiringCommand cmd : FiringCommand.values()) {
-            String title = Messages.getString("FiringDisplay." + cmd.getCmd());
-            MegamekButton newButton = new MegamekButton(title, "PhaseDisplayButton");
-            String ttKey = "FiringDisplay." + cmd.getCmd() + ".tooltip";
-            if (Messages.keyExists(ttKey)) {
-                newButton.setToolTipText(Messages.getString(ttKey));
-            }
-            newButton.addActionListener(this);
-            newButton.setActionCommand(cmd.getCmd());
-            newButton.setEnabled(false);
-            buttons.put(cmd, newButton);
-        }
-        numButtonGroups =
-                (int) Math.ceil((buttons.size() + 0.0) / buttonsPerGroup);
+        setButtons();
+        setButtonsTooltips();
 
         setupButtonPanel();
 
@@ -143,7 +170,38 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
                 }
             }
         });
+    }
 
+    @Override
+    protected void setButtons() {
+        buttons = new HashMap<>((int) (FiringCommand.values().length * 1.25 + 0.5));
+        for (FiringCommand cmd : FiringCommand.values()) {
+            buttons.put(cmd, createButton(cmd.getCmd(), "FiringDisplay."));
+        }
+        numButtonGroups = (int) Math.ceil((buttons.size() + 0.0) / buttonsPerGroup);
+    }
+
+    @Override
+    protected void setButtonsTooltips() {
+        for (FiringCommand cmd : FiringCommand.values()) {
+            String tt = createToolTip(cmd.getCmd(), "FiringDisplay.", cmd.getHotKeyDesc());
+            buttons.get(cmd).setToolTipText(tt);
+        }
+    }
+
+    private boolean shouldPerformPointBlankKeyCommands() {
+        return clientgui.isProcessingPointblankShot()
+                && !clientgui.getBoardView().getChatterBoxActive()
+                && isVisible()
+                && !isIgnoringEvents();
+    }
+
+    private boolean shouldPerformFireKeyCommand() {
+        return shouldPerformPointBlankKeyCommands() && buttons.get(FiringCommand.FIRE_FIRE).isEnabled();
+    }
+
+    private boolean shouldPerformDoneKeyCommand() {
+        return shouldPerformPointBlankKeyCommands() && butDone.isEnabled();
     }
 
     /**
@@ -152,232 +210,25 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
     @Override
     protected void registerKeyCommands() {
         MegaMekController controller = clientgui.controller;
-        final StatusBarPhaseDisplay display = this;
+        controller.registerCommandAction(KeyCommandBind.UNDO_LAST_STEP, this::shouldPerformPointBlankKeyCommands,
+                this::removeLastFiring);
 
-        // Register the action for DONE
-        clientgui.controller.registerCommandAction(KeyCommandBind.DONE.cmd,
-                new CommandAction() {
+        controller.registerCommandAction(KeyCommandBind.TWIST_LEFT, this::shouldPerformPointBlankKeyCommands,
+                this::twistLeft);
+        controller.registerCommandAction(KeyCommandBind.TWIST_RIGHT, this::shouldPerformPointBlankKeyCommands,
+                this::twistRight);
 
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.isProcessingPointblankShot()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || display.isIgnoringEvents()
-                                || !display.isVisible()
-                                || !butDone.isEnabled()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
+        controller.registerCommandAction(KeyCommandBind.NEXT_WEAPON, this::shouldPerformPointBlankKeyCommands,
+                this::nextWeapon);
+        controller.registerCommandAction(KeyCommandBind.PREV_WEAPON, this::shouldPerformPointBlankKeyCommands,
+                this::prevWeapon);
 
-                    @Override
-                    public void performAction() {
-                        ready();
-                    }
-                });
+        controller.registerCommandAction(KeyCommandBind.NEXT_MODE, this, () -> changeMode(true));
+        controller.registerCommandAction(KeyCommandBind.PREV_MODE, this, () -> changeMode(false));
 
-        // Register the action for UNDO
-        controller.registerCommandAction(KeyCommandBind.UNDO_LAST_STEP.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.isProcessingPointblankShot()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || display.isIgnoringEvents()
-                                || !display.isVisible()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        removeLastFiring();
-                    }
-                });
-
-        // Register the action for TWIST_LEFT
-        controller.registerCommandAction(KeyCommandBind.TWIST_LEFT.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.isProcessingPointblankShot()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        updateFlipArms(false);
-                        torsoTwist(0);
-                    }
-                });
-
-        // Register the action for TWIST_RIGHT
-        controller.registerCommandAction(KeyCommandBind.TWIST_RIGHT.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.isProcessingPointblankShot()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        updateFlipArms(false);
-                        torsoTwist(1);
-                    }
-                });
-
-        // Register the action for FIRE
-        controller.registerCommandAction(KeyCommandBind.FIRE.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.isProcessingPointblankShot()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()
-                                || !buttons.get(FiringCommand.FIRE_FIRE)
-                                        .isEnabled()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        fire();
-                    }
-                });
-
-        // Register the action for NEXT_WEAPON
-        controller.registerCommandAction(KeyCommandBind.NEXT_WEAPON.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.isProcessingPointblankShot()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        nextWeapon();
-                    }
-                });
-
-        // Register the action for PREV_WEAPON
-        controller.registerCommandAction(KeyCommandBind.PREV_WEAPON.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.isProcessingPointblankShot()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        prevWeapon();
-                    }
-                });
-
-        // Register the action for NEXT_MODE
-        controller.registerCommandAction(KeyCommandBind.NEXT_MODE.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || display.isIgnoringEvents()
-                                || !display.isVisible()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        changeMode(true);
-                    }
-                });
-
-        // Register the action for PREV_MODE
-        controller.registerCommandAction(KeyCommandBind.PREV_MODE.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || display.isIgnoringEvents()
-                                || !display.isVisible()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        changeMode(false);
-                    }
-                });
-
-        // Register the action for CLEAR
-        controller.registerCommandAction(KeyCommandBind.CANCEL.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        clear();
-                    }
-                });
-
+        controller.registerCommandAction(KeyCommandBind.FIRE, this::shouldPerformFireKeyCommand, this::fire);
+        controller.registerCommandAction(KeyCommandBind.CANCEL, this::shouldPerformClearKeyCommand, this::clear);
+        controller.registerCommandAction(KeyCommandBind.DONE, this::shouldPerformDoneKeyCommand, this::ready);
     }
 
     @Override
@@ -426,7 +277,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
         refreshAll();
 
         if (clientgui.getClient().getGame().getEntity(en) != null) {
-            cen = en;
+            currentEntity = en;
             clientgui.setSelectedEntityNum(en);
             clientgui.getUnitDisplay().displayEntity(ce());
 
@@ -450,7 +301,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
             LogManager.getLogger().error("Tried to select non-existent entity " + en);
         }
 
-        clientgui.getBoardView().clearFiringSolutionData();
+        clientgui.clearTemporarySprites();
     }
 
     /**
@@ -459,7 +310,8 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
     @Override
     public void beginMyTurn() {
         clientgui.maybeShowUnitDisplay();
-        clientgui.getBoardView().clearFieldofF();
+        clientgui.clearFieldOfFire();
+        clientgui.clearTemporarySprites();
 
         butDone.setEnabled(true);
         if (numButtonGroups > 1) {
@@ -478,20 +330,19 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
         // end my turn, then.
         Game game = clientgui.getClient().getGame();
         Entity next = game.getNextEntity(game.getTurnIndex());
-        if ((game.getPhase() == GamePhase.FIRING)
-            && (next != null) && (ce() != null)
-            && (next.getOwnerId() != ce().getOwnerId())) {
-            clientgui.setUnitDisplayVisible(false);
+        if (game.getPhase().isFiring() && (next != null) && (ce() != null)
+                && (next.getOwnerId() != ce().getOwnerId())) {
+            clientgui.maybeShowUnitDisplay();
         }
-        cen = Entity.NONE;
+        currentEntity = Entity.NONE;
         target(null);
         clientgui.getBoardView().select(null);
         clientgui.getBoardView().highlight(null);
         clientgui.getBoardView().cursor(null);
         clientgui.getBoardView().clearMovementData();
-        clientgui.getBoardView().clearFiringSolutionData();
         clientgui.getBoardView().clearStrafingCoords();
-        clientgui.getBoardView().clearFieldofF();
+        clientgui.clearFieldOfFire();
+        clientgui.clearTemporarySprites();
         clientgui.setSelectedEntityNum(Entity.NONE);
         disableButtons();
         // Return back to the movement phase display
@@ -513,50 +364,52 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
         setFireCalledEnabled(false);
     }
 
-    /**
-     * Called when the current entity is done firing. Send out our attack queue
-     * to the server.
-     */
-    @Override
-    public void ready() {
-        if (attacks.isEmpty() && GUIPreferences.getInstance().getNagForNoAction()) {
-            // confirm this action
-            String title = Messages.getString("FiringDisplay.DontFireDialog.title");
-            String body = Messages.getString("FiringDisplay.DontFireDialog.message");
-            ConfirmDialog response = clientgui.doYesNoBotherDialog(title, body);
-            if (!response.getShowAgain()) {
-                GUIPreferences.getInstance().setNagForNoAction(false);
-            }
-
-            if (!response.getAnswer()) {
-                return;
+    private boolean checkNags() {
+        if (needNagForNoAction()) {
+            if (attacks.isEmpty()) {
+                // confirm this action
+                String title = Messages.getString("FiringDisplay.DontFireDialog.title");
+                String body = Messages.getString("FiringDisplay.DontFireDialog.message");
+                if (checkNagForNoAction(title, body)) {
+                    return true;
+                }
             }
         }
 
         // We need to nag for overheat on capital fighters
-        if ((ce() != null) && ce().isCapitalFighter()
-            && GUIPreferences.getInstance().getNagForOverheat()) {
-            int totalheat = 0;
-            for (EntityAction action : attacks) {
-                if (action instanceof WeaponAttackAction) {
-                    Mounted weapon = ce().getEquipment(((WeaponAttackAction) action).getWeaponId());
-                    totalheat += weapon.getCurrentHeat();
-                }
-            }
-
-            if (totalheat > ce().getHeatCapacity()) {
-                // confirm this action
-                String title = Messages.getString("FiringDisplay.OverheatNag.title");
-                String body = Messages.getString("FiringDisplay.OverheatNag.message");
-                ConfirmDialog response = clientgui.doYesNoBotherDialog(title, body);
-                if (!response.getShowAgain()) {
-                    GUIPreferences.getInstance().setNagForOverheat(false);
+        if (needNagForOverheat()) {
+            if ((ce() != null)
+                    && ce().isCapitalFighter()) {
+                int totalheat = 0;
+                for (EntityAction action : attacks) {
+                    if (action instanceof WeaponAttackAction) {
+                        Mounted weapon = ce().getEquipment(((WeaponAttackAction) action).getWeaponId());
+                        totalheat += weapon.getCurrentHeat();
+                    }
                 }
 
-                if (!response.getAnswer()) {
-                    return;
+                if (totalheat > ce().getHeatCapacity()) {
+                    // confirm this action
+                    String title = Messages.getString("FiringDisplay.OverheatNag.title");
+                    String body = Messages.getString("FiringDisplay.OverheatNag.message");
+                    if (checkNagForOverheat(title, body)) {
+                        return true;
+                    }
                 }
             }
+        }
+
+        if (ce() == null) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public void ready() {
+        if (checkNags()) {
+            return;
         }
 
         // stop further input (hopefully)
@@ -588,8 +441,9 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
                     waa2.setAimingMode(waa.getAimingMode());
                     waa2.setOtherAttackInfo(waa.getOtherAttackInfo());
                     waa2.setAmmoId(waa.getAmmoId());
+                    waa2.setAmmoMunitionType(waa.getAmmoMunitionType());
                     waa2.setAmmoCarrier(waa.getAmmoCarrier());
-                    waa2.setBombPayload(waa.getBombPayload());
+                    waa2.setBombPayloads(waa.getBombPayloads());
                     waa2.setStrafing(waa.isStrafing());
                     waa2.setStrafingFirstShot(waa.isStrafingFirstShot());
                     waa2.setPointblankShot(waa.isPointblankShot());
@@ -621,8 +475,9 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
                     waa2.setAimingMode(waa.getAimingMode());
                     waa2.setOtherAttackInfo(waa.getOtherAttackInfo());
                     waa2.setAmmoId(waa.getAmmoId());
+                    waa2.setAmmoMunitionType(waa.getAmmoMunitionType());
                     waa2.setAmmoCarrier(waa.getAmmoCarrier());
-                    waa2.setBombPayload(waa.getBombPayload());
+                    waa2.setBombPayloads(waa.getBombPayloads());
                     waa2.setStrafing(waa.isStrafing());
                     waa2.setStrafingFirstShot(waa.isStrafingFirstShot());
                     waa2.setPointblankShot(waa.isPointblankShot());
@@ -630,13 +485,13 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
                 }
             }
         }
-        
+
         // If the user picked a hex along the flight path, server needs to know
         if ((target instanceof Entity) && Compute.isGroundToAir(ce(), target)) {
-            Coords targetPos = ((Entity) target).getPlayerPickedPassThrough(cen);
+            Coords targetPos = ((Entity) target).getPlayerPickedPassThrough(currentEntity);
             if (targetPos != null) {
                 clientgui.getClient().sendPlayerPickedPassThrough(
-                        ((Entity) target).getId(), cen, targetPos);
+                        ((Entity) target).getId(), currentEntity, targetPos);
             }
         }
 
@@ -645,7 +500,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
         clientgui.setPointblankEID(Entity.NONE);
 
         // clear queue
-        attacks.removeAllElements();
+        removeAllAttacks();
 
         // close aimed shot display, if any
         ash.closeDialog();
@@ -665,17 +520,15 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
         final Game game = clientgui.getClient().getGame();
         // get the selected weaponnum
         final int weaponNum = clientgui.getUnitDisplay().wPan.getSelectedWeaponNum();
-        Mounted mounted = ce().getEquipment(weaponNum);
+        WeaponMounted mounted = (WeaponMounted) ce().getEquipment(weaponNum);
 
         // validate
-        if ((ce() == null)
-                || (mounted == null)
-                || !(mounted.getType() instanceof WeaponType)) {
+        if ((ce() == null) || (mounted == null)) {
             throw new IllegalArgumentException("current fire parameters are invalid");
         }
 
         // declare searchlight, if possible
-        if (GUIPreferences.getInstance().getAutoDeclareSearchlight()
+        if (GUIP.getAutoDeclareSearchlight()
             && ce().isUsingSearchlight()) {
             doSearchlight();
         }
@@ -684,11 +537,11 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
         if (!(mounted.getType().hasFlag(WeaponType.F_ARTILLERY)
                 || (mounted.getType() instanceof CapitalMissileWeapon
                         && Compute.isGroundToGround(ce(), target)))) {
-            waa = new WeaponAttackAction(cen, target.getTargetType(),
-                    target.getTargetId(), weaponNum);
+            waa = new WeaponAttackAction(currentEntity, target.getTargetType(),
+                    target.getId(), weaponNum);
         } else {
-            waa = new ArtilleryAttackAction(cen, target.getTargetType(),
-                    target.getTargetId(), weaponNum, game);
+            waa = new ArtilleryAttackAction(currentEntity, target.getTargetType(),
+                    target.getId(), weaponNum, game);
         }
 
         if ((mounted.getLinked() != null)
@@ -697,16 +550,18 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
             Mounted ammoMount = mounted.getLinked();
             AmmoType ammoType = (AmmoType) ammoMount.getType();
             waa.setAmmoId(ammoMount.getEntity().getEquipmentNum(ammoMount));
+            EnumSet<AmmoType.Munitions> ammoMunitionType = ammoType.getMunitionType();
+            waa.setAmmoMunitionType(ammoMunitionType);
             waa.setAmmoCarrier(ammoMount.getEntity().getId());
-            if (((ammoType.getMunitionType() == AmmoType.M_THUNDER_VIBRABOMB) 
+            if (((ammoMunitionType.contains(AmmoType.Munitions.M_THUNDER_VIBRABOMB))
                     && ((ammoType.getAmmoType() == AmmoType.T_LRM)
                             || (ammoType.getAmmoType() == AmmoType.T_LRM_IMP)
                             || (ammoType.getAmmoType() == AmmoType.T_MML)))
-                    || (ammoType.getMunitionType() == AmmoType.M_VIBRABOMB_IV)) {
+                    || (ammoType.getMunitionType().contains(AmmoType.Munitions.M_VIBRABOMB_IV))) {
                 VibrabombSettingDialog vsd = new VibrabombSettingDialog(clientgui.frame);
                 vsd.setVisible(true);
                 waa.setOtherAttackInfo(vsd.getSetting());
-                waa.setHomingShot(ammoType.getMunitionType() == AmmoType.M_HOMING && ammoMount.curMode().equals("Homing"));
+                waa.setHomingShot(ammoType.getMunitionType().contains(AmmoType.Munitions.M_HOMING) && ammoMount.curMode().equals("Homing"));
             }
         }
 
@@ -720,7 +575,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
         waa.setPointblankShot(true);
 
         // add the attack to our temporary queue
-        attacks.addElement(waa);
+        addAttack(waa);
 
         // and add it into the game, temporarily
         game.addAction(waa);
@@ -733,7 +588,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
 
         // check; if there are no ready weapons, you're done.
         if ((nextWeapon == -1)
-            && GUIPreferences.getInstance().getAutoEndFiring()) {
+            && GUIP.getAutoEndFiring()) {
             ready();
             return;
         }
@@ -759,7 +614,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
             return;
         }
         final int weaponId = clientgui.getUnitDisplay().wPan.getSelectedWeaponNum();
-        Mounted weapon = ce().getEquipment(weaponId); 
+        Mounted weapon = ce().getEquipment(weaponId);
         // Some weapons pick an automatic target
         if ((weapon != null) && weapon.getType().hasFlag(WeaponType.F_VGL)) {
             int facing;
@@ -771,7 +626,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
             facing = (facing + weapon.getFacing()) % 6;
             Coords c = ce().getPosition().translated(facing);
             Targetable hexTarget = new HexTarget(c, Targetable.TYPE_HEX_CLEAR);
-            
+
             // Ignore events that will be generated by the select/cursor calls
             setIgnoringEvents(true);
             clientgui.getBoardView().select(c);
@@ -781,7 +636,7 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
             target = t;
         }
         if ((target instanceof Entity) && Compute.isGroundToAir(ce(), target)) {
-            Coords targetPos = Compute.getClosestFlightPath(cen, ce().getPosition(), (Entity) target);
+            Coords targetPos = Compute.getClosestFlightPath(currentEntity, ce().getPosition(), (Entity) target);
             clientgui.getBoardView().cursor(targetPos);
         }
         ash.setAimingMode();
@@ -799,35 +654,38 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
 
         // update target panel
         final int weaponId = clientgui.getUnitDisplay().wPan.getSelectedWeaponNum();
-        if ((target != null) && (target.getPosition() != null) && (weaponId != -1) && (ce() != null)) {
+        if ((ce() != null) && ce().equals(clientgui.getUnitDisplay().getCurrentEntity())
+               && (target != null) && (target.getPosition() != null) && (weaponId != -1)) {
             ToHitData toHit;
             if (!ash.getAimingMode().isNone()) {
-                Mounted weapon = ce().getEquipment(weaponId);
-                boolean aiming = ash.isAimingAtLocation()
-                        && ash.allowAimedShotWith(weapon);
+                WeaponMounted weapon = (WeaponMounted) ce().getEquipment(weaponId);
+                boolean aiming = ash.isAimingAtLocation() && ash.allowAimedShotWith(weapon);
                 ash.setEnableAll(aiming);
                 if (aiming) {
-                    toHit = WeaponAttackAction.toHit(game, cen, target,
+                    toHit = WeaponAttackAction.toHit(game, currentEntity, target,
                             weaponId, ash.getAimingAt(), ash.getAimingMode(),
-                            false, false, null, null, false, true);
-                    clientgui.getUnitDisplay().wPan.wTargetR.setText(target.getDisplayName() + " ("
-                            + ash.getAimingLocation() + ")");
+                            false, false, null, null, false, true,
+                            WeaponAttackAction.UNASSIGNED, WeaponAttackAction.UNASSIGNED);
+                    clientgui.getUnitDisplay().wPan.setTarget(target, Messages.getFormattedString("MechDisplay.AimingAt", ash.getAimingLocation()));
+
                 } else {
-                    toHit = WeaponAttackAction.toHit(game, cen, target, weaponId, Entity.LOC_NONE,
+                    toHit = WeaponAttackAction.toHit(game, currentEntity, target, weaponId, Entity.LOC_NONE,
                             AimingMode.NONE, false, false,
-                            null, null, false, true);
-                    clientgui.getUnitDisplay().wPan.wTargetR.setText(target.getDisplayName());
+                            null, null, false, true,
+                            WeaponAttackAction.UNASSIGNED, WeaponAttackAction.UNASSIGNED);
+                    clientgui.getUnitDisplay().wPan.setTarget(target, null);
                 }
                 ash.setPartialCover(toHit.getCover());
             } else {
-                toHit = WeaponAttackAction.toHit(game, cen, target, weaponId, Entity.LOC_NONE,
+                toHit = WeaponAttackAction.toHit(game, currentEntity, target, weaponId, Entity.LOC_NONE,
                         AimingMode.NONE, false, false, null,
-                        null, false, true);
-                clientgui.getUnitDisplay().wPan.wTargetR.setText(target.getDisplayName());
+                        null, false, true,
+                        WeaponAttackAction.UNASSIGNED, WeaponAttackAction.UNASSIGNED);
+                clientgui.getUnitDisplay().wPan.setTarget(target, null);
             }
             int effectiveDistance = Compute.effectiveDistance(game, ce(), target);
             clientgui.getUnitDisplay().wPan.wRangeR.setText("" + effectiveDistance);
-            Mounted m = ce().getEquipment(weaponId);
+            WeaponMounted m = ce().getWeapon(weaponId);
             // If we have a Centurion Weapon System selected, we may need to
             //  update ranges.
             if (m.getType().hasFlag(WeaponType.F_CWS)) {
@@ -835,30 +693,27 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
             }
 
             if (m.isUsedThisRound()) {
-                clientgui.getUnitDisplay().wPan.wToHitR.setText(Messages.getString("FiringDisplay.alreadyFired"));
+                clientgui.getUnitDisplay().wPan.setToHit(Messages.getString("FiringDisplay.alreadyFired"));
                 setFireEnabled(false);
             } else if ((m.getType().hasFlag(WeaponType.F_AUTO_TARGET) && !m.curMode().equals(Weapon.MODE_AMS_MANUAL))) {
-                clientgui.getUnitDisplay().wPan.wToHitR.setText(Messages.getString("FiringDisplay.autoFiringWeapon"));
+                clientgui.getUnitDisplay().wPan.setToHit(Messages.getString("FiringDisplay.autoFiringWeapon"));
                 setFireEnabled(false);
             } else if (toHit.getValue() == TargetRoll.IMPOSSIBLE) {
-                clientgui.getUnitDisplay().wPan.wToHitR.setText(toHit.getValueAsString());
+                clientgui.getUnitDisplay().wPan.setToHit(toHit);
                 setFireEnabled(false);
             } else if (toHit.getValue() == TargetRoll.AUTOMATIC_FAIL) {
-                clientgui.getUnitDisplay().wPan.wToHitR.setText(toHit.getValueAsString());
+                clientgui.getUnitDisplay().wPan.setToHit(toHit);
                 setFireEnabled(true);
             } else {
                 boolean natAptGunnery = ce().hasAbility(OptionsConstants.PILOT_APTITUDE_GUNNERY);
-                clientgui.getUnitDisplay().wPan.wToHitR.setText(toHit.getValueAsString()
-                        + " (" + Compute.oddsAbove(toHit.getValue(), natAptGunnery) + "%)");
+                clientgui.getUnitDisplay().wPan.setToHit(toHit, natAptGunnery);
                 setFireEnabled(true);
             }
-            clientgui.getUnitDisplay().wPan.toHitText.setText(toHit.getDesc());
             setSkipEnabled(true);
         } else {
-            clientgui.getUnitDisplay().wPan.wTargetR.setText("---");
+            clientgui.getUnitDisplay().wPan.setTarget(null, null);
             clientgui.getUnitDisplay().wPan.wRangeR.setText("---");
-            clientgui.getUnitDisplay().wPan.wToHitR.setText("---");
-            clientgui.getUnitDisplay().wPan.toHitText.setText("");
+            clientgui.getUnitDisplay().wPan.clearToHit();
         }
 
         if ((weaponId != -1) && (ce() != null)) {
@@ -1022,9 +877,9 @@ public class PointblankShotDisplay extends FiringDisplay implements ItemListener
     @Override
     public void clear() {
         if ((target instanceof Entity) && Compute.isGroundToAir(ce(), target)) {
-            ((Entity) target).setPlayerPickedPassThrough(cen, null);
+            ((Entity) target).setPlayerPickedPassThrough(currentEntity, null);
         }
-        clearAttacks();        
+        clearAttacks();
         clientgui.getBoardView().select(null);
         clientgui.getBoardView().cursor(null);
         refreshAll();

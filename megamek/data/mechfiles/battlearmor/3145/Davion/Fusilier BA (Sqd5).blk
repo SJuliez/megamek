@@ -16,8 +16,8 @@ BattleArmor
 Fusilier Battle Armor
 </Name>
 
-<Model>
-(Standard)(Sqd5)
+<model>
+(Sqd5)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ Fusilier Battle Armor
 <type>
 IS Level 3
 </type>
+
+<role>
+Juggernaut
+</role>
 
 <motion_type>
 Jump
@@ -60,7 +64,7 @@ IS BA Stealth (Basic):Body
 </Squad Equipment>
 
 <source>
-TRO 3145 Federated Suns - Late Republic
+TRO: 3145 Federated Suns
 </source>
 
 <chassis>
@@ -115,3 +119,7 @@ JUMPJET:Unknown
 COMMUNICATIONS:Unknown
 TARGETING:Unknown
 </systemManufacturers>
+
+<weaponQuirks>
+accurate:Squad:1:ISBALightMachineGun
+</weaponQuirks>

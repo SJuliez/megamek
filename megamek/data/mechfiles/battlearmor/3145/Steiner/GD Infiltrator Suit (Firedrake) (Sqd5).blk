@@ -32,6 +32,10 @@ Gray Death Infiltrator Suit
 IS Level 2
 </type>
 
+<role>
+Scout
+</role>
+
 <motion_type>
 Jump
 </motion_type>
@@ -64,7 +68,7 @@ IS BA Stealth (Basic):Body
 </Squad Equipment>
 
 <source>
-TRO 3145 Lyran Commonwealth - Late Republic
+TRO: 3145 Lyran Commonwealth
 </source>
 
 <chassis>
@@ -92,7 +96,7 @@ Manufactured on Furillo by Defiance Industries, the Gray Death Infiltrator Suit 
 </overview>
 
 <capabilities>
-he Gray Death Infiltrator Suit is capable of making swarm and leg attacks as well as being able to travel by mechanized transport. Each suit had a Basic Manipulator mounted on each arm and had more than a third of a ton of basic stealth armor for protection.
+The Gray Death Infiltrator Suit is capable of making swarm and leg attacks as well as being able to travel by mechanized transport. Each suit had a Basic Manipulator mounted on each arm and had more than a third of a ton of basic stealth armor for protection.
 </capabilities>
 
 <deployment>

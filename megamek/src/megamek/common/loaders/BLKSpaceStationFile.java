@@ -14,6 +14,7 @@
 package megamek.common.loaders;
 
 import megamek.common.*;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.util.BuildingBlock;
 
 /**
@@ -30,26 +31,7 @@ public class BLKSpaceStationFile extends BLKFile implements IMechLoader {
     public Entity getEntity() throws EntityLoadingException {
 
         SpaceStation a = new SpaceStation();
-
-        if (!dataFile.exists("Name")) {
-            throw new EntityLoadingException("Could not find name block.");
-        }
-        a.setChassis(dataFile.getDataAsString("Name")[0]);
-        if (dataFile.exists("Model") && (dataFile.getDataAsString("Model")[0] != null)) {
-            a.setModel(dataFile.getDataAsString("Model")[0]);
-        } else {
-            a.setModel("");
-        }
-        if (dataFile.exists(MtfFile.MUL_ID)) {
-            a.setMulId(dataFile.getDataAsInt(MtfFile.MUL_ID)[0]);
-        }
-        setTechLevel(a);
-        setFluff(a);
-        checkManualBV(a);
-
-        if (dataFile.exists("source")) {
-            a.setSource(dataFile.getDataAsString("source")[0]);
-        }
+        setBasicEntityData(a);
 
         if (!dataFile.exists("tonnage")) {
             throw new EntityLoadingException("Could not find weight block.");
@@ -144,12 +126,7 @@ public class BLKSpaceStationFile extends BLKFile implements IMechLoader {
         }
 
         if (dataFile.exists("modular")) {
-            a.setModular(true);
-        }
-
-        // BattleStation
-        if (dataFile.exists("Battlestation")) {
-            a.setBattleStation(true);
+            a.setModularOrKFAdapter(true);
         }
 
         // Grav Decks - two approaches
@@ -235,6 +212,7 @@ public class BLKSpaceStationFile extends BLKFile implements IMechLoader {
         addTransports(a);
 
         a.setArmorTonnage(a.getArmorWeight());
+        loadQuirks(a);
         return a;
     }
 
@@ -252,12 +230,12 @@ public class BLKSpaceStationFile extends BLKFile implements IMechLoader {
             prefix = "IS ";
         }
 
-        boolean rearMount = false;
-        int nAmmo = 1;
+        boolean rearMount;
+        int nAmmo;
         // set up a new weapons bay mount
-        Mounted bayMount = null;
+        WeaponMounted bayMount = null;
         // set up a new bay type
-        boolean newBay = false;
+        boolean newBay;
         double bayDamage = 0;
         if (saEquip[0] != null) {
             for (String element : saEquip) {
@@ -300,7 +278,7 @@ public class BLKSpaceStationFile extends BLKFile implements IMechLoader {
 
                 if (etype != null) {
                     // first load the equipment
-                    Mounted newmount;
+                    Mounted<?> newmount;
                     try {
                         if (nAmmo == 1) {
                             newmount = a.addEquipment(etype, nLoc, rearMount);
@@ -321,7 +299,7 @@ public class BLKSpaceStationFile extends BLKFile implements IMechLoader {
                         WeaponType weap = (WeaponType) newmount.getType();
                         if (bayMount == null) {
                             try {
-                                bayMount = a.addEquipment(weap.getBayType(), nLoc, rearMount);
+                                bayMount = (WeaponMounted) a.addEquipment(weap.getBayType(), nLoc, rearMount);
                                 newBay = false;
                             } catch (LocationFullException ex) {
                                 throw new EntityLoadingException(ex.getMessage());
@@ -338,7 +316,7 @@ public class BLKSpaceStationFile extends BLKFile implements IMechLoader {
                             bayDamage += damage;
                         } else {
                             try {
-                                bayMount = a.addEquipment(weap.getBayType(), nLoc, rearMount);
+                                bayMount = (WeaponMounted) a.addEquipment(weap.getBayType(), nLoc, rearMount);
                             } catch (LocationFullException ex) {
                                 throw new EntityLoadingException(ex.getMessage());
                             }

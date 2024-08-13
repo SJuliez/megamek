@@ -16,8 +16,8 @@ BattleArmor
 Machina Domini Interface Armor
 </Name>
 
-<Model>
-(Standard)
+<model>
+(Sqd1)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ Machina Domini Interface Armor
 <type>
 IS Level 4
 </type>
+
+<role>
+None
+</role>
 
 <motion_type>
 Leg
@@ -60,20 +64,8 @@ StopSwarm
 LegAttack
 </Squad Equipment>
 
-<Trooper 1 Equipment>
-</Trooper 1 Equipment>
-
-<Trooper 2 Equipment>
-</Trooper 2 Equipment>
-
-<Trooper 3 Equipment>
-</Trooper 3 Equipment>
-
-<Trooper 4 Equipment>
-</Trooper 4 Equipment>
-
 <source>
-J:Final Reckoning - Jihad
+Jihad: Final Reckoning
 </source>
 
 <chassis>

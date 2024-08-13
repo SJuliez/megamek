@@ -22,11 +22,15 @@ import megamek.common.MovePath.MoveStepType;
 import megamek.common.enums.MPBoosters;
 import megamek.common.options.OptionsConstants;
 import megamek.common.pathfinder.CachedEntityState;
+import megamek.common.planetaryconditions.Atmosphere;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
 
@@ -38,6 +42,17 @@ import java.util.Vector;
  */
 public class MoveStep implements Serializable {
     private static final long serialVersionUID = -6075640793056182285L;
+    /**
+     * When supplying additional int data, use this to key the index of the cargo being picked up
+     */
+    public static final int CARGO_PICKUP_KEY = 0;
+
+    /**
+     * When supplying additional int data, use this to key the location of the cargo being picked up
+     * (i.e. mech left arm/right arm, vehicle body, etc)
+     */
+    public static final int CARGO_LOCATION_KEY = 1;
+
     private MoveStepType type;
     private int targetId = Entity.NONE;
     private int targetType = Targetable.TYPE_ENTITY;
@@ -98,7 +113,7 @@ public class MoveStep implements Serializable {
     private boolean isTakingCover = false;
     private int wigeBonus = 0;
     private int nWigeDescent = 0;
-    
+
     /**
      * The Entity that is taking this MoveStep.
      */
@@ -114,7 +129,7 @@ public class MoveStep implements Serializable {
      * carefully.
      */
     private boolean isCarefulPath = true;
-    
+
     /*
      * Aero related stuff
      */
@@ -154,7 +169,13 @@ public class MoveStep implements Serializable {
     private boolean maneuver = false;
 
     int braceLocation = Entity.LOC_NONE;
-    
+
+    /**
+     * A map used to hold any additional data that this move step requires.
+     * Preferable to constantly adding new fields for low-usage one-shot data
+     */
+    Map<Integer, Integer> additionalData = new HashMap<>();
+
     private Minefield mf;
 
     /**
@@ -205,7 +226,7 @@ public class MoveStep implements Serializable {
     public MoveStep(MovePath path, MoveStepType type, Targetable target,
                     Coords pos) {
         this(path, type);
-        targetId = target.getTargetId();
+        targetId = target.getId();
         targetType = target.getTargetType();
         targetPos = pos;
         if ((type == MoveStepType.UNLOAD) || (type == MoveStepType.LAUNCH)
@@ -227,7 +248,7 @@ public class MoveStep implements Serializable {
      */
     public MoveStep(MovePath path, MoveStepType type, Targetable target) {
         this(path, type);
-        targetId = target.getTargetId();
+        targetId = target.getId();
         targetType = target.getTargetType();
         if ((type == MoveStepType.UNLOAD) || (type == MoveStepType.LAUNCH)
                 || (type == MoveStepType.DROP) || (type == MoveStepType.UNDOCK)
@@ -244,20 +265,33 @@ public class MoveStep implements Serializable {
      * @param path
      * @param type      - should match one of the MovePath constants, but this is not
      *                  currently checked.
-     * @param additionalIntData - 
+     * @param additionalIntData -
      *              "mineToLay" by default to retain compatibility with existing code
      *              "braceLocation" if the move step type is BRACE
      */
     public MoveStep(MovePath path, MoveStepType type, int additionalIntData) {
         this(path, type);
-        
+
         if (type == MoveStepType.BRACE) {
             this.braceLocation = additionalIntData;
-        } else {
+        } else if (type == MoveStepType.LAY_MINE) {
             this.mineToLay = additionalIntData;
+        } else if (type == MoveStepType.PICKUP_CARGO) {
+            this.additionalData.put(CARGO_PICKUP_KEY, additionalIntData);
+        } else if (type == MoveStepType.DROP_CARGO) {
+            this.additionalData.put(CARGO_LOCATION_KEY, additionalIntData);
         }
     }
-    
+
+    /**
+     * Creates a step with an arbitrary int-to-int mapping of additional data.
+     */
+    public MoveStep(MovePath path, MoveStepType type, Map<Integer, Integer> additionalIntData) {
+        this(path, type);
+
+        additionalData.putAll(additionalIntData);
+    }
+
     /**
      * Create a step with the units to launch or drop.
      *
@@ -292,10 +326,11 @@ public class MoveStep implements Serializable {
     }
 
     public MoveStep(MovePath path, MoveStepType type, boolean noCost,
-                    boolean isManeuver) {
+                    boolean isManeuver, int maneuverType) {
         this(path, type);
         this.noCost = noCost;
         maneuver = isManeuver;
+        this.maneuverType = maneuverType;
     }
 
     public MoveStep(MovePath path, MoveStepType type, int recovery,
@@ -397,6 +432,12 @@ public class MoveStep implements Serializable {
                 return "Hover";
             case BRACE:
                 return "Brace";
+            case CHAFF:
+                return "Chaff";
+            case PICKUP_CARGO:
+                return "Pickup Cargo";
+            case DROP_CARGO:
+                return "Drop Cargo";
             default:
                 return "???";
         }
@@ -418,11 +459,11 @@ public class MoveStep implements Serializable {
             targetId = Entity.NONE;
             targetType = Targetable.TYPE_ENTITY;
         } else {
-            targetId = target.getTargetId();
+            targetId = target.getId();
             targetType = target.getTargetType();
         }
     }
-    
+
     /**
      * Turns VTOL bombing on or off for this step.
      */
@@ -464,11 +505,15 @@ public class MoveStep implements Serializable {
         return targetPos;
     }
 
+    public Integer getAdditionalData(int key) {
+        return additionalData.containsKey(key) ? additionalData.get(key) : null;
+    }
+
     public TreeMap<Integer, Vector<Integer>> getLaunched() {
         if (launched == null) {
             launched = new TreeMap<>();
         }
-        
+
         return launched;
     }
 
@@ -526,7 +571,7 @@ public class MoveStep implements Serializable {
                 // http://www.classicbattletech.com/forums/index.php/topic,37171.new.html#new
                 setNTurns(0);
             }
-                        
+
             if (!hasFreeTurn()) {
                 // check conditions
                 if (dueFreeTurn()) {
@@ -554,12 +599,21 @@ public class MoveStep implements Serializable {
                     .getBoard().getHex(entity.getPosition()).getLevel()) - hex.getLevel();
             int building = hex.terrainLevel(Terrains.BLDG_ELEV);
             int depth = -hex.depth(true);
-            // need to adjust depth for potential ice over water
-            if ((hex.containsTerrain(Terrains.ICE) && hex
-                    .containsTerrain(Terrains.WATER))
-                    || (entity.getMovementMode() == EntityMovementMode.HOVER)) {
-                depth = 0;
+
+            // Set depth to 0 (surface level) in several cases:
+            // 1. Jumping onto ice-covered water hex,
+            // 2. Jumping onto water with Hover move mode,
+            // 3. Jumping onto water with WiGE move mode
+            if (hex.containsTerrain(Terrains.WATER)) {
+                if (
+                        hex.containsTerrain(Terrains.ICE) ||
+                                entity.getMovementMode() == EntityMovementMode.HOVER ||
+                                entity.getMovementMode() == EntityMovementMode.WIGE
+                ) {
+                    depth = 0;
+                }
             }
+
             // grounded DropShips are treated as level 10 buildings for purposes
             // of jumping over
             boolean grdDropship = false;
@@ -579,7 +633,14 @@ public class MoveStep implements Serializable {
                 // infantry can jump into a building
                 setElevation(Math.max(depth, Math.min(building, maxElevation)));
             } else {
-                setElevation(Math.max(depth, building));
+                int subDepth = Math.max(depth, building);
+                // Put jumping Hover or WiGE at their elevation above the substrate level,
+                // or they get implicitly landed (which affects their movement next turn)
+                if (entity.getMovementMode().isHoverOrWiGE()) {
+                    setElevation(elevation + subDepth);
+                } else {
+                    setElevation(subDepth);
+                }
             }
             if (climbMode()
                     && (maxElevation >= hex.terrainLevel(Terrains.BRIDGE_ELEV))) {
@@ -701,7 +762,7 @@ public class MoveStep implements Serializable {
                 }
             }
         }
-        
+
         // WiGEs get bonus MP for each string of three consecutive hexes they descend.
         if (entity.getMovementMode() == EntityMovementMode.WIGE
                 && getClearance() > 0
@@ -743,7 +804,7 @@ public class MoveStep implements Serializable {
             setFirstStep(prev.mpUsed == 0); // Bug 1519330 - its not a first step when continuing after a fall
         } else if (prev.isFirstStep() // Some step types don't remove first step status
                 && ((prev.getType() == MoveStepType.CLIMB_MODE_ON)
-                        || (prev.getType() == MoveStepType.CLIMB_MODE_OFF))) {
+                || (prev.getType() == MoveStepType.CLIMB_MODE_OFF))) {
             setFirstStep(true);
         }
         switch (getType()) {
@@ -936,6 +997,7 @@ public class MoveStep implements Serializable {
                                 mpUsed += 1;
                             }
                         }
+                        setHasJustStood(true);
                     } else {
                         for (int location = Mech.LOC_RARM; location <= Mech.LOC_LLEG; location++) {
                             if (entity.isLocationBad(location)) {
@@ -1053,7 +1115,7 @@ public class MoveStep implements Serializable {
                         setElevation(altitude * 10);
                         setAltitude(0);
                     } else {
-                        setMp(entity instanceof Protomech? 4 : 5);
+                        setMp(entity instanceof Protomech ? 4 : 5);
                     }
                 }
                 break;
@@ -1084,6 +1146,10 @@ public class MoveStep implements Serializable {
             case BRACE:
                 setMp(entity.getBraceMPCost());
                 break;
+            case DROP_CARGO:
+                setMp(1);
+                break;
+            case CHAFF:
             default:
                 setMp(0);
         }
@@ -1091,7 +1157,7 @@ public class MoveStep implements Serializable {
         if (noCost) {
             setMp(0);
         }
-        
+
         if (type != MoveStepType.CONVERT_MODE) {
             movementMode = prev.getMovementMode();
         }
@@ -1100,7 +1166,7 @@ public class MoveStep implements Serializable {
         //  then we are no longer hull-down.
         if ((entity instanceof Tank
                 || (entity instanceof QuadVee
-                        && entity.getConversionMode() == QuadVee.CONV_MODE_VEHICLE))
+                && entity.getConversionMode() == QuadVee.CONV_MODE_VEHICLE))
                 && (distance > 0)) {
             setHullDown(false);
         }
@@ -1110,7 +1176,7 @@ public class MoveStep implements Serializable {
 
         // Check for a stacking violation.
         final Entity violation = Compute.stackingViolation(game,
-                entity, getElevation(), getPosition(), null);
+                entity, getElevation(), getPosition(), null, climbMode);
         if ((violation != null) && (getType() != MoveStepType.CHARGE)
                 && (getType() != MoveStepType.DFA)) {
             setStackingViolation(true);
@@ -1188,6 +1254,7 @@ public class MoveStep implements Serializable {
         nStraight = prev.nStraight;
         nDown = prev.nDown;
         nMoved = prev.nMoved;
+        additionalData = new HashMap<>(additionalData);
     }
 
     /**
@@ -1207,7 +1274,7 @@ public class MoveStep implements Serializable {
         isHullDown = entity.isHullDown();
         climbMode = entity.climbMode();
         thisStepBackwards = entity.inReverse;
-        
+
         // Moving in reverse prohibits running
         if (thisStepBackwards) {
             isRunProhibited = true;
@@ -1258,7 +1325,7 @@ public class MoveStep implements Serializable {
         if ((entity instanceof Tank) && (((Tank) entity).getStunnedTurns() > 0)) {
             isRunProhibited = true;
         }
-        
+
         //Cannot run while using Mek tracks
         if (entity instanceof Mech && entity.getMovementMode() == EntityMovementMode.TRACKED
                 && !(entity instanceof QuadVee)) {
@@ -1455,15 +1522,15 @@ public class MoveStep implements Serializable {
     public boolean isRolled() {
         return isRolled;
     }
-    
+
     public boolean isVTOLBombingStep() {
         return targetType == Targetable.TYPE_HEX_AERO_BOMB;
     }
-    
+
     public boolean isStrafingStep() {
         return targetType == Targetable.TYPE_HEX_CLEAR;
     }
-    
+
     /**
      * Determine if this is a legal step as part of the supplied MovePath.
      *
@@ -1492,7 +1559,7 @@ public class MoveStep implements Serializable {
         }
         return moveType;
     }
-    
+
     public EntityMovementMode getMovementMode() {
         if (movementMode == EntityMovementMode.NONE) {
             return getEntity().getMovementMode();
@@ -1521,6 +1588,7 @@ public class MoveStep implements Serializable {
         } else if (hasEverUnloaded && (type != MoveStepType.UNLOAD)
                 && (type != MoveStepType.LAUNCH) && (type != MoveStepType.DROP)
                 && (type != MoveStepType.UNDOCK) && (type != MoveStepType.DISCONNECT)
+                && (type != MoveStepType.CHAFF)
                 && (getAltitude() == 0)) {
             // Can't be after unloading BA/inf
             legal = false;
@@ -1557,8 +1625,8 @@ public class MoveStep implements Serializable {
         if (getGame().getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_PSR_JUMP_HEAVY_WOODS)) {
             if (!isEnd
                     && isJumping()
-                    && (pos.containsTerrain(Terrains.WOODS, 2) 
-                            || pos.containsTerrain(Terrains.WOODS, 3))) {
+                    && (pos.containsTerrain(Terrains.WOODS, 2)
+                    || pos.containsTerrain(Terrains.WOODS, 3))) {
                 danger = false;
                 pastDanger = false;
             }
@@ -1566,12 +1634,12 @@ public class MoveStep implements Serializable {
 
         return moreUpdates;
     }
-    
+
     /**
      * Returns true if a step is considered to be in an end position for the
      * given MovePath. A step is in an end position if it is the last legal
      * step, or is an illegal step past the last legal step.
-     * 
+     *
      * @param path
      * @return
      */
@@ -1580,11 +1648,11 @@ public class MoveStep implements Serializable {
         if (EntityMovementType.MOVE_ILLEGAL == movementType) {
             return true;
         }
-        
+
         if (path == null) {
             return true;
         }
-        
+
         // A step is an end position if it is the last legal step.
         Vector<MoveStep> steps = path.getStepVector();
         // Starting from the end, each step is considered the last step until
@@ -1600,13 +1668,13 @@ public class MoveStep implements Serializable {
             if ((step.getMovementType(lastStep) != EntityMovementType.MOVE_ILLEGAL)
                     && !stepMatch) {
                 return false;
-            // If we found the current step, no need to check the others
+                // If we found the current step, no need to check the others
             } else if (stepMatch) {
                 return true;
             }
         }
         // Shouldn't reach here, since this step is assumed be in the step list
-        return false;        
+        return false;
     }
 
 
@@ -1617,11 +1685,11 @@ public class MoveStep implements Serializable {
     public boolean isOnlyPavement() {
         return onlyPavement;
     }
-    
+
     public int getWiGEBonus() {
         return wigeBonus;
     }
-    
+
     public int getNWigeDescent() {
         return nWigeDescent;
     }
@@ -1629,7 +1697,7 @@ public class MoveStep implements Serializable {
     public boolean isPastDanger() {
         return pastDanger;
     }
-    
+
     public void setPastDanger(boolean pastDanger) {
         this.pastDanger = pastDanger;
     }
@@ -1644,6 +1712,10 @@ public class MoveStep implements Serializable {
 
     public Coords getPosition() {
         return position;
+    }
+
+    public void setPosition(Coords c) {
+        position = c;
     }
 
     public boolean isPrevStepOnPavement() {
@@ -1748,7 +1820,7 @@ public class MoveStep implements Serializable {
     protected void setOnlyPavement(boolean b) {
         onlyPavement = b;
     }
-    
+
     protected void setWiGEBonus(int i) {
         wigeBonus = i;
     }
@@ -1808,9 +1880,10 @@ public class MoveStep implements Serializable {
      * @param prev
      */
     private void compileIllegal(final Game game, final Entity entity,
-            final MoveStep prev, CachedEntityState cachedEntityState) {
+                                final MoveStep prev, CachedEntityState cachedEntityState) {
         final MoveStepType stepType = getType();
         final boolean isInfantry = entity instanceof Infantry;
+        final boolean isTank = entity instanceof Tank;
 
         Coords curPos = getPosition();
         Coords lastPos = prev.getPosition();
@@ -1855,7 +1928,7 @@ public class MoveStep implements Serializable {
             }
             return;
         }
-        
+
         if ((prev.getAltitude() > 0) || game.getBoard().inSpace()) {
             //Ejected crew/pilots just drift or parachute, resulting in a move_none type
             if (entity instanceof EjectedCrew) {
@@ -1864,7 +1937,7 @@ public class MoveStep implements Serializable {
             }
 
             // If airborne and some other non-Aero unit then everything is illegal, except
-            // turns and AirMech 
+            // turns and AirMech
             if (!entity.isAero()) {
                 switch (type) {
                     case TURN_LEFT:
@@ -1895,9 +1968,10 @@ public class MoveStep implements Serializable {
             }
 
             // check the fuel requirements
-            if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_FUEL_CONSUMPTION)) {
+            if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_FUEL_CONSUMPTION)
+                    && entity.hasEngine() && a.requiresFuel()) {
                 int fuelUsed = mpUsed + Math.max(mpUsed - cachedEntityState.getWalkMP(), 0);
-                if (fuelUsed > a.getFuel()) {
+                if (fuelUsed > a.getCurrentFuel()) {
                     return;
                 }
             }
@@ -1907,9 +1981,9 @@ public class MoveStep implements Serializable {
                 // space stations can only turn and launch space craft
                 if ((entity instanceof SpaceStation)
                         && !((type == MoveStepType.TURN_LEFT)
-                                || (type == MoveStepType.TURN_RIGHT)
-                                || (type == MoveStepType.LAUNCH)
-                                || (type == MoveStepType.UNDOCK))) {
+                        || (type == MoveStepType.TURN_RIGHT)
+                        || (type == MoveStepType.LAUNCH)
+                        || (type == MoveStepType.UNDOCK))) {
                     return;
                 }
 
@@ -1934,6 +2008,13 @@ public class MoveStep implements Serializable {
                         && (velocity != 0) && (getNTurns() > 1)) {
                     return;
                 }
+
+                // Jumpships cannot change velocity and use attitude jets in the same turn.
+                if ((a instanceof Jumpship) && ((Jumpship) a).hasStationKeepingDrive()
+                        && (prev.getMovementType(false) == EntityMovementType.MOVE_OVER_THRUST)
+                        && ((type == MoveStepType.TURN_LEFT) || (type == MoveStepType.TURN_RIGHT))) {
+                    return;
+                }
             }
 
             // atmosphere has its own rules about turning
@@ -1942,14 +2023,14 @@ public class MoveStep implements Serializable {
                     && !prev.canAeroTurn(game)) {
                 return;
             }
-            
+
             // spheroids in atmosphere can move a max of 1 hex on the low atmo map
             // and 8 hexes on the ground map, regardless of any other considerations
             // unless they're out of control, in which case, well...
-            if (useSpheroidAtmosphere(game, entity) && 
+            if (useSpheroidAtmosphere(game, entity) &&
                     (((IAero) entity).isOutControlTotal() ||
-                    (!game.getBoard().onGround() && (this.getDistance() > 1) || 
-                            (game.getBoard().onGround() && (getDistance() > 8))))) {
+                            (!game.getBoard().onGround() && (this.getDistance() > 1) ||
+                                    (game.getBoard().onGround() && (getDistance() > 8))))) {
                 return;
             }
 
@@ -2056,14 +2137,18 @@ public class MoveStep implements Serializable {
             movementType = EntityMovementType.MOVE_NONE;
         } else if ((type == MoveStepType.DIG_IN)
                 || (type == MoveStepType.FORTIFY)) {
-            if (!isInfantry || !isFirstStep()) {
+            if ((!isInfantry && !isTank) || !isFirstStep()) {
                 return; // can't dig in
             }
-            Infantry inf = (Infantry) entity;
-            if ((inf.getDugIn() != Infantry.DUG_IN_NONE)
-                    && (inf.getDugIn() != Infantry.DUG_IN_COMPLETE)) {
-                return; // already dug in
+
+            if (isInfantry) {
+                Infantry inf = (Infantry) entity;
+                if ((inf.getDugIn() != Infantry.DUG_IN_NONE)
+                        && (inf.getDugIn() != Infantry.DUG_IN_COMPLETE)) {
+                    return; // Already dug in
+                }
             }
+
             if (game.getBoard().getHex(curPos)
                     .containsTerrain(Terrains.PAVEMENT)
                     || game.getBoard().getHex(curPos)
@@ -2079,12 +2164,12 @@ public class MoveStep implements Serializable {
             isDiggingIn = true;
             movementType = EntityMovementType.MOVE_NONE;
         }
-        
+
         // Taking cover or bracing should happen as the last action
         if (prev.isTakingCover || (prev.braceLocation != Entity.LOC_NONE)) {
             return;
         }
-        
+
         if (type == MoveStepType.TAKE_COVER) {
             // Only Infantry can take cover
             if (!isInfantry) {
@@ -2150,8 +2235,8 @@ public class MoveStep implements Serializable {
         if (type == MoveStepType.EVADE) {
             if (entity.hasHipCrit()
                     || (entity.getMovementMode() == EntityMovementMode.WIGE
-                            && (entity instanceof LandAirMech || entity instanceof Protomech)
-                            && getClearance() > 0)) {
+                    && (entity instanceof LandAirMech || entity instanceof Protomech)
+                    && getClearance() > 0)) {
                 movementType = EntityMovementType.MOVE_ILLEGAL;
                 return;
             }
@@ -2168,6 +2253,9 @@ public class MoveStep implements Serializable {
             movementType = EntityMovementType.MOVE_NONE;
         }
         if (type == MoveStepType.CONVERT_MODE) {
+            movementType = EntityMovementType.MOVE_NONE;
+        }
+        if (type == MoveStepType.CHAFF) {
             movementType = EntityMovementType.MOVE_NONE;
         }
 
@@ -2210,17 +2298,23 @@ public class MoveStep implements Serializable {
         }
         int tmpWalkMP = cachedEntityState.getWalkMP() + bonus;
 
-        int runMP = cachedEntityState.getRunMP() + bonus;
-        int runMPOneMASC = cachedEntityState.getRunMPwithOneMASC() + bonus;
-        int runMPNoMASC = cachedEntityState.getRunMPwithoutMASC() + bonus;
+        // For entities with neither MASC nor Supercharger, these values will be the same
+        int runMPMax = cachedEntityState.getRunMP() + bonus;
+        int runMPSingleBoost = cachedEntityState.getRunMPwithOneMASC() + bonus;
+        int runMPNoBoost = cachedEntityState.getRunMPwithoutMASC() + bonus;
 
+        // Sprint MP is calculated depending on the entity type
+        // For those that cannot sprint, it is the same as run.
+        // For those that can, it is the maximum distance it can sprint
+        // For entities with neither MASC nor Supercharger, these values will be the same
+        int sprintMPMax = cachedEntityState.getSprintMP() + bonus;
+        int sprintMPSingleBoost = cachedEntityState.getSprintMPwithOneMASC() + bonus;
+        int sprintMPNoBoost = cachedEntityState.getSprintMPwithoutMASC() + bonus;
 
-        int sprintMP = cachedEntityState.getSprintMP() + bonus;
-        int sprintMPOneMASC = cachedEntityState.getSprintMPwithOneMASC() + bonus;
-        int sprintMPNoMASC = cachedEntityState.getSprintMPwithoutMASC() + bonus;
-
-        final boolean isMASCUsedEntity = entity.isMASCUsed();
-        final boolean isSuperchargerUsedEntity = entity.isSuperchargerUsed();
+        // Have these been used already this turn. If so, they do not require a recheck agaisnt PSR
+        // This can happen as a result of interrupted turns due to failed PSRs, pointblank shots, etc.
+        final boolean hasMASCBeenUsed = entity.isMASCUsed();
+        final boolean hasSuperchargerBeenUsed = entity.isSuperchargerUsed();
 
         final boolean hasPoorPerformance = entity
                 .hasQuirk(OptionsConstants.QUIRK_NEG_POOR_PERFORMANCE);
@@ -2232,34 +2326,34 @@ public class MoveStep implements Serializable {
                     // On the ground or underwater use AirMech walk/run.
                     // Sprint can only be used on the ground, so that is already set.
                     tmpWalkMP = ((LandAirMech) entity).getAirMechWalkMP();
-                    runMPNoMASC = ((LandAirMech) entity).getAirMechRunMP();
+                    runMPNoBoost = ((LandAirMech) entity).getAirMechRunMP();
                     // LAMs cannot use hardened armor, which makes runMP a simpler calculation.
                     MPBoosters mpBoosters = ((LandAirMech) entity).getArmedMPBoosters();
                     if (!mpBoosters.isNone()) {
-                        runMP = mpBoosters.calculateRunMP(tmpWalkMP);
+                        runMPMax = mpBoosters.calculateRunMP(tmpWalkMP);
                     } else {
-                        runMP = runMPNoMASC;
+                        runMPMax = runMPNoBoost;
                     }
                 } else {
                     // Only 1 ground MP for ground effect vehicles and glider ProtoMeks
-                    tmpWalkMP = runMP = runMPNoMASC = sprintMP = sprintMPNoMASC = 1;
+                    tmpWalkMP = runMPMax = runMPNoBoost = sprintMPMax = sprintMPNoBoost = 1;
                 }
             } else if (entity instanceof LandAirMech) {
                 // LAMs cannot use overdrive and MASC does not affect airborne MP.
                 tmpWalkMP = ((LandAirMech) entity).getAirMechCruiseMP();
-                runMP = runMPNoMASC = sprintMP = sprintMPNoMASC = ((LandAirMech) entity).getAirMechFlankMP();
+                runMPMax = runMPNoBoost = sprintMPMax = sprintMPNoBoost = ((LandAirMech) entity).getAirMechFlankMP();
             }
         }
 
         Hex currHex = game.getBoard().getHex(curPos);
         Hex lastHex = game.getBoard().getHex(lastPos);
-        
+
         // Bootlegger ends movement
         if (prev.type == MoveStepType.BOOTLEGGER) {
             movementType = EntityMovementType.MOVE_ILLEGAL;
             return;
         }
-        
+
         if (stepType == MoveStepType.CONVERT_MODE) {
             // QuadVees and LAMs cannot convert in water, and Mech tracks cannot be used in water.
             if (currHex.containsTerrain(Terrains.WATER)
@@ -2276,7 +2370,7 @@ public class MoveStep implements Serializable {
             // some conversions take two convert steps and can be legal even though the first one
             // is illegal on its own.
         }
-        
+
         if (isVTOLBombingStep()) {
             if (!getEntity().isBomber() || getClearance() <= 0) {
                 movementType = EntityMovementType.MOVE_ILLEGAL;
@@ -2286,7 +2380,7 @@ public class MoveStep implements Serializable {
                 movementType = prev.getMovementType(false);
             }
         }
-        
+
         if ((getEntity().getMovementMode() == EntityMovementMode.INF_UMU)
                 && (currHex.containsTerrain(Terrains.WATER)
                 && lastHex.containsTerrain(Terrains.WATER) && (entity
@@ -2297,7 +2391,8 @@ public class MoveStep implements Serializable {
         if ((getEntity().getMovementMode() == EntityMovementMode.BIPED_SWIM)
                 || (getEntity().getMovementMode() == EntityMovementMode.QUAD_SWIM)
                 || ((getEntity() instanceof Infantry
-                        && getEntity().getMovementMode() == EntityMovementMode.SUBMARINE))) {
+                && getEntity().getMovementMode().isSubmarine()
+                && (currHex.terrainLevel(Terrains.WATER) > 0)))) {
             tmpWalkMP = entity.getActiveUMUCount();
         }
 
@@ -2306,7 +2401,7 @@ public class MoveStep implements Serializable {
                 && !(getEntity() instanceof VTOL)) {
             tmpWalkMP = entity.getJumpMP();
         }
-        
+
         // check for valid walk/run mp; BRACE is a special case for protomechs
         if (!isJumping() && !entity.isStuck() && (tmpWalkMP > 0)
                 && ((getMp() > 0) || (stepType == MoveStepType.BRACE))) {
@@ -2324,7 +2419,7 @@ public class MoveStep implements Serializable {
                 movementType = EntityMovementType.MOVE_ILLEGAL;
                 return;
             }
-            
+
             // WiGEs that land are finished with movement
             if (entity.getMovementMode() == EntityMovementMode.WIGE
                     && prev.getType() == MoveStepType.DOWN
@@ -2358,15 +2453,29 @@ public class MoveStep implements Serializable {
                 } else {
                     movementType = EntityMovementType.MOVE_WALK;
                 }
-            } else if ((((getMpUsed() <= runMP) && (isMASCUsedEntity || isSuperchargerUsedEntity))
-                    || (getMpUsed() <= runMPNoMASC)) && !isRunProhibited()) {
+            } else if (hasPoorPerformance
+                    && (entity.getMpUsedLastRound() < cachedEntityState.getWalkMP())) {
                 // Poor performance requires spending all walk MP in the
-                //  previous round in order to flank
-                if (hasPoorPerformance
-                        && (entity.getMpUsedLastRound() < cachedEntityState.getWalkMP())) {
-                    movementType = EntityMovementType.MOVE_ILLEGAL;
-                    return;
+                // previous round in order to move faster than a walk
+                movementType = EntityMovementType.MOVE_ILLEGAL;
+                return;
+            } else if (getMpUsed() <= runMPMax && !isRunProhibited()) {
+                // RUN - If we got this far, entity is moving farther than a walk
+                // but within run and running is legal
+
+                if (getMpUsed() > runMPNoBoost) {
+                    // must be using MP booster to go this fast
+                    if (isEvading) {
+                        // MP Boosters like MASC and Supercharger cannot be use when evading
+                        movementType = EntityMovementType.MOVE_ILLEGAL;
+                        return;
+                    } else if ((getMpUsed() <= runMPSingleBoost)) {
+                        UseEitherMASCOrSupercharger(hasMASCBeenUsed, hasSuperchargerBeenUsed);
+                    } else if ((getMpUsed() <= runMPMax)) {
+                        UseBothMASCAndSupercharger(hasMASCBeenUsed, hasSuperchargerBeenUsed);
+                    }
                 }
+
                 if ((entity.getMovementMode() == EntityMovementMode.VTOL
                         || entity.getMovementMode() == EntityMovementMode.WIGE)
                         && getClearance() > 0) {
@@ -2374,89 +2483,38 @@ public class MoveStep implements Serializable {
                 } else {
                     movementType = EntityMovementType.MOVE_RUN;
                 }
-            } else if ((getMpUsed() <= runMPOneMASC) && !isRunProhibited()
-                    && !isEvading()) {
-                // decide which to use if both are active
-                MPBoosters mpBoosters = entity.getArmedMPBoosters();
-                int scTarget = mpBoosters.hasSupercharger() ? entity.getSuperchargerTarget() : 2000;
-                int mascTarget = mpBoosters.hasMASC() ? entity.getMASCTarget() : 2000;
-                if (mascTarget < scTarget) {
-                    setUsingMASC(true);
-                    setTargetNumberMASC(entity.getMASCTarget());
-                } else {
-                    setUsingSupercharger(true);
-                    setTargetNumberSupercharger(scTarget);
+            } else if ((getMpUsed() <= sprintMPMax) && !isRunProhibited() && !isEvading() && canUseSprint(game)) {
+                // SPRINT - If we got this far, entity is moving farther than a run
+                // but within sprint and sprinting must be legal and the option enabled
+
+                if (getMpUsed() > sprintMPNoBoost) {
+                    // must be using MP booster to go this fast
+                    if (getMpUsed() <= sprintMPSingleBoost) {
+                        UseEitherMASCOrSupercharger(hasMASCBeenUsed, hasSuperchargerBeenUsed);
+                    } else {
+                        UseBothMASCAndSupercharger(hasMASCBeenUsed, hasSuperchargerBeenUsed);
+                    }
                 }
-                if (entity.getMovementMode() == EntityMovementMode.VTOL) {
-                    movementType = EntityMovementType.MOVE_VTOL_RUN;
-                } else {
-                    movementType = EntityMovementType.MOVE_RUN;
-                }
-            } else if ((getMpUsed() <= runMP) && !isRunProhibited()
-                    && !isEvading()) {
-                setUsingMASC(true);
-                setTargetNumberMASC(entity.getMASCTarget());
-                setUsingSupercharger(true);
-                setTargetNumberSupercharger(entity.getSuperchargerTarget());
-                if (entity.getMovementMode() == EntityMovementMode.VTOL) {
-                    movementType = EntityMovementType.MOVE_VTOL_RUN;
-                } else {
-                    movementType = EntityMovementType.MOVE_RUN;
-                }
-            } else if (canUseSprint(game)
-                    && ((getMpUsed() <= sprintMPNoMASC)
-                            || ((getMpUsed() <= sprintMP) && (isMASCUsedEntity || isSuperchargerUsedEntity)))
-                    && !isRunProhibited() && !isEvading()) {
+
                 if (entity.getMovementMode() == EntityMovementMode.VTOL
                         || (entity.getMovementMode() == EntityMovementMode.WIGE
-                                && getClearance() > 0)) {
-                    movementType = EntityMovementType.MOVE_VTOL_SPRINT;
-                } else {
-                    movementType = EntityMovementType.MOVE_SPRINT;
-                }
-            } else if ((getMpUsed() <= sprintMPOneMASC) && !isRunProhibited()
-                    && !isEvading()) {
-                // decide if using MASC or Supercharger if need only one
-                // choose Super if even
-                MPBoosters mpBoosters = entity.getArmedMPBoosters();
-                int scTarget = mpBoosters.hasSupercharger() ? entity.getSuperchargerTarget() : 2000;
-                int mascTarget = mpBoosters.hasMASC() ? entity.getMASCTarget() : 2000;
-                if (mascTarget < scTarget) {
-                    setUsingMASC(true);
-                    setTargetNumberMASC(entity.getMASCTarget());
-                } else {
-                    setUsingSupercharger(true);
-                    setTargetNumberSupercharger(scTarget);
-                }
-                if (entity.getMovementMode() == EntityMovementMode.VTOL) {
-                    movementType = EntityMovementType.MOVE_VTOL_SPRINT;
-                } else {
-                    movementType = EntityMovementType.MOVE_SPRINT;
-                }
-            } else if ((getMpUsed() <= sprintMP)
-                    && !isRunProhibited() && !isEvading()
-                    && game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_SPRINT)) {
-                setUsingMASC(true);
-                setTargetNumberMASC(entity.getMASCTarget());
-                setUsingSupercharger(true);
-                setTargetNumberSupercharger(entity.getSuperchargerTarget());
-                if (entity.getMovementMode() == EntityMovementMode.VTOL) {
+                        && getClearance() > 0)) {
                     movementType = EntityMovementType.MOVE_VTOL_SPRINT;
                 } else {
                     movementType = EntityMovementType.MOVE_SPRINT;
                 }
             }
         }
-        
+
         // If using vehicle acceleration restrictions, it is impossible to go from a stop to overdrive.
         // Stop to flank or cruise to overdrive is permitted with a driving check ("gunning it").
         if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_ACCELERATION)
                 && movementType == EntityMovementType.MOVE_SPRINT
                 && (entity instanceof Tank
-                        || (entity instanceof QuadVee && entity.getConversionMode() == QuadVee.CONV_MODE_VEHICLE))
+                || (entity instanceof QuadVee && entity.getConversionMode() == QuadVee.CONV_MODE_VEHICLE))
                 && (entity.movedLastRound == EntityMovementType.MOVE_NONE
-                    || entity.movedLastRound == EntityMovementType.MOVE_SKID
-                    || entity.movedLastRound == EntityMovementType.MOVE_JUMP)) {
+                || entity.movedLastRound == EntityMovementType.MOVE_SKID
+                || entity.movedLastRound == EntityMovementType.MOVE_JUMP)) {
             movementType = EntityMovementType.MOVE_ILLEGAL;
         }
         // 0 MP infantry units can move 1 hex
@@ -2465,8 +2523,8 @@ public class MoveStep implements Serializable {
                 && getEntity().getPosition().equals(prev.getPosition())
                 && (prev.getElevation() == entity.getElevation())
                 && (getEntity().getPosition().distance(getPosition()) <= 1)
-                && (Math.abs(entity.getElevation() - getElevation()) 
-                        <= entity.getMaxElevationChange())
+                && (Math.abs(entity.getElevation() - getElevation())
+                <= entity.getMaxElevationChange())
                 && (movementType != EntityMovementType.MOVE_JUMP)) {
             movementType = EntityMovementType.MOVE_WALK;
         }
@@ -2504,7 +2562,7 @@ public class MoveStep implements Serializable {
                 && (prev.movementType == EntityMovementType.MOVE_VTOL_SPRINT)) {
             movementType = EntityMovementType.MOVE_VTOL_SPRINT;
         }
-        
+
         if (entity.isGyroDestroyed() && !((entity instanceof LandAirMech)
                 && (entity.getConversionMode() == LandAirMech.CONV_MODE_FIGHTER))) {
             //A prone 'Mech with a destroyed gyro can only change a single hex side, or eject
@@ -2535,7 +2593,7 @@ public class MoveStep implements Serializable {
                     }
                 }
             }
-        }                
+        }
 
         // Mechs with no arms and a missing leg cannot attempt to stand
         if (((stepType == MoveStepType.GET_UP) ||
@@ -2568,7 +2626,7 @@ public class MoveStep implements Serializable {
             // VTOLs with a damaged flight stabiliser can't flank
             if ((entity instanceof VTOL)
                     && (movementType == EntityMovementType.MOVE_VTOL_RUN
-                        || movementType == EntityMovementType.MOVE_VTOL_SPRINT)
+                    || movementType == EntityMovementType.MOVE_VTOL_SPRINT)
                     && ((VTOL) entity).isStabiliserHit(VTOL.LOC_ROTOR)) {
                 movementType = EntityMovementType.MOVE_ILLEGAL;
             }
@@ -2588,7 +2646,7 @@ public class MoveStep implements Serializable {
                 && !entity.isGyroDestroyed() && (stepType == MoveStepType.FORWARDS)) {
             movementType = EntityMovementType.MOVE_RUN;
         }
-        
+
         // Bimodal LAMs cannot spend MP when converting to fighter mode on the ground.
         if (entity instanceof LandAirMech
                 && ((LandAirMech) entity).getLAMType() == LandAirMech.LAM_BIMODAL
@@ -2637,7 +2695,7 @@ public class MoveStep implements Serializable {
                     }
                     Entity other = (Entity) target;
                     if ((null != Compute.stackingViolation(game, other, curPos,
-                            entity)) || other.isLocationProhibited(curPos, getElevation())) {
+                            entity, climbMode)) || other.isLocationProhibited(curPos, getElevation())) {
                         movementType = EntityMovementType.MOVE_ILLEGAL;
                     }
                 } else {
@@ -2645,10 +2703,10 @@ public class MoveStep implements Serializable {
                 }
             }
         }
-        
+
         // Is the entity trying to drop a trailer?
         if (stepType == MoveStepType.DISCONNECT) {
-            
+
             // If this isn't the first step, trailer position isn't updated by Server.processTrailerMovement()
             // before this step, so they don't drop off in the right place
             if (!isFirstStep()) {
@@ -2663,13 +2721,13 @@ public class MoveStep implements Serializable {
             if (target instanceof Entity) {
                 Entity other = (Entity) target;
                 if ((null != Compute.stackingViolation(game, other, curPos,
-                        entity)) || other.isLocationProhibited(curPos, getElevation())) {
+                        entity, climbMode)) || other.isLocationProhibited(curPos, getElevation())) {
                     movementType = EntityMovementType.MOVE_ILLEGAL;
                 }
             } else {
                 movementType = EntityMovementType.MOVE_ILLEGAL;
             }
-        
+
         }
 
         if (stepType == MoveStepType.SHAKE_OFF_SWARMERS) {
@@ -2691,7 +2749,7 @@ public class MoveStep implements Serializable {
                 && ((movementType == EntityMovementType.MOVE_RUN)
                 || (movementType == EntityMovementType.MOVE_SPRINT)
                 || (movementType == EntityMovementType.MOVE_VTOL_RUN
-                || (movementType == EntityMovementType.MOVE_VTOL_SPRINT)) 
+                || (movementType == EntityMovementType.MOVE_VTOL_SPRINT))
                 || isJumping())) {
             movementType = EntityMovementType.MOVE_ILLEGAL;
         }
@@ -2711,8 +2769,8 @@ public class MoveStep implements Serializable {
             }
             if (entity instanceof Tank
                     || (entity instanceof QuadVee
-                            && ((entity.getConversionMode() == QuadVee.CONV_MODE_VEHICLE)
-                                    != entity.isConvertingNow()))) {
+                    && ((entity.getConversionMode() == QuadVee.CONV_MODE_VEHICLE)
+                    != entity.isConvertingNow()))) {
                 //Tanks and QuadVees ending movement in vehicle mode require a fortified hex.
                 if (!(game.getBoard().getHex(curPos)
                         .containsTerrain(Terrains.FORTIFIED))) {
@@ -2737,7 +2795,7 @@ public class MoveStep implements Serializable {
                 && climbMode
                 && entity.getMovementMode() != EntityMovementMode.VTOL
                 && (entity.getMovementMode() != EntityMovementMode.WIGE
-                    || getClearance() == 0)
+                || getClearance() == 0)
                 && (movementType != EntityMovementType.MOVE_JUMP)
                 && game.getBoard().getHex(curPos)
                 .containsTerrain(Terrains.BRIDGE)
@@ -2746,7 +2804,7 @@ public class MoveStep implements Serializable {
                 .containsTerrainExit(Terrains.BRIDGE,
                         curPos.direction(lastPos))
                 && (getElevation() + entity.getHeight()
-                        >= game.getBoard().getHex(curPos).terrainLevel(Terrains.BRIDGE_ELEV))) {
+                >= game.getBoard().getHex(curPos).terrainLevel(Terrains.BRIDGE_ELEV))) {
             movementType = EntityMovementType.MOVE_ILLEGAL;
         }
 
@@ -2764,7 +2822,7 @@ public class MoveStep implements Serializable {
             movementType = EntityMovementType.MOVE_ILLEGAL;
             return;
         }
-        
+
         if ((type == MoveStepType.LAY_MINE) && entity.canLayMine()) {
             //All units may only lay mines on its first or last step.
             //BA additionally have to use Jump or VTOL movement.
@@ -2782,7 +2840,7 @@ public class MoveStep implements Serializable {
             movementType = EntityMovementType.MOVE_ILLEGAL;
             return;
         }
-        
+
         // can't brace when jumping, prone, wrong unit type or no eligible locations
         if ((stepType == MoveStepType.BRACE) && (this.isJumping() || !entity.canBrace())) {
             movementType = EntityMovementType.MOVE_ILLEGAL;
@@ -2793,7 +2851,7 @@ public class MoveStep implements Serializable {
         if (stepType == MoveStepType.MOUNT) {
             movementType = EntityMovementType.MOVE_WALK;
         }
-        
+
         if (stepType == MoveStepType.BOOTLEGGER) {
             // Bootlegger requires three hexes straight and is illegal for tracked, WiGE, or naval.
             if (prev.nStraight < 3
@@ -2803,12 +2861,17 @@ public class MoveStep implements Serializable {
                 movementType = EntityMovementType.MOVE_ILLEGAL;
             } else {
                 danger = true;
-            }            
+            }
+        }
+
+        if (stepType == MoveStepType.PICKUP_CARGO ||
+                stepType == MoveStepType.DROP_CARGO) {
+            movementType = EntityMovementType.MOVE_NONE;
         }
 
         // check if this movement is illegal for reasons other than points
         if (!isMovementPossible(game, lastPos, prev.getElevation(), cachedEntityState)
-                || isUnloaded) {
+                || (isUnloaded && type != MoveStepType.CHAFF)) {
             movementType = EntityMovementType.MOVE_ILLEGAL;
         }
 
@@ -2821,7 +2884,7 @@ public class MoveStep implements Serializable {
         if (movementType == EntityMovementType.MOVE_ILLEGAL) {
             return;
         }
-        
+
         // Danger is flagged for PSR checks by entire path when a new step is added, since turning
         // while running on pavement does cannot trigger the danger flag if the turn occurs before
         // enough MP are spent to require running.
@@ -2868,13 +2931,14 @@ public class MoveStep implements Serializable {
         }
 
         // only walking speed in Tornados
-        if (game.getPlanetaryConditions().getWindStrength() == PlanetaryConditions.WI_TORNADO_F4) {
+        PlanetaryConditions conditions = game.getPlanetaryConditions();
+        if (conditions.getWind().isTornadoF4()) {
             if (getMpUsed() > tmpWalkMP) {
                 movementType = EntityMovementType.MOVE_ILLEGAL;
                 return;
             }
         }
-        
+
         // Vehicles carrying mechanized BA can't jump, VTOL, or WiGE
         if ((entity instanceof Tank) && !entity.getExternalUnits().isEmpty()) {
             if ((movementType == EntityMovementType.MOVE_JUMP)
@@ -2882,9 +2946,44 @@ public class MoveStep implements Serializable {
                     || (movementType == EntityMovementType.MOVE_VTOL_RUN)
                     || (movementType == EntityMovementType.MOVE_VTOL_SPRINT)
                     || ((entity.getMovementMode() == EntityMovementMode.WIGE)
-                        && getClearance() > 0)) {
+                    && getClearance() > 0)) {
                 movementType = EntityMovementType.MOVE_ILLEGAL;
             }
+        }
+    }
+
+    /**
+     * If the entity has both, choose the one with the lower risk, or Supercharger if they are even
+     * Require a PSR if it has not been done in an earlier part of the move
+     */
+    private void UseEitherMASCOrSupercharger(boolean hasMASCBeenUsed, boolean hasSuperchargerBeenUsed) {
+        MPBoosters mpBoosters = entity.getArmedMPBoosters();
+        if (mpBoosters.isJetBooster() && !hasMASCBeenUsed) {
+            setUsingMASC(true);
+        } else if (!hasMASCBeenUsed && !hasSuperchargerBeenUsed) {
+            int scTarget = mpBoosters.hasSupercharger() ? entity.getSuperchargerTarget() : 2000;
+            int mascTarget = mpBoosters.hasMASC() ? entity.getMASCTarget() : 2000;
+            if (mascTarget < scTarget) {
+                setUsingMASC(true);
+                setTargetNumberMASC(entity.getMASCTarget());
+            } else {
+                setUsingSupercharger(true);
+                setTargetNumberSupercharger(entity.getSuperchargerTarget());
+            }
+        }
+    }
+
+    /**
+     * Require a PSR if it has not been done in an earlier part of the move
+     */
+    private void UseBothMASCAndSupercharger(boolean hasMASCBeenUsed, boolean hasSuperchargerBeenUsed) {
+        if (!hasMASCBeenUsed) {
+            setUsingMASC(true);
+            setTargetNumberMASC(entity.getMASCTarget());
+        }
+        if (!hasSuperchargerBeenUsed) {
+            setUsingSupercharger(true);
+            setTargetNumberSupercharger(entity.getSuperchargerTarget());
         }
     }
 
@@ -2904,6 +3003,7 @@ public class MoveStep implements Serializable {
         final int prevEl = prevStep.getElevation();
         final EntityMovementMode moveMode = getEntity()
                 .getMovementMode();
+        final Entity en = getEntity();
         final Hex srcHex = game.getBoard().getHex(prev);
         final Hex destHex = game.getBoard().getHex(getPosition());
         final boolean isInfantry = getEntity() instanceof Infantry;
@@ -2913,25 +3013,27 @@ public class MoveStep implements Serializable {
                 && ((Infantry) getEntity()).isMechanized();
         final boolean isProto = getEntity() instanceof Protomech;
         final boolean isMech = getEntity() instanceof Mech;
-        final boolean isAmphibious = cachedEntityState.hasWorkingMisc(MiscType.F_FULLY_AMPHIBIOUS) || 
+        final boolean isAmphibious = cachedEntityState.hasWorkingMisc(MiscType.F_FULLY_AMPHIBIOUS) ||
                 cachedEntityState.hasWorkingMisc(MiscType.F_LIMITED_AMPHIBIOUS);
+        final boolean isFogSpecialist = en.getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_FOG);
+        final boolean isLightSpecialist = en.getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_LIGHT);
         int nSrcEl = srcHex.getLevel() + prevEl;
         int nDestEl = destHex.getLevel() + elevation;
+        PlanetaryConditions conditions = game.getPlanetaryConditions();
 
         mp = 1;
-
 
         // 0 MP infantry units can move 1 hex
         if (isInfantry
                 && (cachedEntityState.getWalkMP() == 0)
-                && (moveMode != EntityMovementMode.SUBMARINE)
+                && !moveMode.isSubmarine()
+                && !moveMode.isVTOL()
                 && getEntity().getPosition().equals(prev)
                 && (getEntity().getPosition().distance(getPosition()) == 1)
                 && (!isJumping())) {
             mp = 0;
             return;
         }
-
 
         boolean applyNightPen =
                 !game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_NO_NIGHT_MOVE_PEN);
@@ -2942,28 +3044,66 @@ public class MoveStep implements Serializable {
         if (!game.getBoard().inSpace() && isCareful() && applyNightPen
                 && !carefulExempt) {
             // Fog
-            switch (game.getPlanetaryConditions().getFog()) {
-                case PlanetaryConditions.FOG_LIGHT:
-                    mp += 1;
+            switch (conditions.getFog()) {
+                case FOG_LIGHT:
+                    if (!isFogSpecialist) {
+                        mp += 1;
+                    }
                     break;
-                case PlanetaryConditions.FOG_HEAVY:
-                    mp += 2;
+                case FOG_HEAVY:
+                    if (!isFogSpecialist) {
+                        mp += 2;
+                    } else {
+                        mp += 1;
+                    }
                     break;
+                default:
             }
-            // Light
-            switch (game.getPlanetaryConditions().getLight()) {
-                case PlanetaryConditions.L_FULL_MOON:
-                    mp += 1;
-                    break;
-                case  PlanetaryConditions.L_MOONLESS:
-                    mp += 2;
-                    break;
-                case PlanetaryConditions.L_PITCH_BLACK:
-                    mp += 3;
-                    break;
+
+            // Light TO:AR 6th ed. p. 34
+            if (!entity.isNightwalker()) {
+                switch (conditions.getLight()) {
+                    case FULL_MOON:
+                        if (!isLightSpecialist && !en.isUsingSearchlight()) {
+                            mp += 1;
+                        }
+                        break;
+                    case GLARE:
+                        if (!isLightSpecialist) {
+                            mp += 1;
+                        }
+                        break;
+                    case MOONLESS:
+                        if (en.isUsingSearchlight()) {
+                            break;
+                        }
+
+                        if (!isLightSpecialist) {
+                            mp += 2;
+                        } else {
+                            mp += 1;
+                        }
+                        break;
+                    case SOLAR_FLARE:
+                        if (!isLightSpecialist) {
+                            mp += 2;
+                        } else {
+                            mp += 1;
+                        }
+                        break;
+                    case PITCH_BLACK:
+                        if (!isLightSpecialist) {
+                            mp += 3;
+                        } else {
+                            mp += 1;
+                        }
+                        break;
+                    default:
+                }
+            } else if (conditions.getLight().isFullMoonOrGlareOrMoonlessOrSolarFlareOrPitchBack()) {
+                setRunProhibited(true);
             }
         }
-
 
         // VTOLs pay 1 for everything
         if (moveMode == EntityMovementMode.VTOL) {
@@ -2973,6 +3113,28 @@ public class MoveStep implements Serializable {
         // jumping always costs 1, unless fog or poor light
         if (isJumping()) {
             return;
+        }
+
+        // Be careful on pavement during cold weather, there may be black ice.
+        boolean useBlackIce = game.getOptions().booleanOption(OptionsConstants.ADVANCED_BLACK_ICE);
+        boolean goodTemp = conditions.getTemperature() <= PlanetaryConditions.BLACK_ICE_TEMP;
+        boolean goodWeather = conditions.getWeather().isIceStorm();
+
+        if (isPavementStep && ((useBlackIce && goodTemp) || goodWeather)) {
+            if (destHex.containsTerrain(Terrains.BLACK_ICE)) {
+                mp++;
+            }
+            if (destHex.containsTerrain(Terrains.BLACK_ICE)
+                    && !isCareful()
+                    && (nDestEl == destHex.getLevel())) {
+                mp--;
+            }
+            if (isPavementStep
+                    && !destHex.containsTerrain(Terrains.BLACK_ICE)
+                    && isCareful()) {
+                mp++;
+            }
+
         }
 
         // Account for terrain, unless we're moving along a road.
@@ -2987,7 +3149,7 @@ public class MoveStep implements Serializable {
             // if this is an amphibious unit crossing water, increment movement cost by 1
             if (isAmphibious && !destHex.containsTerrain(Terrains.ICE) && (destHex.terrainLevel(Terrains.WATER) > 0)) {
                 mp++;
-                
+
                 // this is kind of a hack, but only occurs when an amphibious unit passes over mud at the bottom
                 // of a body of water. We can't account for that in the hex's movement cost function
                 // because it doesn't have the ability to pretend the entity is at a particular elevation
@@ -2995,7 +3157,7 @@ public class MoveStep implements Serializable {
                     mp--;
                 }
             }
-            
+
             // non-hovers, non-navals and non-VTOLs check for water depth and
             // are affected by swamp
             if ((moveMode != EntityMovementMode.HOVER)
@@ -3044,10 +3206,10 @@ public class MoveStep implements Serializable {
             // non-flying Infantry and ground vehicles are charged double.
             if ((isInfantry
                     && !((getMovementType(false) == EntityMovementType.MOVE_VTOL_WALK)
-                            || (getMovementType(false) == EntityMovementType.MOVE_VTOL_RUN)))
+                    || (getMovementType(false) == EntityMovementType.MOVE_VTOL_RUN)))
                     || ((moveMode == EntityMovementMode.TRACKED)
-                            || (moveMode == EntityMovementMode.WHEELED)
-                            || (moveMode == EntityMovementMode.HOVER))) {
+                    || (moveMode == EntityMovementMode.WHEELED)
+                    || (moveMode == EntityMovementMode.HOVER))) {
                 delta_e *= 2;
             }
             if (entity.hasAbility(OptionsConstants.PILOT_TM_MOUNTAINEER)) {
@@ -3064,13 +3226,13 @@ public class MoveStep implements Serializable {
         // See http://bg.battletech.com/forums/index.php?topic=51081.msg1297747#msg1297747
         if (entity.getMovementMode() == EntityMovementMode.WIGE && distance > 0 && (getClearance() > 1
                 || (destHex.containsTerrain(Terrains.BLDG_ELEV)
-                        && destHex.ceiling() > srcHex.ceiling()))) {
+                && destHex.ceiling() > srcHex.ceiling()))) {
             mp += 2;
         }
-        
+
         // WIGEs spend one extra MP to ascend a sheer cliff, TO p.39
-        if (entity.getMovementMode() == EntityMovementMode.WIGE 
-                && distance > 0 
+        if (entity.getMovementMode() == EntityMovementMode.WIGE
+                && distance > 0
                 && destHex.hasCliffTopTowards(srcHex)
                 && nDestEl > nSrcEl) {
             mp += 1;
@@ -3085,7 +3247,7 @@ public class MoveStep implements Serializable {
                     && bldg.isIn(prev)
                     && (bldg.getBldgClass() == Building.HANGAR)
                     && (destHex.terrainLevel(Terrains.BLDG_ELEV) > getEntity()
-                            .height())) {
+                    .height())) {
                 mp += 0;
             } else if (!isInfantry && !isSuperHeavyMech) {
                 if (!isProto) {
@@ -3104,6 +3266,8 @@ public class MoveStep implements Serializable {
             } else if (isMechanizedInfantry) {
                 // mechanized infantry pays 1 extra
                 mp += 1;
+            } else if (isInfantry && (((Infantry) entity).getMount() != null)) {
+                mp += ((Infantry) entity).getMount().getSize().buildingMP;
             }
         }
 
@@ -3113,12 +3277,12 @@ public class MoveStep implements Serializable {
                 && !isPavementStep) {
             mp--;
 
-            // Ensures that Infantry always pay at least 1 mp when 
+            // Ensures that Infantry always pay at least 1 mp when
             // entering woods or jungle
             if (mp <= 0) {
                 mp = 1;
             }
-        }        
+        }
     }
 
     /**
@@ -3150,7 +3314,7 @@ public class MoveStep implements Serializable {
                 && (entity.getAltitude() <= 3))) {
             return false;
         }
-        
+
         // If we're a tank and immobile, check if we try to unjam
         // or eject and the crew is not unconscious
         if ((entity instanceof Tank)
@@ -3176,12 +3340,17 @@ public class MoveStep implements Serializable {
             return true;
         }
 
+        // Motive hit has immobilized CV, but it still wants to (and can) jump: okay!
+        if (movementType == EntityMovementType.MOVE_JUMP && (entity instanceof Tank) && !entity.isImmobileForJump()) {
+            return true;
+        }
+
         // super-easy, but not any more
         if (entity.isImmobile() && !entity.isBracing()) {
             return false;
         }
 
-        // Hidden units, and activating hidden units cannot move 
+        // Hidden units, and activating hidden units cannot move
         // unless it is the movement phase and the plan is to activate then
         // if we're in this method, we're implicitly in the movement phase
         if (entity.isHidden()
@@ -3256,6 +3425,11 @@ public class MoveStep implements Serializable {
             return true;
         }
 
+        if (type == MoveStepType.PICKUP_CARGO ||
+                type == MoveStepType.DROP_CARGO) {
+            return !isProne();
+        }
+
         // The entity is trying to load. Check for a valid move.
         if (type == MoveStepType.LOAD) {
             // Find the unit being loaded.
@@ -3292,7 +3466,7 @@ public class MoveStep implements Serializable {
             }
 
         } // End STEP_LOAD-checks
-        
+
         // The entity is trying to tow. Check for a valid move.
         if (type == MoveStepType.TOW) {
 
@@ -3333,14 +3507,13 @@ public class MoveStep implements Serializable {
             return false;
         }
 
-    
-        
+
         if ((movementType != EntityMovementType.MOVE_JUMP)
                 && (nMove != EntityMovementMode.VTOL)) {
             int maxDown = entity.getMaxElevationDown(srcAlt);
             if (movementMode == EntityMovementMode.WIGE
                     && (srcEl == 0 || (srcHex.containsTerrain(Terrains.BLDG_ELEV)
-                            && (srcHex.terrainLevel(Terrains.BLDG_ELEV) >= srcEl)))) {
+                    && (srcHex.terrainLevel(Terrains.BLDG_ELEV) >= srcEl)))) {
                 maxDown = entity.getMaxElevationChange();
             }
             if ((((srcAlt - destAlt) > 0) && ((srcAlt - destAlt) > maxDown))
@@ -3348,12 +3521,12 @@ public class MoveStep implements Serializable {
                 return false;
             }
         }
-        
+
         // Sheer Cliffs, TO p.39
         // Roads over cliffs cancel the cliff effects for units that move on roads
-        boolean vehicleAffectedByCliff = entity instanceof Tank 
+        boolean vehicleAffectedByCliff = entity instanceof Tank
                 && !entity.isAirborneVTOLorWIGE();
-        boolean quadveeVehMode = entity instanceof QuadVee 
+        boolean quadveeVehMode = entity instanceof QuadVee
                 && entity.getConversionMode() == QuadVee.CONV_MODE_VEHICLE;
         int stepHeight = destAlt - srcAlt;
         // Cliffs should only exist towards 1 or 2 level drops, check just to make sure
@@ -3361,23 +3534,23 @@ public class MoveStep implements Serializable {
         boolean isUpCliff = !src.equals(dest)
                 && destHex.hasCliffTopTowards(srcHex)
                 && (stepHeight == 1 || stepHeight == 2);
-        boolean isDownCliff = !src.equals(dest) 
+        boolean isDownCliff = !src.equals(dest)
                 && srcHex.hasCliffTopTowards(destHex)
                 && (stepHeight == -1 || stepHeight == -2);
-        
+
         // For vehicles exc. VTOL, WIGE, upward Sheer Cliffs is forbidden
         // QuadVees in vehicle mode drive as vehicles, IO p.133
-        if ((vehicleAffectedByCliff || quadveeVehMode) 
+        if ((vehicleAffectedByCliff || quadveeVehMode)
                 && isUpCliff
                 && !isPavementStep) {
             return false;
         }
 
-        // For Infantry, up or down sheer cliffs requires a climbing action 
+        // For Infantry, up or down sheer cliffs requires a climbing action
         // except for Mountain Troops across a level 1 cliff.
         // Climbing actions do not seem to be implemented, so Infantry cannot
         // cross sheer cliffs at all except for Mountain Troops across a level 1 cliff.
-        if (entity instanceof Infantry 
+        if (entity instanceof Infantry
                 && (isUpCliff || isDownCliff)
                 && !isPavementStep) {
 
@@ -3386,7 +3559,7 @@ public class MoveStep implements Serializable {
                 return false;
             }
         }
-        
+
         if ((entity instanceof Mech) && ((srcAlt - destAlt) > 2)) {
             setLeapDistance(srcAlt - destAlt);
         }
@@ -3405,7 +3578,7 @@ public class MoveStep implements Serializable {
             // May not move across a cliff (up) moving backwards at all
             if (destHex.containsTerrain(Terrains.CLIFF_TOP)
                     && destHex.getTerrain(Terrains.CLIFF_TOP).hasExitsSpecified()
-                    && ((destHex.getTerrain(Terrains.CLIFF_TOP).getExits() & (1 << dest.direction(src))) != 0) 
+                    && ((destHex.getTerrain(Terrains.CLIFF_TOP).getExits() & (1 << dest.direction(src))) != 0)
                     && (!src.equals(dest))) {
                 return false;
             }
@@ -3416,7 +3589,7 @@ public class MoveStep implements Serializable {
                     && (!src.equals(dest))) {
                 return false;
             }
-            // May not move across more than 1 level 
+            // May not move across more than 1 level
             if (Math.abs(destAlt - srcAlt) > 1) {
                 return false;
             }
@@ -3481,7 +3654,7 @@ public class MoveStep implements Serializable {
                     if (inHex.equals(entity)) {
                         continue;
                     }
-                    
+
                     // Ignore the first trailer behind a non-superheavy tractor which can be in the
                     // same hex
                     if (!entity.getAllTowedUnits().isEmpty() && !entity.isSuperHeavy()) {
@@ -3490,7 +3663,7 @@ public class MoveStep implements Serializable {
                             validRoadTrain = true;
                         }
                     }
-                    
+
                     if ((inHex instanceof LargeSupportTank)
                             || (!entity.getAllTowedUnits().isEmpty() && !validRoadTrain)
                             || (!inHex.getAllTowedUnits().isEmpty())
@@ -3557,14 +3730,14 @@ public class MoveStep implements Serializable {
                 }
             }
         }
-        
+
         // If we're a land train with mixed motive types, use the most restrictive type
         // to determine terrain restrictions
         if (!entity.getAllTowedUnits().isEmpty()
                 && (type != MoveStepType.LOAD
-                    && type != MoveStepType.UNLOAD
-                    && type != MoveStepType.TOW
-                    && type != MoveStepType.DISCONNECT)) {
+                && type != MoveStepType.UNLOAD
+                && type != MoveStepType.TOW
+                && type != MoveStepType.DISCONNECT)) {
             boolean prohibitedByTrailer = false;
             // Add up the trailers
             for (int id : entity.getAllTowedUnits()) {
@@ -3627,8 +3800,8 @@ public class MoveStep implements Serializable {
         if ((entity instanceof VTOL || entity.getMovementMode() == EntityMovementMode.WIGE)
                 && getClearance() > 0
                 && ((type == MoveStepType.BACKWARDS) || (type == MoveStepType.FORWARDS)
-                        || (type == MoveStepType.LATERAL_LEFT) || (type == MoveStepType.LATERAL_LEFT_BACKWARDS)
-                        || (type == MoveStepType.LATERAL_RIGHT) || (type == MoveStepType.LATERAL_RIGHT_BACKWARDS))) {
+                || (type == MoveStepType.LATERAL_LEFT) || (type == MoveStepType.LATERAL_LEFT_BACKWARDS)
+                || (type == MoveStepType.LATERAL_RIGHT) || (type == MoveStepType.LATERAL_RIGHT_BACKWARDS))) {
             // It's possible to fly under a bridge.
             if (destHex.containsTerrain(Terrains.BRIDGE_ELEV)) {
                 if (elevation == destHex.terrainLevel(Terrains.BRIDGE_ELEV)) {
@@ -3659,7 +3832,7 @@ public class MoveStep implements Serializable {
     public int getElevation() {
         return elevation;
     }
-    
+
     /**
      * In hexes with buildings, returns the elevation relative to the roof. Otherwise returns the elevation
      * relative to the surface.
@@ -3671,7 +3844,7 @@ public class MoveStep implements Serializable {
         }
         return elevation;
     }
-    
+
     public int getAltitude() {
         return altitude;
     }
@@ -3683,11 +3856,11 @@ public class MoveStep implements Serializable {
     protected void setMineToLay(int mineId) {
         mineToLay = mineId;
     }
-    
+
     public int getBraceLocation() {
         return braceLocation;
     }
-    
+
     protected void setBraceLocation(int value) {
         braceLocation = value;
     }
@@ -3728,7 +3901,7 @@ public class MoveStep implements Serializable {
         if (useSpheroidAtmosphere(game, entity)) {
             return 0;
         }
-        
+
         // if in atmosphere, the rules are different
         if (useAeroAtmosphere(game, entity)) {
             // if they have a free turn, then this move is free
@@ -3837,11 +4010,11 @@ public class MoveStep implements Serializable {
      */
     public boolean canAeroTurn(Game game) {
         Entity en = getEntity();
-        
+
         if (!en.isAero()) {
             return false;
         }
-        
+
         // spheroids in atmo can spin around like a centrifuge all they want
         if (useSpheroidAtmosphere(game, en)) {
             return true;
@@ -3852,9 +4025,10 @@ public class MoveStep implements Serializable {
         }
 
         // if its part of a maneuver then you can turn
-        if (isManeuver()) {
+        if (isFacingChangeManeuver()) {
             return true;
         }
+
 
         if (en instanceof ConvFighter) {
             // conventional fighters can only turn on free turns or maneuvers
@@ -3877,6 +4051,9 @@ public class MoveStep implements Serializable {
 
     public boolean dueFreeTurn() {
         Entity en = getEntity();
+        if (en.isSpaceborne()) {
+            return false;
+        }
         int straight = getNStraight();
         int vel = getVelocity();
         int thresh = 99;
@@ -3967,8 +4144,32 @@ public class MoveStep implements Serializable {
         return maneuver;
     }
 
+    /**
+     * @return Whether this step is a maneuver that allows a free facing change.
+     */
+    public boolean isFacingChangeManeuver() {
+        return maneuver && (
+                maneuverType == ManeuverType.MAN_IMMELMAN
+                        || maneuverType == ManeuverType.MAN_SPLIT_S
+        );
+    }
+
     public Minefield getMinefield() {
         return mf;
+    }
+
+    /**
+     * For serialization purposes
+     */
+    public Map<Integer, Integer> getAdditionalData() {
+        return additionalData;
+    }
+
+    /**
+     * Setter for serialization purposes
+     */
+    public void setAdditionalData(Map<Integer, Integer> value) {
+        additionalData = value;
     }
 
     /**
@@ -3987,7 +4188,9 @@ public class MoveStep implements Serializable {
             return false;
         }
         // are we airborne in non-vacuum?
-        return en.isAirborne() && !game.getPlanetaryConditions().isVacuum();
+        PlanetaryConditions conditions = game.getPlanetaryConditions();
+        return en.isAirborne()
+                && !conditions.getAtmosphere().isLighterThan(Atmosphere.THIN);
     }
 
     /**
@@ -4005,7 +4208,7 @@ public class MoveStep implements Serializable {
         if (crushedBuildingLocs == null) {
             crushedBuildingLocs = new ArrayList<>();
         }
-        
+
         return crushedBuildingLocs;
     }
 
@@ -4030,7 +4233,7 @@ public class MoveStep implements Serializable {
     public boolean isCareful() {
         return isCarefulPath;
     }
-    
+
     /**
      * Helper function to determine whether sprint is available as a game option to the entity
      */
@@ -4040,12 +4243,12 @@ public class MoveStep implements Serializable {
         }
         if (entity instanceof Tank
                 || (entity instanceof QuadVee && entity.getConversionMode() == QuadVee.CONV_MODE_VEHICLE)) {
-            return  game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_ADVANCED_MANEUVERS);
+            return game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_ADVANCED_MANEUVERS);
         }
         if (entity instanceof LandAirMech) {
             return entity.getConversionMode() == LandAirMech.CONV_MODE_MECH
                     || (entity.getConversionMode() == LandAirMech.CONV_MODE_AIRMECH
-                            && getClearance() <= 0);
+                    && getClearance() <= 0);
         }
         return entity instanceof Mech;
     }

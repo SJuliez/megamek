@@ -1,14 +1,14 @@
 /**
  * MegaMek - Copyright (C) 2005 Ben Mazur (bmazur@sev.org)
- * 
- *  This program is free software; you can redistribute it and/or modify it 
- *  under the terms of the GNU General Public License as published by the Free 
- *  Software Foundation; either version 2 of the License, or (at your option) 
+ *
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by the Free
+ *  Software Foundation; either version 2 of the License, or (at your option)
  *  any later version.
- * 
- *  This program is distributed in the hope that it will be useful, but 
- *  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
- *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+ *
+ *  This program is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  *  for more details.
  */
 package megamek.common.weapons;
@@ -31,6 +31,8 @@ import megamek.common.ToHitData;
 import megamek.common.WeaponType;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.enums.GamePhase;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.OptionsConstants;
 import megamek.server.GameManager;
 
@@ -40,7 +42,7 @@ import megamek.server.GameManager;
 public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
 
     private static final long serialVersionUID = -1618484541772117621L;
-    
+
     protected MissileBayWeaponHandler() {
         // deserialization only
     }
@@ -62,7 +64,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
      * function because I may run out of ammo while going through the loop Sine
      * this function is called in the WeaponHandler constructor it should be ok
      * to use the ammo here
-     * 
+     *
      * @return an <code>int</code> representing the attack value at that range.
      */
     @Override
@@ -73,14 +75,13 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
         int weaponarmor = 0;
         int range = RangeType.rangeBracket(nRange, wtype.getATRanges(), true, false);
 
-        for (int wId : weapon.getBayWeapons()) {
-            Mounted bayW = ae.getEquipment(wId);
+        for (WeaponMounted bayW : weapon.getBayWeapons()) {
             // check the currently loaded ammo
-            Mounted bayWAmmo = bayW.getLinked();
+            AmmoMounted bayWAmmo = bayW.getLinkedAmmo();
             if (null == bayWAmmo || bayWAmmo.getUsableShotsLeft() < 1) {
                 // try loading something else
                 ae.loadWeaponWithSameAmmo(bayW);
-                bayWAmmo = bayW.getLinked();
+                bayWAmmo = bayW.getLinkedAmmo();
             }
             if (!bayW.isBreached()
                     && !bayW.isDestroyed()
@@ -103,7 +104,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
                     current_av = bayWType.getExtAV();
                 }
                 current_av = updateAVforAmmo(current_av, atype, bayWType,
-                        range, wId);
+                        range, bayW.getEquipmentNum());
                 av = av + current_av;
                 //If these are thunderbolts, they'll have missile armor
                 weaponarmor += bayWType.getMissileArmor();
@@ -115,7 +116,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
                                 || bayWAmmo.getUsableShotsLeft() < 1) {
                             // try loading something else
                             ae.loadWeaponWithSameAmmo(bayW);
-                            bayWAmmo = bayW.getLinked();
+                            bayWAmmo = bayW.getLinkedAmmo();
                         }
                         if (null != bayWAmmo) {
                             bayWAmmo.setShotsLeft(bayWAmmo.getBaseShotsLeft() - 1);
@@ -126,7 +127,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
         }
         //Bracketing fire reduces the number of missiles that hit
         av = (int) Math.floor(getBracketingMultiplier() * av);
-        
+
         //Point Defenses engage the missiles still aimed at us
         counterAV = calcCounterAV();
         if (isTbolt()) {
@@ -135,7 +136,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
         } else {
             av = av - counterAV;
         }
-        
+
         //Apply direct/glancing blow modifiers to the survivors
         if (bDirect) {
             av = Math.min(av + (toHit.getMoS() / 3), av * 2);
@@ -144,9 +145,9 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
         av = applyGlancingBlowModifier(av, false);
 
         return (int) Math.ceil(av);
-       
+
     }
-    
+
     /**
      * Sets the appropriate AMS Bay reporting flag depending on what type of missile this is
      */
@@ -158,7 +159,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
             amsBayEngaged = true;
         }
     }
-    
+
     /**
      * Sets the appropriate PD Bay reporting flag depending on what type of missile this is
      */
@@ -170,13 +171,13 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
             pdBayEngaged = true;
         }
     }
-    
+
     //Check for Thunderbolt. We'll use this for single AMS resolution
     @Override
     protected boolean isTbolt() {
         return wtype.hasFlag(WeaponType.F_LARGEMISSILE);
     }
-    
+
     /**
      * Calculate the starting armor value of a flight of thunderbolts
      * Used for Aero Sanity. This is done in calcAttackValue() otherwise
@@ -185,16 +186,12 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
     @Override
     protected int initializeCapMissileArmor() {
         int armor = 0;
-        for (int wId : weapon.getBayWeapons()) {
-            int curr_armor = 0;
-            Mounted bayW = ae.getEquipment(wId);
-            WeaponType bayWType = ((WeaponType) bayW.getType());
-            curr_armor = bayWType.getMissileArmor();
-            armor = armor + curr_armor;
+        for (WeaponMounted bayW : weapon.getBayWeapons()) {
+            armor += bayW.getType().getMissileArmor();
         }
         return armor;
     }
-    
+
     @Override
     protected int calcCapMissileAMSMod() {
         CapMissileAMSMod = 0;
@@ -205,8 +202,8 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
     }
 
     /*
-     * check for special munitions and their effect on av 
-     * 
+     * check for special munitions and their effect on av
+     *
      */
     @Override
     protected double updateAVforAmmo(double current_av, AmmoType atype,
@@ -218,7 +215,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
                 && !mLinker.isDestroyed() && !mLinker.isMissing()
                 && !mLinker.isBreached() && mLinker.getType().hasFlag(
                         MiscType.F_ARTEMIS))
-                && atype.getMunitionType() == AmmoType.M_ARTEMIS_CAPABLE) {
+                && atype.getMunitionType().contains(AmmoType.Munitions.M_ARTEMIS_CAPABLE)) {
             bonus = (int) Math.ceil(atype.getRackSize() / 5.0);
             if ((atype.getAmmoType() == AmmoType.T_SRM) || (atype.getAmmoType() == AmmoType.T_SRM_IMP))  {
                 bonus = 2;
@@ -230,7 +227,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
                 && !mLinker.isDestroyed() && !mLinker.isMissing()
                 && !mLinker.isBreached() && mLinker.getType().hasFlag(
                         MiscType.F_ARTEMIS_V))
-                && (atype.getMunitionType() == AmmoType.M_ARTEMIS_V_CAPABLE)) {
+                && (atype.getMunitionType().contains(AmmoType.Munitions.M_ARTEMIS_V_CAPABLE))) {
             // MML3 WOULD get a bonus from Artemis V, if you were crazy enough
             // to cross-tech it
             bonus = (int) Math.ceil(atype.getRackSize() / 5.0);
@@ -239,12 +236,12 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
             }
         }
 
-        if (atype.getMunitionType() == AmmoType.M_CLUSTER) {
+        if (atype.getMunitionType().contains(AmmoType.Munitions.M_CLUSTER)) {
             current_av = Math.floor(0.6 * current_av);
         } else if (AmmoType.T_ATM == atype.getAmmoType()) {
-            if (atype.getMunitionType() == AmmoType.M_EXTENDED_RANGE) {
+            if (atype.getMunitionType().contains(AmmoType.Munitions.M_EXTENDED_RANGE)) {
                 current_av = bayWType.getShortAV() / 2;
-            } else if (atype.getMunitionType() == AmmoType.M_HIGH_EXPLOSIVE) {
+            } else if (atype.getMunitionType().contains(AmmoType.Munitions.M_HIGH_EXPLOSIVE)) {
                 current_av = 1.5 * current_av;
                 if (range > WeaponType.RANGE_SHORT) {
                     current_av = 0.0;
@@ -256,14 +253,14 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
             if (range > WeaponType.RANGE_SHORT) {
                 current_av = 0;
             }
-        } 
+        }
         return current_av;
-        
-    }     
-   
+
+    }
+
     @Override
     public boolean handle(GamePhase phase, Vector<Report> vPhaseReport) {
-        
+
         if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_AERO_SANITY)) {
             return handleAeroSanity(phase, vPhaseReport);
         }
@@ -271,13 +268,13 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
         Entity entityTarget = (target.getTargetType() == Targetable.TYPE_ENTITY) ? (Entity) target
                 : null;
 
-        if ((((null == entityTarget) || entityTarget.isAirborne()) 
-                && (target.getTargetType() != Targetable.TYPE_HEX_CLEAR 
+        if ((((null == entityTarget) || entityTarget.isAirborne())
+                && (target.getTargetType() != Targetable.TYPE_HEX_CLEAR
                 &&  target.getTargetType() != Targetable.TYPE_HEX_IGNITE
-                &&  target.getTargetType() != Targetable.TYPE_BUILDING)) 
+                &&  target.getTargetType() != Targetable.TYPE_BUILDING))
                 || game.getBoard().inSpace()) {
             return super.handle(phase, vPhaseReport);
-        } 
+        }
 
         // then we have a ground target, so we need to handle it in a special
         // way
@@ -347,14 +344,14 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
         vPhaseReport.addElement(r);
 
         // do we hit?
-        bMissed = roll < toHit.getValue();
-                
+        bMissed = roll.getIntValue() < toHit.getValue();
+
         // are we a glancing hit?
         setGlancingBlowFlags(entityTarget);
         addGlancingBlowReports(vPhaseReport);
 
         // Set Margin of Success/Failure.
-        toHit.setMoS(roll - Math.max(2, toHit.getValue()));
+        toHit.setMoS(roll.getIntValue() - Math.max(2, toHit.getValue()));
         bDirect = game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_DIRECT_BLOW)
                 && ((toHit.getMoS() / 3) >= 1) && (entityTarget != null);
         if (bDirect) {
@@ -367,8 +364,8 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
         // Do this stuff first, because some weapon's miss report reference the
         // amount of shots fired and stuff.
         nDamPerHit = calcAttackValue();
-        addHeat();   
-        
+        addHeat();
+
         // Report any AMS bay action against standard missiles.
         // This only gets used in atmosphere/ground battles
         // Non AMS point defenses only work in space
@@ -439,9 +436,8 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
         int range = RangeType.rangeBracket(nRange, wtype.getATRanges(), true, false);
         int hits = 1;
         int nCluster = 1;
-        for (int wId : weapon.getBayWeapons()) {
+        for (WeaponMounted m : weapon.getBayWeapons()) {
             double av = 0;
-            Mounted m = ae.getEquipment(wId);
             if (!m.isBreached() && !m.isDestroyed() && !m.isJammed()) {
                 WeaponType bayWType = ((WeaponType) m.getType());
                 // need to cycle through weapons and add av
@@ -455,7 +451,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
                     av = bayWType.getExtAV();
                 }
             }
-            
+
             nDamPerHit = (int) (Math.ceil(av) - CounterAV);
             if (nDamPerHit <= 0) {
                 continue;
@@ -469,7 +465,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
                     && (toHit.getThruBldg() == null)) {
                 bldgAbsorbs = bldg.getAbsorbtion(target.getPosition());
             }
-            
+
             // Attacking infantry in buildings from same building
             if (targetInBuilding && (bldg != null)
                     && (toHit.getThruBldg() != null)
@@ -500,7 +496,7 @@ public class MissileBayWeaponHandler extends AmmoBayWeaponHandler {
                     nCluster, bldgAbsorbs);
             gameManager.creditKill(entityTarget, ae);
         } // Handle the next weapon in the bay
-        Report.addNewline(vPhaseReport); 
+        Report.addNewline(vPhaseReport);
         return false;
     }
 }

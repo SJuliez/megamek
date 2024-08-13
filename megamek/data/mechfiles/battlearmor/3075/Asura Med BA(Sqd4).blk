@@ -16,8 +16,8 @@ BattleArmor
 Asura Medium Battle Armor
 </Name>
 
-<Model>
-(Standard)(Sqd4)
+<model>
+(Sqd4)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ Asura Medium Battle Armor
 <type>
 IS Level 2
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Jump
@@ -65,7 +69,7 @@ ISBARL4:Body
 
 
 <source>
-TRO 3075 - Jihad
+TRO: 3075
 </source>
 
 <chassis>

@@ -37,6 +37,7 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 
 import megamek.client.ui.Messages;
+import megamek.client.ui.swing.util.UIUtil;
 
 /**
  * A simple yes/no confirmation dialog.
@@ -125,6 +126,8 @@ public class ConfirmDialog extends JDialog{
         } else {
             defaultButton = butYes;
         }
+
+        adaptToGUIScale();
         finishSetup(p);
     }
 
@@ -175,7 +178,7 @@ public class ConfirmDialog extends JDialog{
         c.gridheight = 2;
         c.insets = new Insets(5, 5, 5, 5);
         gridbag.setConstraints(questionLabel, c);
-        getContentPane().add(questionLabel);
+        add(questionLabel);
     }
 
     private void addInputs() {
@@ -188,7 +191,7 @@ public class ConfirmDialog extends JDialog{
 
             c.gridy = y++;
             gridbag.setConstraints(botherCheckbox, c);
-            getContentPane().add(botherCheckbox);
+            add(botherCheckbox);
         }
 
         GridBagLayout buttonGridbag = new GridBagLayout();
@@ -205,7 +208,7 @@ public class ConfirmDialog extends JDialog{
         c.gridy = y;
 
         gridbag.setConstraints(panButtons, c);
-        getContentPane().add(panButtons);
+        add(panButtons);
     }
 
     private void finishSetup(JFrame p) {
@@ -215,6 +218,12 @@ public class ConfirmDialog extends JDialog{
                 setVisible(false);
             }
         });
+
+        String closeAction = "closeAction";
+        final KeyStroke escape = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escape, closeAction);
+        getRootPane().getInputMap(JComponent.WHEN_FOCUSED).put(escape, closeAction);
+        getRootPane().getActionMap().put(closeAction, new CloseAction(this));
 
         pack();
 
@@ -259,5 +268,9 @@ public class ConfirmDialog extends JDialog{
             return true;
         }
         return !botherCheckbox.isSelected();
+    }
+
+    private void adaptToGUIScale() {
+        UIUtil.adjustDialog(this, UIUtil.FONT_SCALE1);
     }
 }

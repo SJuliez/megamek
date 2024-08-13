@@ -36,6 +36,10 @@ Brunel Dump Truck
 IS Level 3
 </type>
 
+<role>
+None
+</role>
+
 <motion_type>
 Wheeled
 </motion_type>
@@ -109,11 +113,11 @@ Autocannon/20
 </armor_tech_rating>
 
 <notes>
-Not enough item slots available! Using 14 slot(s) too many. Armor is based on fluff.  No Record Sheet available.
+Not enough item slots available! Using 14 slot(s) too many. Armor is based on fluff. No Record Sheet available.
 </notes>
 
 <source>
-H:Operation Klondike - Succession Wars
+Historical: Operation Klondike
 </source>
 
 <tonnage>

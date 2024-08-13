@@ -15,8 +15,8 @@ BattleArmor
 Ravager Assault Battle Armor
 </Name>
 
-<Model>
-(Standard)(Sqd4)
+<model>
+(Sqd4)
 </Model>
 
 <mul id:>
@@ -62,6 +62,10 @@ BABattleClaw:LA
 IS Level 2
 </type>
 
+<role>
+Juggernaut
+</role>
+
 <year>
 3084
 </year>
@@ -71,7 +75,7 @@ Leg
 </motion_type>
 
 <source>
-TRO 3085 - Jihad
+TRO: 3085
 </source>
 
 <overview>

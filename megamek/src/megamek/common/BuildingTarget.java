@@ -152,8 +152,26 @@ public class BuildingTarget implements Targetable {
     }
 
     @Override
-    public int getTargetId() {
+    public int getId() {
         return id;
+    }
+
+    @Override
+    public void setId(int newId) {
+        id = newId;
+    }
+
+    @Override
+    public int getOwnerId() {
+        return Player.PLAYER_NONE;
+    }
+
+    @Override
+    public void setOwnerId(int newOwnerId) { }
+
+    @Override
+    public int getStrength() {
+        return 0;
     }
 
     @Override
@@ -229,11 +247,6 @@ public class BuildingTarget implements Targetable {
         return false;
     }
 
-    @Override
-    public boolean isAero() {
-        return false;
-    }
-
     /*
      * (non-Javadoc)
      * @see megamek.common.Targetable#isAirborne()
@@ -260,5 +273,15 @@ public class BuildingTarget implements Targetable {
     @Override
     public boolean isEnemyOf(Entity other) {
         return true;
+    }
+
+    @Override
+    public String generalName() {
+        return name;
+    }
+
+    @Override
+    public String specificName() {
+        return "";
     }
 }

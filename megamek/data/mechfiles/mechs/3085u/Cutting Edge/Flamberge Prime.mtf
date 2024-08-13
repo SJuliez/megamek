@@ -1,13 +1,17 @@
-Version:1.0
-Flamberge
-Prime
+chassis:Flamberge
+model:Prime
 mul id:1119
 
 Config:Biped Omnimech
 TechBase:Clan
 Era:3077
-Source:Jihad
+source:TRO: 3085
 Rules Level:2
+role:Skirmisher
+
+
+quirk:imp_target_med
+
 
 Mass:70
 Engine:280 XL (Clan) Engine(IS)
@@ -156,7 +160,7 @@ Clan Improved Jump Jet (omnipod)
 
 overview:Initially a Partial Wing test-bed, the Flamberge became a prominent Clan Jade Falcon OmniMech, helping to inspire the Falcon's Dark Age era design style aesthetic.
 
-capabilities:Built on a Endo Steel chassis, powered by a 280 rated XL Engine, and clad in thirteen and a half tons of armor, while slower than other front-line OmniMechs of similar weight, the bulk of the Flamberge's variants feature Jump Jets and the design was built with them in mind. Mounting eleven double heat sinks on its base frame, the design had thirty-five tons of available pod space.
+capabilities:Built on an Endo Steel chassis, powered by a 280 rated XL Engine, and clad in thirteen and a half tons of armor, while slower than other front-line OmniMechs of similar weight, the bulk of the Flamberge's variants feature Jump Jets and the design was built with them in mind. Mounting eleven double heat sinks on its base frame, the design had thirty-five tons of available pod space.
 
 deployment:Aside from the fixed pair of SRM-6 launchers mounted in its shoulders, the primary configuration mounted an ATM-6 in each torso supported by two Medium Pulse Lasers in each arm. The Flamberge Prime featured superb mobility thanks to its inclusion of Improved Jump Jets, mounted two tons of ATM munitions, a single ton of SRM reloads and four extra heat sinks.
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000-2002 Ben Mazur (bmazur@sev.org)
- * Copyright (c) 2022 - The MegaMek Team. All Rights Reserved.
+ * Copyright (c) 2022-2023 - The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MegaMek.
  *
@@ -19,20 +19,29 @@
  */
 package megamek.common.loaders;
 
-import java.io.*;
-import java.util.*;
-
+import megamek.codeUtilities.StringUtility;
 import megamek.common.*;
 import org.apache.logging.log4j.LogManager;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+
 /**
+ * This class represents mtf files which are used to store Meks. The class contains the file reader while the
+ * mtf file generation is currently located in {@link Mech#getMtf()}.
+ *
  * @author Ben
- * @since April 7, 2002, 8:47 PM
+ * @author Simon (Juliez)
  */
 public class MtfFile implements IMechLoader {
 
-    private final String name;
-    private final String model;
+    private String chassis;
+    private String model;
+    private String clanChassisName = "";
     private int mulId = -1;
 
     private String chassisConfig;
@@ -69,18 +78,29 @@ public class MtfFile implements IMechLoader {
     private final Map<EntityFluff.System, String> systemManufacturers = new EnumMap<>(EntityFluff.System.class);
     private final Map<EntityFluff.System, String> systemModels = new EnumMap<>(EntityFluff.System.class);
     private String notes = "";
-    private String imagePath = "";
+
+    private String fluffImageEncoded = "";
+    private String iconEncoded = "";
 
     private int bv = 0;
+    private String role;
 
     private final Map<EquipmentType, Mounted> hSharedEquip = new HashMap<>();
     private final List<Mounted> vSplitWeapons = new ArrayList<>();
+
+    private final List<String> quirkLines = new ArrayList<>();
 
     public static final int[] locationOrder =
             {Mech.LOC_LARM, Mech.LOC_RARM, Mech.LOC_LT, Mech.LOC_RT, Mech.LOC_CT, Mech.LOC_HEAD, Mech.LOC_LLEG, Mech.LOC_RLEG, Mech.LOC_CLEG};
     public static final int[] rearLocationOrder =
             {Mech.LOC_LT, Mech.LOC_RT, Mech.LOC_CT};
 
+    public static final String COMMENT = "#";
+    public static final String MTF_VERSION = "version:";
+    public static final String GENERATOR = "generator:";
+    public static final String CHASSIS = "chassis:";
+    public static final String CLAN_CHASSIS_NAME = "clanname:";
+    public static final String MODEL = "model:";
     public static final String COCKPIT = "cockpit:";
     public static final String GYRO = "gyro:";
     public static final String MOTIVE = "motive:";
@@ -115,7 +135,6 @@ public class MtfFile implements IMechLoader {
     public static final String SYSTEM_MANUFACTURER = "systemmanufacturer:";
     public static final String SYSTEM_MODEL = "systemmode:";
     public static final String NOTES = "notes:";
-    public static final String IMAGE_FILE = "imagefile:";
     public static final String BV = "bv:";
     public static final String WEAPONS = "weapons:";
     public static final String EMPTY = "-Empty-";
@@ -124,34 +143,17 @@ public class MtfFile implements IMechLoader {
     public static final String NO_CRIT = "nocrit:";
     public static final String SIZE = ":SIZE:";
     public static final String MUL_ID = "mul id:";
+    public static final String QUIRK = "quirk:";
+    public static final String WEAPON_QUIRK = "weaponquirk:";
+    public static final String ROLE = "role:";
+    public static final String FLUFF_IMAGE = "fluffimage:";
+    public static final String ICON = "icon:";
 
-    /**
-     * Creates new MtfFile
-     */
     public MtfFile(InputStream is) throws EntityLoadingException {
-        try (InputStreamReader isr = new InputStreamReader(is);
+        try (InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
              BufferedReader r = new BufferedReader(isr)) {
-            String version = r.readLine();
-            if (version == null) {
-                throw new EntityLoadingException("MTF File empty!");
-            }
-            // Version 1.0: Initial version.
-            // Version 1.1: Added level 3 cockpit and gyro options.
-            // version 1.2: added full head ejection
-            // Version 1.3: Added MUL ID
-            if (!version.trim().equalsIgnoreCase("Version:1.0")
-                    && !version.trim().equalsIgnoreCase("Version:1.1")
-                    && !version.trim().equalsIgnoreCase("Version:1.2")
-                    && !version.trim().equalsIgnoreCase("Version:1.3")) {
-                throw new EntityLoadingException("Wrong MTF file version.");
-            }
-
-            name = r.readLine();
-            model = r.readLine();
-
             critData = new String[9][12];
-
-            readCrits(r);
+            readLines(r);
         } catch (IOException ex) {
             LogManager.getLogger().error("", ex);
             throw new EntityLoadingException("I/O Error reading file");
@@ -161,53 +163,6 @@ public class MtfFile implements IMechLoader {
         } catch (NumberFormatException ex) {
             LogManager.getLogger().error("", ex);
             throw new EntityLoadingException("NumberFormatException reading file (format error)");
-        }
-    }
-
-    private void readCrits(BufferedReader r) throws IOException {
-        int slot = 0;
-        int loc = 0;
-        String crit;
-        int weaponsCount;
-        int armorLocation;
-        while (r.ready()) {
-            crit = r.readLine().trim();
-            if (crit.isEmpty()) {
-                continue;
-            }
-
-            if (isValidLocation(crit)) {
-                loc = getLocation(crit);
-                slot = 0;
-                continue;
-            }
-
-            if (isProcessedComponent(crit)) {
-                continue;
-            }
-
-            weaponsCount = weaponsList(crit);
-
-            if (weaponsCount > 0) {
-                for (int count = 0; count < weaponsCount; count++) {
-                    r.readLine();
-                }
-                continue;
-            }
-
-            armorLocation = getArmorLocation(crit);
-
-            if (armorLocation >= 0) {
-                armorValues[armorLocation] = crit;
-                continue;
-            }
-            if (critData.length <= loc) {
-                continue;
-            }
-            if (critData[loc].length <= slot) {
-                continue;
-            }
-            critData[loc][slot++] = crit.trim();
         }
     }
 
@@ -271,11 +226,17 @@ public class MtfFile implements IMechLoader {
                 mech = new BipedMech(iGyroType, iCockpitType);
             }
             mech.setFullHeadEject(fullHead);
-            mech.setChassis(name.trim());
+            mech.setChassis(chassis.trim());
+            mech.setClanChassisName(clanChassisName);
             mech.setModel(model.trim());
             mech.setMulId(mulId);
             mech.setYear(Integer.parseInt(techYear.substring(4).trim()));
             mech.setSource(source.substring("Source:".length()).trim());
+            if (StringUtility.isNullOrBlank(role)) {
+                mech.setUnitRole(UnitRole.UNDETERMINED);
+            } else {
+                mech.setUnitRole(UnitRole.parseRole(role));
+            }
 
             if (chassisConfig.contains("Omni")) {
                 mech.setOmni(true);
@@ -436,12 +397,6 @@ public class MtfFile implements IMechLoader {
             for (int x = 0; x < rearLocationOrder.length; x++) {
                 mech.initializeRearArmor(Integer.parseInt(armorValues[x + locationOrder.length].substring(10)), rearLocationOrder[x]);
             }
-            
-            // Set capital fighter stats for LAMs
-            if (mech instanceof LandAirMech) {
-                ((LandAirMech) mech).autoSetCapArmor();
-                ((LandAirMech) mech).autoSetFatalThresh();
-            }
 
             // oog, crits.
             compactCriticals(mech);
@@ -453,6 +408,14 @@ public class MtfFile implements IMechLoader {
 
             for (String equipment : noCritEquipment) {
                 parseNoCritEquipment(mech, equipment);
+            }
+
+            if (mech instanceof LandAirMech) {
+                // Set capital fighter stats for LAMs
+                ((LandAirMech) mech).autoSetCapArmor();
+                ((LandAirMech) mech).autoSetFatalThresh();
+                int fuelTankCount = (int) mech.getEquipment().stream().filter(e -> e.is(EquipmentTypeLookup.LAM_FUEL_TANK)).count();
+                ((LandAirMech) mech).setFuel(80 * (1 + fuelTankCount));
             }
 
             // add any heat sinks not allocated
@@ -501,9 +464,10 @@ public class MtfFile implements IMechLoader {
             mech.getFluff().setManufacturer(manufacturer);
             mech.getFluff().setPrimaryFactory(primaryFactory);
             mech.getFluff().setNotes(notes);
+            mech.getFluff().setFluffImage(fluffImageEncoded);
+            mech.setIcon(iconEncoded);
             systemManufacturers.forEach((k, v) -> mech.getFluff().setSystemManufacturer(k, v));
             systemModels.forEach((k, v) -> mech.getFluff().setSystemModel(k, v));
-            mech.getFluff().setMMLImagePath(imagePath);
 
             mech.setArmorTonnage(mech.getArmorWeight());
 
@@ -511,10 +475,107 @@ public class MtfFile implements IMechLoader {
                 mech.setUseManualBV(true);
                 mech.setManualBV(bv);
             }
+
+            List<QuirkEntry> quirks = new ArrayList<>();
+            for (String quirkLine : quirkLines) {
+                if (quirkLine.startsWith(QUIRK)) {
+                    QuirkEntry quirkEntry = new QuirkEntry(quirkLine.substring(QUIRK.length()));
+                    quirks.add(quirkEntry);
+                } else if (quirkLine.startsWith(WEAPON_QUIRK)) {
+                    String[] fields = quirkLine.substring(WEAPON_QUIRK.length()).split(":");
+                    int slot = Integer.parseInt(fields[2]);
+                    QuirkEntry quirkEntry = new QuirkEntry(fields[0], fields[1], slot, fields[3]);
+                    quirks.add(quirkEntry);
+                }
+            }
+            mech.loadQuirks(quirks);
+
             return mech;
         } catch (Exception ex) {
             LogManager.getLogger().error("", ex);
             throw new Exception(ex);
+        }
+    }
+
+    private String readLineIgnoringComments(BufferedReader reader) throws IOException {
+        while (true) {
+            String line = reader.readLine();
+            if (line == null) {
+                return "";
+            } else if (!line.startsWith(COMMENT)) {
+                return line;
+            }
+        }
+    }
+
+    private void readLines(BufferedReader r) throws IOException {
+        int slot = 0;
+        int loc = 0;
+        int weaponsCount;
+        int armorLocation;
+        while (r.ready()) {
+            String line = r.readLine().trim();
+
+            if (line.isBlank() || line.startsWith(COMMENT) || line.startsWith(GENERATOR)) {
+                continue;
+            }
+
+            if (line.toLowerCase().startsWith(MTF_VERSION)) {
+                // Reading the version, chassis and model as the first three lines without header is kept
+                // for backward compatibility for user-generated units. However the version is no longer checked
+                // for correct values as that makes no difference so long as the unit can be loaded
+                // Version 1.0: Initial version.
+                // Version 1.1: Added level 3 cockpit and gyro options.
+                // version 1.2: added full head ejection
+                // Version 1.3: Added MUL ID
+
+                String generatorOrChassis = readLineIgnoringComments(r);
+                if (generatorOrChassis.toLowerCase().startsWith(GENERATOR)) {
+                    // Compatibility with SSW 0.7.6.1 - Generator: comes between Version and chassis
+                    chassis = readLineIgnoringComments(r);
+                } else {
+                    chassis = generatorOrChassis;
+                }
+                model = readLineIgnoringComments(r);
+                continue;
+            }
+
+            if (isTitleLine(line)) {
+                continue;
+            }
+
+            if (isValidLocation(line)) {
+                loc = getLocation(line);
+                slot = 0;
+                continue;
+            }
+
+            if (isProcessedComponent(line)) {
+                continue;
+            }
+
+            weaponsCount = weaponsList(line);
+
+            if (weaponsCount > 0) {
+                for (int count = 0; count < weaponsCount; count++) {
+                    r.readLine();
+                }
+                continue;
+            }
+
+            armorLocation = getArmorLocation(line);
+
+            if (armorLocation >= 0) {
+                armorValues[armorLocation] = line;
+                continue;
+            }
+            if (critData.length <= loc) {
+                continue;
+            }
+            if (critData[loc].length <= slot) {
+                continue;
+            }
+            critData[loc][slot++] = line.trim();
         }
     }
 
@@ -729,7 +790,7 @@ public class MtfFile implements IMechLoader {
                 if (etype != null) {
                     if (etype.isSpreadable()) {
                         // do we already have one of these? Key on Type
-                        Mounted m = hSharedEquip.get(etype);
+                        Mounted<?> m = hSharedEquip.get(etype);
                         if (m != null) {
                             // use the existing one
                             mech.addCritical(loc, new CriticalSlot(m));
@@ -740,15 +801,26 @@ public class MtfFile implements IMechLoader {
                                               isTurreted);
                         m.setOmniPodMounted(isOmniPod);
                         hSharedEquip.put(etype, m);
+                    } else if (etype instanceof MiscType && etype.hasFlag(MiscType.F_TARGCOMP)) {
+                        // Targeting computers are special, they need to be loaded like spreadable equipment, but they aren't spreadable
+                        Mounted<?> m = hSharedEquip.get(etype);
+                        if (m == null) {
+                            m = mech.addTargCompWithoutSlots((MiscType) etype, loc, isOmniPod, isArmored);
+                            hSharedEquip.put(etype, m);
+                        }
+                        mech.addCritical(loc, new CriticalSlot(m));
+
+
                     } else if (((etype instanceof WeaponType) && ((WeaponType) etype).isSplitable()) || ((etype instanceof MiscType) && etype.hasFlag(MiscType.F_SPLITABLE))) {
-                        // do we already have this one in this or an outer
-                        // location?
+                        // do we already have this one in this or an outer location?
                         Mounted m = null;
                         boolean bFound = false;
                         for (Mounted vSplitWeapon : vSplitWeapons) {
                             m = vSplitWeapon;
                             int nLoc = m.getLocation();
-                            if (((nLoc == loc) || (loc == Mech.getInnerLocation(nLoc))) && (m.getType() == etype)) {
+                            if ((((nLoc == loc) || (loc == Mech.getInnerLocation(nLoc)))
+                                    || ((nLoc == Mech.LOC_CT) && (loc == Mech.LOC_HEAD)))
+                                    && (m.getType() == etype)) {
                                 bFound = true;
                                 break;
                             }
@@ -771,7 +843,7 @@ public class MtfFile implements IMechLoader {
                             }
                         } else {
                             // make a new one
-                            m = new Mounted(mech, etype);
+                            m = Mounted.createMounted(mech, etype);
                             m.setFoundCrits(1);
                             m.setArmored(isArmored);
                             m.setMechTurretMounted(isTurreted);
@@ -804,8 +876,13 @@ public class MtfFile implements IMechLoader {
                                 size = BLKFile.getLegacyVariableSize(critName);
                             }
                             mount.setSize(size);
-                            // THe size may require additional critical slots
-                            for (int c = 1; c < mount.getCriticals(); c++) {
+                            // The size may require additional critical slots
+                            // Account for loading Superheavy oversized Variable Size components
+                            int critCount = mount.getCriticals();
+                            if (mech.isSuperHeavy()){
+                                critCount = (int)Math.ceil(critCount / 2.0);
+                            }
+                            for (int c = 1; c < critCount; c++) {
                                 CriticalSlot cs = new CriticalSlot(mount);
                                 mech.addCritical(loc, cs, i + c);
                             }
@@ -1023,7 +1100,7 @@ public class MtfFile implements IMechLoader {
             gyroType = line;
             return true;
         }
-        
+
         if (lineLower.startsWith(MOTIVE)) {
             motiveType = line;
             return true;
@@ -1052,7 +1129,7 @@ public class MtfFile implements IMechLoader {
         if (lineLower.startsWith(MYOMER)) {
             return true;
         }
-        
+
         if (lineLower.startsWith(LAM)) {
             lamType = line;
             return true;
@@ -1110,9 +1187,14 @@ public class MtfFile implements IMechLoader {
             noCritEquipment.add(line.substring(NO_CRIT.length()));
             return true;
         }
-        
+
         if (lineLower.startsWith(OVERVIEW)) {
             overview = line.substring(OVERVIEW.length());
+            return true;
+        }
+
+        if (lineLower.startsWith(CLAN_CHASSIS_NAME)) {
+            clanChassisName = line.substring(CLAN_CHASSIS_NAME.length());
             return true;
         }
 
@@ -1120,12 +1202,12 @@ public class MtfFile implements IMechLoader {
             capabilities = line.substring(CAPABILITIES.length());
             return true;
         }
-                
+
         if (lineLower.startsWith(DEPLOYMENT)) {
             deployment = line.substring(DEPLOYMENT.length());
             return true;
         }
-        
+
         if (lineLower.startsWith(HISTORY)) {
             history = line.substring(HISTORY.length());
             return true;
@@ -1168,11 +1250,6 @@ public class MtfFile implements IMechLoader {
             return true;
         }
 
-        if (lineLower.startsWith(IMAGE_FILE)) {
-            imagePath = line.substring(IMAGE_FILE.length());
-            return true;
-        }
-
         if (lineLower.startsWith(BV)) {
             bv = Integer.parseInt(line.substring(BV.length()));
             return true;
@@ -1183,7 +1260,40 @@ public class MtfFile implements IMechLoader {
             return true;
         }
 
+        if (lineLower.startsWith(FLUFF_IMAGE)) {
+            fluffImageEncoded = line.substring(FLUFF_IMAGE.length());
+            return true;
+        }
+
+        if (lineLower.startsWith(ICON)) {
+            iconEncoded = line.substring(ICON.length());
+            return true;
+        }
+
+        if (lineLower.startsWith(QUIRK) || lineLower.startsWith(WEAPON_QUIRK)) {
+            quirkLines.add(line);
+            return true;
+        }
+
+        if (lineLower.startsWith(ROLE)) {
+            role = line.substring(ROLE.length());
+            return true;
+        }
+
         return false;
+    }
+
+    private boolean isTitleLine(String line) {
+        String lineLower = line.toLowerCase();
+        if (lineLower.startsWith(CHASSIS)) {
+            chassis = line.substring(CHASSIS.length());
+            return true;
+        } else if (lineLower.startsWith(MODEL)) {
+            model = line.substring(MODEL.length());
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private int weaponsList(String line) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 The MegaMek Team. All rights reserved.
+ * Copyright (c) 2020-2024 - The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MegaMek.
  *
@@ -10,13 +10,12 @@
  *
  * MegaMek is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MegaMek.  If not, see <http://www.gnu.org/licenses/>.
+ * along with MegaMek. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package megamek.common.util;
 
 import com.thoughtworks.xstream.XStream;
@@ -27,22 +26,55 @@ import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 
 import megamek.common.Coords;
+import megamek.common.net.marshalling.SanityInputFilter;
 
 /**
  * Class that off-loads serialization related code from Server.java
  */
 public class SerializationHelper {
-    
+
+    private SerializationHelper() {
+    }
+
     /**
-     * Factory method that produces an XStream object suitable for loading MegaMek save games
+     * Factory method that produces an XStream object suitable for working with
+     * MegaMek save games
      */
-    public static XStream getXStream() {
-        XStream xstream = new XStream();
+    public static XStream getSaveGameXStream() {
+        final XStream xStream = new XStream();
 
-        // This mirrors the settings is saveGame
-        xstream.setMode(XStream.ID_REFERENCES);
+        // This will make save games much smaller by using a more efficient means of
+        // referencing objects in the XML graph
+        xStream.setMode(XStream.ID_REFERENCES);
 
-        xstream.registerConverter(new Converter() {
+        xStream.allowTypesByRegExp(SanityInputFilter.getFilterList());
+
+        xStream.allowTypeHierarchy(megamek.common.BTObject.class);
+        xStream.allowTypeHierarchy(megamek.common.Building.class);
+        xStream.allowTypeHierarchy(megamek.common.Crew.class);
+        xStream.allowTypeHierarchy(megamek.common.GameTurn.class);
+        xStream.allowTypeHierarchy(megamek.common.ITechnology.class);
+        xStream.allowTypeHierarchy(megamek.common.Roll.class);
+        xStream.allowTypeHierarchy(megamek.common.Transporter.class);
+        xStream.allowTypeHierarchy(megamek.common.Mounted.class);
+        xStream.allowTypeHierarchy(megamek.common.actions.EntityAction.class);
+        xStream.allowTypeHierarchy(megamek.common.icons.AbstractIcon.class);
+        xStream.allowTypeHierarchy(megamek.common.options.AbstractOptions.class);
+        xStream.allowTypeHierarchy(megamek.common.options.IOption.class);
+        xStream.allowTypeHierarchy(megamek.common.weapons.AttackHandler.class);
+        xStream.allowTypeHierarchy(megamek.server.victory.IVictoryConditions.class);
+        xStream.allowTypeHierarchy(megamek.common.strategicBattleSystems.SBFMoveStep.class);
+        return xStream;
+    }
+
+    /**
+     * Factory method that produces an XStream object suitable for loading MegaMek
+     * save games
+     */
+    public static XStream getLoadSaveGameXStream() {
+        XStream xStream = getSaveGameXStream();
+
+        xStream.registerConverter(new Converter() {
             @Override
             public boolean canConvert(Class cls) {
                 return (cls == Coords.class);
@@ -50,8 +82,10 @@ public class SerializationHelper {
 
             @Override
             public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
-                int x = 0, y = 0;
-                boolean foundX = false, foundY = false;
+                int x = 0;
+                int y = 0;
+                boolean foundX = false;
+                boolean foundY = false;
                 while (reader.hasMoreChildren()) {
                     reader.moveDown();
                     switch (reader.getNodeName()) {
@@ -77,7 +111,7 @@ public class SerializationHelper {
                 // Unused here
             }
         });
-        
-        return xstream;
+
+        return xStream;
     }
 }

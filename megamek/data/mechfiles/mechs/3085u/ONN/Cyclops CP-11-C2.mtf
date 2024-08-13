@@ -1,13 +1,21 @@
-Version:1.0
-Cyclops
-CP-11-C2
+chassis:Cyclops
+model:CP-11-C2
 mul id:776
 
 Config:Biped
 TechBase:Inner Sphere
 Era:3073
-Source:Jihad
+source:TRO: 3085
 Rules Level:2
+role:Brawler
+
+
+
+quirk:battle_computer
+quirk:cowl
+quirk:difficult_eject
+quirk:weak_head_2
+
 
 Mass:90
 Engine:360 Fusion Engine(IS)
@@ -155,7 +163,7 @@ Foot Actuator
 
 overview:The Cyclops began production in 2710 as an assault BattleMech and headquarters unit for Star League Defense Force field commanders.
 
-capabilities:A decent mix of weapons provided the Cyclops with both long- and short-range firepower and a sizable engine to keep up with mobile operations. But the centerpiece of the Cyclops is its sophisticated holographic battle computer, the Tacticon B-2000. When combined with the Omstead Olmstead 840 tight beam comm suite with SatNav module, the Cyclops can effectively command a brigade across the surface of an entire world. Unfortunately the Cyclops is poorly protected relative to other assault 'Mechs with only ten tons of armor, and while its normal load of twelve heat sinks allows it to stay cool in most cases, they can prove to be inadequate in especially heavy situations.
+capabilities:A decent mix of weapons provided the Cyclops with both long- and short-range firepower and a sizable engine to keep up with mobile operations. But the centerpiece of the Cyclops is its sophisticated holographic battle computer, the Tacticon B-2000. When combined with the Olmstead 840 tight beam comm suite with SatNav module, the Cyclops can effectively command a brigade across the surface of an entire world. Unfortunately the Cyclops is poorly protected relative to other assault 'Mechs with only ten tons of armor, and while its normal load of twelve heat sinks allows it to stay cool in most cases, they can prove to be inadequate in especially heavy situations.
 
 deployment:Based on the 11-C variant and first fielded in 3073, this Cyclops is a company command-level machine that carries a pair of C3 Master Computers. To make room for these massive computers, the Gauss Rifle, its ammunition, and some armor were replaced by a single ER PPC. This leaves the Cyclops slightly undergunned for an assault 'Mech, but it shouldn't be engaging the enemy closely anyway.
 

@@ -15,12 +15,15 @@
 */
 package megamek.common;
 
+import megamek.SuiteConstants;
 import megamek.client.ui.swing.calculationReport.CalculationReport;
-import megamek.common.battlevalue.MekBVCalculator;
 import megamek.common.cost.MekCostCalculator;
 import megamek.common.enums.AimingMode;
 import megamek.common.enums.MPBoosters;
+import megamek.common.equipment.MiscMounted;
 import megamek.common.loaders.MtfFile;
+import megamek.common.options.IBasicOption;
+import megamek.common.options.IOption;
 import megamek.common.options.OptionsConstants;
 import megamek.common.preference.PreferenceManager;
 import megamek.common.weapons.autocannons.ACWeapon;
@@ -32,7 +35,9 @@ import org.apache.logging.log4j.LogManager;
 
 import java.io.PrintWriter;
 import java.math.BigInteger;
+import java.time.LocalDate;
 import java.util.*;
+import static java.util.Map.entry;
 import java.util.stream.Collectors;
 
 /**
@@ -153,10 +158,14 @@ public abstract class Mech extends Entity {
     public static final int COCKPIT_QUADVEE = 13;
 
     public static final int COCKPIT_SUPERHEAVY_INDUSTRIAL = 14;
-    
+
     public static final int COCKPIT_SUPERHEAVY_COMMAND_CONSOLE = 15;
-    
+
     public static final int COCKPIT_SMALL_COMMAND_CONSOLE = 16;
+
+    public static final int COCKPIT_TRIPOD_INDUSTRIAL = 17;
+
+    public static final int COCKPIT_SUPERHEAVY_TRIPOD_INDUSTRIAL = 18;
 
     public static final String[] COCKPIT_STRING = { "Standard Cockpit",
             "Small Cockpit", "Command Console", "Torso-Mounted Cockpit",
@@ -164,17 +173,37 @@ public abstract class Mech extends Entity {
             "Primitive Industrial Cockpit", "Superheavy Cockpit",
             "Superheavy Tripod Cockpit", "Tripod Cockpit", "Interface Cockpit",
             "Virtual Reality Piloting Pod", "QuadVee Cockpit",
-            "Superheavy Industrial Cockpit", "Superheavy Command Console", 
-        "Small Command Console"};
+            "Superheavy Industrial Cockpit", "Superheavy Command Console",
+            "Small Command Console", "Tripod Industrial Cockpit", "Superheavy Tripod Industrial Cockpit" };
 
     public static final String[] COCKPIT_SHORT_STRING = { "Standard", "Small",
             "Command Console", "Torso Mounted", "Dual", "Industrial",
             "Primitive", "Primitive Industrial", "Superheavy",
-            "Superheavy Tripod", "Tripod", "Interface", "VRRP", "Quadvee",
-            "Superheavy Industrial", "Superheavy Command", 
-            "Small Command"};
+            "Superheavy Tripod", "Tripod", "Interface", "VRPP", "Quadvee",
+            "Superheavy Industrial", "Superheavy Command",
+            "Small Command", "Tripod Industrial", "Superheavy Tripod Industrial" };
 
     public static final String FULL_HEAD_EJECT_STRING = "Full Head Ejection System";
+    
+    /**
+     * Contains a mapping of locations which are blocked when carrying cargo in the "key" location
+     */
+    public static final Map<Integer, List<Integer>> BLOCKED_FIRING_LOCATIONS;
+    
+    static {
+    	BLOCKED_FIRING_LOCATIONS = new HashMap<>();
+    	BLOCKED_FIRING_LOCATIONS.put(LOC_LARM, new ArrayList<>());
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_LARM).add(LOC_LARM);
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_LARM).add(LOC_LT);
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_LARM).add(LOC_CT);
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_LARM).add(LOC_RT);
+    	
+    	BLOCKED_FIRING_LOCATIONS.put(LOC_RARM, new ArrayList<>());
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_RARM).add(LOC_RARM);
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_RARM).add(LOC_LT);
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_RARM).add(LOC_CT);
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_RARM).add(LOC_RT);
+    }
 
     // jump types
     public static final int JUMP_UNKNOWN = -1;
@@ -323,9 +352,11 @@ public abstract class Mech extends Entity {
 
         switch (inCockpitType) {
             case COCKPIT_TRIPOD:
+            case COCKPIT_TRIPOD_INDUSTRIAL:
                 setCrew(new Crew(CrewType.TRIPOD));
                 break;
             case COCKPIT_SUPERHEAVY_TRIPOD:
+            case COCKPIT_SUPERHEAVY_TRIPOD_INDUSTRIAL:
                 setCrew(new Crew(CrewType.SUPERHEAVY_TRIPOD));
                 break;
             case COCKPIT_DUAL:
@@ -345,6 +376,12 @@ public abstract class Mech extends Entity {
     @Override
     public int getUnitType() {
         return UnitType.MEK;
+    }
+
+    @Override
+    public CrewType defaultCrewType() {
+        return (cockpitType == COCKPIT_COMMAND_CONSOLE) || (cockpitType == COCKPIT_SUPERHEAVY_COMMAND_CONSOLE)
+                || (cockpitType == COCKPIT_SMALL_COMMAND_CONSOLE) ? CrewType.COMMAND_CONSOLE : CrewType.SINGLE;
     }
 
     /**
@@ -825,19 +862,6 @@ public abstract class Mech extends Entity {
     }
 
     /**
-     * does this mech have SCM?
-     */
-    public boolean hasSCM() {
-        for (Mounted m : getEquipment()) {
-            if ((m.getType() instanceof MiscType)
-                    && m.getType().hasFlag(MiscType.F_SCM)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * does this mech have industrial TSM=
      *
      * @return
@@ -974,52 +998,20 @@ public abstract class Mech extends Entity {
     }
 
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreHeat, boolean ignoreModularArmor) {
+    public int getRunMP(MPCalculationSetting mpCalculationSetting) {
+        int mp;
         MPBoosters mpBoosters = getArmedMPBoosters();
-        if (!mpBoosters.isNone()) {
-            return mpBoosters.calculateRunMP(
-                    getWalkMP(gravity, ignoreHeat, ignoreModularArmor))
-                            - (hasMPReducingHardenedArmor() ? 1 : 0);
-        }
-        return Math.max(0, super.getRunMP(gravity, ignoreHeat, ignoreModularArmor)
-                - (hasMPReducingHardenedArmor() ? 1 : 0));
-    }
-
-    @Override
-    public int getRunMPwithOneMASC(boolean gravity, boolean ignoreHeat,
-                                   boolean ignoreModularArmor) {
-        MPBoosters mpBoosters = getArmedMPBoosters();
-        if (!mpBoosters.isNone()) {
-            return MPBoosters.MASC_ONLY.calculateRunMP(
-                    getWalkMP(gravity, ignoreHeat, ignoreModularArmor))
-                    - (hasMPReducingHardenedArmor() ? 1 : 0);
+        if (!mpCalculationSetting.ignoreMASC && !mpBoosters.isNone()) {
+            if (mpCalculationSetting.singleMASC) {
+                mp = MPBoosters.MASC_ONLY.calculateRunMP(getWalkMP(mpCalculationSetting));
+            } else {
+                mp = mpBoosters.calculateRunMP(getWalkMP(mpCalculationSetting));
+            }
+        } else {
+            mp = super.getRunMP(mpCalculationSetting);
         }
 
-        return super.getRunMP(gravity, ignoreHeat, ignoreModularArmor)
-                - (hasMPReducingHardenedArmor() ? 1 : 0);
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getRunMPwithoutMASC(boolean, boolean, boolean)
-     */
-    @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreHeat,
-            boolean ignoreModularArmor) {
-        return super.getRunMP(gravity, ignoreHeat, ignoreModularArmor)
-                - (hasMPReducingHardenedArmor() ? 1 : 0);
-    }
-
-
-
-    /**
-     * @return The mech's run MP without MASC or supercharger, but with any reduction
-     *         due to hardened armor.
-     */
-    public int getOriginalRunMPwithoutMASC() {
-        return super.getOriginalRunMP()
-                - (hasMPReducingHardenedArmor() ? 1 : 0);
+        return Math.max(0, mp - hardenedArmorMPReduction());
     }
 
     /**
@@ -1052,116 +1044,35 @@ public abstract class Mech extends Entity {
         return extra + (hasEngine() ? getEngine().getRunHeat(this) : 0);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getSprintMP()
-     */
     @Override
-    public int getSprintMP() {
+    public int getSprintMP(MPCalculationSetting mpCalculationSetting) {
         if (hasHipCrit()) {
-            return getRunMP();
-        }
-        return getSprintMP(true, false, false);
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getSprintMP(boolean, boolean, boolean)
-     */
-    @Override
-    public int getSprintMP(boolean gravity, boolean ignoreHeat,
-            boolean ignoreModularArmor) {
-        if (hasHipCrit()) {
-            return getRunMP(gravity, ignoreHeat, ignoreModularArmor);
+            return getRunMP(mpCalculationSetting);
         }
 
+        int mp;
         MPBoosters mpBoosters = getArmedMPBoosters();
-        if (!mpBoosters.isNone()) {
-            return mpBoosters.calculateSprintMP(
-                    getWalkMP(gravity, ignoreHeat, ignoreModularArmor))
-            - (hasMPReducingHardenedArmor() ? 1 : 0);
+        if (!mpCalculationSetting.ignoreMASC && !mpBoosters.isNone()) {
+            if (mpCalculationSetting.singleMASC) {
+                mp = MPBoosters.MASC_ONLY.calculateSprintMP(getWalkMP(mpCalculationSetting));
+            } else {
+                mp = mpBoosters.calculateSprintMP(getWalkMP(mpCalculationSetting));
+            }
+        } else {
+            // normally, sprint MP is just 2x walk speed
+            mp = getWalkMP(mpCalculationSetting) * 2;
         }
 
-        return getSprintMPwithoutMASC(gravity, ignoreHeat, ignoreModularArmor);
+        return Math.max(0, mp - hardenedArmorMPReduction());
     }
 
-    @Override
-    public int getSprintMPwithOneMASC() {
-        return getSprintMPwithOneMASC(true, false, false);
-    }
-
-    @Override
-    public int getSprintMPwithOneMASC(boolean gravity, boolean ignoreHeat,
-                                      boolean ignoreModularArmor) {
-        if (hasHipCrit()) {
-            return getRunMPwithoutMASC(gravity, ignoreHeat, ignoreModularArmor);
-        }
-
-        MPBoosters mpBoosters = getArmedMPBoosters();
-        if (!mpBoosters.isNone()) {
-            return MPBoosters.MASC_ONLY.calculateSprintMP(
-                    getWalkMP(gravity, ignoreHeat, ignoreModularArmor))
-                    - (hasMPReducingHardenedArmor() ? 1 : 0);
-        }
-
-        return super.getRunMP(gravity, ignoreHeat, ignoreModularArmor)
-                - (hasMPReducingHardenedArmor() ? 1 : 0);
-    }
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getSprintMPwithoutMASC(boolean, boolean)
-     */
-    @Override
-    public int getSprintMPwithoutMASC() {
-        return getSprintMPwithoutMASC(true, false, false);
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getSprintMPwithoutMASC(boolean, boolean,
-     * boolean)
-     */
-    @Override
-    public int getSprintMPwithoutMASC(boolean gravity, boolean ignoreHeat,
-            boolean ignoreModularArmor) {
-        if (hasHipCrit()) {
-            return getRunMPwithoutMASC(gravity, ignoreHeat, ignoreModularArmor);
-        }
-        return ((int) Math.ceil(getWalkMP(gravity, ignoreHeat,
-                ignoreModularArmor) * 2.0))
-                - (hasMPReducingHardenedArmor() ? 1 : 0);
-    }
-
-    public int getOriginalSprintMPwithoutMASC() {
-        return ((int) Math.ceil(getOriginalWalkMP() * 2.0)) - (hasMPReducingHardenedArmor() ? 1 : 0);
-    }
-
-    /**
-     * Returns this entity's Sprint mp as a string.
-     */
-    @Override
-    public String getSprintMPasString() {
-        MPBoosters armedBoosters = getArmedMPBoosters();
-        return !armedBoosters.isNone()
-                ? getRunMPwithoutMASC() + "(" + getSprintMP() + ")"
-                : Integer.toString(getSprintMP());
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getRunningGravityLimit()
-     */
     @Override
     public int getRunningGravityLimit() {
         if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_SPRINT)) {
-            return getSprintMP(false, false, false);
+            return getSprintMP(MPCalculationSetting.NO_GRAVITY);
+        } else {
+            return getRunMP(MPCalculationSetting.NO_GRAVITY);
         }
-        return getRunMP(false, false, false);
     }
 
     /**
@@ -1169,65 +1080,116 @@ public abstract class Mech extends Entity {
      */
     @Override
     public int getSprintHeat() {
-        int extra = bDamagedCoolantSystem?1:0;
-        return extra + (hasEngine() ? getEngine().getSprintHeat() : 0);
+        int extra = bDamagedCoolantSystem ? 1 : 0;
+        return extra + (hasEngine() ? getEngine().getSprintHeat(this) : 0);
     }
 
-    /**
-     * This mech's jumping MP modified for missing jump jets and gravity
-     */
     @Override
-    public int getJumpMP() {
-        return getJumpMP(true);
-    }
-
-    /**
-     * This mech's jumping MP modified for missing jump jets and possibly
-     * gravity
-     */
-    @Override
-    public int getJumpMP(boolean gravity) {
-        return getJumpMP(gravity, false);
-    }
-
-    public int getJumpMP(boolean gravity, boolean ignoreModularArmor) {
-        int jump = 0;
-
+    public int getJumpMP(MPCalculationSetting mpCalculationSetting) {
         if (hasShield() && (getNumberOfShields(MiscType.S_SHIELD_LARGE) > 0)) {
             return 0;
         }
 
+        int mp = 0;
+        boolean isJumpBooster = false;
+
         for (Mounted mounted : getMisc()) {
             if (mounted.getType().hasFlag(MiscType.F_JUMP_JET)
                     && !mounted.isDestroyed() && !mounted.isBreached()) {
-                jump++;
+                mp++;
             } else if (mounted.getType().hasFlag(MiscType.F_JUMP_BOOSTER)
                     && !mounted.isDestroyed() && !mounted.isBreached()) {
-                jump = getOriginalJumpMP();
+                mp = getOriginalJumpMP();
+                isJumpBooster = true;
                 break;
             }
         }
 
+        if (!mpCalculationSetting.ignoreSubmergedJumpJets && hasOccupiedHex()
+                && !isJumpBooster && getElevation() < 0) {
+            int waterLevel = game.getBoard().getHex(getPosition()).terrainLevel(Terrains.WATER);
+            if (waterLevel > 1) {
+                return 0;
+            } else if (waterLevel == 1) {
+                mp = torsoJumpJets();
+            }
+        }
+
         // apply Partial Wing bonus if we have the ability to jump
-        if (jump > 0) {
+        if (mp > 0) {
             for (Mounted mount : getMisc()) {
                 if (mount.getType().hasFlag(MiscType.F_PARTIAL_WING)) {
-                    jump += getPartialWingJumpBonus(mount);
+                    mp += getPartialWingJumpBonus(mount, mpCalculationSetting);
                     break;
                 }
             }
         }
-        // Medium shield reduces jump mp by 1/shield
-        jump -= getNumberOfShields(MiscType.S_SHIELD_MEDIUM);
 
-        if (hasModularArmor() && !ignoreModularArmor) {
-            jump--;
+        // Medium shield reduces jump mp by 1/shield
+        mp -= getNumberOfShields(MiscType.S_SHIELD_MEDIUM);
+
+        if (!mpCalculationSetting.ignoreModularArmor && hasModularArmor()) {
+            mp--;
         }
-        
-        if (gravity) {
-            return Math.max(applyGravityEffectsOnMP(jump), 0);
+
+        if (!mpCalculationSetting.ignoreGravity) {
+            return Math.max(applyGravityEffectsOnMP(mp), 0);
         }
-        return Math.max(jump, 0);
+
+        return Math.max(mp, 0);
+    }
+
+    public int getPartialWingJumpWeightClassBonus()  {
+        return (getWeightClass() <= EntityWeightClass.WEIGHT_MEDIUM) ? 2 : 1;
+    }
+
+    public int getPartialWingJumpAtmoBonus() {
+        return getPartialWingJumpAtmoBonus(MPCalculationSetting.STANDARD);
+    }
+
+    public int getPartialWingJumpAtmoBonus(MPCalculationSetting mpCalculationSetting)  {
+        int bonus;
+
+        if (!mpCalculationSetting.ignoreWeather && (game != null)) {
+            if ((getWeightClass() <= EntityWeightClass.WEIGHT_MEDIUM)) {
+                switch (game.getPlanetaryConditions().getAtmosphere()) {
+                    case VACUUM:
+                    case TRACE:
+                        bonus = 0;
+                        break;
+                    case THIN:
+                        bonus = 1;
+                        break;
+                    case VERY_HIGH:
+                        bonus = 3;
+                        break;
+                    case STANDARD:
+                    case HIGH:
+                    default:
+                        bonus = 2;
+                        break;
+                }
+            } else {
+                switch (game.getPlanetaryConditions().getAtmosphere()) {
+                    case VACUUM:
+                    case TRACE:
+                    case THIN:
+                        bonus = 0;
+                        break;
+                    case HIGH:
+                    case VERY_HIGH:
+                        bonus = 2;
+                        break;
+                    case STANDARD:
+                    default:
+                        bonus = 1;
+                }
+            }
+        } else {
+            bonus = getPartialWingJumpWeightClassBonus();
+        }
+
+        return bonus;
     }
 
     /**
@@ -1237,58 +1199,15 @@ public abstract class Mech extends Entity {
      *            The mounted location of the Wing
      * @return The Jump MP bonus conferred by the wing
      */
-    public int getPartialWingJumpBonus(Mounted mount) {
-        int bonus;
-        if (game != null) {
-            if ((getWeightClass() <= EntityWeightClass.WEIGHT_MEDIUM)) {
-                switch (game.getPlanetaryConditions().getAtmosphere()) {
-                    case PlanetaryConditions.ATMO_VACUUM:
-                    case PlanetaryConditions.ATMO_TRACE:
-                        bonus = 0;
-                        break;
-                    case PlanetaryConditions.ATMO_THIN:
-                        bonus = 1;
-                        break;
-                    case PlanetaryConditions.ATMO_VHIGH:
-                        bonus = 3;
-                        break;
-                    case PlanetaryConditions.ATMO_STANDARD:
-                    case PlanetaryConditions.ATMO_HIGH:
-                    default:
-                        bonus = 2;
-                        break;
-                }
-            } else {
-                switch (game.getPlanetaryConditions().getAtmosphere()) {
-                    case PlanetaryConditions.ATMO_VACUUM:
-                    case PlanetaryConditions.ATMO_TRACE:
-                    case PlanetaryConditions.ATMO_THIN:
-                        bonus = 0;
-                        break;
-                    case PlanetaryConditions.ATMO_HIGH:
-                    case PlanetaryConditions.ATMO_VHIGH:
-                        bonus = 2;
-                        break;
-                    case PlanetaryConditions.ATMO_STANDARD:
-                    default:
-                        bonus = 1;
-                }
-            }
-        } else {
-            if ((getWeightClass() <= EntityWeightClass.WEIGHT_MEDIUM)) {
-                bonus = 2;
-            } else {
-                bonus = 1;
-            }
-        }
-
-        // subtract jumping bonus for damaged criticals
-        bonus -= getBadCriticals(CriticalSlot.TYPE_EQUIPMENT,
-                getEquipmentNum(mount), Mech.LOC_RT);
-        bonus -= getBadCriticals(CriticalSlot.TYPE_EQUIPMENT,
-                getEquipmentNum(mount), Mech.LOC_LT);
-
+    public int getPartialWingJumpBonus(Mounted mount, MPCalculationSetting mpCalculationSetting) {
+        int bonus = getPartialWingJumpAtmoBonus(mpCalculationSetting);
+        bonus -= getBadCriticals(CriticalSlot.TYPE_EQUIPMENT, getEquipmentNum(mount), Mech.LOC_RT);
+        bonus -= getBadCriticals(CriticalSlot.TYPE_EQUIPMENT, getEquipmentNum(mount), Mech.LOC_LT);
         return Math.max(bonus, 0);
+    }
+
+    public int getPartialWingJumpBonus(Mounted mount) {
+        return getPartialWingJumpBonus(mount, MPCalculationSetting.STANDARD);
     }
 
     /**
@@ -1300,18 +1219,18 @@ public abstract class Mech extends Entity {
         int bonus;
         if (game != null) {
             switch (game.getPlanetaryConditions().getAtmosphere()) {
-                case PlanetaryConditions.ATMO_VACUUM:
+                case VACUUM:
                     bonus = 0;
                     break;
-                case PlanetaryConditions.ATMO_TRACE:
+                case TRACE:
                     bonus = 1;
                     break;
-                case PlanetaryConditions.ATMO_THIN:
+                case THIN:
                     bonus = 2;
                     break;
-                case PlanetaryConditions.ATMO_STANDARD:
-                case PlanetaryConditions.ATMO_HIGH:
-                case PlanetaryConditions.ATMO_VHIGH:
+                case STANDARD:
+                case HIGH:
+                case VERY_HIGH:
                 default:
                     bonus = 3;
                     break;
@@ -1381,28 +1300,6 @@ public abstract class Mech extends Entity {
                 return 0;
             default:
                 return extra + (hasEngine() ? getEngine().getJumpHeat(movedMP) : 0);
-        }
-    }
-
-    /**
-     * Returns this mech's jumping MP, modified for missing and underwater jets
-     * and gravity.
-     */
-    @Override
-    public int getJumpMPWithTerrain() {
-        if ((getPosition() == null) || (game.getBoard().getHex(getPosition()) == null) || (getJumpType() == JUMP_BOOSTER)) {
-            return getJumpMP();
-        }
-        int waterLevel = 0;
-        if (!isOffBoard()) {
-            waterLevel = game.getBoard().getHex(getPosition()).terrainLevel(Terrains.WATER);
-        }
-        if ((waterLevel <= 0) || (getElevation() >= 0)) {
-            return getJumpMP();
-        } else if (waterLevel > 1) {
-            return 0;
-        } else { // waterLevel == 1
-            return applyGravityEffectsOnMP(torsoJumpJets());
         }
     }
 
@@ -1541,7 +1438,7 @@ public abstract class Mech extends Entity {
 
         for (int i = 0; i < toAllocate; i++) {
             try {
-                addEquipment(new Mounted(this, sinkType), Entity.LOC_NONE, false);
+                addEquipment(Mounted.createMounted(this, sinkType), Entity.LOC_NONE, false);
             } catch (LocationFullException ignored) {
                 // um, that's impossible.
             }
@@ -1633,19 +1530,6 @@ public abstract class Mech extends Entity {
     }
 
     /**
-     * Returns the about of heat that the entity can sink each turn.
-     */
-    @Override
-    public int getHeatCapacity() {
-        return getHeatCapacity(true, true);
-    }
-
-    @Override
-    public int getHeatCapacity(boolean radicalHeatSink) {
-        return getHeatCapacity(true, radicalHeatSink);
-    }
-
-    /**
      * Returns the name of the heat sinks mounted on this 'mech.
      *
      * @return
@@ -1662,15 +1546,28 @@ public abstract class Mech extends Entity {
                 return m.getName();
             }
         }
-        
+
         // if a mech has no heat sink equipment, we pretend like it has standard heat sinks.
         return "Heat Sink";
     }
 
-    public int getHeatCapacity(boolean includePartialWing,
-            boolean includeRadicalHeatSink) {
+    /**
+     * Returns the about of heat that the entity can sink each turn.
+     */
+    @Override
+    public int getHeatCapacity() {
+        return getHeatCapacity(true, true);
+    }
+
+    @Override
+    public int getHeatCapacity(boolean radicalHeatSink) {
+        return getHeatCapacity(true, radicalHeatSink);
+    }
+
+    public int getHeatCapacity(boolean includePartialWing, boolean includeRadicalHeatSink) {
         int capacity = 0;
         int activeCount = getActiveSinks();
+        boolean isDoubleHeatSink = false;
 
         for (Mounted mounted : getMisc()) {
             if (mounted.isDestroyed() || mounted.isBreached()) {
@@ -1684,26 +1581,24 @@ public abstract class Mech extends Entity {
                     && mounted.getType().hasFlag(MiscType.F_DOUBLE_HEAT_SINK)) {
                 activeCount--;
                 capacity += 2;
+                isDoubleHeatSink = true;
             } else if (mounted.getType().hasFlag(
                     MiscType.F_IS_DOUBLE_HEAT_SINK_PROTOTYPE)) {
                 capacity += 2;
+                isDoubleHeatSink = true;
             } else if (includePartialWing
                     && mounted.getType().hasFlag(MiscType.F_PARTIAL_WING)
-                    && // unless
-                       // all crits
-                       // are
-                       // destroyed,
-                       // we get
-                       // the bonus
+                    && // unless all crits are destroyed, we get the bonus
                     ((getGoodCriticals(CriticalSlot.TYPE_EQUIPMENT,
-                            getEquipmentNum(mounted), Mech.LOC_RT) > 0) || (getGoodCriticals(
-                            CriticalSlot.TYPE_EQUIPMENT,
+                            getEquipmentNum(mounted), Mech.LOC_RT) > 0)
+                            || (getGoodCriticals(CriticalSlot.TYPE_EQUIPMENT,
                             getEquipmentNum(mounted), Mech.LOC_LT) > 0))) {
                 capacity += getPartialWingHeatBonus();
                 includePartialWing = false; // Only count the partial wing bonus
                                             // once.
             }
         }
+        capacity -= damagedSCMCritCount() * (isDoubleHeatSink ? 2 : 1);
         // AirMech mode for LAMs confers the same heat benefits as a partial wing.
         if (includePartialWing && movementMode == EntityMovementMode.WIGE) {
             capacity += getPartialWingHeatBonus();
@@ -1713,7 +1608,14 @@ public abstract class Mech extends Entity {
             capacity += (int) Math.ceil(getActiveSinks() * 0.4);
         }
 
-        return capacity;
+        // If the tacops option for coolant failure is enabled, include reductions for
+        // coolant failure
+        if (game != null &&
+                game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_COOLANT_FAILURE)) {
+            capacity -= heatSinkCoolantFailureFactor;
+        }
+
+        return Math.max(capacity, 0);
     }
 
     /**
@@ -1764,7 +1666,7 @@ public abstract class Mech extends Entity {
         }
         return sinksUnderwater;
     }
-    
+
     @Override
     public boolean tracksHeat() {
         return true;
@@ -1837,7 +1739,7 @@ public abstract class Mech extends Entity {
         if (hasQuirk(OptionsConstants.QUIRK_NEG_NO_TWIST)) {
             return false;
         }
-        return !isProne() && !isBracing();
+        return !(isProne() || isBracing() || getAlreadyTwisted());
     }
 
     /**
@@ -2090,8 +1992,7 @@ public abstract class Mech extends Entity {
                 // normal front hits
                 switch (roll) {
                     case 2:
-                        if ((getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_TAC))
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
                                 && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
@@ -2116,9 +2017,7 @@ public abstract class Mech extends Entity {
                     case 11:
                         return new HitData(Mech.LOC_LARM);
                     case 12:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(
-                                        OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                     aimedLocation, aimingMode, cover);
@@ -2131,8 +2030,7 @@ public abstract class Mech extends Entity {
                 // normal left side hits
                 switch (roll) {
                     case 2:
-                        if ((getCrew().hasEdgeRemaining() && getCrew()
-                                .getOptions().booleanOption(OptionsConstants.EDGE_WHEN_TAC))
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
                                 && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
@@ -2168,9 +2066,7 @@ public abstract class Mech extends Entity {
                     case 11:
                         return new HitData(Mech.LOC_RLEG);
                     case 12:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(
-                                        OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                     aimedLocation, aimingMode, cover);
@@ -2183,8 +2079,7 @@ public abstract class Mech extends Entity {
                 // normal right side hits
                 switch (roll) {
                     case 2:
-                        if ((getCrew().hasEdgeRemaining() && getCrew()
-                                .getOptions().booleanOption(OptionsConstants.EDGE_WHEN_TAC))
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
                                 && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
@@ -2220,9 +2115,7 @@ public abstract class Mech extends Entity {
                     case 11:
                         return new HitData(Mech.LOC_LLEG);
                     case 12:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(
-                                        OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                     aimedLocation, aimingMode, cover);
@@ -2238,9 +2131,7 @@ public abstract class Mech extends Entity {
                         && isProne()) {
                     switch (roll) {
                         case 2:
-                            if ((getCrew().hasEdgeRemaining() && getCrew()
-                                    .getOptions()
-                                    .booleanOption(OptionsConstants.EDGE_WHEN_TAC))
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
                                     && !game.getOptions().booleanOption(
                                             OptionsConstants.ADVCOMBAT_NO_TAC)) {
                                 getCrew().decreaseEdge();
@@ -2268,9 +2159,7 @@ public abstract class Mech extends Entity {
                         case 11:
                             return new HitData(Mech.LOC_LARM, true);
                         case 12:
-                            if (getCrew().hasEdgeRemaining()
-                                    && getCrew().getOptions().booleanOption(
-                                            OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side,
                                         aimedLocation, aimingMode, cover);
@@ -2283,9 +2172,7 @@ public abstract class Mech extends Entity {
                 } else {
                     switch (roll) {
                         case 2:
-                            if ((getCrew().hasEdgeRemaining() && getCrew()
-                                    .getOptions()
-                                    .booleanOption(OptionsConstants.EDGE_WHEN_TAC))
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
                                     && !game.getOptions().booleanOption(
                                             OptionsConstants.ADVCOMBAT_NO_TAC)) {
                                 getCrew().decreaseEdge();
@@ -2313,9 +2200,7 @@ public abstract class Mech extends Entity {
                         case 11:
                             return new HitData(Mech.LOC_LARM, true);
                         case 12:
-                            if (getCrew().hasEdgeRemaining()
-                                    && getCrew().getOptions().booleanOption(
-                                            OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side,
                                         aimedLocation, aimingMode, cover);
@@ -2358,9 +2243,7 @@ public abstract class Mech extends Entity {
                     case 5:
                         return new HitData(Mech.LOC_RARM);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(
-                                        OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                     aimedLocation, aimingMode, cover);
@@ -2382,9 +2265,7 @@ public abstract class Mech extends Entity {
                     case 5:
                         return new HitData(Mech.LOC_LARM);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(
-                                        OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                     aimedLocation, aimingMode, cover);
@@ -2406,9 +2287,7 @@ public abstract class Mech extends Entity {
                     case 5:
                         return new HitData(Mech.LOC_RARM);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(
-                                        OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                     aimedLocation, aimingMode, cover);
@@ -2432,9 +2311,7 @@ public abstract class Mech extends Entity {
                     case 5:
                         return new HitData(Mech.LOC_RARM, true);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(
-                                        OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                     aimedLocation, aimingMode, cover);
@@ -2511,8 +2388,7 @@ public abstract class Mech extends Entity {
             // Swarm attack locations.
             switch (roll) {
                 case 2:
-                    if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                    if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                         getCrew().decreaseEdge();
                         HitData result = rollHitLocation(table, side, aimedLocation, aimingMode, cover);
                         result.setUndoneLocation(new HitData(Mech.LOC_HEAD, false, effects));
@@ -2538,9 +2414,7 @@ public abstract class Mech extends Entity {
                 case 11:
                     return new HitData(Mech.LOC_CT, true, effects);
                 case 12:
-                    if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(
-                                    OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                    if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                         getCrew().decreaseEdge();
                         HitData result = rollHitLocation(table, side,
                                 aimedLocation, aimingMode, cover);
@@ -2579,9 +2453,7 @@ public abstract class Mech extends Entity {
                 case 5:
                     return new HitData(Mech.LOC_RARM, (side == ToHitData.SIDE_REAR));
                 case 6:
-                    if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(
-                                    OptionsConstants.EDGE_WHEN_HEADHIT)) {
+                    if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                         getCrew().decreaseEdge();
                         HitData result = rollHitLocation(table, side,
                                 aimedLocation, aimingMode, cover);
@@ -2863,13 +2735,14 @@ public abstract class Mech extends Entity {
         for (int i = 0; i < locations(); i++) {
             explosiveFound = false;
             for (Mounted m : getEquipment()) {
-                if (m.getType().isExplosive(m, true) && (m.getLocation() == i)) {
+                if (m.getType().isExplosive(m, true)
+                        && ((m.getLocation() == i) || (m.getSecondLocation() == i))) {
                     explosiveFound = true;
                 }
             }
             if (explosiveFound) {
                 try {
-                    addEquipment(new Mounted(this, clCase), i, false);
+                    addEquipment(Mounted.createMounted(this, clCase), i, false);
                 } catch (LocationFullException ex) {
                     // um, that's impossible.
                 }
@@ -2877,10 +2750,22 @@ public abstract class Mech extends Entity {
         }
     }
 
+    /**
+     * Adds equipment without adding slots for it.
+     * Specifically for targeting computers, which when loaded from a file don't have a correct size and get loaded slot by slot
+     */
+    public MiscMounted addTargCompWithoutSlots(MiscType etype, int loc, boolean omniPod, boolean armored) throws LocationFullException {
+        MiscMounted mounted = (MiscMounted) MiscMounted.createMounted(this, etype);
+        mounted.setOmniPodMounted(omniPod);
+        mounted.setArmored(armored);
+        super.addEquipment(mounted, loc, false);
+        return mounted;
+    }
+
     public Mounted addEquipment(EquipmentType etype, EquipmentType etype2,
             int loc,  boolean omniPod, boolean armored) throws LocationFullException {
-        Mounted mounted = new Mounted(this, etype);
-        Mounted mounted2 = new Mounted(this, etype2);
+        Mounted mounted = Mounted.createMounted(this, etype);
+        Mounted mounted2 = Mounted.createMounted(this, etype2);
         mounted.setOmniPodMounted(omniPod);
         mounted2.setOmniPodMounted(omniPod);
         mounted.setArmored(armored);
@@ -3187,6 +3072,16 @@ public abstract class Mech extends Entity {
                 .setPrototypeFactions(F_FS).setProductionFactions(F_FS, F_CJF)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setStaticTechLevel(SimpleTechLevel.ADVANCED), //Small Command Console
+            new TechAdvancement(TECH_BASE_IS).setISAdvancement(3130, 3135)
+                    .setISApproximate(true, false).setTechRating(RATING_E)
+                    .setPrototypeFactions(F_RS).setProductionFactions(F_RS)
+                    .setAvailability(RATING_X, RATING_F, RATING_X, RATING_F)
+                    .setStaticTechLevel(SimpleTechLevel.ADVANCED), //Superheavy tripod
+            new TechAdvancement(TECH_BASE_IS).setISAdvancement(2590, 2702)
+                    .setISApproximate(true, false).setTechRating(RATING_F)
+                    .setPrototypeFactions(F_TH).setProductionFactions(F_TH)
+                    .setAvailability(RATING_X, RATING_X, RATING_X, RATING_F)
+                    .setStaticTechLevel(SimpleTechLevel.ADVANCED), //Tripod
     };
 
     // Advanced fire control for industrial mechs is implemented with a standard cockpit,
@@ -3207,9 +3102,6 @@ public abstract class Mech extends Entity {
     }
 
     public TechAdvancement getCockpitTechAdvancement() {
-        if (isIndustrial() && (getCockpitType() == COCKPIT_STANDARD)) {
-            return getIndustrialAdvFireConTA();
-        }
         return getCockpitTechAdvancement(getCockpitType());
     }
 
@@ -3247,6 +3139,9 @@ public abstract class Mech extends Entity {
         if (getCockpitTechAdvancement() != null) {
             ctl.addComponent(getCockpitTechAdvancement());
         }
+        if (isIndustrial() && hasAdvancedFireControl()) {
+            ctl.addComponent(getIndustrialAdvFireConTA());
+        }
         if (hasFullHeadEject()) {
             ctl.addComponent(getFullHeadEjectAdvancement());
         }
@@ -3277,11 +3172,6 @@ public abstract class Mech extends Entity {
             }
         }
         return contiguousCrits;
-    }
-
-    @Override
-    protected int doBattleValueCalculation(boolean ignoreC3, boolean ignoreSkill, CalculationReport calculationReport) {
-        return MekBVCalculator.calculateBV(this, ignoreC3, ignoreSkill, calculationReport);
     }
 
     @Override
@@ -3341,41 +3231,22 @@ public abstract class Mech extends Entity {
 
     @Override
     public Vector<Report> victoryReport() {
-        Vector<Report> vDesc = new Vector<>();
-
-        Report r = new Report(7025);
-        r.type = Report.PUBLIC;
-        r.addDesc(this);
-        vDesc.addElement(r);
-
-        r = new Report(7030);
-        r.type = Report.PUBLIC;
-        r.newlines = 0;
-        vDesc.addElement(r);
-        vDesc.addAll(getCrew().getDescVector(false));
-        r = new Report(7070, Report.PUBLIC);
-        r.add(getKillNumber());
-        vDesc.addElement(r);
-
+        Vector<Report> reports = new Vector<>();
+        reports.addElement(Report.publicReport(7025).addDesc(this));
+        reports.addElement(Report.publicReport(7030).noNL());
+        reports.addAll(getCrew().getDescVector(false));
+        reports.addElement(Report.publicReport(7070).add(getKillNumber()));
         if (isDestroyed()) {
-            Entity killer = game.getEntity(killerId);
-            if (killer == null) {
-                killer = game.getOutOfGameEntity(killerId);
-            }
+            Entity killer = game.getEntityFromAllSources(killerId);
             if (killer != null) {
-                r = new Report(7072, Report.PUBLIC);
-                r.addDesc(killer);
+                reports.addElement(Report.publicReport(7072).addDesc(killer).newLines(2));
             } else {
-                r = new Report(7073, Report.PUBLIC);
+                reports.addElement(Report.publicReport(7073).newLines(2));
             }
-            vDesc.addElement(r);
         } else if (getCrew().isEjected()) {
-            r = new Report(7074, Report.PUBLIC);
-            vDesc.addElement(r);
+            reports.addElement(Report.publicReport(7074).newLines(2));
         }
-        r.newlines = 2;
-
-        return vDesc;
+        return reports;
     }
 
     /**
@@ -3753,8 +3624,7 @@ public abstract class Mech extends Entity {
      */
     @Override
     public boolean isRepairable() {
-        // A Mech is repairable if it is salvageable,
-        // and its CT internals are not gone.
+        // A Mech is repairable if it is salvageable, and its CT internals are not gone.
         int loc_is = this.getInternal(Mech.LOC_CT);
         return isSalvage() && (loc_is != IArmorState.ARMOR_DOOMED)
                 && (loc_is != IArmorState.ARMOR_DESTROYED);
@@ -3764,17 +3634,21 @@ public abstract class Mech extends Entity {
     public boolean canCharge() {
         // Mechs can charge, unless they are Clan and the "no clan physicals" option is set
         return super.canCharge()
-                && !(game.getOptions().booleanOption(OptionsConstants.ALLOWED_NO_CLAN_PHYSICAL) && isClan());
+                && !(game.getOptions().booleanOption(OptionsConstants.ALLOWED_NO_CLAN_PHYSICAL)
+                        && getCrew().isClanPilot());
     }
 
     @Override
     public boolean canDFA() {
         // Mechs can DFA, unless they are Clan and the "no clan physicals" option is set
         return super.canDFA()
-                && !(game.getOptions().booleanOption(OptionsConstants.ALLOWED_NO_CLAN_PHYSICAL) && isClan());
+                && !(game.getOptions().booleanOption(OptionsConstants.ALLOWED_NO_CLAN_PHYSICAL)
+                        && getCrew().isClanPilot());
     }
 
-    // gives total number of sinks
+    /**
+     * @return the total number of sinks
+     */
     public int getNumberOfSinks() {
         int sinks = 0;
         for (Mounted mounted : getMisc()) {
@@ -3846,19 +3720,33 @@ public abstract class Mech extends Entity {
     }
 
     /**
-     * @return Returns the autoEject.
+     * @return unit has an ejection seat
      */
-    public boolean isAutoEject() {
-        boolean hasEjectSeat = (getCockpitType() != COCKPIT_TORSO_MOUNTED) && !hasQuirk(OptionsConstants.QUIRK_NEG_NO_EJECT);
+    public boolean hasEjectSeat() {
+        // Ejection Seat
+        boolean result = true;
+        // torso mounted cockpits don't have an ejection seat
+        if (getCockpitType() == Mech.COCKPIT_TORSO_MOUNTED
+                || hasQuirk(OptionsConstants.QUIRK_NEG_NO_EJECT)) {
+            result = false;
+        }
         if (isIndustrial()) {
+            result = false;
             // industrials can only eject when they have an ejection seat
-            for (Mounted misc : miscList) {
+            for (Mounted misc : getMisc()) {
                 if (misc.getType().hasFlag(MiscType.F_EJECTION_SEAT)) {
-                    hasEjectSeat = true;
+                    result = true;
                 }
             }
         }
-        return autoEject && hasEjectSeat;
+        return result;
+    }
+
+    /**
+     * @return Returns the autoEject.
+     */
+    public boolean isAutoEject() {
+        return autoEject && hasEjectSeat();
     }
 
     /**
@@ -4048,8 +3936,26 @@ public abstract class Mech extends Entity {
         return Mech.getGyroTypeString(getGyroType());
     }
 
+    public static String getCockpitTypeString(int cockpitType, boolean industrial) {
+        if (industrial) {
+            switch (cockpitType) {
+                case COCKPIT_STANDARD:
+                    return Mech.getCockpitTypeString(COCKPIT_INDUSTRIAL) + " (Adv. FCS)";
+                case COCKPIT_PRIMITIVE:
+                    return Mech.getCockpitTypeString(COCKPIT_PRIMITIVE_INDUSTRIAL) + " (Adv. FCS)";
+                case COCKPIT_SUPERHEAVY:
+                    return Mech.getCockpitTypeString(COCKPIT_SUPERHEAVY_INDUSTRIAL) + " (Adv. FCS)";
+                case COCKPIT_TRIPOD:
+                    return Mech.getCockpitTypeString(COCKPIT_TRIPOD_INDUSTRIAL) + " (Adv. FCS)";
+                case COCKPIT_SUPERHEAVY_TRIPOD:
+                    return Mech.getCockpitTypeString(COCKPIT_SUPERHEAVY_TRIPOD_INDUSTRIAL) + " (Adv. FCS)";
+            }
+        }
+        return Mech.getCockpitTypeString(cockpitType);
+    }
+
     public String getCockpitTypeString() {
-        return Mech.getCockpitTypeString(getCockpitType());
+        return getCockpitTypeString(getCockpitType(), isIndustrial());
     }
 
     public static String getGyroTypeString(int inGyroType) {
@@ -4201,6 +4107,12 @@ public abstract class Mech extends Entity {
             case COCKPIT_SMALL_COMMAND_CONSOLE:
                 inName = "COCKPIT_SMALL_COMMAND_CONSOLE";
                 break;
+            case COCKPIT_TRIPOD_INDUSTRIAL:
+                inName = "COCKPIT_TRIPOD_INDUSTRIAL";
+                break;
+            case COCKPIT_SUPERHEAVY_TRIPOD_INDUSTRIAL:
+                inName = "COCKPIT_SUPERHEAVY_TRIPOD_INDUSTRIAL";
+                break;
             default:
                 inName = "COCKPIT_UNKNOWN";
         }
@@ -4209,6 +4121,14 @@ public abstract class Mech extends Entity {
             return result;
         }
         return inName;
+    }
+
+    public boolean hasAdvancedFireControl() {
+        return (cockpitType != COCKPIT_INDUSTRIAL)
+                && (cockpitType != COCKPIT_PRIMITIVE_INDUSTRIAL)
+                && (cockpitType != COCKPIT_SUPERHEAVY_INDUSTRIAL)
+                && (cockpitType != COCKPIT_TRIPOD_INDUSTRIAL)
+                && (cockpitType != COCKPIT_SUPERHEAVY_TRIPOD_INDUSTRIAL);
     }
 
     @Override
@@ -4284,6 +4204,20 @@ public abstract class Mech extends Entity {
                 || (hex.terrainLevel(Terrains.JUNGLE) > 2);
     }
 
+    @Override
+    public boolean isLocationDeadly(Coords c) {
+        Hex hex = game.getBoard().getHex(c);
+
+        if (this.isIndustrial()
+                && !this.hasEnvironmentalSealing()
+                && (this.getEngine().getEngineType() == Engine.COMBUSTION_ENGINE)
+                && hex.terrainLevel(Terrains.WATER) >= 2) {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * Get an '.mtf' file representation of the mech. This string can be
      * directly written to disk as a file and later loaded by the MtfFile class.
@@ -4293,22 +4227,18 @@ public abstract class Mech extends Entity {
         StringBuilder sb = new StringBuilder();
         String newLine = "\n";
 
+        sb.append(MtfFile.GENERATOR).append(SuiteConstants.PROJECT_NAME)
+                .append(" ").append(SuiteConstants.VERSION).append(" on ").append(LocalDate.now()).append(newLine);
+
         boolean standard = (getCockpitType() == Mech.COCKPIT_STANDARD)
                 && (getGyroType() == Mech.GYRO_STANDARD);
-        boolean fullHead = hasFullHeadEject();
-        if (hasMulId()) {
-            sb.append("Version:1.3").append(newLine);
-        } else if (standard && !fullHead) {
-            sb.append("Version:1.0").append(newLine);
-        } else if (!fullHead) {
-            sb.append("Version:1.1").append(newLine);
-        } else {
-            sb.append("Version:1.2").append(newLine);
+        sb.append(MtfFile.CHASSIS).append(chassis).append(newLine);
+        if (!clanChassisName.isBlank()) {
+            sb.append(MtfFile.CLAN_CHASSIS_NAME).append(clanChassisName).append(newLine);
         }
-        sb.append(chassis).append(newLine);
-        sb.append(model).append(newLine);
+        sb.append(MtfFile.MODEL).append(model).append(newLine);
         if (hasMulId()) {
-            sb.append(MtfFile.MUL_ID).append(mulId);
+            sb.append(MtfFile.MUL_ID).append(mulId).append(newLine);
         }
         sb.append(newLine);
 
@@ -4348,6 +4278,25 @@ public abstract class Mech extends Entity {
         sb.append(MtfFile.RULES_LEVEL).append(
                 TechConstants.T_SIMPLE_LEVEL[techLevel]);
         sb.append(newLine);
+        if (hasRole()) {
+            sb.append(MtfFile.ROLE).append(getRole().toString());
+            sb.append(newLine);
+        }
+        sb.append(newLine);
+
+        getQuirks().getOptionsList().stream()
+                .filter(IOption::booleanValue)
+                .map(IBasicOption::getName)
+                .forEach(quirk -> sb.append(MtfFile.QUIRK).append(quirk).append(newLine));
+
+        for (Mounted equipment : getEquipment()) {
+            for (IOption weaponQuirk : equipment.getQuirks().activeQuirks()) {
+                sb.append(MtfFile.WEAPON_QUIRK).append(weaponQuirk.getName()).append(":")
+                        .append(getLocationAbbr(equipment.getLocation())).append(":")
+                        .append(slotNumber(equipment)).append(":")
+                        .append(equipment.getType().getInternalName()).append(newLine);
+            }
+        }
         sb.append(newLine);
 
         sb.append(MtfFile.MASS).append((int) weight).append(newLine);
@@ -4408,7 +4357,7 @@ public abstract class Mech extends Entity {
         sb.append(newLine);
 
         sb.append(MtfFile.HEAT_SINKS).append(heatSinks()).append(" ");
-        Optional<EquipmentType> heatSink = getMisc().stream()
+        Optional<MiscType> heatSink = getMisc().stream()
                 .filter(m -> m.getType().hasFlag(MiscType.F_HEAT_SINK)
                     || m.getType().hasFlag(MiscType.F_DOUBLE_HEAT_SINK))
                 .map(Mounted::getType).findFirst();
@@ -4541,12 +4490,6 @@ public abstract class Mech extends Entity {
             sb.append(newLine);
         }
 
-        if (!getFluff().getMMLImagePath().isBlank()) {
-            sb.append(MtfFile.IMAGE_FILE);
-            sb.append(getFluff().getMMLImagePath());
-            sb.append(newLine);
-        }
-
         for (EntityFluff.System system : EntityFluff.System.values()) {
             if (!getFluff().getSystemManufacturer(system).isBlank()) {
                 sb.append(MtfFile.SYSTEM_MANUFACTURER);
@@ -4566,6 +4509,20 @@ public abstract class Mech extends Entity {
         if (getUseManualBV()) {
             sb.append(MtfFile.BV);
             sb.append(getManualBV());
+            sb.append(newLine);
+        }
+
+        if (!icon.isEmpty()) {
+            sb.append(newLine);
+            sb.append(MtfFile.ICON);
+            sb.append(icon.getBase64String());
+            sb.append(newLine);
+        }
+
+        if (getFluff().hasEmbeddedFluffImage()) {
+            sb.append(newLine);
+            sb.append(MtfFile.FLUFF_IMAGE);
+            sb.append(getFluff().getBase64FluffImage().getBase64String());
             sb.append(newLine);
         }
 
@@ -4664,16 +4621,16 @@ public abstract class Mech extends Entity {
                 SYSTEM_LIFE_SUPPORT));
         if (isSuperHeavy()) {
             if (this instanceof TripodMech) {
-            setCockpitType(COCKPIT_SUPERHEAVY_TRIPOD);
+                setCockpitType(isIndustrial() ? COCKPIT_SUPERHEAVY_TRIPOD_INDUSTRIAL : COCKPIT_SUPERHEAVY_TRIPOD);
             } else if (isIndustrial()) {
                 setCockpitType(COCKPIT_SUPERHEAVY_INDUSTRIAL);
             } else {
                 setCockpitType(COCKPIT_SUPERHEAVY);
             }
         } else if (this instanceof TripodMech) {
-            setCockpitType(COCKPIT_TRIPOD);
+            setCockpitType(isIndustrial() ? COCKPIT_TRIPOD_INDUSTRIAL : COCKPIT_TRIPOD);
         } else {
-            setCockpitType(COCKPIT_STANDARD);
+            setCockpitType(isIndustrial() ? COCKPIT_INDUSTRIAL : COCKPIT_STANDARD);
         }
 
         return true;
@@ -4889,7 +4846,7 @@ public abstract class Mech extends Entity {
         setCockpitType(COCKPIT_SUPERHEAVY_COMMAND_CONSOLE);
         return true;
     }
-    
+
     //The location of critical is based on small cockpit, but since command console requires two cockpit slots the second Sensor is return to the location 4.
     public boolean addSmallCommandConsole() {
         if (getEmptyCriticals(LOC_HEAD) < 5) {
@@ -4961,14 +4918,14 @@ public abstract class Mech extends Entity {
         }
         return success;
     }
-    
+
     /**
      * Convenience function that returns the critical slot containing the cockpit
      * @return
      */
     public List<CriticalSlot> getCockpit() {
         List<CriticalSlot> retVal = new ArrayList<>();
-        
+
         switch (cockpitType) {
             // these always occupy slots 2 and 3 in the head
             case Mech.COCKPIT_COMMAND_CONSOLE:
@@ -4991,7 +4948,7 @@ public abstract class Mech extends Entity {
                 retVal.add(getCritical(Mech.LOC_HEAD, 2));
                 break;
         }
-        
+
         return retVal;
     }
 
@@ -5023,7 +4980,7 @@ public abstract class Mech extends Entity {
 
     @Override
     public boolean hasCommandConsoleBonus() {
-        return ((getCockpitType() == COCKPIT_COMMAND_CONSOLE) 
+        return ((getCockpitType() == COCKPIT_COMMAND_CONSOLE)
         || (getCockpitType() == COCKPIT_SUPERHEAVY_COMMAND_CONSOLE)
         || (getCockpitType() == COCKPIT_SMALL_COMMAND_CONSOLE))
                 && getCrew().hasActiveCommandConsole()
@@ -5312,12 +5269,10 @@ public abstract class Mech extends Entity {
                 continue;
             }
 
-            Mounted m = cs.getMount();
-
-            EquipmentType type = m.getType();
-            if ((type instanceof MiscType) && ((MiscType) type).isShield()) {
-                rate -= m.getDamageAbsorption(this, m.getLocation());
-                m.damageTaken++;
+            Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted) && ((MiscMounted) m).getType().isShield()) {
+                rate -= ((MiscMounted) m).getDamageAbsorption(this, m.getLocation());
+                ((MiscMounted) m).takeDamage(1);
                 return Math.max(0, rate);
             }
         }
@@ -5426,29 +5381,6 @@ public abstract class Mech extends Entity {
     }
 
     @Override
-    public boolean hasCASEII(int location) {
-        for (Mounted mount : getEquipment()) {
-            if ((mount.getLocation() == location)
-                    && (mount.getType() instanceof MiscType)
-                    && mount.getType().hasFlag(MiscType.F_CASEII)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /* Check to see if case II exists anywhere on the mech */
-    public boolean hasCASEIIAnywhere() {
-        for (Mounted mount : getEquipment()) {
-            if ((mount.getType() instanceof MiscType)
-                    && mount.getType().hasFlag(MiscType.F_CASEII)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
     public void setGrappleSide(int side) {
         grappledSide = side;
     }
@@ -5463,16 +5395,28 @@ public abstract class Mech extends Entity {
         return isCarefulStanding;
     }
 
+    /**
+     * How many times TacOps coolant failure has occurred, which is also the reduction in heat
+     * sinking capacity
+     */
     @Override
     public int getCoolantFailureAmount() {
         return heatSinkCoolantFailureFactor;
     }
 
+    /**
+     * Modify the number of TacOps coolant failures. May be positive to indicate additional
+     * failures, or negative to indicate coolant being refreshed from an outside source.
+     * @param amount  Amount to change the value, typical value is 1
+     */
     @Override
     public void addCoolantFailureAmount(int amount) {
         heatSinkCoolantFailureFactor += amount;
     }
 
+    /**
+     * Reset count of TacOps coolant failures to zero (no loss)
+     */
     @Override
     public void resetCoolantFailureAmount() {
         heatSinkCoolantFailureFactor = 0;
@@ -5509,14 +5453,7 @@ public abstract class Mech extends Entity {
      */
     @Override
     public int getBARRating(int loc) {
-        if (armorType[loc] == EquipmentType.T_ARMOR_COMMERCIAL) {
-            return 5;
-        }
-        if ((armorType[loc] == EquipmentType.T_ARMOR_INDUSTRIAL)
-                || (armorType[loc] == EquipmentType.T_ARMOR_HEAVY_INDUSTRIAL)) {
-            return 10;
-        }
-        return 10;
+        return (armorType[loc] == EquipmentType.T_ARMOR_COMMERCIAL) ? 5 : 10;
     }
 
     /**
@@ -5560,6 +5497,17 @@ public abstract class Mech extends Entity {
     }
 
     /**
+     * set if this mech should die at the end of turn because it's an IndustrialMech
+     * without environmental sealing that moved into water last round and stayed
+      * there?
+     *
+     * @param moved
+     */
+    public void setShouldDieAtEndOfTurnBecauseOfWater(boolean moved) {
+        shouldDieAtEndOfTurnBecauseOfWater = moved;
+    }
+
+    /**
      * Set if this Mech's ICE Engine is stalled or not should only be used for
      * industrial mechs carrying an ICE engine
      *
@@ -5590,121 +5538,61 @@ public abstract class Mech extends Entity {
         return super.isShutDown() || isStalled();
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#doCheckEngineStallRoll(java.util.Vector)
-     */
     @Override
     public Vector<Report> doCheckEngineStallRoll(Vector<Report> vPhaseReport) {
         if (hasEngine() && (getEngine().getEngineType() == Engine.COMBUSTION_ENGINE)) {
-            Report r = new Report(2280);
-            r.addDesc(this);
-            r.subject = getId();
-            r.add(1);
-            r.add("ICE-Engine 'Mech failed a PSR");
-            vPhaseReport.add(r);
-            r = new Report(2285);
-            r.subject = getId();
+            vPhaseReport.add(Report.subjectReport(2280, getId()).addDesc(this).add(1).add("ICE-Engine Mek failed a PSR"));
+
             // Stall check is made against unmodified Piloting skill...
-            PilotingRollData base = new PilotingRollData(getId(), getCrew()
-                    .getPiloting(), "Base piloting skill");
+            PilotingRollData psr = new PilotingRollData(getId(), getCrew().getPiloting(), "Base piloting skill");
             // ...but dead or unconscious pilots should still auto-fail.
-            if (getCrew().isDead() || getCrew().isDoomed()
-                    || (getCrew().getHits() >= 6)) {
-                base = new PilotingRollData(getId(), TargetRoll.AUTOMATIC_FAIL,
-                        "Pilot dead");
+            if (getCrew().isDead() || getCrew().isDoomed() || (getCrew().getHits() >= 6)) {
+                psr = new PilotingRollData(getId(), TargetRoll.AUTOMATIC_FAIL, "Pilot dead");
             } else if (!getCrew().isActive()) {
-                base = new PilotingRollData(getId(), TargetRoll.IMPOSSIBLE,
-                        "Pilot unconscious");
+                psr = new PilotingRollData(getId(), TargetRoll.IMPOSSIBLE, "Pilot unconscious");
             }
-            r.add(base.getValueAsString());
-            r.add(base.getDesc());
-            vPhaseReport.add(r);
-            r = new Report(2290);
-            r.subject = getId();
-            r.indent();
-            r.newlines = 0;
-            r.add(1);
-            r.add(base.getPlainDesc());
-            vPhaseReport.add(r);
-            int diceRoll = getCrew().rollPilotingSkill();
-            r = new Report(2300);
-            r.subject = getId();
-            r.add(base);
-            r.add(diceRoll);
-            if (diceRoll < base.getValue()) {
-                r.choose(false);
+
+            vPhaseReport.add(Report.subjectReport(2285, getId()).add(psr.getValueAsString()).add(psr.getDesc()));
+            vPhaseReport.add(Report.subjectReport(2290, getId()).indent().noNL().add(1).add(psr.getPlainDesc()));
+
+            Roll diceRoll = getCrew().rollPilotingSkill();
+            Report r = Report.subjectReport(2300, getId()).add(psr).add(diceRoll);
+            if (diceRoll.getIntValue() < psr.getValue()) {
                 setStalled(true);
-                r.newlines = 0;
-                vPhaseReport.add(r);
-                r = new Report(2303);
-                r.subject = getId();
-                vPhaseReport.add(r);
+                vPhaseReport.add(r.noNL().choose(false));
+                vPhaseReport.add(Report.subjectReport(2303, getId()));
             } else {
-                r.choose(true);
-                vPhaseReport.add(r);
+                vPhaseReport.add(r.choose(true));
             }
         }
         return vPhaseReport;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#checkUnstall(java.util.Vector)
-     */
     @Override
     public void checkUnstall(Vector<Report> vPhaseReport) {
-        if (stalled && !stalledThisTurn && hasEngine()
-                && (getEngine().getEngineType() == Engine.COMBUSTION_ENGINE)) {
-            Report r = new Report(2280);
-            r.addDesc(this);
-            r.subject = getId();
-            r.add(1);
-            r.add("unstall stalled ICE engine");
-            vPhaseReport.add(r);
-            r = new Report(2285);
-            r.subject = getId();
+        if (stalled && !stalledThisTurn && hasEngine() && (getEngine().getEngineType() == Engine.COMBUSTION_ENGINE)) {
+            vPhaseReport.add(Report.subjectReport(2280, getId()).addDesc(this).add(1).add("unstall stalled ICE engine"));
+
             // Unstall check is made against unmodified Piloting skill...
-            PilotingRollData base = new PilotingRollData(getId(), getCrew()
-                    .getPiloting(), "Base piloting skill");
-            // ...but dead or unconscious pilots should still auto-fail, same as
-            // for stalling.
-            if (getCrew().isDead() || getCrew().isDoomed()
-                    || (getCrew().getHits() >= 6)) {
-                base = new PilotingRollData(getId(), TargetRoll.AUTOMATIC_FAIL,
-                        "Pilot dead");
+            PilotingRollData psr = new PilotingRollData(getId(), getCrew().getPiloting(), "Base piloting skill");
+            // ...but dead or unconscious pilots should still auto-fail, same as for stalling.
+            if (getCrew().isDead() || getCrew().isDoomed() || (getCrew().getHits() >= 6)) {
+                psr = new PilotingRollData(getId(), TargetRoll.AUTOMATIC_FAIL, "Pilot dead");
             } else if (!getCrew().isActive()) {
-                base = new PilotingRollData(getId(), TargetRoll.IMPOSSIBLE,
-                        "Pilot unconscious");
+                psr = new PilotingRollData(getId(), TargetRoll.IMPOSSIBLE, "Pilot unconscious");
             }
-            r.add(base.getValueAsString());
-            r.add(base.getDesc());
-            vPhaseReport.add(r);
-            r = new Report(2290);
-            r.subject = getId();
-            r.indent();
-            r.newlines = 0;
-            r.add(1);
-            r.add(base.getPlainDesc());
-            vPhaseReport.add(r);
-            int diceRoll = getCrew().rollPilotingSkill();
-            r = new Report(2300);
-            r.subject = getId();
-            r.add(base);
-            r.add(diceRoll);
-            if (diceRoll < base.getValue()) {
-                r.choose(false);
-                vPhaseReport.add(r);
+
+            vPhaseReport.add(Report.subjectReport(2285, getId()).add(psr.getValueAsString()).add(psr.getDesc()));
+            vPhaseReport.add(Report.subjectReport(2290, getId()).indent().noNL().add(1).add(psr.getPlainDesc()));
+
+            Roll diceRoll = getCrew().rollPilotingSkill();
+            Report r = Report.subjectReport(2300, getId()).add(psr).add(diceRoll);
+            if (diceRoll.getIntValue() < psr.getValue()) {
+                vPhaseReport.add(r.choose(false));
             } else {
-                r.choose(true);
-                r.newlines = 0;
-                vPhaseReport.add(r);
                 setStalled(false);
-                r = new Report(2304);
-                r.subject = getId();
-                vPhaseReport.add(r);
+                vPhaseReport.add(r.noNL().choose(true));
+                vPhaseReport.add(Report.subjectReport(2304, getId()));
             }
         }
     }
@@ -5860,256 +5748,12 @@ public abstract class Mech extends Entity {
         return fullHeadEject;
     }
 
-    /**
-     * Start of Battle Force Conversion Methods
-     */
-
-    @Override
-    public double getBaseBattleForceMovement() {
-        double move = getOriginalWalkMP();
-
-        MPBoosters mpBooster = getMPBoosters();
-        if (mpBooster.isMASCAndSupercharger()) {
-            move *= 1.5;
-        } else if (mpBooster.isMASCXorSupercharger()) {
-            move *= 1.25;
-        }
-
-        if (hasMPReducingHardenedArmor()) {
-            move--;
-        }
-
-        if (getMisc().stream().filter(m -> m.getType().hasFlag(MiscType.F_CLUB))
-                .map(m -> m.getType().getSubType())
-                .anyMatch(st -> st == MiscType.S_SHIELD_LARGE || st == MiscType.S_SHIELD_MEDIUM)) {
-            move--;
-        }
-        return move;
-    }
-
-    @Override
-    /*
-     * returns the battle force structure points for a mech
-     */
-    public int getBattleForceStructurePoints() {
-        int battleForceStructure = 0;
-        int battleForceEngineType = 0;
-
-        int[][] battleForceStructureTable = new int[][] {
-                { 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 8, 8,
-                    8, 8, 9, 9, 10, 10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15 },
-                { 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 7, 7, 8, 8, 9, 10, 10, 10,
-                    11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20 },
-                { 1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 4, 4, 4, 5, 5, 5, 6, 6, 6,
-                    6, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 11, 11, 12, 12 },
-                { 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
-                    5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10 },
-                { 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-                    5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 8, 9 },
-                { 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4,
-                    4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 8 },
-                { 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3,
-                    3, 3, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6 },
-                { 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3,
-                    4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 7, 7 },
-                { 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3,
-                    3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5 } };
-
-        if (hasEngine()) {
-            if (isClan()) {
-                if (getEngine().hasFlag(Engine.LARGE_ENGINE)) {
-                    switch (getEngine().getEngineType()) {
-                        case Engine.XL_ENGINE:
-                            battleForceEngineType = 5;
-                            break;
-                        case Engine.XXL_ENGINE:
-                            battleForceEngineType = 8;
-                            break;
-                    }
-                } else {
-                    switch (getEngine().getEngineType()) {
-                        case Engine.XL_ENGINE:
-                            battleForceEngineType = 4;
-                            break;
-                        case Engine.XXL_ENGINE:
-                            battleForceEngineType = 6;
-                            break;
-                        default:
-                            battleForceEngineType = 1;
-                            break;
-                    }
-                }
-            } else {
-                if (getEngine().hasFlag(Engine.LARGE_ENGINE)) {
-                    switch (getEngine().getEngineType()) {
-                        case Engine.XL_ENGINE:
-                            battleForceEngineType = 5;
-                            break;
-                        case Engine.XXL_ENGINE:
-                            battleForceEngineType = 9;
-                            break;
-                        case Engine.LIGHT_ENGINE:
-                            battleForceEngineType = 5;
-                            break;
-                        default:
-                            battleForceEngineType = 3;
-                            break;
-                    }
-                } else {
-                    switch (getEngine().getEngineType()) {
-                        case Engine.XL_ENGINE:
-                            battleForceEngineType = 5;
-                            break;
-                        case Engine.COMPACT_ENGINE:
-                            battleForceEngineType = 2;
-                            break;
-                        case Engine.LIGHT_ENGINE:
-                            battleForceEngineType = 4;
-                            break;
-                        case Engine.XXL_ENGINE:
-                            battleForceEngineType = 7;
-                            break;
-                        default:
-                            battleForceEngineType = 1;
-                            break;
-                    }
-                }
-            }
-        }
-
-        battleForceStructure = battleForceStructureTable[battleForceEngineType - 1][((int) getWeight() / 5) - 2];
-
-        if (getStructureType() == EquipmentType.T_STRUCTURE_COMPOSITE) {
-            battleForceStructure = (int) Math.ceil(battleForceStructure * .5);
-        } else if (getStructureType() == EquipmentType.T_STRUCTURE_REINFORCED) {
-            battleForceStructure *= 2;
-        }
-        return battleForceStructure;
-
-    }
-
-    @Override
-    public int getNumBattleForceWeaponsLocations() {
-        return 2;
-    }
-
-    @Override
-    public double getBattleForceLocationMultiplier(int index, int location, boolean rearMounted) {
-        if ((index == 0 && !rearMounted
-                || (index == 1) && rearMounted)) {
-            return 1.0;
-        }
-        return 0;
-    }
-
-    @Override
-    public String getBattleForceLocationName(int index) {
-        if (index == 1) {
-            return "REAR";
-        }
-        return "";
-    }
-
-    @Override
-    public boolean isBattleForceRearLocation(int index) {
-        return index == 1;
-    }
-
-    @Override
-    public int getBattleForceTotalHeatGeneration(boolean allowRear) {
-        int totalHeat = 0;
-
-        // finish the max heat calculations
-        if (this.getJumpMP() > 0) {
-            totalHeat += getJumpHeat(getJumpMP());
-        } else if (!isIndustrial() && hasEngine()) {
-            totalHeat += getEngine().getRunHeat(this);
-        }
-
-        for (Mounted mount : getWeaponList()) {
-            WeaponType weapon = (WeaponType) mount.getType();
-            if (weapon.hasFlag(WeaponType.F_ONESHOT)
-                || (allowRear && !mount.isRearMounted())
-                || (!allowRear && mount.isRearMounted())) {
-                continue;
-            }
-            if (weapon.getAmmoType() == AmmoType.T_AC_ROTARY) {
-                totalHeat += weapon.getHeat() * 6;
-            } else if (weapon.getAmmoType() == AmmoType.T_AC_ULTRA
-                    || weapon.getAmmoType() == AmmoType.T_AC_ULTRA_THB) {
-                totalHeat += weapon.getHeat() * 2;
-            } else {
-                totalHeat += weapon.getHeat();
-            }
-        }
-
-        if (hasWorkingMisc(MiscType.F_STEALTH, -1)) {
-            totalHeat += 10;
-        }
-
-        return totalHeat;
-    }
-
-    @Override
-    public void addBattleForceSpecialAbilities(Map<BattleForceSPA,Integer> specialAbilities) {
-        super.addBattleForceSpecialAbilities(specialAbilities);
-        specialAbilities.put(BattleForceSPA.SRCH, null);
-        for (Mounted m : getEquipment()) {
-            if (!(m.getType() instanceof MiscType)) {
-                continue;
-            }
-            if (m.getType().hasFlag(MiscType.F_HARJEL)) {
-                specialAbilities.put(BattleForceSPA.BHJ, null);
-            } else if (m.getType().hasFlag(MiscType.F_HARJEL_II)) {
-                specialAbilities.put(BattleForceSPA.BHJ2, null);
-            } else if (m.getType().hasFlag(MiscType.F_HARJEL_III)) {
-                specialAbilities.put(BattleForceSPA.BHJ3, null);
-            } else if (((MiscType) m.getType()).isShield()) {
-                specialAbilities.put(BattleForceSPA.SHLD, null);
-            } else if (m.getType().hasFlag(MiscType.F_INDUSTRIAL_TSM)) {
-                specialAbilities.put(BattleForceSPA.ITSM, null);
-            } else if (m.getType().hasFlag(MiscType.F_TSM)) {
-                specialAbilities.put(BattleForceSPA.TSM, null);
-            } else if (m.getType().hasFlag(MiscType.F_VOIDSIG)) {
-                specialAbilities.put(BattleForceSPA.MAS, null);
-            } else if (isIndustrial() && m.getType().hasFlag(MiscType.F_ENVIRONMENTAL_SEALING)
-                    && getEngine().getEngineType() != Engine.COMBUSTION_ENGINE) {
-                specialAbilities.put(BattleForceSPA.SOA, null);
-            } else if (m.getType().hasFlag(MiscType.F_NULLSIG)
-                    || m.getType().hasFlag(MiscType.F_CHAMELEON_SHIELD)) {
-                specialAbilities.put(BattleForceSPA.STL, null);
-                specialAbilities.put(BattleForceSPA.ECM, null);
-            } else if (m.getType().hasFlag(MiscType.F_UMU)) {
-                specialAbilities.put(BattleForceSPA.UMU, null);
-            } else if (m.getType().hasFlag(MiscType.F_BATTLEMECH_NIU)) {
-                specialAbilities.put(BattleForceSPA.DN, null);
-            }
-        }
-        if (getCockpitType() == COCKPIT_COMMAND_CONSOLE) {
-            specialAbilities.merge(BattleForceSPA.MHQ, 1, Integer::sum);
-        } else if (getCockpitType() == COCKPIT_SUPERHEAVY_COMMAND_CONSOLE) {
-            specialAbilities.merge(BattleForceSPA.MHQ, 1, Integer::sum);
-        } else if (getCockpitType() == COCKPIT_SMALL_COMMAND_CONSOLE) {
-            specialAbilities.merge(BattleForceSPA.MHQ, 1, Integer::sum);
-        } else if (getCockpitType() == COCKPIT_VRRP) {
-            specialAbilities.merge(BattleForceSPA.VR, 1, Integer::sum);
-        }
-        if (isIndustrial()) {
-            if (getCockpitType() == Mech.COCKPIT_STANDARD) {
-                specialAbilities.put(BattleForceSPA.AFC, null);
-            } else {
-                specialAbilities.put(BattleForceSPA.BFC, null);
-            }
-        } else {
-            specialAbilities.put(BattleForceSPA.SOA, null);
-        }
-    }
-
     public abstract boolean hasMPReducingHardenedArmor();
 
-    /**
-     * End of Battle Force Conversion Methods
-     */
+    /** @return The MP reduction due to hardened armor on this unit; 1 if it has HA, 0 if not. */
+    protected int hardenedArmorMPReduction() {
+        return hasMPReducingHardenedArmor() ? 1 : 0;
+    }
 
     @Override
     public int getEngineHits() {
@@ -6448,7 +6092,7 @@ public abstract class Mech extends Entity {
         // modular armor since they're reasonably permanent but ignoring heat
         // effects -- have dropped to 0, we're stuck even if we still have
         // jump jets because we can't get up anymore to *use* them.
-        if ((getWalkMP(true, true, false) <= 0) && isProne()) {
+        if ((getWalkMP(MPCalculationSetting.PERM_IMMOBILIZED) <= 0) && isProne()) {
             return true;
         }
         // Gyro destroyed? TW p. 258 at least heavily implies that that counts
@@ -6697,20 +6341,13 @@ public abstract class Mech extends Entity {
         }
         if (coolantSystem != null) {
             boolean bFailure = false;
-            int nRoll = Compute.d6(2);
+            Roll diceRoll = Compute.rollD6(2);
             bUsedCoolantSystem = true;
-            Report r = new Report(2365);
-            r.subject = getId();
-            r.addDesc(this);
-            r.add(coolantSystem.getName());
-            vDesc.addElement(r);
-            r = new Report(2370);
-            r.subject = getId();
-            r.indent();
-            r.add(EMERGENCY_COOLANT_SYSTEM_FAILURE[nCoolantSystemLevel]);
-            r.add(nRoll);
+            vDesc.addElement(Report.subjectReport(2365, getId()).addDesc(this).add(coolantSystem.getName()));
+            int requiredRoll = EMERGENCY_COOLANT_SYSTEM_FAILURE[nCoolantSystemLevel];
+            Report r = Report.subjectReport(2370, getId()).indent().add(requiredRoll).add(diceRoll);
 
-            if (nRoll < EMERGENCY_COOLANT_SYSTEM_FAILURE[nCoolantSystemLevel]) {
+            if (diceRoll.getIntValue() < requiredRoll) {
                 // uh oh
                 bFailure = true;
                 r.choose(false);
@@ -6750,7 +6387,7 @@ public abstract class Mech extends Entity {
             } else {
                 r.choose(true);
                 vDesc.addElement(r);
-                nCoolantSystemMOS = nRoll - EMERGENCY_COOLANT_SYSTEM_FAILURE[nCoolantSystemLevel];
+                nCoolantSystemMOS = diceRoll.getIntValue() - EMERGENCY_COOLANT_SYSTEM_FAILURE[nCoolantSystemLevel];
             }
             return bFailure;
         }
@@ -6787,5 +6424,61 @@ public abstract class Mech extends Entity {
     @Override
     public int getSpriteDrawPriority() {
         return 6;
+    }
+
+    @Override
+    public boolean isMek() {
+        return true;
+    }
+
+    @Override
+    public boolean isIndustrialMek() {
+        return isIndustrial();
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(3.729 + 0.889*Math.log(getWeight())));
+    }
+
+    @Override
+    public boolean getsAutoExternalSearchlight() {
+        return true;
+    }
+    
+    public static Map<Integer, String> getAllCockpitCodeName() {
+        Map<Integer, String> result = new HashMap<>();
+
+        result.put(COCKPIT_STANDARD, getCockpitDisplayString(COCKPIT_STANDARD));
+        result.put(COCKPIT_SMALL, getCockpitDisplayString(COCKPIT_SMALL));
+        result.put(COCKPIT_COMMAND_CONSOLE, getCockpitDisplayString(COCKPIT_COMMAND_CONSOLE));
+        result.put(COCKPIT_TORSO_MOUNTED, getCockpitDisplayString(COCKPIT_TORSO_MOUNTED));
+        result.put(COCKPIT_DUAL, getCockpitDisplayString(COCKPIT_DUAL));
+        result.put(COCKPIT_INDUSTRIAL, getCockpitDisplayString(COCKPIT_INDUSTRIAL));
+        result.put(COCKPIT_PRIMITIVE, getCockpitDisplayString(COCKPIT_PRIMITIVE));
+        result.put(COCKPIT_PRIMITIVE_INDUSTRIAL, getCockpitDisplayString(COCKPIT_PRIMITIVE_INDUSTRIAL));
+        result.put(COCKPIT_SUPERHEAVY, getCockpitDisplayString(COCKPIT_SUPERHEAVY));
+        result.put(COCKPIT_SUPERHEAVY_TRIPOD, getCockpitDisplayString(COCKPIT_SUPERHEAVY_TRIPOD));
+        result.put(COCKPIT_TRIPOD, getCockpitDisplayString(COCKPIT_TRIPOD));
+        result.put(COCKPIT_INTERFACE, getCockpitDisplayString(COCKPIT_INTERFACE));
+        result.put(COCKPIT_VRRP, getCockpitDisplayString(COCKPIT_VRRP));
+        result.put(COCKPIT_QUADVEE, getCockpitDisplayString(COCKPIT_QUADVEE));
+        result.put(COCKPIT_SUPERHEAVY_INDUSTRIAL, getCockpitDisplayString(COCKPIT_SUPERHEAVY_INDUSTRIAL));
+        result.put(COCKPIT_SUPERHEAVY_COMMAND_CONSOLE, getCockpitDisplayString(COCKPIT_SUPERHEAVY_COMMAND_CONSOLE));
+        result.put(COCKPIT_SMALL_COMMAND_CONSOLE, getCockpitDisplayString(COCKPIT_SMALL_COMMAND_CONSOLE));
+        result.put(COCKPIT_TRIPOD_INDUSTRIAL, getCockpitDisplayString(COCKPIT_TRIPOD_INDUSTRIAL));
+        result.put(COCKPIT_SUPERHEAVY_TRIPOD_INDUSTRIAL, getCockpitDisplayString(COCKPIT_SUPERHEAVY_TRIPOD_INDUSTRIAL));
+        result.put(COCKPIT_UNKNOWN, getCockpitDisplayString(COCKPIT_UNKNOWN));
+
+        return result;
+    }
+    
+    /**
+     * Method that returns the mapping between locations which, if cargo is carried,
+     * block other locations from firing.
+     */
+    @Override
+    protected Map<Integer, List<Integer>> getBlockedFiringLocations() {
+    	return BLOCKED_FIRING_LOCATIONS;
     }
 }

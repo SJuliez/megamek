@@ -36,6 +36,10 @@ SU-14
 IS Level 4
 </type>
 
+<role>
+Fast Dogfighter
+</role>
+
 <motion_type>
 Aerodyne
 </motion_type>
@@ -136,15 +140,23 @@ Kajikazawa
 CHASSIS:Suzaku Sleek Assault
 ENGINE:Nissan 375 Extra Light
 ARMOR:New Samarkand Flying Dragon Heavy Ferro-Aluminum
-COMMUNICATIONS:Duotech 250
+COMMUNICATIONS:Duoteck 250
 TARGETING:Chichester ASR30
 </systemManufacturers>
 
 <source>
-TRO Prototypes - Jihad
+TRO: Prototypes
 </source>
 
 <tonnage>
 75.0
 </tonnage>
 
+
+<quirks>
+atmo_flyer
+</quirks>
+
+<weaponQuirks>
+no_cooling:Aft:0:ISLaserAMS
+</weaponQuirks>

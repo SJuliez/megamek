@@ -14,6 +14,7 @@
 package megamek.common.loaders;
 
 import megamek.common.*;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.util.BuildingBlock;
 
 /**
@@ -30,27 +31,7 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
     public Entity getEntity() throws EntityLoadingException {
 
         Dropship a = new Dropship();
-
-        if (!dataFile.exists("Name")) {
-            throw new EntityLoadingException("Could not find name block.");
-        }
-        a.setChassis(dataFile.getDataAsString("Name")[0]);
-        if (dataFile.exists("Model")
-                && (dataFile.getDataAsString("Model")[0] != null)) {
-            a.setModel(dataFile.getDataAsString("Model")[0]);
-        } else {
-            a.setModel("");
-        }
-        if (dataFile.exists(MtfFile.MUL_ID)) {
-            a.setMulId(dataFile.getDataAsInt(MtfFile.MUL_ID)[0]);
-        }
-        setTechLevel(a);
-        setFluff(a);
-        checkManualBV(a);
-
-        if (dataFile.exists("source")) {
-            a.setSource(dataFile.getDataAsString("source")[0]);
-        }
+        setBasicEntityData(a);
 
         if (dataFile.exists("originalBuildYear")) {
             a.setOriginalBuildYear(dataFile.getDataAsInt("originalBuildYear")[0]);
@@ -186,10 +167,10 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
             throw new EntityLoadingException("Incorrect armor array length");
         }
 
-        a.initializeArmor(armor[BLKAeroFile.NOSE], Dropship.LOC_NOSE);
-        a.initializeArmor(armor[BLKAeroFile.RW], Dropship.LOC_RWING);
-        a.initializeArmor(armor[BLKAeroFile.LW], Dropship.LOC_LWING);
-        a.initializeArmor(armor[BLKAeroFile.AFT], Dropship.LOC_AFT);
+        a.initializeArmor(armor[BLKAeroSpaceFighterFile.NOSE], Dropship.LOC_NOSE);
+        a.initializeArmor(armor[BLKAeroSpaceFighterFile.RW], Dropship.LOC_RWING);
+        a.initializeArmor(armor[BLKAeroSpaceFighterFile.LW], Dropship.LOC_LWING);
+        a.initializeArmor(armor[BLKAeroSpaceFighterFile.AFT], Dropship.LOC_AFT);
         a.initializeArmor(IArmorState.ARMOR_NA, Dropship.LOC_HULL);
 
         a.autoSetInternal();
@@ -206,7 +187,12 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
         }
 
         addTransports(a);
+
+        // how many bombs can it carry; depends on transport bays
+        a.autoSetMaxBombPoints();
+
         a.setArmorTonnage(a.getArmorWeight());
+        loadQuirks(a);
         return a;
     }
 
@@ -247,7 +233,7 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
         boolean rearMount = false;
         int nAmmo = 1;
         // set up a new weapons bay mount
-        Mounted bayMount = null;
+        WeaponMounted bayMount = null;
         // set up a new bay type
         boolean newBay = false;
         double bayDamage = 0;
@@ -321,8 +307,7 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
                         WeaponType weap = (WeaponType) newmount.getType();
                         if (bayMount == null) {
                             try {
-                                bayMount = a.addEquipment(weap.getBayType(),
-                                        nLoc, rearMount);
+                                bayMount = (WeaponMounted) a.addEquipment(weap.getBayType(), nLoc, rearMount);
                                 newBay = false;
                             } catch (LocationFullException ex) {
                                 throw new EntityLoadingException(
@@ -346,8 +331,7 @@ public class BLKDropshipFile extends BLKFile implements IMechLoader {
                             bayDamage += damage;
                         } else {
                             try {
-                                bayMount = a.addEquipment(weap.getBayType(),
-                                        nLoc, rearMount);
+                                bayMount = (WeaponMounted) a.addEquipment(weap.getBayType(), nLoc, rearMount);
                             } catch (LocationFullException ex) {
                                 throw new EntityLoadingException(
                                         ex.getMessage());

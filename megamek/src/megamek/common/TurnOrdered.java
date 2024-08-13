@@ -48,7 +48,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
      *         take in a phase.
      */
     @Override
-    public int getNormalTurns(Game game) {
+    public int getNormalTurns(IGame game) {
         return getMultiTurns(game) + getOtherTurns();
     }
 
@@ -63,7 +63,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
     }
 
     @Override
-    public int getMultiTurns(Game game) {
+    public int getMultiTurns(IGame game) {
         int turns = 0;
         // turns_multi is transient, so it could be null
         if (turns_multi == null) {
@@ -71,7 +71,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
         }
         if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_MEK_LANCE_MOVEMENT)) {
             double lanceSize = game.getOptions().intOption(OptionsConstants.ADVGRNDMOV_MEK_LANCE_MOVEMENT_NUMBER);
-            Integer numMekMultis = turns_multi.get(GameTurn.CLASS_MECH);
+            Integer numMekMultis = turns_multi.get(EntityClassTurn.CLASS_MECH);
             if (numMekMultis != null) {
                 turns += (int) Math.ceil(numMekMultis / lanceSize);
             }
@@ -79,7 +79,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
         if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_LANCE_MOVEMENT)) {
             double lanceSize = game.getOptions().intOption(OptionsConstants.ADVGRNDMOV_VEHICLE_LANCE_MOVEMENT_NUMBER);
-            Integer numTankMultis = turns_multi.get(GameTurn.CLASS_TANK);
+            Integer numTankMultis = turns_multi.get(EntityClassTurn.CLASS_TANK);
             if (numTankMultis != null) {
                 turns += (int) Math.ceil(numTankMultis / lanceSize);
             }
@@ -87,7 +87,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
         if (game.getOptions().booleanOption(OptionsConstants.INIT_PROTOS_MOVE_MULTI)) {
             double lanceSize = game.getOptions().intOption(OptionsConstants.INIT_INF_PROTO_MOVE_MULTI);
-            Integer numProtoMultis = turns_multi.get(GameTurn.CLASS_PROTOMECH);
+            Integer numProtoMultis = turns_multi.get(EntityClassTurn.CLASS_PROTOMECH);
             if (numProtoMultis != null) {
                 turns += (int) Math.ceil(numProtoMultis / lanceSize);
             }
@@ -95,7 +95,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
 
         if (game.getOptions().booleanOption(OptionsConstants.INIT_INF_MOVE_MULTI)) {
             double lanceSize = game.getOptions().intOption(OptionsConstants.INIT_INF_PROTO_MOVE_MULTI);
-            Integer numInfMultis = turns_multi.get(GameTurn.CLASS_INFANTRY);
+            Integer numInfMultis = turns_multi.get(EntityClassTurn.CLASS_INFANTRY);
             if (numInfMultis != null) {
                 turns += (int) Math.ceil(numInfMultis / lanceSize);
             }
@@ -312,13 +312,10 @@ public abstract class TurnOrdered implements ITurnOrdered {
                 for (ITurnOrdered item : v) {
                     if (!item.equals(winningElement)) {
                         int newBonus = 0;
-                        boolean observer = false;
+                        boolean observer = ((item instanceof Player) && ((Player) item).isObserver())
+                                || ((item instanceof Team) && ((Team) item).isObserverTeam());
                         // Observers don't have initiative, and they don't get initiative compensation
-                        if (((item instanceof Player) && ((Player) item).isObserver())
-                                || ((item instanceof Team) && ((Team) item).isObserverTeam())) {
-                            observer = true;
-                        }
-                        
+
                         if (!item.equals(lastRoundInitWinner) && !observer) {
                             newBonus = item.getInitCompensationBonus() + 1;
                         }
@@ -340,7 +337,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
      * 
      * @param v
      *            A vector of items that need to have turns.
-     * @param rerollRequests
+     * @param rerollRequests null when there should be no re-rolls
      * @param bInitCompBonus
      *            A flag that determines whether initiative compensation bonus
      *            should be used: used to prevent one side getting long init win
@@ -411,7 +408,7 @@ public abstract class TurnOrdered implements ITurnOrdered {
     /**
      * This takes a Vector of TurnOrdered and generates a TurnVector.
      */
-    public static TurnVectors generateTurnOrder(List<? extends ITurnOrdered> v, Game game) {
+    public static TurnVectors generateTurnOrder(List<? extends ITurnOrdered> v, IGame game) {
         int[] num_even_turns = new int[v.size()];
         int[] num_normal_turns = new int[v.size()];
         int[] num_space_station_turns = new int[v.size()];

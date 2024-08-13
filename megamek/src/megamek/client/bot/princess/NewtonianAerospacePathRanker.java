@@ -39,14 +39,14 @@ public class NewtonianAerospacePathRanker extends BasicPathRanker implements IPa
         List<Entity> enemies = getOwner().getEnemyEntities();
         for (Entity e : enemies) {
             // Also, skip withdrawing enemy bot units, to avoid humping disabled tanks and ejected mechwarriors
-            if (getOwner().getHonorUtil().isEnemyBroken(e.getTargetId(), e.getOwnerId(), getOwner().getForcedWithdrawal())) {
+            if (getOwner().getHonorUtil().isEnemyBroken(e.getId(), e.getOwnerId(), getOwner().getForcedWithdrawal())) {
                 continue;
             }
 
             // If a unit has not moved, assume it will move away from me.
             int unmovedDistMod = 0;
             if (e.isSelectableThisTurn() && !e.isImmobile()) {
-                unmovedDistMod = e.getWalkMP(true, false, false);
+                unmovedDistMod = e.getWalkMP();
             }
 
             if ((position.distance(e.getPosition()) + unmovedDistMod) < range) {

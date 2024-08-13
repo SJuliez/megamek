@@ -15,7 +15,6 @@
 */
 package megamek.common.net.connections;
 
-import megamek.common.net.enums.PacketCommand;
 import megamek.common.net.events.AbstractConnectionEvent;
 import megamek.common.net.events.ConnectedEvent;
 import megamek.common.net.events.DisconnectedEvent;
@@ -29,79 +28,49 @@ import org.apache.logging.log4j.LogManager;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.Enumeration;
-import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * Generic bidirectional connection between client and server
  */
 public abstract class AbstractConnection {
 
-    private static PacketMarshallerFactory marshallerFactory = PacketMarshallerFactory.getInstance();
-
+    private static final PacketMarshallerFactory marshallerFactory = PacketMarshallerFactory.getInstance();
     private static final int DEFAULT_MARSHALLING = PacketMarshaller.NATIVE_SERIALIZATION_MARSHALING;
 
-    /**
-     * Peer Host Non null in case if it's a client connection
-     */
+    private Socket socket;
+    private int connectionId;
+
+    /** Peer Host Non null in case if it's a client connection */
     private String host;
 
-    /**
-     * Peer port != 0 in case if it's a client connection
-     */
+    /** Peer port != 0 in case if it's a client connection */
     private int port;
 
-    /**
-     * Connection state
-     */
+    /** Connection state */
     private boolean open;
 
-    /**
-     * The socket for this connection.
-     */
-    private Socket socket;
-
-    /**
-     * The connection ID
-     */
-    private int id;
-
-    /**
-     * Bytes send during the connection lifecycle
-     */
+    /** Bytes send during the connection lifecycle */
     private long bytesSent;
 
-    /**
-     * Bytes received during the connection lifecycle
-     */
+    /** Bytes received during the connection lifecycle */
     private long bytesReceived;
 
-    /**
-     * Queue of <code>Packets</code> to send
-     */
-    private SendQueue sendQueue = new SendQueue();
+    /** Queue of Packets to send */
+    private final SendQueue sendQueue = new SendQueue();
 
-    /**
-     * Connection listeners list
-     */
-    private Vector<ConnectionListener> connectionListeners = new Vector<>();
+    /** Connection listeners list */
+    private final Vector<ConnectionListener> connectionListeners = new Vector<>();
 
-    /**
-     * Type of marshalling used to represent sent packets
-     */
+    /** Type of marshalling used to represent sent packets */
     protected int marshallingType;
 
-    /**
-     * Marshaller used to send packets
-     */
+    /** Marshaller used to send packets */
     protected PacketMarshaller marshaller;
 
-    /**
-     * Indicates the need to compress sent data
-     */
+    /** Indicates the need to compress sent data */
     private boolean zipData = true;
 
     /**
@@ -114,7 +83,7 @@ public abstract class AbstractConnection {
     public AbstractConnection(String host, int port, int id) {
         this.host = host;
         this.port = port;
-        this.id = id;
+        connectionId = id;
         setMarshallingType(DEFAULT_MARSHALLING);
     }
 
@@ -126,20 +95,16 @@ public abstract class AbstractConnection {
      */
     public AbstractConnection(Socket socket, int id) {
         this.socket = socket;
-        this.id = id;
+        connectionId = id;
         setMarshallingType(DEFAULT_MARSHALLING);
     }
 
-    /**
-     * @return <code>true</code> if it's the Server connection
-     */
+    /** @return True if this is the Server connection. */
     public boolean isServer() {
         return host == null;
     }
 
-    /**
-     * @return the type of the marshalling used to send packets
-     */
+    /** @return The type of the marshalling used to send packets. */
     protected int getMarshallingType() {
         return marshallingType;
     }
@@ -147,11 +112,11 @@ public abstract class AbstractConnection {
     /**
      * Sets the type of the marshalling used to send packets
      *
-     * @param marshallingType new marhalling type
+     * @param marshallingType new marshalling type
      */
     protected void setMarshallingType(int marshallingType) {
         PacketMarshaller pm = marshallerFactory.getMarshaller(marshallingType);
-        assert (pm != null) : "Unknown marshalling type";
+        Objects.requireNonNull(pm);
         this.marshallingType = marshallingType;
         marshaller = pm;
     }
@@ -159,7 +124,7 @@ public abstract class AbstractConnection {
     /**
      * Opens the connection
      *
-     * @return <code>true</code> on success, <code>false</code> otherwise
+     * @return True on success, false otherwise
      */
     public synchronized boolean open() {
         if (!open) {
@@ -175,12 +140,10 @@ public abstract class AbstractConnection {
         return true;
     }
 
-    /**
-     * Closes the socket and shuts down the receiver and sender threads
-     */
+    /** Closes the socket and shuts down the receiver and sender threads. */
     public void close() {
         synchronized (this) {
-            System.err.print(getConnectionTypeAbbrevation());
+            LogManager.getLogger().info("Starting to close " + getConnectionTypeText());
             sendQueue.reportContents();
             sendQueue.finish();
             try {
@@ -195,18 +158,14 @@ public abstract class AbstractConnection {
         processConnectionEvent(new DisconnectedEvent(this));
     }
 
-    /**
-     * @return if the socket for this connection has been closed.
-     */
+    /** @return True if the socket for this connection has been closed (or is null). */
     public boolean isClosed() {
         return (socket == null) || socket.isClosed();
     }
 
-    /**
-     * @return the connection ID
-     */
+    /** @return the connection ID. */
     public int getId() {
-        return id;
+        return connectionId;
     }
 
     /**
@@ -215,12 +174,10 @@ public abstract class AbstractConnection {
      * @param id new connection ID
      */
     public void setId(int id) {
-        this.id = id;
+        connectionId = id;
     }
 
-    /**
-     * @return the address this socket is or was connected to
-     */
+    /** @return The address this socket is or was connected to. */
     public String getInetAddress() {
         if (socket != null) {
             return socket.getInetAddress().toString();
@@ -228,11 +185,7 @@ public abstract class AbstractConnection {
         return "Unknown";
     }
 
-    /**
-     * Returns <code>true</code> if this connection compress the sent data
-     *
-     * @return <code>true</code> if this connection compress the sent data
-     */
+    /** @return True if this connection compresses the sent data. */
     public boolean isCompressed() {
         return zipData;
     }
@@ -240,49 +193,39 @@ public abstract class AbstractConnection {
     /**
      * Sets the compression
      *
-     * @param compress
+     * @param compress True when compression is to be used
      */
     public void setCompression(boolean compress) {
         zipData = compress;
     }
 
-    /**
-     * Adds a packet to the send queue to be send on a seperate thread.
-     */
+    /** Adds a packet to the send queue to be sent on a separate thread. */
     public synchronized void send(Packet packet) {
-        sendQueue.addPacket(new SendPacket(packet));
+        sendQueue.addPacket(new SendPacket(packet, this));
         // Send right now
         flush();
     }
 
-    /**
-     * Send the packet now, on a separate thread; This is the blocking call.
-     */
+    /** Send the packet now, on a separate thread; This is the blocking call. */
     public void sendNow(SendPacket packet) {
         try {
             sendNetworkPacket(packet.getData(), packet.isCompressed());
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
+            LogManager.getLogger().error("", ex);
         }
     }
 
-    /**
-     * @return <code>true</code> if there are pending packets
-     */
+    /** @return True if there are pending packets. */
     public synchronized boolean hasPending() {
         return sendQueue.hasPending();
     }
 
-    /**
-     * @return a very approximate count of how many bytes were sent
-     */
+    /** @return a very approximate count of how many bytes were sent. */
     public synchronized long getBytesSent() {
         return bytesSent;
     }
 
-    /**
-     * @return a very approximate count of how many bytes were received
-     */
+    /** @return a very approximate count of how many bytes were received. */
     public synchronized long getBytesReceived() {
         return bytesReceived;
     }
@@ -305,83 +248,20 @@ public abstract class AbstractConnection {
         connectionListeners.removeElement(listener);
     }
 
-    /**
-     * Reports receive exception to the <code>System.err</code>
-     *
-     * @param ex <code>Exception</code>
-     * @param packet <code>Packet</code>
-     */
-    protected void reportSendException(Exception ex, SendPacket packet) {
-        System.err.print(getConnectionTypeAbbrevation());
-        System.err.print(" error sending command #");
-        System.err.print(packet.getCommand());
-        System.err.print(": ");
-        System.err.println(ex.getMessage());
+    /** @return The connection type ("Client" / "Server") that is used in the debug messages and so on. */
+    protected String getConnectionTypeText() {
+        return isServer() ? "Server" : "Client";
     }
 
-    /**
-     * Reports receive exception to the <code>System.err</code>
-     *
-     * @param ex <code>Exception</code>
-     */
-    protected void reportReceiveException(Exception ex) {
-        StringBuffer message = new StringBuffer();
-        reportReceiveException(ex, message);
-        System.err.println(message);
-    }
-
-    /**
-     * Appends the receive exception report to the given
-     * <code>StringBuffer</code>
-     *
-     * @param ex <code>Exception</code>
-     */
-    protected void reportReceiveException(Exception ex, StringBuffer buffer) {
-        System.err.print(getConnectionTypeAbbrevation());
-        System.err.print(" error reading command: ");
-        System.err.println(ex.getMessage());
-    }
-
-    /**
-     * Appends the last commands sent/received to the given
-     * <code>StringBuffer</code>
-     */
-    protected synchronized void reportLastCommands() {
-        System.err.println();
-        System.err.println();
-        sendQueue.reportContents();
-    }
-
-    /**
-     * Returns the the connection type abbrevation (client/server) that used in
-     * the debug messages and so on.
-     *
-     * @return
-     */
-    protected String getConnectionTypeAbbrevation() {
-        return isServer() ? "s:" : "c:";
-    }
-
-    /**
-     * Returns an input stream
-     *
-     * @return an input stream
-     * @throws IOException
-     */
+    /** @return an input stream */
     protected InputStream getInputStream() throws IOException {
         return socket.getInputStream();
     }
 
-    /**
-     * Returns an output stream
-     *
-     * @return an output stream
-     * @throws IOException
-     */
+    /** @return an output stream */
     protected OutputStream getOutputStream() throws IOException {
         return socket.getOutputStream();
     }
-
 
     protected int getSendBufferSize() throws SocketException {
         return socket.getSendBufferSize();
@@ -404,19 +284,17 @@ public abstract class AbstractConnection {
             while ((np = readNetworkPacket()) != null) {
                 processPacket(np);
             }
-        } catch (SocketException e) {
+        } catch (java.io.InvalidClassException ex) {
+            LogManager.getLogger().error(getConnectionTypeText(), ex);
+            close();
+        } catch (SocketException | EOFException ignored) {
             // Do nothing, happens when the socket closes
             close();
-        } catch (EOFException e) {
-            // Do nothing, happens when the socket closes
+        } catch (IOException ex) {
+            LogManager.getLogger().error(getConnectionTypeText(), ex);
             close();
-        } catch (IOException e) {
-            System.out
-                    .println("IOException during AbstractConnection#update()");
-            close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            reportReceiveException(e);
+        } catch (Exception ex) {
+            LogManager.getLogger().error(getConnectionTypeText() + " had an error receiving a packet", ex);
             close();
         }
     }
@@ -431,46 +309,41 @@ public abstract class AbstractConnection {
             while ((packet = sendQueue.getPacket()) != null) {
                 processPacket(packet);
             }
-        } catch (Exception e) {
-            reportSendException(e, packet);
+        } catch (Exception ex) {
+            if (packet == null) {
+                LogManager.getLogger().error(String.format("%s had an error sending a null packet",
+                        getConnectionTypeText()), ex);
+            } else {
+                LogManager.getLogger().error(String.format("%s had an error sending command %s",
+                        getConnectionTypeText(), packet.getCommand().name()), ex);
+            }
             close();
         }
     }
 
-    /**
-     * process a received packet
-     */
+    /** Processes a received packet. */
     protected void processPacket(INetworkPacket np) throws Exception {
-        PacketMarshaller pm = marshallerFactory.getMarshaller(np
-                .getMarshallingType());
-        assert (pm != null) : "Unknown marshalling type";
+        PacketMarshaller pm = marshallerFactory.getMarshaller(np.getMarshallingType());
+        Objects.requireNonNull(pm);
         byte[] data = np.getData();
         bytesReceived += data.length;
         ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        InputStream in;
-        if (np.isCompressed()) {
-            in = new GZIPInputStream(bis);
-        } else {
-            in = bis;
-        }
+        InputStream in = np.isCompressed() ? new GZIPInputStream(bis) : bis;
         Packet packet = pm.unmarshall(in);
         if (packet != null) {
             processConnectionEvent(new PacketReceivedEvent(this, packet));
         }
     }
 
-    /**
-     * process a packet to be sent
-     */
-    protected void processPacket(SendPacket packet) throws Exception {
+    /** Processes a packet to be sent. */
+    protected void processPacket(SendPacket packet) {
         sendNow(packet);
     }
 
     /**
-     * Reads a complete <code>NetworkPacket</code> must not block, must return
-     * null instead
+     * Reads a complete NetworkPacket. This method must not block, must return null instead.
      *
-     * @return the <code>NetworkPacket</code> that was sent.
+     * @return the NetworkPacket that was sent.
      */
     protected abstract INetworkPacket readNetworkPacket() throws Exception;
 
@@ -484,144 +357,28 @@ public abstract class AbstractConnection {
     protected abstract void sendNetworkPacket(byte[] data, boolean zipped) throws Exception;
 
     /**
-     * Wrapper around a <code>LinkedList</code> for keeping a queue of packets
-     * to send. Note that this implementation is not synchronized.
-     */
-    static class SendQueue {
-
-        private LinkedList<SendPacket> queue = new LinkedList<>();
-        private boolean finished = false;
-
-        public void addPacket(SendPacket packet) {
-            queue.add(packet);
-        }
-
-        public void finish() {
-            queue.clear();
-            finished = true;
-        }
-
-        /**
-         * Waits for a packet to appear in the queue and then returns it.
-         *
-         * @return the first available packet in the queue or null if none
-         */
-        public SendPacket getPacket() {
-            if (!finished) {
-                return queue.poll();
-            }
-            return null;
-        }
-
-        /**
-         * Returns true if this connection has pending data
-         */
-        public boolean hasPending() {
-            return !queue.isEmpty();
-        }
-
-        public void reportContents() {
-            System.err.print("Contents of Send Queue: ");
-            for (SendPacket p : queue) {
-                System.err.print(p.command);
-            }
-            System.err.println();
-        }
-    }
-
-    /**
      * Processes game events occurring on this connection by dispatching them to
      * any registered GameListener objects.
      *
      * @param event the game event.
      */
     protected void processConnectionEvent(AbstractConnectionEvent event) {
-        for (Enumeration<ConnectionListener> e = connectionListeners.elements(); e
-                .hasMoreElements();) {
-            ConnectionListener l = e.nextElement();
+        for (ConnectionListener listener : connectionListeners) {
             switch (event.getType()) {
                 case CONNECTED:
-                    l.connected((ConnectedEvent) event);
+                    listener.connected((ConnectedEvent) event);
                     break;
                 case DISCONNECTED:
-                    l.disconnected((DisconnectedEvent) event);
+                    listener.disconnected((DisconnectedEvent) event);
                     break;
                 case PACKET_RECEIVED:
-                    l.packetReceived((PacketReceivedEvent) event);
+                    listener.packetReceived((PacketReceivedEvent) event);
                     break;
             }
         }
     }
 
-    private class SendPacket implements INetworkPacket {
-        byte[] data;
-        boolean zipped = false;
-        PacketCommand command;
-
-        public SendPacket(Packet packet) {
-            command = packet.getCommand();
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            OutputStream out;
-            try {
-                if (zipData && packet.getData() != null) {
-                    out = new GZIPOutputStream(bos);
-                    zipped = true;
-                } else {
-                    out = bos;
-                }
-                marshaller.marshall(packet, out);
-                out.close();
-                data = bos.toByteArray();
-                bytesSent += data.length;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public int getMarshallingType() {
-            return marshallingType;
-        }
-
-        @Override
-        public byte[] getData() {
-            return data;
-        }
-
-        @Override
-        public boolean isCompressed() {
-            return zipped;
-        }
-
-        public PacketCommand getCommand() {
-            return command;
-        }
-    }
-
-    /**
-     * Connection layer data packet.
-     */
-    protected interface INetworkPacket {
-
-        /**
-         * Returns data marshalling type
-         *
-         * @return data marshalling type
-         */
-        public abstract int getMarshallingType();
-
-        /**
-         * Returns packet data
-         *
-         * @return packet data
-         */
-        public abstract byte[] getData();
-
-        /**
-         * Returns <code>true</code> if data is compressed
-         *
-         * @return <code>true</code> if data is compressed
-         */
-        public abstract boolean isCompressed();
+    void addBytesSent(int additionalBytesSent) {
+        bytesSent += additionalBytesSent;
     }
 }

@@ -75,7 +75,7 @@ public class SRMInfernoHandler extends SRMHandler {
         r.indent();
         r.newlines = 0;
         r.subject = subjectId;
-        r.add(wtype.getName());
+        r.add(wtype.getName() + " (" + atype.getShortName() + ")");
         if (entityTarget != null) {
             r.addDesc(entityTarget);
         } else {
@@ -118,14 +118,14 @@ public class SRMInfernoHandler extends SRMHandler {
         vPhaseReport.addElement(r);
 
         // do we hit?
-        bMissed = roll < toHit.getValue();
+        bMissed = roll.getIntValue() < toHit.getValue();
 
         // are we a glancing hit?
         setGlancingBlowFlags(entityTarget);
         addGlancingBlowReports(vPhaseReport);
 
         // Set Margin of Success/Failure.
-        toHit.setMoS(roll - Math.max(2, toHit.getValue()));
+        toHit.setMoS(roll.getIntValue() - Math.max(2, toHit.getValue()));
         bDirect = game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_DIRECT_BLOW)
                 && ((toHit.getMoS() / 3) >= 1) && (entityTarget != null);
         if (bDirect) {
@@ -174,7 +174,7 @@ public class SRMInfernoHandler extends SRMHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * megamek.common.weapons.MissileWeaponHandler#calcHits(java.util.Vector)
      */
@@ -206,7 +206,7 @@ public class SRMInfernoHandler extends SRMHandler {
 
         // add AMS mods
         nMissilesModifier += getAMSHitsMod(vPhaseReport);
-        
+
         if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_AERO_SANITY)) {
             Entity entityTarget = (target.getTargetType() == Targetable.TYPE_ENTITY) ? (Entity) target
                     : null;
@@ -286,7 +286,7 @@ public class SRMInfernoHandler extends SRMHandler {
         if ((bldg != null)
                 && gameManager.tryIgniteHex(target.getPosition(), subjectId, false,
                         true,
-                        new TargetRoll(wtype.getFireTN(), wtype.getName()), 5,
+                        getFireTNRoll(), 5,
                         vPhaseReport)) {
             return;
         }

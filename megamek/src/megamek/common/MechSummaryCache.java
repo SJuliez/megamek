@@ -15,7 +15,10 @@
  */
 package megamek.common;
 
-import megamek.common.loaders.EntityLoadingException;
+import megamek.common.alphaStrike.ASUnitType;
+import megamek.common.alphaStrike.AlphaStrikeElement;
+import megamek.common.alphaStrike.conversion.ASConverter;
+import megamek.common.preference.PreferenceManager;
 import megamek.common.util.fileUtils.MegaMekFile;
 import megamek.common.verifier.*;
 import org.apache.logging.log4j.LogManager;
@@ -33,13 +36,16 @@ import java.util.zip.ZipFile;
  * @author arlith
  */
 public class MechSummaryCache {
-    
+
     public interface Listener {
         void doneLoading();
     }
 
-    private static final String FILENAME_UNITS_CACHE = "units.cache";
-    private static final String FILENAME_LOOKUP = "name_changes.txt";
+    public static final String FILENAME_UNITS_CACHE = "units.cache";
+    public static final String FILENAME_LOOKUP = "name_changes.txt";
+
+    private static final List<String> SUPPORTED_FILE_EXTENSIONS =
+            List.of(".mtf", ".blk", ".mep", ".hmv", ".tdb", ".hmp", ".zip");
 
     private static MechSummaryCache instance;
     private static boolean disposeInstance = false;
@@ -59,7 +65,6 @@ public class MechSummaryCache {
     private final List<Listener> listeners = new ArrayList<>();
 
     private StringBuffer loadReport = new StringBuffer();
-    private EntityVerifier entityVerifier = null;
     private Thread loader;
     private static final Object lock = new Object();
 
@@ -94,6 +99,7 @@ public class MechSummaryCache {
         instance.initialized = false;
         interrupted = false;
         disposeInstance = false;
+
         File unit_cache_path = new MegaMekFile(getUnitCacheDir(), FILENAME_UNITS_CACHE).getFile();
         long lastModified = unit_cache_path.exists() ? unit_cache_path.lastModified() : 0L;
 
@@ -155,8 +161,8 @@ public class MechSummaryCache {
             synchronized (lock) {
                 try {
                     lock.wait();
-                } catch (Exception e) {
-                    // Ignore
+                } catch (Exception ignored) {
+
                 }
             }
         }
@@ -184,8 +190,6 @@ public class MechSummaryCache {
         Vector<MechSummary> vMechs = new Vector<>();
         Set<String> sKnownFiles = new HashSet<>();
         long lLastCheck = 0;
-        entityVerifier = EntityVerifier.getInstance(new MegaMekFile(getUnitCacheDir(),
-                EntityVerifier.CONFIG_FILENAME).getFile());
         failedFiles = new HashMap<>();
 
         EquipmentType.initializeTypes(); // load master equipment lists
@@ -229,10 +233,10 @@ public class MechSummaryCache {
                     fin.close();
                     istream.close();
                 }
-            } catch (Exception e) {
+            } catch (Exception ex) {
                 loadReport.append("  Unable to load unit cache: ")
-                        .append(e.getMessage()).append("\n");
-                LogManager.getLogger().error(loadReport.toString(), e);
+                        .append(ex.getMessage()).append("\n");
+                LogManager.getLogger().error(loadReport.toString(), ex);
             }
         }
 
@@ -250,9 +254,36 @@ public class MechSummaryCache {
         boolean bNeedsUpdate = loadMechsFromDirectory(vMechs, sKnownFiles,
                 lLastCheck, Configuration.unitsDir(), ignoreUnofficial);
 
-        File userDataUnits = new File(Configuration.userdataDir(), Configuration.unitsDir().toString());
-        if (userDataUnits.isDirectory()) {
-            bNeedsUpdate |= loadMechsFromDirectory(vMechs, sKnownFiles, lLastCheck, userDataUnits, ignoreUnofficial);
+        // Official units are in the internal dir, not in the user dirs or story arcs dir
+        if (!ignoreUnofficial) {
+            // load units from the MM internal user data dir
+            File userDataUnits = new File(Configuration.userdataDir(), Configuration.unitsDir().toString());
+            if (userDataUnits.isDirectory()) {
+                bNeedsUpdate |= loadMechsFromDirectory(vMechs, sKnownFiles, lLastCheck, userDataUnits, false);
+            }
+
+            // load units from the external user data dir
+            String userDir = PreferenceManager.getClientPreferences().getUserDir();
+            File userDataUnits2 = new File(userDir, "");
+            if (!userDir.isBlank() && userDataUnits2.isDirectory()) {
+                bNeedsUpdate |= loadMechsFromDirectory(vMechs, sKnownFiles, lLastCheck, userDataUnits2, false);
+            }
+
+            // load units from story arcs
+            File storyarcsDir = Configuration.storyarcsDir();
+            if(storyarcsDir.exists() && storyarcsDir.isDirectory()) {
+                File[] storyArcsFiles = storyarcsDir.listFiles();
+                if (storyArcsFiles != null) {
+                    for (File file : storyArcsFiles) {
+                        if (file.isDirectory()) {
+                            File storyArcUnitsDir = new File(file.getPath() + "/data/mechfiles");
+                            if (storyArcUnitsDir.exists() && storyArcUnitsDir.isDirectory()) {
+                                bNeedsUpdate |= loadMechsFromDirectory(vMechs, sKnownFiles, lLastCheck, storyArcUnitsDir, false);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // save updated cache back to disk
@@ -374,11 +405,26 @@ public class MechSummaryCache {
         MechSummary ms = new MechSummary();
         ms.setName(e.getShortNameRaw());
         ms.setChassis(e.getChassis());
+        ms.setClanChassisName(e.getClanChassisName());
         ms.setModel(e.getModel());
         ms.setMulId(e.getMulId());
         ms.setUnitType(UnitType.getTypeName(e.getUnitType()));
         ms.setFullAccurateUnitType(Entity.getEntityTypeName(e.getEntityType()));
+        ms.setEntityType(e.getEntityType());
+        ms.setOmni(e.isOmni());
+        if (e.getFluff().hasEmbeddedFluffImage()) {
+            ms.setFluffImage(e.getFluff().getBase64FluffImage().getBase64String());
+        }
+        ms.setMilitary(e.isMilitary());
+        ms.setMountedInfantry((e instanceof Infantry) && ((Infantry) e).getMount() != null);
+
+        int tankTurrets = 0;
+        if (e instanceof Tank) {
+            tankTurrets = ((Tank) e).getTurretCount();
+        }
+        ms.setTankTurrets(tankTurrets);
         ms.setSourceFile(f);
+        ms.setSource(e.getSource());
         ms.setEntryName(entry);
         ms.setYear(e.getYear());
         ms.setType(e.getTechLevel());
@@ -402,17 +448,18 @@ public class MechSummaryCache {
             ms.setTWweight(e.getWeight());
             ms.setSuitWeight(((BattleArmor) e).getTrooperWeight());
         }
-        ms.setBV(e.calculateBattleValue());
+        ms.setBV(e.calculateBattleValue(true, true));
         ms.setLevel(TechConstants.T_SIMPLE_LEVEL[e.getTechLevel()]);
         ms.setAdvancedYear(e.getProductionDate(e.isClan()));
         ms.setStandardYear(e.getCommonDate(e.isClan()));
+        ms.setExtinctRange(e.getExtinctionRange());
         ms.setCost((long) e.getCost(false));
         ms.setDryCost((long) e.getCost(true));
         ms.setAlternateCost((int) e.getAlternateCost());
         ms.setCanon(e.isCanon());
-        ms.setWalkMp(e.getWalkMP(false, false));
-        ms.setRunMp(e.getRunMP(false, false, false));
-        ms.setJumpMp(e.getJumpMP(false));
+        ms.setWalkMp(e.getWalkMP());
+        ms.setRunMp(e.getRunMP(MPCalculationSetting.NO_GRAVITY));
+        ms.setJumpMp(e.getJumpMP());
         ms.setClan(e.isClan());
         if (e.isSupportVehicle()) {
             ms.setSupport(true);
@@ -429,6 +476,8 @@ public class MechSummaryCache {
             ms.setUnitSubType(e.getMovementModeAsString());
         }
         ms.setEquipment(e.getEquipment());
+        ms.setQuirkNames(e.getQuirks());
+        ms.setWeaponQuirkNames(e);
         ms.setTotalArmor(e.getTotalArmor());
         ms.setTotalInternal(e.getTotalInternal());
         ms.setInternalsType(e.getStructureType());
@@ -441,6 +490,12 @@ public class MechSummaryCache {
         ms.setArmorType(armorTypes);
         ms.setArmorTypes(armorTypes);
         ms.setArmorTechTypes(armorTechTypes);
+        ms.setPatchwork(Arrays.stream(ms.getArmorTypes()).distinct().count() > 1);
+        ms.setDoomedOnGround(e.doomedOnGround());
+        ms.setDoomedInAtmosphere(e.doomedInAtmosphere());
+        ms.setDoomedInSpace(e.doomedInSpace());
+        ms.setDoomedInExtremeTemp(e.doomedInExtremeTemp());
+        ms.setDoomedInVacuum(e.doomedInVacuum());
 
         // Check to see if this entity has a cockpit, and if so, set it's type
         if ((e instanceof Mech)) {
@@ -454,37 +509,27 @@ public class MechSummaryCache {
             ms.setCockpitType(-2);
         }
 
-        TestEntity testEntity = null;
-        if (e instanceof Mech) {
-            testEntity = new TestMech((Mech) e, entityVerifier.mechOption, null);
-        } else if (e instanceof Protomech) {
-            testEntity = new TestProtomech((Protomech) e, entityVerifier.protomechOption, null);
-        } else if (e.isSupportVehicle()) {
-            testEntity = new TestSupportVehicle(e, entityVerifier.tankOption, null);
-        } else if (e instanceof Tank && !(e instanceof GunEmplacement)) {
-            testEntity = new TestTank((Tank) e, entityVerifier.tankOption, null);
-        } else if (e instanceof BattleArmor) {
-            testEntity = new TestBattleArmor((BattleArmor) e, entityVerifier.baOption, null);
-        } else if (e instanceof Infantry) {
-            testEntity = new TestInfantry((Infantry) e, entityVerifier.infOption, null);
-        } else if (e instanceof Jumpship) {
-            testEntity = new TestAdvancedAerospace((Jumpship) e, entityVerifier.aeroOption, null);
-        } else if (e instanceof SmallCraft) {
-            testEntity = new TestSmallCraft((SmallCraft) e, entityVerifier.aeroOption, null);
-        } else if (e instanceof Aero) {
-            // FighterSquadron and TeleMissile are also instanceof Aero but they won't be showing up in the unit files
-            testEntity = new TestAero((Aero) e, entityVerifier.aeroOption, null);
-        }
-        if (testEntity != null &&
-                !testEntity.correctEntity(new StringBuffer())) {
+        TestEntity testEntity = TestEntity.getEntityVerifier(e);
+        if (testEntity != null && !testEntity.correctEntity(new StringBuffer())) {
             ms.setLevel("F");
+            ms.setInvalid(true);
+        } else {
+            ms.setInvalid(false);
         }
+
+        ms.setTechLevel(e.getStaticTechLevel().toString());
+        ms.setTechLevelCode(e.getStaticTechLevel().ordinal());
+        ms.setTechBase(e.getTechBaseDescription());
+
+        ms.setFailedToLoadEquipment(e.getFailedEquipment().hasNext());
 
         ms.setGyroType(e.getGyroType());
         if (e.hasEngine()) {
             ms.setEngineName(e.getEngine().getEngineName());
+            ms.setEngineType(e.getEngine().getEngineType());
         } else {
             ms.setEngineName("None");
+            ms.setEngineType(-1);
         }
 
         if (e instanceof Mech) {
@@ -499,6 +544,181 @@ public class MechSummaryCache {
             }
         } else {
             ms.setMyomerName("None");
+        }
+
+        int lowerArms = 0;
+        int hands = 0;
+
+        if (e instanceof Mech) {
+            lowerArms += e.hasSystem(Mech.ACTUATOR_LOWER_ARM, Mech.LOC_RARM) ? 1 : 0;
+            lowerArms += e.hasSystem(Mech.ACTUATOR_LOWER_ARM, Mech.LOC_LARM) ? 1 : 0;
+            hands += e.hasSystem(Mech.ACTUATOR_HAND, Mech.LOC_RARM) ? 1 : 0;
+            hands += e.hasSystem(Mech.ACTUATOR_HAND, Mech.LOC_LARM) ? 1 : 0;
+        }
+
+        ms.setLowerArms(lowerArms);
+        ms.setHands(hands);
+
+        double ts = e.getTroopCarryingSpace();
+        ts += e.getPodMountedTroopCarryingSpace();
+        ms.setTroopCarryingSpace(ts);
+
+        int aBays = 0;
+        int aDoors = 0;
+        double aUnits = 0;
+        int scBays = 0;
+        int scDoors = 0;
+        double scUnits = 0;
+        int dc = 0;
+        int mBays = 0;
+        int mDoors = 0;
+        double mUnits = 0;
+        int hvBays = 0;
+        int hvDoors = 0;
+        double hvUnits = 0;
+        int lvBays = 0;
+        int lvDoors = 0;
+        double lvUnits = 0;
+        int pmBays = 0;
+        int pmDoors = 0;
+        double pmUnits = 0;
+        int baBays = 0;
+        int baDoors = 0;
+        double baUnits = 0;
+        int iBays = 0;
+        int iDoors = 0;
+        double iUnits = 0;
+        int shvBays = 0;
+        int shvDoors = 0;
+        double shvUnits = 0;
+        int dBays = 0;
+        int dDoors = 0;
+        double dUnits = 0;
+        double cbUnits = 0;
+        int nrf = 0;
+        int bah = 0;
+        Vector<Transporter>  trs = e.getTransports();
+        for (Transporter t : trs) {
+            if (t instanceof ASFBay) {
+                aBays++;
+                aDoors += ((ASFBay) t).getCurrentDoors();
+                aUnits += t.getUnused();
+            }
+            if (t instanceof SmallCraftBay) {
+                scBays++;
+                scDoors += ((SmallCraftBay) t).getCurrentDoors();
+                scUnits +=  t.getUnused();
+            }
+            if (t instanceof DockingCollar) {
+                dc++;
+            }
+            if (t instanceof MechBay) {
+                mBays++;
+                mDoors += ((MechBay) t).getCurrentDoors();
+                mUnits += t.getUnused();
+            }
+            if (t instanceof HeavyVehicleBay) {
+                hvBays++;
+                hvDoors += ((HeavyVehicleBay) t).getCurrentDoors();
+                hvUnits += t.getUnused();
+            }
+            if (t instanceof LightVehicleBay) {
+                lvBays++;
+                lvDoors += ((LightVehicleBay) t).getCurrentDoors();
+                lvUnits += t.getUnused();
+            }
+            if (t instanceof ProtomechBay) {
+                pmBays++;
+                pmDoors += ((ProtomechBay) t).getCurrentDoors();
+                pmUnits += t.getUnused();
+            }
+            if (t instanceof BattleArmorBay) {
+                baBays++;
+                baDoors += ((BattleArmorBay) t).getCurrentDoors();
+                baUnits += t.getUnused();
+            }
+            if (t instanceof InfantryBay) {
+                iBays++;
+                iDoors += ((InfantryBay) t).getCurrentDoors();
+                iUnits += ((InfantryBay) t).getUnusedSlots();
+            }
+            if (t instanceof SuperHeavyVehicleBay) {
+                shvBays++;
+                shvDoors += ((SuperHeavyVehicleBay) t).getCurrentDoors();
+                shvUnits += t.getUnused();
+            }
+            if (t instanceof DropshuttleBay) {
+                dBays++;
+                dDoors += ((DropshuttleBay) t).getCurrentDoors();
+                dUnits += t.getUnused();
+            }
+            if (t instanceof BattleArmorHandles) {
+                bah++;
+            }
+            if (t instanceof  CargoBay) {
+                cbUnits += t.getUnused();
+            }
+            if (t instanceof  NavalRepairFacility) {
+                nrf++;
+            }
+        }
+        ms.setASFBays(aBays);
+        ms.setASFDoors(aDoors);
+        ms.setASFUnits(aUnits);
+        ms.setSmallCraftBays(scBays);
+        ms.setSmallCraftDoors(scDoors);
+        ms.setSmallCraftUnits(scUnits);
+        ms.setDockingCollars(dc);
+        ms.setMechBays(mBays);
+        ms.setMechDoors(mDoors);
+        ms.setMechUnits(mUnits);
+        ms.setHeavyVehicleBays(hvBays);
+        ms.setHeavyVehicleDoors(hvDoors);
+        ms.setHeavyVehicleUnits(hvUnits);
+        ms.setLightVehicleBays(lvBays);
+        ms.setLightVehicleDoors(lvDoors);
+        ms.setLightVehicleUnits(lvUnits);
+        ms.setProtoMecheBays(pmBays);
+        ms.setProtoMechDoors(pmDoors);
+        ms.setProtoMechUnits(pmUnits);
+        ms.setBattleArmorBays(baBays);
+        ms.setBattleArmorDoors(baDoors);
+        ms.setBattleArmorUnits(baUnits);
+        ms.setInfantryBays(iBays);
+        ms.setInfantryDoors(iDoors);
+        ms.setInfantryUnits(iUnits);
+        ms.setSuperHeavyVehicleBays(shvBays);
+        ms.setSuperHeavyVehicleDoors(shvDoors);
+        ms.setSuperHeavyVehicleUnits(shvUnits);
+        ms.setDropshuttleBays(dBays);
+        ms.setDropshuttleDoors(dDoors);
+        ms.setDropshuttelUnits(dUnits);
+        ms.setBattleArmorHandles(bah);
+        ms.setCargoBayUnits(cbUnits);
+        ms.setNavalRepairFacilities(nrf);
+
+        if (ASConverter.canConvert(e)) {
+            AlphaStrikeElement element = ASConverter.convertForMechCache(e);
+            ms.setAsUnitType(element.getASUnitType());
+            ms.setSize(element.getSize());
+            ms.setTmm(element.getTMM());
+            ms.setMovement(element.getMovement());
+            ms.setPrimaryMovementMode(element.getPrimaryMovementMode());
+            ms.setStandardDamage(element.getStandardDamage());
+            ms.setOverheat(element.getOV());
+            ms.setFrontArc(element.getFrontArc());
+            ms.setLeftArc(element.getLeftArc());
+            ms.setRightArc(element.getRightArc());
+            ms.setRearArc(element.getRearArc());
+            ms.setThreshold(element.getThreshold());
+            ms.setFullArmor(element.getFullArmor());
+            ms.setFullStructure(element.getFullStructure());
+            ms.setSquadSize(element.getSquadSize());
+            ms.setSpecialAbilities(element.getSpecialAbilities());
+            ms.setUnitRole(element.getRole());
+            ms.setPointValue(element.getPointValue());
+        } else {
+            ms.setAsUnitType(ASUnitType.UNKNOWN);
         }
 
         return ms;
@@ -549,44 +769,18 @@ public class MechSummaryCache {
                         continue;
                     }
                     // recursion is fun
-                    bNeedsUpdate |= loadMechsFromDirectory(vMechs, sKnownFiles,
-                            lLastCheck, f, ignoreUnofficial);
+                    bNeedsUpdate |= loadMechsFromDirectory(vMechs, sKnownFiles, lLastCheck, f, ignoreUnofficial);
                     continue;
                 }
-                if (f.getName().indexOf('.') == -1) {
+                String lowerCaseName = f.getName().toLowerCase();
+                if (SUPPORTED_FILE_EXTENSIONS.stream().noneMatch(lowerCaseName::endsWith)) {
                     continue;
                 }
-                if (f.getName().toLowerCase().endsWith(".gitignore")) {
+                if (lowerCaseName.endsWith(".zip")) {
+                    bNeedsUpdate |= loadMechsFromZipFile(vMechs, sKnownFiles, lLastCheck, f);
                     continue;
                 }
-                if (f.getName().toLowerCase().endsWith(".txt")) {
-                    continue;
-                }
-                if (f.getName().toLowerCase().endsWith(".log")) {
-                    continue;
-                }
-                if (f.getName().toLowerCase().endsWith(".svn-base")) {
-                    continue;
-                }
-                if (f.getName().toLowerCase().endsWith(".svn-work")) {
-                    continue;
-                }
-                if (f.getName().toLowerCase().endsWith(".ds_store")) {
-                    continue;
-                }
-                if (f.getName().toLowerCase().endsWith(".yml")) {
-                    continue;
-                }
-                if (f.getName().equals("UnitVerifierOptions.xml")) {
-                    continue;
-                }
-                if (f.getName().toLowerCase().endsWith(".zip")) {
-                    bNeedsUpdate |= loadMechsFromZipFile(vMechs, sKnownFiles,
-                            lLastCheck, f);
-                    continue;
-                }
-                if ((f.lastModified() < lLastCheck)
-                        && sKnownFiles.contains(f.toString())) {
+                if ((f.lastModified() < lLastCheck) && sKnownFiles.contains(f.toString())) {
                     continue;
                 }
                 try {
@@ -611,7 +805,7 @@ public class MechSummaryCache {
                                     .append(failedEquipment.next()).append("\n");
                         }
                     }
-                } catch (EntityLoadingException ex) {
+                } catch (Exception ex) {
                     loadReport.append("    Loading from ").append(f).append("\n");
                     loadReport.append("***   Unable to load file: ");
                     StringWriter stringWriter = new StringWriter();
@@ -652,8 +846,8 @@ public class MechSummaryCache {
                 try {
                     zFile.close();
                     return false;
-                } catch (IOException e) {
-                    LogManager.getLogger().error("", e);
+                } catch (Exception ex) {
+                    LogManager.getLogger().error("", ex);
                 }
             }
             ZipEntry zEntry = (ZipEntry) i.nextElement();
@@ -664,10 +858,8 @@ public class MechSummaryCache {
                 }
                 continue;
             }
-            if (zEntry.getName().toLowerCase().endsWith(".txt")) {
-                continue;
-            }
-            if (zEntry.getName().toLowerCase().endsWith(".yml")) {
+            String lowerCaseName = zEntry.getName().toLowerCase();
+            if (SUPPORTED_FILE_EXTENSIONS.stream().noneMatch(lowerCaseName::endsWith)) {
                 continue;
             }
             if ((Math.max(fZipFile.lastModified(), zEntry.getTime()) < lLastCheck)
@@ -745,7 +937,7 @@ public class MechSummaryCache {
                         }
                     }
                 }
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 LogManager.getLogger().error("", ex);
             }
         }

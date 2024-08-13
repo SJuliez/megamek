@@ -23,6 +23,7 @@ import megamek.common.weapons.AttackHandler;
 import megamek.common.weapons.PrototypeLaserHandler;
 import megamek.common.weapons.lasers.LaserWeapon;
 import megamek.server.GameManager;
+import megamek.server.Server;
 
 /**
  * @author Andrew Hunter
@@ -49,9 +50,13 @@ public class ISERLaserLargePrototype extends LaserWeapon {
         waterMediumRange = 9;
         waterLongRange = 12;
         waterExtremeRange = 18;
+        shortAV = 8;
+        medAV = 8;
+        longAV = 8;
+        maxRange = RANGE_LONG;
         tonnage = 5.0;
         criticals = 2;
-        bv = 163;
+        bv = 136;
         cost = 600000;
         rulesRefs = "103, IO";
         flags = flags.or(F_PROTOTYPE);
@@ -81,16 +86,7 @@ public class ISERLaserLargePrototype extends LaserWeapon {
     }
 
     @Override
-    public int getLongRange() {
-        GameOptions options = getGameOptions();
-        if (options == null) {
-            return super.getLongRange();
-        } else if (options.getOption(OptionsConstants.ADVCOMBAT_INCREASED_ISERLL_RANGE) == null) {
-            return super.getLongRange();
-        }
-        if (options.getOption(OptionsConstants.ADVCOMBAT_INCREASED_ISERLL_RANGE).booleanValue()) {
-            return 21;
-        }
-        return super.getLongRange();
+    public int getAlphaStrikeHeat() {
+        return 15;
     }
 }

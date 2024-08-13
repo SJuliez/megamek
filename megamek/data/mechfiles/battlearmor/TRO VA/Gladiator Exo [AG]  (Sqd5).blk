@@ -16,8 +16,8 @@ BattleArmor
 Gladiator Exoskeleton
 </Name>
 
-<Model>
-(Standard) [AG](Sqd5)
+<model>
+[AG](Sqd5)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ Gladiator Exoskeleton
 <type>
 IS Level 2
 </type>
+
+<role>
+None
+</role>
 
 <motion_type>
 Leg
@@ -60,7 +64,7 @@ LegAttack
 </Squad Equipment>
 
 <source>
-TRO Vehicle Annex (r) - Clan Invasion
+TRO: Vehicle Annex Revised
 </source>
 
 <chassis>
@@ -119,3 +123,8 @@ JUMPJET:Unknown
 COMMUNICATIONS:Unknown
 TARGETING:Unknown
 </systemManufacturers>
+
+<quirks>
+difficult_maintain
+</quirks>
+

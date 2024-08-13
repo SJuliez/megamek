@@ -20,17 +20,25 @@ IS Standard Battle Armor
 (Baka) [LRR](Sqd5)
 </Model>
 
+<mul id:>
+9521
+</mul id:>
+
 <year>
-3150
+3086
 </year>
 
 <originalBuildYear>
-3150
+3086
 </originalBuildYear>
 
 <type>
 IS Level 2
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Leg
@@ -78,7 +86,7 @@ ISBASRM2OS:Body
 </Trooper 5 Equipment>
 
 <source>
-Dark Age
+TRO: Dark Age
 </source>
 
 <chassis>

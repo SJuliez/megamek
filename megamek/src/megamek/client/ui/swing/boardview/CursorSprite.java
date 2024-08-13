@@ -9,6 +9,7 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
 import megamek.client.ui.swing.GUIPreferences;
+import megamek.client.ui.swing.util.UIUtil;
 import megamek.common.Coords;
 
 /**
@@ -23,8 +24,8 @@ class CursorSprite extends Sprite {
     public CursorSprite(BoardView boardView1, final Color color) {
         super(boardView1);
         this.color = color;
-        bounds = new Rectangle(BoardView.hexPoly.getBounds().width + 1,
-                BoardView.hexPoly.getBounds().height + 1);
+        bounds = new Rectangle(BoardView.getHexPoly().getBounds().width + 1,
+                BoardView.getHexPoly().getBounds().height + 1);
         image = null;
 
         // start offscreen
@@ -37,22 +38,17 @@ class CursorSprite extends Sprite {
         Image tempImage = new BufferedImage(bounds.width, bounds.height,
                 BufferedImage.TYPE_INT_ARGB);
         Graphics graph = tempImage.getGraphics();
-        
-        if (GUIPreferences.getInstance().getAntiAliasing()) {
-            ((Graphics2D) graph).setRenderingHint(
-                    RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
-        }
+        UIUtil.setHighQualityRendering(graph);
 
         // fill with key color
         graph.setColor(new Color(0, 0, 0, 0));
         graph.fillRect(0, 0, bounds.width, bounds.height);
         // draw attack poly
         graph.setColor(color);
-        graph.drawPolygon(BoardView.hexPoly);
+        graph.drawPolygon(BoardView.getHexPoly());
 
         // create final image
-        image = bv.getScaledImage(bv.createImage(tempImage.getSource()), false);
+        image = bv.getScaledImage(bv.getPanel().createImage(tempImage.getSource()), false);
         
         graph.dispose();
         tempImage.flush();
@@ -74,8 +70,8 @@ class CursorSprite extends Sprite {
 
     @Override
     public Rectangle getBounds() {
-        bounds = new Rectangle(BoardView.hexPoly.getBounds().width + 1,
-                BoardView.hexPoly.getBounds().height + 1);
+        bounds = new Rectangle(BoardView.getHexPoly().getBounds().width + 1,
+                BoardView.getHexPoly().getBounds().height + 1);
         bounds.setLocation(bv.getHexLocation(hexLoc));
 
         return bounds;

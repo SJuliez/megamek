@@ -15,18 +15,21 @@ package megamek.common;
 
 import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.client.ui.swing.calculationReport.DummyCalculationReport;
-import megamek.common.battlevalue.BattleArmorBVCalculator;
 import megamek.common.cost.BattleArmorCostCalculator;
 import megamek.common.enums.AimingMode;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.MiscMounted;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.Atmosphere;
+import megamek.common.planetaryconditions.PlanetaryConditions;
+import megamek.common.planetaryconditions.Wind;
 import megamek.common.weapons.InfantryAttack;
 import megamek.common.weapons.infantry.InfantryWeapon;
 import org.apache.logging.log4j.LogManager;
 
 import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * This class represents a squad or point of battle armor equipped infantry,
@@ -82,7 +85,7 @@ public class BattleArmor extends Infantry {
         "BABattleClawMagnets", "BABattleClawVibro",
         "BAHeavyBattleClaw", "BAHeavyBattleClawMagnets",
         "BAHeavyBattleClawVibro",
-        "BASalvageArm", "BACargoLifter", "BAIndustrialDrill" };
+        "BASalvageArm", EquipmentTypeLookup.BA_MANIPULATOR_CARGO_LIFTER, "BAIndustrialDrill" };
 
     /**
      * A list of the display names for the different manipulator types.
@@ -267,7 +270,7 @@ public class BattleArmor extends Infantry {
      * How many mount locations are possible?
      */
     public static final int MOUNT_NUM_LOCS = 4;
-    
+
     // Quad BA can add critical space by adding a turret mount.
     private int turretSize = 0;
     private boolean modularTurret = false;
@@ -342,7 +345,7 @@ public class BattleArmor extends Infantry {
         setArmorType(EquipmentType.T_ARMOR_BA_STANDARD);
 
         // BA are always one squad
-        squadn = 1;
+        squadCount = 1;
 
         // All Battle Armor squads are Clan until specified otherwise.
         setTechLevel(TechConstants.T_CLAN_TW);
@@ -361,7 +364,7 @@ public class BattleArmor extends Infantry {
                 .setClanAdvancement(2710, DATE_NONE, 3058).setPrototypeFactions(F_TH)
                 .setReintroductionFactions(F_CS).setTechRating(RATING_D)
                 .setAvailability(RATING_F, RATING_X, RATING_E, RATING_D)
-                .setStaticTechLevel(SimpleTechLevel.STANDARD), //ultralight
+                .setStaticTechLevel(SimpleTechLevel.STANDARD), //PA(L)
             new TechAdvancement(TECH_BASE_ALL).setISAdvancement(DATE_NONE, 3050, 3050)
                 .setClanAdvancement(2865, 2870, 2900).setPrototypeFactions(F_CWF)
                 .setProductionFactions(F_CIH, F_FS, F_LC).setClanApproximate(true, false, false)
@@ -387,13 +390,23 @@ public class BattleArmor extends Infantry {
                 .setAvailability(RATING_X, RATING_F, RATING_E, RATING_D)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD) // assault
     };
-    
+
+    public static TechAdvancement exoskeletonTechAdvancement() {
+        return new TechAdvancement(TECH_BASE_ALL).setAdvancement(2100, DATE_NONE, 2200)
+            .setApproximate(true, false, true).setTechRating(RATING_C)
+            .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
+            .setStaticTechLevel(SimpleTechLevel.STANDARD);
+    }
+
     public static TechAdvancement getConstructionTechAdvancement(int weightClass) {
         return new TechAdvancement(TA_BATTLEARMOR[weightClass]);
     }
-    
+
     @Override
     public TechAdvancement getConstructionTechAdvancement() {
+        if (isExoskeleton()) {
+            return exoskeletonTechAdvancement();
+        }
         int index = getWeightClass();
         if (index < 0 || index >= TA_BATTLEARMOR.length) {
             index = EntityWeightClass.WEIGHT_MEDIUM;
@@ -409,65 +422,58 @@ public class BattleArmor extends Infantry {
         return jumpMP;
     }
 
-    /**
-     * Returns this entity's walking mp, factored for extreme temperatures and
-     * gravity.
-     */
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor, false, false);
-    }
+    public int getWalkMP(MPCalculationSetting mpCalculationSetting) {
+        int mp = getOriginalWalkMP();
 
-    public int getWalkMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor, boolean ignoreDWP,
-            boolean ignoreMyomerBooster) {
-        int j = getOriginalWalkMP();
         if (hasMyomerBooster()) {
-            if (!ignoreMyomerBooster) {
-                if (getWeightClass() >= EntityWeightClass.WEIGHT_HEAVY) {
-                    j++;
-                } else {
-                    j += 2;
-                }
+            if (!mpCalculationSetting.ignoreMyomerBooster) {
+                mp += (getWeightClass() >= EntityWeightClass.WEIGHT_HEAVY) ? 1 : 2;
             }
         } else if (hasWorkingMisc(MiscType.F_MECHANICAL_JUMP_BOOSTER)) {
-            // mechanical jump booster gives an extra MP
-            j++;
+            mp++;
         }
-        if (hasDWP() && !ignoreDWP) {
+
+        if (hasDWP() && !mpCalculationSetting.ignoreDWP) {
             if (getWeightClass() == EntityWeightClass.WEIGHT_MEDIUM) {
-                j -= 3;
+                mp -= 3;
             } else if (getWeightClass() >= EntityWeightClass.WEIGHT_HEAVY) {
-                j -= 2;
+                mp -= 2;
             }
-            if (j == 0) {
-                j++;
-            }
-        }
-        if (null != game) {
-            int weatherMod = game.getPlanetaryConditions()
-                    .getMovementMods(this);
-            if (weatherMod != 0) {
-                j = Math.max(j + weatherMod, 0);
+            if (mp == 0) {
+                mp++;
             }
         }
-        if (gravity) {
-            j = applyGravityEffectsOnMP(j);
+
+        if ((!mpCalculationSetting.ignoreWeather) && (null != game)) {
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
+            mp = Math.max(mp + weatherMod, 0);
+
+            if (conditions.getWeather().isGustingRain()
+                    && getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_RAIN)) {
+                mp += 1;
+            }
+
+            if (getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_WIND)
+                    && conditions.getWeather().isClear()
+                    && conditions.getWind().isStrongGaleOrStorm()) {
+                mp += 1;
+            }
         }
-        return j;
+
+        if (!mpCalculationSetting.ignoreGravity) {
+            mp = applyGravityEffectsOnMP(mp);
+        }
+
+        return mp;
     }
 
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
-        boolean fastMove = (game != null) &&
+    public int getRunMP(MPCalculationSetting mpCalculationSetting) {
+        boolean fastMove = !mpCalculationSetting.ignoreOptionalRules && (game != null) &&
                 game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_FAST_INFANTRY_MOVE);
-        if (fastMove) {
-            return getWalkMP(gravity, ignoreheat, ignoremodulararmor, false,
-                    false) + 1;
-        }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor, false, false);
+        return getWalkMP(mpCalculationSetting) + (fastMove ? 1 : 0);
     }
 
     /**
@@ -485,39 +491,26 @@ public class BattleArmor extends Infantry {
         return false;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Infantry#getJumpMP(boolean)
-     */
     @Override
-    public int getJumpMP(boolean gravity) {
-        return getJumpMP(gravity, false, false);
-    }
+    public int getJumpMP(MPCalculationSetting mpCalculationSetting) {
+        if (isBurdened() && !mpCalculationSetting.ignoreBurden) {
+            return 0;
+        }
 
-    /**
-     * get this BA's jump MP, possibly ignoring gravity and burden
-     *
-     * @param gravity
-     * @param ignoreBurden
-     * @return
-     */
-    public int getJumpMP(boolean gravity, boolean ignoreBurden,
-            boolean ignoreDWP) {
-        if (isBurdened() && !ignoreBurden) {
+        if (hasDWP() && !mpCalculationSetting.ignoreDWP) {
             return 0;
         }
-        if (hasDWP() && !ignoreDWP) {
-            return 0;
-        }
+
         if (null != game) {
-            int windCond = game.getPlanetaryConditions().getWindStrength();
-            if (windCond >= PlanetaryConditions.WI_STORM) {
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            if (!mpCalculationSetting.ignoreWeather
+                    && conditions.getWind().isStrongerThan(Wind.STRONG_GALE)){
                 return 0;
             }
         }
+
         int mp = 0;
-        if (getMovementMode() != EntityMovementMode.INF_UMU) {
+        if (!getMovementMode().isUMUInfantry()) {
             mp = getOriginalJumpMP();
         }
         // if we have no normal jump jets, we get 1 jump MP from mechanical jump
@@ -525,19 +518,33 @@ public class BattleArmor extends Infantry {
         if ((mp == 0) && hasWorkingMisc(MiscType.F_MECHANICAL_JUMP_BOOSTER)) {
             mp++;
         }
-        // partial wing gives extra MP in atmosphere
+
+        // MM is concerned with in-game conditions that impact Partial Wing mp
+        if ((game != null)) {
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            boolean ignoreGameLessThanThin = mpCalculationSetting.ignoreWeather
+                || !conditions.getAtmosphere().isLighterThan(Atmosphere.THIN);
+            if ((mp > 0)
+                    && hasWorkingMisc(MiscType.F_PARTIAL_WING)
+                    && ignoreGameLessThanThin) {
+                mp++;
+            }
+        } else {
+            // MML just cares that the Partial Wing exists and is installed
+            if ((mp > 0) && hasWorkingMisc(MiscType.F_PARTIAL_WING)) {
+                mp++;
+            }
+        }
+
         if ((mp > 0)
-                && hasWorkingMisc(MiscType.F_PARTIAL_WING)
-                && ((game == null) || !game.getPlanetaryConditions().isVacuum())) {
+                && hasWorkingMisc(MiscType.F_JUMP_BOOSTER)) {
             mp++;
         }
-        if ((mp > 0) && hasWorkingMisc(MiscType.F_JUMP_BOOSTER)) {
-            // jump booster gives an extra MP
-            mp++;
-        }
-        if (gravity) {
+
+        if (!mpCalculationSetting.ignoreGravity) {
             mp = applyGravityEffectsOnMP(mp);
         }
+
         return mp;
     }
 
@@ -591,19 +598,25 @@ public class BattleArmor extends Infantry {
     @Override
     public HitData rollHitLocation(int table, int side, int aimedLocation, AimingMode aimingMode,
                                    int cover) {
+        return rollHitLocation(side, aimedLocation, aimingMode, false);
+    }
 
+    /**
+     * Battle Armor units can only get hit in undestroyed troopers.
+     *
+     * @param isAttackingConvInfantry Set to true when attacked by CI, as these cannot score TacOps crits
+     */
+    public HitData rollHitLocation(int side, int aimedLocation, AimingMode aimingMode,
+                                   boolean isAttackingConvInfantry) {
         // If this squad was killed, target trooper 1 (just because).
         if (isDoomed()) {
             return new HitData(1);
         }
 
         if ((aimedLocation != LOC_NONE) && !aimingMode.isNone()) {
-
             int roll = Compute.d6(2);
-
             if ((5 < roll) && (roll < 9)) {
-                return new HitData(aimedLocation, side == ToHitData.SIDE_REAR,
-                        true);
+                return new HitData(aimedLocation, side == ToHitData.SIDE_REAR, true);
             }
         }
 
@@ -614,8 +627,7 @@ public class BattleArmor extends Infantry {
         // Remember that there's one more location than the number of troopers.
         // In http://forums.classicbattletech.com/index.php/topic,43203.0.html,
         // "previously destroyed includes the current phase" for rolling hits on
-        // a squad,
-        // modifying previous ruling in the AskThePM FAQ.
+        // a squad, modifying previous ruling in the AskThePM FAQ.
         while ((loc >= locations())
                 || (IArmorState.ARMOR_NA == this.getInternal(loc))
                 || (IArmorState.ARMOR_DESTROYED == this.getInternal(loc))
@@ -623,16 +635,13 @@ public class BattleArmor extends Infantry {
             loc = Compute.d6();
         }
 
-        int critLocation = Compute.d6();
-        // TacOps p. 108 Trooper takes a crit if a second roll is the same
-        // location as the first.
+        // TO:AR p.108: Trooper takes a crit if a second roll is the same location as the first.
         if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_BA_CRITICALS)
-                && (loc == critLocation)) {
+                && (loc == Compute.d6()) && !isAttackingConvInfantry) {
             return new HitData(loc, false, HitData.EFFECT_CRITICAL);
         }
         // Hit that trooper.
         return new HitData(loc);
-
     }
 
     @Override
@@ -735,16 +744,6 @@ public class BattleArmor extends Infantry {
 
         // No surviving troopers, so we're toast.
         return new HitData(Entity.LOC_DESTROYED);
-    }
-
-    /**
-     * Battle Armor units use default behavior for armor and internals.
-     *
-     * @see megamek.common.Infantry#isPlatoon()
-     */
-    @Override
-    protected boolean isPlatoon() {
-        return false;
     }
 
     /**
@@ -867,33 +866,6 @@ public class BattleArmor extends Infantry {
         return super.hasHittableCriticals(loc);
     }
 
-    @Override
-    public int doBattleValueCalculation(boolean ignoreC3, boolean ignoreSkill, CalculationReport calculationReport) {
-        return BattleArmorBVCalculator.calculateBV(this, ignoreC3, ignoreSkill, calculationReport);
-    }
-
-    /**
-     * Calculates the Battle Value of this BattleArmor. When singleTrooper is true the Battle Value of one
-     * trooper is returned, otherwise the BV of the whole unit. Calling this method with the value of
-     * singleTrooper being false is equivalent to calling the standard calculateBattleValue methods.
-     *
-     * <P> As in all other BV calculations, the other parameters can be used to ignore C3 / skill-based changes
-     * to the BV. When both are true, the "base" BV of the unit is calculated. Note that when a unit has a manual BV
-     * value set in its definition file, this manual BV value is returned instead of a calculated BV value.
-     *
-     * @param ignoreC3    When true, the BV contributions of any C3 computers are not added
-     * @param ignoreSkill When true, the skill of the crew / pilot is not taken into account for BV
-     * @param singleTrooper When true, returns the BV of a single trooper of this BA, otherwise of the full unit
-     * @return The Battle Value of this BattleArmor
-     */
-    public int calculateBattleValue(boolean ignoreC3, boolean ignoreSkill, boolean singleTrooper) {
-        if (useManualBV) {
-            return manualBV; // TODO : divide by the number of troopers when singleTrooper is true?
-        }
-        return BattleArmorBVCalculator.calculateBV(this, ignoreC3, ignoreSkill,
-                new DummyCalculationReport(), singleTrooper);
-    }
-
     /**
      * Prepare the entity for a new round of action.
      */
@@ -1012,8 +984,11 @@ public class BattleArmor extends Infantry {
      * pack. A <code>BattleArmor</code> must have 2 or more walking MP and be
      * Medium or heavier to mount DWP.
      *
-     * @return
+     * Used in MML!
+     *
+     * @return True if this BA can use a detachable weapon pack
      */
+    @SuppressWarnings("unused")
     public boolean canMountDWP() {
         return (getOriginalWalkMP() >= 2)
                 && (getWeightClass() >= EntityWeightClass.WEIGHT_MEDIUM);
@@ -1058,6 +1033,12 @@ public class BattleArmor extends Infantry {
      */
     public int getLongStealthMod() {
         return longStealthMod;
+    }
+
+    // Only for ground vehicles and certain infantry
+    @Override
+    public boolean isEligibleForPavementBonus() {
+        return false;
     }
 
     /**
@@ -1266,7 +1247,7 @@ public class BattleArmor extends Infantry {
     }
 
     @Override
-    public boolean loadWeapon(Mounted mounted, Mounted mountedAmmo) {
+    public boolean loadWeapon(WeaponMounted mounted, AmmoMounted mountedAmmo) {
         // BA must carry the ammo in same location as the weapon.
         // except for mine launcher mines
         // This allows for squad weapons and individual trooper weapons
@@ -1280,7 +1261,7 @@ public class BattleArmor extends Infantry {
     }
 
     @Override
-    public boolean loadWeaponWithSameAmmo(Mounted mounted, Mounted mountedAmmo) {
+    public boolean loadWeaponWithSameAmmo(WeaponMounted mounted, AmmoMounted mountedAmmo) {
         // BA must carry the ammo in same location as the weapon.
         // except for mine launcher mines
         // This allows for squad weapons and individual trooper weapons
@@ -1293,234 +1274,10 @@ public class BattleArmor extends Infantry {
         return super.loadWeaponWithSameAmmo(mounted, mountedAmmo);
     }
 
-    public final String getBLK() {
-        String newline = "\r\n";
-        StringBuffer buff = new StringBuffer();
-        buff.append("<BlockVersion>");
-        buff.append(newline);
-        buff.append("1");
-        buff.append(newline);
-        buff.append("</BlockVersion>");
-        buff.append(newline);
-
-        buff.append("<UnitType>");
-        buff.append(newline);
-        buff.append("BattleArmor");
-        buff.append(newline);
-        buff.append("</UnitType>");
-        buff.append(newline);
-
-        buff.append("<name>");
-        buff.append(newline);
-        buff.append(getChassis());
-        buff.append(newline);
-        buff.append("</name>");
-        buff.append(newline);
-
-        buff.append("<model>");
-        buff.append(newline);
-        buff.append(getModel());
-        buff.append(newline);
-        buff.append("</model>");
-        buff.append(newline);
-
-        buff.append("<year>");
-        buff.append(newline);
-        buff.append(getYear());
-        buff.append(newline);
-        buff.append("</year>");
-        buff.append(newline);
-
-        buff.append("<type>");
-        buff.append(newline);
-        switch (getTechLevel()) {
-            case TechConstants.T_INTRO_BOXSET:
-                buff.append("IS Level 1");
-                break;
-            case TechConstants.T_IS_TW_NON_BOX:
-                buff.append("IS Level 2");
-                break;
-            case TechConstants.T_IS_ADVANCED:
-                buff.append("IS Level 3");
-                break;
-            case TechConstants.T_IS_EXPERIMENTAL:
-                buff.append("IS Level 4");
-                break;
-            case TechConstants.T_IS_UNOFFICIAL:
-                buff.append("IS Level 5");
-                break;
-            case TechConstants.T_CLAN_TW:
-                buff.append("Clan Level 2");
-                break;
-            case TechConstants.T_CLAN_ADVANCED:
-                buff.append("Clan Level 3");
-                break;
-            case TechConstants.T_CLAN_EXPERIMENTAL:
-                buff.append("Clan Level 4");
-                break;
-            case TechConstants.T_CLAN_UNOFFICIAL:
-                buff.append("Clan Level 5");
-                break;
-        }
-        buff.append(newline);
-        buff.append("</type>");
-        buff.append(newline);
-
-        buff.append("<trooper count>");
-        buff.append(newline);
-        buff.append(getWeight());
-        buff.append(newline);
-        buff.append("</trooper count>");
-        buff.append(newline);
-
-        buff.append("<weightclass>");
-        buff.append(newline);
-        switch (getWeightClass()) {
-            case EntityWeightClass.WEIGHT_ULTRA_LIGHT:
-                buff.append("0");
-                break;
-            case EntityWeightClass.WEIGHT_LIGHT:
-                buff.append("1");
-                break;
-            case EntityWeightClass.WEIGHT_MEDIUM:
-                buff.append("2");
-                break;
-            case EntityWeightClass.WEIGHT_HEAVY:
-                buff.append("3");
-                break;
-            case EntityWeightClass.WEIGHT_ASSAULT:
-                buff.append("4");
-                break;
-        }
-        buff.append(newline);
-        buff.append("</weightclass>");
-        buff.append(newline);
-
-        buff.append("<motion_type>");
-        buff.append(newline);
-        switch (getMovementMode()) {
-            case INF_JUMP:
-                buff.append("jump");
-                break;
-            case INF_LEG:
-                buff.append("leg");
-                break;
-            case VTOL:
-                buff.append("vtol");
-                break;
-            case INF_UMU:
-                buff.append("submarine");
-                break;
-            default:
-                buff.append("none");
-                break;
-        }
-        buff.append(newline);
-        buff.append("</motion_type>");
-        buff.append(newline);
-
-        buff.append("<chassis>");
-        buff.append(newline);
-        switch (getChassisType()) {
-            case BattleArmor.CHASSIS_TYPE_BIPED:
-                buff.append("biped");
-                break;
-            case BattleArmor.CHASSIS_TYPE_QUAD:
-                buff.append("quad");
-                break;
-        }
-        buff.append("</chassis>");
-        buff.append(newline);
-
-        buff.append("<cruiseMP>");
-        buff.append(newline);
-        buff.append(getOriginalRunMP());
-        buff.append(newline);
-        buff.append("</cruiseMP>");
-        buff.append(newline);
-
-        buff.append("<jumpMP>");
-        buff.append(newline);
-        buff.append(getOriginalJumpMP());
-        buff.append(newline);
-        buff.append("</jumpMP>");
-        buff.append(newline);
-
-        buff.append("<armor>");
-        buff.append(newline);
-        buff.append(getOArmor(LOC_TROOPER_1));
-        buff.append(newline);
-        buff.append("</armor>");
-        buff.append(newline);
-        
-        if (getTurretCapacity() > 0) {
-            buff.append("<turret>");
-            buff.append(newline);
-            if (hasModularTurretMount()) {
-                buff.append("Modular:");
-            } else {
-                buff.append("Standard:");
-            }
-            buff.append(getTurretCapacity());
-            buff.append("</turret>");
-            buff.append(newline);
-        }
-
-        buff.append("<armor_type>");
-        buff.append(newline);
-        buff.append(getArmorType(LOC_SQUAD));
-        buff.append(newline);
-        buff.append("</armor_type>");
-        buff.append(newline);
-
-        buff.append("<armor_tech>");
-        buff.append(newline);
-        buff.append(getArmorTechLevel(LOC_SQUAD));
-        buff.append(newline);
-        buff.append("</armor_tech>");
-        buff.append(newline);
-
-        for (int i = 0; i < locations(); i++) {
-            boolean found = false;
-            for (Mounted m : getEquipment()) {
-                // don't write out swarm and leg attack, those get added
-                // dynamically
-                if ((m.getType() instanceof WeaponType)
-                        && m.getType().hasFlag(WeaponType.F_INFANTRY_ATTACK)) {
-                    continue;
-                }
-                if (m.getLocation() == i) {
-                    if (!found) {
-                        found = true;
-                        buff.append("<");
-                        buff.append(getLocationName(i));
-                        buff.append(" equipment>");
-                        buff.append(newline);
-                    }
-                    buff.append(m.getType().getInternalName());
-                    buff.append(newline);
-                }
-            }
-            if (found) {
-                buff.append("</");
-                buff.append(getLocationName(i));
-                buff.append(" equipment>");
-                buff.append(newline);
-            }
-        }
-
-        return buff.toString();
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getVibroClaws()
-     */
     @Override
     public int getVibroClaws() {
         int claws = 0;
-        for (Mounted mounted : getMisc()) {
+        for (MiscMounted mounted : getMisc()) {
             if (mounted.getType().hasFlag(MiscType.F_VIBROCLAW)) {
                 claws++;
             }
@@ -1725,85 +1482,6 @@ public class BattleArmor extends Infantry {
         return false;
     }
 
-    @Override
-    public void setBattleForceMovement(Map<String,Integer> movement) {
-        if (hasDWP()) {
-            movement.put("", getWalkMP());
-        }
-        int move = Math.max(getWalkMP(true, false, false, true, false),
-                getJumpMP(true, true, true));
-        movement.put(getMovementModeAsBattleForceString(), move);
-    }    
-
-    @Override
-    public void setAlphaStrikeMovement(Map<String,Integer> moves) {
-        if (getMovementMode().equals(EntityMovementMode.INF_JUMP)) {
-            moves.put("j", getJumpMP(true, true, true) * 2);
-        } else if (getMovementMode().equals(EntityMovementMode.INF_UMU)) {
-            moves.put("s", getActiveUMUCount() * 2);
-        } else {
-            moves.put(getMovementModeAsBattleForceString(), getOriginalWalkMP() * 2);
-        }
-    }
-    
-    @Override
-    public int getBattleForceArmorPoints() {
-        double armor = 0;
-        for (int i = 1; i < locations(); i++) {
-            if (armorType[i] == EquipmentType.T_ARMOR_BA_REACTIVE
-                    || armorType[i] == EquipmentType.T_ARMOR_BA_REFLECTIVE) {
-                armor += getArmor(i) * 0.75;
-            } else {
-                armor += getArmor(i);
-            }
-        }
-        return (int) Math.round(armor / 30.0);
-    }
-
-    @Override
-    /**
-     * Each BA squad has 2 structure points
-     */
-    public int getBattleForceStructurePoints() {
-        return 2;
-    }
-
-    @Override
-    public void addBattleForceSpecialAbilities(Map<BattleForceSPA,Integer> specialAbilities) {
-        super.addBattleForceSpecialAbilities(specialAbilities);
-        for (Mounted m : getEquipment()) {
-            if (!(m.getType() instanceof MiscType)) {
-                continue;
-            }
-            if (m.getType().hasFlag(MiscType.F_VISUAL_CAMO)
-                    && !m.getType().getName().equals(MIMETIC_ARMOR)) {
-                specialAbilities.put(BattleForceSPA.LMAS, null);
-            } else if (m.getType().hasFlag(MiscType.F_VEHICLE_MINE_DISPENSER)) {
-                specialAbilities.merge(BattleForceSPA.MDS, 1, Integer::sum);
-            } else if (m.getType().hasFlag(MiscType.F_TOOLS)
-                    && (m.getType().getSubType() & MiscType.S_MINESWEEPER) == MiscType.S_MINESWEEPER) {
-                specialAbilities.put(BattleForceSPA.MSW, null);
-            } else if (m.getType().hasFlag(MiscType.F_SPACE_ADAPTATION)) {
-                specialAbilities.put(BattleForceSPA.SOA, null);
-            } else if (m.getType().hasFlag(MiscType.F_PARAFOIL)) {
-                specialAbilities.put(BattleForceSPA.PARA, null);
-            } else if (m.getType().hasFlag(MiscType.F_MAGNETIC_CLAMP)) {
-                specialAbilities.put(BattleForceSPA.XMEC, null);
-            }
-        }
-        if (canDoMechanizedBA()) {
-            specialAbilities.put(BattleForceSPA.MEC, null);
-        }
-        switch (getArmorType(0)) {
-            case EquipmentType.T_ARMOR_BA_MIMETIC:
-                specialAbilities.put(BattleForceSPA.MAS, null);
-                break;
-            case EquipmentType.T_ARMOR_BA_FIRE_RESIST:
-                specialAbilities.put(BattleForceSPA.FR, null);
-                break;
-        }
-    }
-
     public void setIsExoskeleton(boolean exoskeleton) {
         this.exoskeleton = exoskeleton;
     }
@@ -1871,10 +1549,10 @@ public class BattleArmor extends Infantry {
         if (hasMyomerBooster()) {
             damage += getTroopers() * 2;
         }
-        
+
         // we only track vibro claws at the squad level, so we have either 0, 1 or 2. See TW page 223.
         damage += getVibroClaws();
-        
+
         return damage;
     }
 
@@ -2047,7 +1725,7 @@ public class BattleArmor extends Infantry {
                 return 4;
         }
     }
-    
+
     public int getBodyCrits() {
         if (getChassisType() == CHASSIS_TYPE_QUAD) {
             int turret = 0;
@@ -2082,19 +1760,19 @@ public class BattleArmor extends Infantry {
             }
         }
     }
-    
+
     public int getTurretCapacity() {
         return turretSize;
     }
-    
+
     public void setTurretSize(int capacity) {
         turretSize = capacity;
     }
-    
+
     public boolean hasModularTurretMount() {
         return modularTurret;
     }
-    
+
     public void setModularTurret(boolean modular) {
         modularTurret = modular;
     }
@@ -2291,5 +1969,26 @@ public class BattleArmor extends Infantry {
     @Override
     public int getSpriteDrawPriority() {
         return 2;
+    }
+
+    @Override
+    protected boolean isFieldWeapon(Mounted equipment) {
+        return false;
+    }
+
+    @Override
+    public boolean isBattleArmor() {
+        return true;
+    }
+
+    // BA index 0 appears to be a dump slot
+    @Override
+    public int firstArmorIndex() {
+        return 1;
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(3.157 + 1.514*Math.log(getWeight())));
     }
 }

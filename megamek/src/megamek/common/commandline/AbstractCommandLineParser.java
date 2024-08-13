@@ -13,8 +13,6 @@
  */
 package megamek.common.commandline;
 
-import megamek.client.ui.Messages;
-
 import java.util.Objects;
 
 /**
@@ -23,9 +21,6 @@ import java.util.Objects;
  * <code>start</code> function
  */
 public abstract class AbstractCommandLineParser {
-
-    private static final String INCORRECT_ARGUMENTS_MESSAGE = Messages.getString("MegaMek.Help.IncorrectArguments");
-
     /**
      * Exception thrown in case of error
      */
@@ -85,11 +80,11 @@ public abstract class AbstractCommandLineParser {
     /**
      * Current token value
      */
-    private String tokenValue;
+    private String value;
 
     /**
      * Constructs new parser
-     * 
+     *
      * @param args <code>array</code> of arguments to parse
      */
     public AbstractCommandLineParser(String... args) {
@@ -99,7 +94,7 @@ public abstract class AbstractCommandLineParser {
 
     /**
      * Main entry point of the parser
-     * 
+     *
      * @throws ParseException if it fails to parse
      */
     public void parse() throws ParseException {
@@ -108,7 +103,7 @@ public abstract class AbstractCommandLineParser {
     }
 
     /**
-     * 
+     *
      * @return current argument
      */
     protected String getArgValue() {
@@ -124,7 +119,7 @@ public abstract class AbstractCommandLineParser {
     }
 
     /**
-     * 
+     *
      * @param token to set the current token to
      */
     protected void setToken(int token) {
@@ -132,23 +127,23 @@ public abstract class AbstractCommandLineParser {
     }
 
     /**
-     * 
+     *
      * @return <code>String</code> value of the current token
      */
     protected String getTokenValue() {
-        return tokenValue;
+        return value;
     }
 
     /**
-     * 
+     *
      * @param tokenValue to set the current token to
      */
     protected void setTokenValue(String tokenValue) {
-        this.tokenValue = tokenValue;
+        this.value = tokenValue;
     }
 
     /**
-     * 
+     *
      * @return <code>String</code> value of the current token
      */
     protected int getPosition() {
@@ -157,7 +152,7 @@ public abstract class AbstractCommandLineParser {
 
     /**
      * Real entry point of parser
-     * 
+     *
      * @throws ParseException if the parser fails
      */
     protected abstract void start() throws ParseException;
@@ -169,15 +164,6 @@ public abstract class AbstractCommandLineParser {
     }
 
     /**
-     *
-     * @return <code>String</code> error message for user
-     */
-    public String formatErrorMessage(Exception e) {
-        return (INCORRECT_ARGUMENTS_MESSAGE + e.getMessage() + '\n'
-                + help());
-    }
-
-    /**
      * Reads the next available token.
      */
     protected void nextToken() {
@@ -185,13 +171,13 @@ public abstract class AbstractCommandLineParser {
         if (argValue != null) {
             if (argValue.startsWith(OPTION_PREFIX)) {
                 token = TOK_OPTION;
-                tokenValue = argValue.substring(OPTION_PREFIX.length());
+                value = argValue.substring(OPTION_PREFIX.length());
             } else {
                 token = TOK_LITERAL;
-                tokenValue = argValue;
+                value = argValue;
             }
         } else {
-            tokenValue = null;
+            value = null;
             token = TOK_EOF;
         }
     }

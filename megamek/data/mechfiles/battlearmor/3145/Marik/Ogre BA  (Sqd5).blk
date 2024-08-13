@@ -16,8 +16,8 @@ BattleArmor
 Ogre Battle Armor
 </Name>
 
-<Model>
-(Standard)(Sqd5)
+<model>
+(Sqd5)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ Ogre Battle Armor
 <type>
 IS Level 2
 </type>
+
+<role>
+Juggernaut
+</role>
 
 <motion_type>
 Jump
@@ -59,7 +63,7 @@ BA-SRM2 Ammo:Body:Shots1#
 </Squad Equipment>
 
 <source>
-TRO 3145 Free Worlds League - Early Republic
+TRO: 3145 Free Worlds League
 </source>
 
 <chassis>

@@ -13,6 +13,7 @@
  */
 package megamek.common.actions;
 
+import megamek.client.ui.Messages;
 import megamek.common.*;
 import megamek.common.options.OptionsConstants;
 
@@ -45,11 +46,7 @@ public class PushAttackAction extends DisplacementAttackAction {
      */
     protected static String toHitIsImpossible(Game game, Entity ae, Targetable target) {
         String physicalImpossible = PhysicalAttackAction.toHitIsImpossible(game, ae, target);
-        String extendedBladeImpossible = null;
-        if ((ae instanceof Mech) && ((Mech) ae).hasExtendedRetractableBlade()) {
-            extendedBladeImpossible = "Extended retractable blade";
-        }
-
+        
         if (physicalImpossible != null) {
             return physicalImpossible;
         }
@@ -57,23 +54,19 @@ public class PushAttackAction extends DisplacementAttackAction {
         if (ae.getGrappled() != Entity.NONE) {
             return "Unit Grappled";
         }
-
-        if (ae.isEvading()) {
-            return "attacker is evading.";
+        
+        // can't push if carrying any cargo per TW
+        if ((ae instanceof Mech) &&
+        		!((Mech) ae).canFireWeapon(Mech.LOC_LARM) ||
+        		!((Mech) ae).canFireWeapon(Mech.LOC_LARM) ) {
+    		return Messages.getString("WeaponAttackAction.CantFireWhileCarryingCargo");
+    	}
+        
+        if ((ae instanceof Mech) && ((Mech) ae).hasExtendedRetractableBlade()) {
+            return "Extended retractable blade";
         }
-
-        if (!game.getOptions().booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE)) {
-            // a friendly unit can never be the target of a direct attack.
-            if ((target.getTargetType() == Targetable.TYPE_ENTITY)
-                && ((((Entity) target).getOwnerId() == ae.getOwnerId())
-                    || ((((Entity) target).getOwner().getTeam() != Player.TEAM_NONE)
-                        && (ae.getOwner().getTeam() != Player.TEAM_NONE)
-                        && (ae.getOwner().getTeam() == ((Entity) target).getOwner().getTeam())))) {
-                return "A friendly unit can never be the target of a direct attack.";
-            }
-        }
-
-        return extendedBladeImpossible;
+        
+        return null;
     }
 
     /**
@@ -86,7 +79,7 @@ public class PushAttackAction extends DisplacementAttackAction {
         Entity te = null;
         if (target.getTargetType() == Targetable.TYPE_ENTITY) {
             te = (Entity) target;
-            targetId = target.getTargetId();
+            targetId = target.getId();
         }
 
         if (ae == null) {
@@ -131,7 +124,7 @@ public class PushAttackAction extends DisplacementAttackAction {
         if (ae.entityIsQuad()) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Attacker is a quad");
         }
-        
+
         // LAM AirMechs can only push when grounded.
         if (ae.isAirborneVTOLorWIGE()) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Cannot push while airborne");
@@ -194,7 +187,7 @@ public class PushAttackAction extends DisplacementAttackAction {
 
         // can't do anything but counter-push if the target of another attack
         if (ae.isTargetOfDisplacementAttack()
-                && (ae.findTargetedDisplacement().getEntityId() != target.getTargetId())) {
+                && (ae.findTargetedDisplacement().getEntityId() != target.getId())) {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Attacker is the target of another push/charge/DFA");
         }
 
@@ -247,6 +240,11 @@ public class PushAttackAction extends DisplacementAttackAction {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Invalid attack");
         }
 
+        String otherImpossible = toHitIsImpossible(game, ae, target);
+        if (otherImpossible != null) {
+        	return new ToHitData(TargetRoll.IMPOSSIBLE, otherImpossible);
+        }
+        
         // Set the base BTH
         int base = ae.getCrew().getPiloting() - 1;
 
@@ -324,5 +322,11 @@ public class PushAttackAction extends DisplacementAttackAction {
 
         // done!
         return toHit;
+    }
+
+    @Override
+    public String toSummaryString(final Game game) {
+        final String roll = this.toHit(game).getValueAsString();
+        return Messages.getString("BoardView1.PushAttackAction", roll);
     }
 }

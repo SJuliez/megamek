@@ -1,13 +1,13 @@
-Version:1.1
-Wasp
-WSP-7MAF
+chassis:Wasp
+model:WSP-7MAF
 mul id:3531
 
 Config:Biped
 TechBase:Inner Sphere
 Era:3071
-Source:Jihad
+source:TRO: 3085
 Rules Level:2
+role:Scout
 
 Mass:20
 Engine:160 XL Engine(IS)
@@ -163,5 +163,5 @@ systemmanufacturer:CHASSIS:Hellespont Type W Endo Steel
 systemmanufacturer:ENGINE:Hermes 160 XL
 systemmanufacturer:ARMOR:Jolassa-328 Ferro-Fibrous
 systemmanufacturer:JUMPJET:Rawlings 52
-systemmanufacturer:COMMUNICATIONS:Duotech 65
+systemmanufacturer:COMMUNICATIONS:Duoteck 65
 systemmanufacturer:TARGETING:RadCom TXX

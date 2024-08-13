@@ -21,7 +21,7 @@ PEX-2B(Sqd6)
 </Model>
 
 <mul id:>
-4225
+8988
 </mul id:>
 
 <year>
@@ -31,6 +31,10 @@ PEX-2B(Sqd6)
 <type>
 IS Level 2
 </type>
+
+<role>
+None
+</role>
 
 <motion_type>
 Leg
@@ -56,7 +60,7 @@ BASearchlight:Body
 </Squad Equipment>
 
 <source>
-TRO Vehicle Annex (r) - Clan Invasion
+TRO: Vehicle Annex Revised
 </source>
 
 <chassis>

@@ -1,13 +1,25 @@
-Version:1.0
-Wolverine
-WVR-8C
+chassis:Wolverine
+model:WVR-8C
 mul id:3577
 
 Config:Biped
 techbase:Inner Sphere
 era:3067
-source:Civil War
+source:TRO: 3085u 
 rules level:2
+role:Skirmisher
+
+
+
+quirk:command_mech
+quirk:ext_twist
+quirk:imp_com
+quirk:pro_actuator
+quirk:ubiquitous_clan
+quirk:ubiquitous_is
+quirk:cramped_cockpit
+weaponquirk:jettison_capable:RA:4:ISLargePulseLaser
+
 
 mass:55
 engine:275 XL Engine(IS)
@@ -156,7 +168,7 @@ capabilities:The autocannon, missile system and laser found on most Wolverines a
 
 deployment:The 8C variant of the Wolverine, introduced by Victory Industries in 3067 after the success of the 8K, is built on an Endo Steel chassis and uses an XL Engine for power. It carries a large pulse laser as its primary weapon, as well as a medium pulse laser and a small pulse laser. For additional close-combat capability this version carries two Streak SRM-6 launchers while a C3 Slave Unit allows it to share targeting telemetry with friendly units but only carries thirteen double heat sinks.
 
-history:A widespread part of every major military, the Wolverine has manufacturing plants scattered throughout the entire Inner Sphere. While certain states-notable the Free Worlds League-have larger numbers of the design, only the Capellans began facing a shortage of the Wolverine after the loss of their Nanking facilities.
+history:A widespread part of every major military, the Wolverine has manufacturing plants scattered throughout the entire Inner Sphere. While certain states-notably the Free Worlds League-have larger numbers of the design, only the Capellans began facing a shortage of the Wolverine after the loss of their Nanking facilities.
 
 manufacturer:Victory Industries (formerly Norse BattleMech Works)
 primaryfactory:Marduk

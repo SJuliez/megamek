@@ -70,7 +70,7 @@ public class SharedUtility {
         // iterate through steps
         for (final Enumeration<MoveStep> i = md.getSteps(); i.hasMoreElements();) {
             final MoveStep step = i.nextElement();
-            
+
             // stop for illegal movement
             if (step.getMovementType(md.isEndStep(step)) == EntityMovementType.MOVE_ILLEGAL) {
                 break;
@@ -103,7 +103,7 @@ public class SharedUtility {
                         step.getVelocity(), curPos, curFacing, false);
                 checkNag(rollTarget, nagReport, psrList);
             }
-            
+
             if (step.getType() == MoveStepType.VLAND) {
                 rollTarget = ((IAero) entity).checkLanding(moveType,
                         step.getVelocity(), curPos, curFacing, true);
@@ -111,7 +111,7 @@ public class SharedUtility {
             }
 
             // Check for Ejecting
-            if (step.getType() == MoveStepType.EJECT 
+            if (step.getType() == MoveStepType.EJECT
                     && (entity.isFighter())) {
                 rollTarget = GameManager.getEjectModifiers(game, entity, 0, false);
                 checkNag(rollTarget, nagReport, psrList);
@@ -150,7 +150,7 @@ public class SharedUtility {
         }
         return psrList;
     }
-    
+
     /**
      * Checks to see if piloting skill rolls are needed for the currently
      * selected movement. This code is basically a simplified version of
@@ -274,15 +274,6 @@ public class SharedUtility {
             rollTarget = entity.checkRubbleMove(step, overallMoveType, curHex,
                     lastPos, curPos, isLastStep, isPavementStep);
             checkNag(rollTarget, nagReport, psrList);
-            
-            
-
-            int lightPenalty = entity.getGame().getPlanetaryConditions()
-                    .getLightPilotPenalty();
-            if (lightPenalty > 0) {
-                rollTarget.addModifier(lightPenalty, entity.getGame()
-                        .getPlanetaryConditions().getLightDisplayableName());
-            }
 
             // check if we are moving recklessly
             rollTarget = entity.checkRecklessMove(step, overallMoveType,
@@ -306,12 +297,12 @@ public class SharedUtility {
                     lastPos, curPos, isPavementStep);
             checkNag(rollTarget, nagReport, psrList);
 
-            // check for non-mech entering a fire
+            // check for non-heat tracking entering a fire
             boolean underwater = curHex.containsTerrain(Terrains.WATER)
                     && (curHex.depth() > 0)
                     && (step.getElevation() < curHex.getLevel());
             if (curHex.containsTerrain(Terrains.FIRE) && !underwater
-                    && !(entity instanceof Mech) && (step.getElevation() <= 1)
+                    && !entity.tracksHeat() && (step.getElevation() <= 1) && !entity.isAirborne()
                     && (moveType != EntityMovementType.MOVE_JUMP)
                     && !(curPos.equals(lastPos))) {
                 nagReport.append(Messages.getString("MovementDisplay.FireMoving", 8));
@@ -319,6 +310,9 @@ public class SharedUtility {
 
             // check for magma
             int level = curHex.terrainLevel(Terrains.MAGMA);
+            boolean jumpedIntoMagma = (curPos.equals(lastPos)
+                    && (curHex.terrainLevel(Terrains.MAGMA) == 2)
+                    && (moveType == EntityMovementType.MOVE_JUMP));
             if ((level == 1) && (step.getElevation() == 0)
                     && (entity.getMovementMode() != EntityMovementMode.HOVER)
                     && (moveType != EntityMovementType.MOVE_JUMP)
@@ -341,14 +335,16 @@ public class SharedUtility {
                             && step.getClearance() > 0)) {
                 rollTarget = entity.checkSideSlip(moveType, prevHex,
                         overallMoveType, prevStep, prevFacing, curFacing,
-                        lastPos, curPos, distance);
+                        lastPos, curPos, distance, md.hasActiveMASC());
                 checkNag(rollTarget, nagReport, psrList);
             }
 
-            // check if we've moved into swamp
-            rollTarget = entity.checkBogDown(step, overallMoveType, curHex,
-                    lastPos, curPos, lastElevation, isPavementStep);
-            checkNag(rollTarget, nagReport, psrList);
+            // check if we've moved into swamp; skip Liquid Magma bog-down check if not jumping into the last hex
+            if (level != 2 || jumpedIntoMagma) {
+                rollTarget = entity.checkBogDown(step, overallMoveType, curHex,
+                        lastPos, curPos, lastElevation, isPavementStep);
+                checkNag(rollTarget, nagReport, psrList);
+            }
 
             // Check if used more MPs than Mech/Vehicle would have w/o gravity
             if (!i.hasMoreElements() && !firstStep) {
@@ -368,9 +364,9 @@ public class SharedUtility {
                             checkNag(rollTarget, nagReport, psrList);
                         }
                     } else if (moveType == EntityMovementType.MOVE_JUMP) {
-                        int origWalkMP = entity.getWalkMP(false, false);
+                        int origWalkMP = entity.getWalkMP(MPCalculationSetting.NO_GRAVITY);
                         int gravWalkMP = entity.getWalkMP();
-                        if (step.getMpUsed() > entity.getJumpMP(false)) {
+                        if (step.getMpUsed() > entity.getJumpMP(MPCalculationSetting.NO_GRAVITY)) {
                             rollTarget = entity.checkMovedTooFast(step, overallMoveType);
                             checkNag(rollTarget, nagReport, psrList);
                         } else if ((game.getPlanetaryConditions().getGravity() > 1)
@@ -389,17 +385,17 @@ public class SharedUtility {
                             SharedUtility.checkNag(rollTarget, nagReport,
                                     psrList);
                         }
-                        if (step.getMpUsed() > entity.getSprintMP(false, false, false)) {
+                        if (step.getMpUsed() > entity.getSprintMP(MPCalculationSetting.NO_GRAVITY)) {
                             rollTarget = entity.checkMovedTooFast(step, overallMoveType);
                             checkNag(rollTarget, nagReport, psrList);
                         }
                     }
                 }
             }
-            
+
             // Sheer Cliffs, TO p.39
             // Roads over cliffs cancel the cliff effects for units that move on roads
-            boolean vehicleAffectedByCliff = entity instanceof Tank 
+            boolean vehicleAffectedByCliff = entity instanceof Tank
                     && !entity.isAirborneVTOLorWIGE();
             boolean quadveeVehMode = entity instanceof QuadVee
                     && entity.getConversionMode() == QuadVee.CONV_MODE_VEHICLE;
@@ -408,12 +404,12 @@ public class SharedUtility {
                     && !entity.isAero();
             // Cliffs should only exist towards 1 or 2 level drops, check just to make sure
             // Everything that does not have a 1 or 2 level drop shouldn't be handled as a cliff
-            int stepHeight = curElevation + curHex.getLevel() 
+            int stepHeight = curElevation + curHex.getLevel()
                     - (lastElevation + prevHex.getLevel());
-            boolean isUpCliff = !lastPos.equals(curPos) 
+            boolean isUpCliff = !lastPos.equals(curPos)
                     && curHex.hasCliffTopTowards(prevHex)
                     && (stepHeight == 1 || stepHeight == 2);
-            boolean isDownCliff = !lastPos.equals(curPos) 
+            boolean isDownCliff = !lastPos.equals(curPos)
                     && prevHex.hasCliffTopTowards(curHex)
                     && (stepHeight == -1 || stepHeight == -2);
 
@@ -501,13 +497,13 @@ public class SharedUtility {
                     checkNag(rollTarget, nagReport, psrList);
                 }
             }
-            
+
             if (step.isTurning()) {
                 rollTarget = entity.checkTurnModeFailure(overallMoveType,
                         prevStep == null? 0 : prevStep.getNStraight(), md.getMpUsed(), curPos);
                 checkNag(rollTarget, nagReport, psrList);
             }
-            
+
             if (step.getType() == MoveStepType.BOOTLEGGER) {
                 rollTarget = entity.getBasePilotingRoll(overallMoveType);
                 entity.addPilotingModifierForTerrain(rollTarget);
@@ -540,7 +536,7 @@ public class SharedUtility {
 
         rollTarget = entity.checkUsingOverdrive(overallMoveType);
         checkNag(rollTarget, nagReport, psrList);
-            
+
         rollTarget = entity.checkGunningIt(overallMoveType);
         checkNag(rollTarget, nagReport, psrList);
 
@@ -566,7 +562,7 @@ public class SharedUtility {
                     nagReport.append(Messages.getString("MovementDisplay.IceLanding"));
                 }
             } else if (!(prevStep.climbMode() && hex.containsTerrain(Terrains.BRIDGE))) {
-                if (!entity.getMovementMode().isHover()) {
+                if (!entity.getMovementMode().isHoverOrWiGE()) {
                     rollTarget = entity.checkWaterMove(waterLevel, overallMoveType);
                     checkNag(rollTarget, nagReport, psrList);
                 }
@@ -831,7 +827,7 @@ public class SharedUtility {
                 for (Entity ent : game.getEntitiesVector(left)) {
                     leftTonnage += ent.getWeight();
                 }
-                
+
                 double rightTonnage = 0;
                 for (Entity ent : game.getEntitiesVector(right)) {
                     rightTonnage += ent.getWeight();
@@ -914,19 +910,12 @@ public class SharedUtility {
         return retVal;
     }
 
-    public static @Nullable Targetable getTargetPicked(List<? extends Targetable> targets,
-                                                       String input) {
-        if (input == null) {
+    public static @Nullable Targetable getTargetPicked(@Nullable List<? extends Targetable> targets,
+                                                       @Nullable String chosenDisplayName) {
+        if ((chosenDisplayName == null) || (targets == null)) {
             return null;
+        } else {
+            return targets.stream().filter(t -> chosenDisplayName.equals(t.getDisplayName())).findAny().orElse(null);
         }
-
-        for (Targetable ent : targets) {
-            if (input.equals(ent.getDisplayName())) {
-                return ent;
-            }
-        }
-
-        // Should never get here!
-        return null;
     }
 }

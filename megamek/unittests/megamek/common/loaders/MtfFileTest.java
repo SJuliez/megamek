@@ -24,8 +24,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MtfFileTest {
 
@@ -43,14 +42,14 @@ public class MtfFileTest {
     @Test
     public void testLoadEquipment() throws Exception {
         Mech mech = new BipedMech();
-        Mounted mount = new Mounted(mech, EquipmentType.get("Medium Laser"));
+        Mounted<?> mount = Mounted.createMounted(mech, EquipmentType.get("Medium Laser"));
         mount.setOmniPodMounted(true);
         mount.setMechTurretMounted(true);
         mount.setArmored(true);
         mech.addEquipment(mount, Mech.LOC_LT, true);
 
         MtfFile loader = toMtfFile(mech);
-        Mounted found = loader.getEntity().getCritical(Mech.LOC_LT, 0).getMount();
+        Mounted<?> found = loader.getEntity().getCritical(Mech.LOC_LT, 0).getMount();
 
         assertEquals(mount.getType(), found.getType());
         assertTrue(found.isRearMounted());
@@ -96,5 +95,50 @@ public class MtfFileTest {
         assertTrue(slot.getMount().isOmniPodMounted());
         assertTrue(slot.getMount2().isOmniPodMounted());
         assertTrue(slot.isArmored());
+    }
+
+    // Exercises new MtfFile.java code
+    // We should be able to load a Size 24 CommsGear component into 12 Superheavy slots, filling
+    // the Left torso.
+    @Test
+    public void loadSuperheavyVariableSizeSlot() throws Exception {
+        Mech mech = new TripodMech();
+        double varSize = 24.0;
+        mech.setWeight(150.0);
+        mech.setEngine(new Engine(300, Engine.NORMAL_ENGINE, 0));
+        EquipmentType commo = EquipmentType.get("CommsGear");
+        Mounted<?> mount = mech.addEquipment(commo, Mech.LOC_LT, false);
+        mount.setSize(varSize);
+
+        MtfFile loader = toMtfFile(mech);
+        CriticalSlot slot = loader.getEntity().getCritical(Mech.LOC_LT, 0);
+
+        assertEquals(commo, slot.getMount().getType());
+        assertEquals(varSize, slot.getMount().getSize());
+        assertFalse(slot.getMount().isOmniPodMounted());
+        assertFalse(slot.isArmored());
+    }
+
+    // Should _not_ allow loading size 25 CommsGear; 25 / 2.0 -> 13 crits, 1 more than allowed
+    @Test
+    public void ExceptionLoadSuperheavyVariableSizeSlot() throws Exception {
+        Mech mech = new TripodMech();
+        double varSize = 25.0;
+        mech.setWeight(150.0);
+        mech.setEngine(new Engine(300, Engine.NORMAL_ENGINE, 0));
+        EquipmentType commo = EquipmentType.get("CommsGear");
+        Mounted<?> mount = mech.addEquipment(commo, Mech.LOC_LT, false);
+        mount.setSize(varSize);
+        MtfFile loader = toMtfFile(mech);
+
+        Exception e = assertThrowsExactly(
+                Exception.class,
+                () -> loader.getEntity().getCritical(Mech.LOC_LT, 0)
+        );
+        assertEquals(
+                "java.lang.ArrayIndexOutOfBoundsException: Index 12 out of bounds for length 12",
+                e.getMessage()
+        );
+
     }
 }

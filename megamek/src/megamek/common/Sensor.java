@@ -17,6 +17,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 
 /**
  * This class will hold all the information about a particular active sensor,
@@ -32,7 +33,7 @@ public class Sensor implements Serializable {
     public static final int TYPE_MEK_RADAR = 0;
     public static final int TYPE_VEE_RADAR = 1;
     public static final int TYPE_BAP = 2;
-    public static final int TYPE_CLAN_BAP = 3;
+    public static final int TYPE_CLAN_AP = 3;
     public static final int TYPE_BLOODHOUND = 4;
     public static final int TYPE_WATCHDOG = 5;
     public static final int TYPE_LIGHT_AP = 6;
@@ -67,7 +68,7 @@ public class Sensor implements Serializable {
     public static final String EW_EQUIPMENT = "ISElectronicWarfareEquipment";
 
     private static String[] sensorNames = { "Mech Radar", "Vehicle Radar",
-            "Beagle Active Probe", "Clan BAP", "Bloodhound AP", "Watchdog",
+            "Beagle Active Probe", "Clan AP", "Bloodhound AP", "Watchdog",
             "Light AP", "Mech IR", "Vehicle IR", "Mech Magscan",
             "Vehicle Magscan", "Heat Sensors", "Improved Sensors",
             "Mech Seismic", "Vehicle Seismic", "EW Equipment", "Nova CEWS", "Beagle Active Probe Prototype", 
@@ -104,7 +105,7 @@ public class Sensor implements Serializable {
 
     public boolean isBAP() {
         return (type == TYPE_BAP) || (type == TYPE_BLOODHOUND)
-                || (type == TYPE_CLAN_BAP) || (type == TYPE_WATCHDOG)
+                || (type == TYPE_CLAN_AP) || (type == TYPE_WATCHDOG)
                 || (type == TYPE_LIGHT_AP) || (type == TYPE_EW_EQUIPMENT)
                 || (type == TYPE_NOVA) || (type == TYPE_BAPP);
     }
@@ -118,7 +119,7 @@ public class Sensor implements Serializable {
                 return 12;
             case TYPE_BLOODHOUND:
                 return 16;
-            case TYPE_CLAN_BAP:
+            case TYPE_CLAN_AP:
                 return 15;
             case TYPE_WATCHDOG:
             case TYPE_LIGHT_AP:
@@ -180,7 +181,8 @@ public class Sensor implements Serializable {
         }
 
         if ((type != TYPE_MEK_SEISMIC) && (type != TYPE_VEE_SEISMIC)) {
-            if (game.getPlanetaryConditions().hasEMI()) {
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            if (conditions.getEMI().isEMI()) {
                 range -= 4;
             }
             // TODO: add lightning
@@ -283,7 +285,7 @@ public class Sensor implements Serializable {
                     mod += 1;
                 }
                 break;
-            case TYPE_CLAN_BAP:
+            case TYPE_CLAN_AP:
                 if (te.isVoidSigActive()) {
                     mod += 5;
                 }
@@ -443,7 +445,7 @@ public class Sensor implements Serializable {
         switch (type) {
             case TYPE_BAP:
             case TYPE_BAPP:
-            case TYPE_CLAN_BAP:
+            case TYPE_CLAN_AP:
             case TYPE_WATCHDOG:
                 // as above, no data, assuming watchdog quality
             case TYPE_NOVA:

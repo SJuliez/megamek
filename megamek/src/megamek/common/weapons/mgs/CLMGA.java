@@ -13,15 +13,12 @@
  */
 package megamek.common.weapons.mgs;
 
-import megamek.common.AmmoType;
-import megamek.common.Game;
-import megamek.common.ToHitData;
+import megamek.common.*;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.weapons.AmmoWeapon;
 import megamek.common.weapons.AttackHandler;
 import megamek.common.weapons.MGAWeaponHandler;
 import megamek.server.GameManager;
-import megamek.server.Server;
 
 /**
  * @author Sebastian Brocks
@@ -37,6 +34,7 @@ public class CLMGA extends AmmoWeapon {
         sortingName = "MGA C";
         heat = 0;
         damage = 2;
+        infDamageClass = WeaponType.WEAPON_BURST_2D6;
         rackSize = 2;
         ammoType = AmmoType.T_MG;
         minimumRange = WEAPON_NA;
@@ -70,4 +68,10 @@ public class CLMGA extends AmmoWeapon {
                                               GameManager manager) {
         return new MGAWeaponHandler(toHit, waa, game, manager);
     }
+
+    @Override
+    public double getBattleForceDamage(int range, Mounted fcs) {
+        return 0;
+    }
+
 }

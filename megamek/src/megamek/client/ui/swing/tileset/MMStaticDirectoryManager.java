@@ -20,17 +20,21 @@ package megamek.client.ui.swing.tileset;
 
 import megamek.common.Configuration;
 import megamek.common.annotations.Nullable;
+import megamek.common.preference.PreferenceManager;
 import megamek.common.util.fileUtils.AbstractDirectory;
 import megamek.common.util.fileUtils.DirectoryItems;
 import megamek.common.util.fileUtils.ImageFileFactory;
 import megamek.common.util.fileUtils.ScaledImageFileFactory;
 import org.apache.logging.log4j.LogManager;
 
+import java.io.File;
+import java.util.Map;
+
 public class MMStaticDirectoryManager {
     //region Variable Declarations
     // Directories
-    private static AbstractDirectory portraitDirectory;
-    private static AbstractDirectory camouflageDirectory;
+    private static DirectoryItems portraitDirectory;
+    private static DirectoryItems camouflageDirectory;
     private static MechTileset mechTileset;
 
     // Re-parsing Prevention Variables: They are True at startup and when the specified directory
@@ -70,6 +74,27 @@ public class MMStaticDirectoryManager {
             try {
                 portraitDirectory = new DirectoryItems(Configuration.portraitImagesDir(),
                         new ImageFileFactory());
+
+                String userDir = PreferenceManager.getClientPreferences().getUserDir();
+                File portraitUserDir = new File(userDir + "/" + Configuration.portraitImagesDir());
+                if (!userDir.isBlank() && portraitUserDir.isDirectory()) {
+                    DirectoryItems userDirPortraits = new DirectoryItems(portraitUserDir, new ImageFileFactory());
+                    portraitDirectory.merge(userDirPortraits);
+                }
+
+                // check for portraits in story arcs subdirectories
+                File storyarcsDir = Configuration.storyarcsDir();
+                if(storyarcsDir.exists() && storyarcsDir.isDirectory()) {
+                    for (File file : storyarcsDir.listFiles()) {
+                        if (file.isDirectory()) {
+                            File storyArcPortraitDir = new File(file.getPath() + "/data/images/portraits");
+                            if (storyArcPortraitDir.exists() && storyArcPortraitDir.isDirectory()) {
+                                DirectoryItems storyArcPortraits = new DirectoryItems(storyArcPortraitDir, new ImageFileFactory());
+                                portraitDirectory.merge(storyArcPortraits);
+                            }
+                        }
+                    }
+                }
             } catch (Exception e) {
                 LogManager.getLogger().error("Could not parse the portraits directory!", e);
             }
@@ -89,6 +114,27 @@ public class MMStaticDirectoryManager {
             try {
                 camouflageDirectory = new DirectoryItems(Configuration.camoDir(),
                         new ScaledImageFileFactory());
+
+                String userDir = PreferenceManager.getClientPreferences().getUserDir();
+                File camoUserDir = new File(userDir + "/" + Configuration.camoDir());
+                if (!userDir.isBlank() && camoUserDir.isDirectory()) {
+                    DirectoryItems userDirCamo = new DirectoryItems(camoUserDir, new ScaledImageFileFactory());
+                    camouflageDirectory.merge(userDirCamo);
+                }
+
+                // check for camouflage in story arcs subdirectories
+                File storyarcsDir = Configuration.storyarcsDir();
+                if(storyarcsDir.exists() && storyarcsDir.isDirectory()) {
+                    for (File file : storyarcsDir.listFiles()) {
+                        if (file.isDirectory()) {
+                            File storyArcCamoDir = new File(file.getPath() + "/data/images/camo");
+                            if (storyArcCamoDir.exists() && storyArcCamoDir.isDirectory()) {
+                                DirectoryItems storyArcCamo = new DirectoryItems(storyArcCamoDir, new ScaledImageFileFactory());
+                                camouflageDirectory.merge(storyArcCamo);
+                            }
+                        }
+                    }
+                }
             } catch (Exception e) {
                 LogManager.getLogger().error("Could not parse the camo directory!", e);
             }

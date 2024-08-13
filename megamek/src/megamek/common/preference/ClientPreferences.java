@@ -15,7 +15,6 @@ package megamek.common.preference;
 
 import megamek.MMConstants;
 import megamek.common.MovePath;
-import megamek.common.util.LocaleParser;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.BufferedWriter;
@@ -48,6 +47,7 @@ public class ClientPreferences extends PreferenceStoreProxy {
     public static final String UNIT_START_CHAR = "UnitStartChar";
     public static final String DEFAULT_AUTOEJECT_DISABLED = "DefaultAutoejectDisabled";
     public static final String USE_AVERAGE_SKILLS = "UseAverageSkills";
+    public static final String USE_GP_IN_UNIT_SELECTION = "UseGPinUnitSelection";
     public static final String GENERATE_NAMES = "GenerateNames";
     public static final String METASERVER_NAME = "MetaServerName";
     public static final String GOAL_PLAYERS = "GoalPlayers";
@@ -57,9 +57,16 @@ public class ClientPreferences extends PreferenceStoreProxy {
     public static final String BOARD_HEIGHT = "BoardHeight";
     public static final String MAP_WIDTH = "MapWidth";
     public static final String MAP_HEIGHT = "MapHeight";
+    public static final String REPORT_KEYWORDS = "ReportKeywords";
+    private static final String REPORTKEYWORDSDEFAULTS = "Needs\nRolls\nTakes\nHit\nFalls\nSkill Roll\nPilot Skill\nPhase\nDestroyed\nDamage";
     public static final String IP_ADDRESSES_IN_CHAT = "IPAddressesInChat";
+    public static final String START_SEARCHLIGHTS_ON = "StartSearchlightsOn";
+
+    /** A user-specified directory, typically outside the MM directory, where content may be loaded from. */
+    public static final String USER_DIR = "UserDir";
+
     //endregion Variable Declarations
-    
+
     //region Constructors
     public ClientPreferences(IPreferenceStore store) {
         this.store = store;
@@ -78,6 +85,7 @@ public class ClientPreferences extends PreferenceStoreProxy {
         store.setDefault(UNIT_START_CHAR, 'A');
         store.setDefault(GUI_NAME, "swing");
         store.setDefault(USE_AVERAGE_SKILLS, true);
+        store.setDefault(USE_GP_IN_UNIT_SELECTION, false);
         store.setDefault(GENERATE_NAMES, true);
         store.setDefault(PRINT_ENTITY_CHANGE, false);
         store.setDefault(BOARD_WIDTH, 16);
@@ -86,7 +94,10 @@ public class ClientPreferences extends PreferenceStoreProxy {
         store.setDefault(MAP_HEIGHT, 1);
         store.setDefault(DEBUG_OUTPUT_ON, false);
         store.setDefault(MEMORY_DUMP_ON, false);
+        store.setDefault(REPORT_KEYWORDS, REPORTKEYWORDSDEFAULTS);
         store.setDefault(IP_ADDRESSES_IN_CHAT, false);
+        store.setDefault(START_SEARCHLIGHTS_ON, true);
+        store.setDefault(USER_DIR, "");
         setLocale(store.getString(LOCALE));
         setMekHitLocLog();
     }
@@ -109,6 +120,10 @@ public class ClientPreferences extends PreferenceStoreProxy {
         return store.getBoolean(USE_AVERAGE_SKILLS);
     }
 
+    public boolean useGPinUnitSelection() {
+        return store.getBoolean(USE_GP_IN_UNIT_SELECTION);
+    }
+    
     public boolean generateNames() {
         return store.getBoolean(GENERATE_NAMES);
     }
@@ -215,6 +230,10 @@ public class ClientPreferences extends PreferenceStoreProxy {
         store.setValue(USE_AVERAGE_SKILLS, state);
     }
 
+    public void setUseGpInUnitSelection(boolean state) {
+        store.setValue(USE_GP_IN_UNIT_SELECTION, state);
+    }
+    
     public void setGenerateNames(boolean state) {
         store.setValue(GENERATE_NAMES, state);
     }
@@ -283,6 +302,14 @@ public class ClientPreferences extends PreferenceStoreProxy {
         store.setValue(GUI_NAME, guiName);
     }
 
+    public String getReportKeywords() {
+        return store.getString(REPORT_KEYWORDS);
+    }
+
+    public void setReportKeywords(String s) {
+        store.setValue(REPORT_KEYWORDS, s);
+    }
+
     public boolean getShowIPAddressesInChat() {
         return store.getBoolean(IP_ADDRESSES_IN_CHAT);
     }
@@ -291,14 +318,19 @@ public class ClientPreferences extends PreferenceStoreProxy {
         store.setValue(IP_ADDRESSES_IN_CHAT, value);
     }
 
+    public boolean getStartSearchlightsOn() {
+        return store.getBoolean(START_SEARCHLIGHTS_ON);
+    }
+
+    public void setStartSearchlightsOn(boolean value) {
+        store.setValue(START_SEARCHLIGHTS_ON, value);
+    }
+
     protected Locale locale = null;
 
     public void setLocale(String l) {
-        LocaleParser p = new LocaleParser();
-        if (!p.parse(l)) {
-            locale = new Locale(p.getLanguage(), p.getCountry(), p.getVariant());
-            store.setValue(LOCALE, getLocaleString());
-        }
+        locale = new Locale(l);
+        store.setValue(LOCALE, getLocaleString());
     }
 
     public Locale getLocale() {
@@ -352,5 +384,18 @@ public class ClientPreferences extends PreferenceStoreProxy {
 
     public int getMapHeight() {
         return store.getInt(MAP_HEIGHT);
+    }
+
+    /** @return The absolute user directory path (usually outside of MM). Does not end in a slash or backslash. */
+    public String getUserDir() {
+        return store.getString(USER_DIR);
+    }
+
+    public void setUserDir(String userDir) {
+        // remove directory separators at the end
+        while (!userDir.isBlank() && (userDir.endsWith("/") || userDir.endsWith("\\"))) {
+            userDir = userDir.substring(0, userDir.length() - 1);
+        }
+        store.setValue(USER_DIR, userDir);
     }
 }

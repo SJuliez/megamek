@@ -1,17 +1,12 @@
-#building block data file
-<BlockVersion>
-1
-</BlockVersion>
-#Write the version number just in case...
-<Version>
-MAM0
-</Version>
+#Saved from version 0.49.19.1 on 2024-05-26
 <UnitType>
 VTOL
 </UnitType>
+
 <Name>
 Kestrel VTOL
 </Name>
+
 <Model>
 (ML)
 </Model>
@@ -19,43 +14,75 @@ Kestrel VTOL
 <mul id:>
 1766
 </mul id:>
-<Tonnage>
-25
-</Tonnage>
+
+<year>
+3030
+</year>
+
+<originalBuildYear>
+3030
+</originalBuildYear>
+
+<type>
+IS Level 1
+</type>
+
+<role>
+Scout
+</role>
+
+<motion_type>
+VTOL
+</motion_type>
+
+<transporters>
+cargobay:0.5:1:0::-1:0
+</transporters>
+
 <cruiseMP>
 12
 </cruiseMP>
-<Armor>
+
+<engine_type>
+1
+</engine_type>
+
+<armor>
 8
 5
 5
 4
 2
-</Armor>
-<Front Equipment>
-ISMediumLaser
-</Front Equipment>
+</armor>
+
 <Body Equipment>
-Cargo (0.5 tons)
 </Body Equipment>
-<type>
-IS Level 1
-</type>
-<year>
-3030
-</year>
-<internal_type>
-0
-</internal_type>
-<armor_type>
-0
-</armor_type>
-<engine_type>
-1
-</engine_type>
-<motion_type>
-VTOL
-</motion_type>
+
+<Front Equipment>
+Medium Laser
+</Front Equipment>
+
+<Right Equipment>
+</Right Equipment>
+
+<Left Equipment>
+</Left Equipment>
+
+<Rear Equipment>
+</Rear Equipment>
+
+<Rotor Equipment>
+</Rotor Equipment>
+
 <source>
-Succession Wars
+TRO: 3058
 </source>
+
+<tonnage>
+25.0
+</tonnage>
+
+<fuelType>
+PETROCHEMICALS
+</fuelType>
+

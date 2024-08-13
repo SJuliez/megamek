@@ -14,12 +14,13 @@
 package megamek.common.weapons.autocannons;
 
 import megamek.common.AmmoType;
-import megamek.common.BattleForceElement;
+import megamek.common.alphaStrike.AlphaStrikeElement;
 import megamek.common.Game;
 import megamek.common.Mounted;
 import megamek.common.ToHitData;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.options.GameOptions;
+import megamek.common.options.IOption;
 import megamek.common.options.OptionsConstants;
 import megamek.common.weapons.ACAPHandler;
 import megamek.common.weapons.ACCaselessHandler;
@@ -33,6 +34,7 @@ import megamek.common.weapons.AttackHandler;
 import megamek.common.weapons.RapidfireACWeaponHandler;
 import megamek.common.weapons.Weapon;
 import megamek.server.GameManager;
+import megamek.server.Server;
 
 /**
  * N.B. This class is overridden for AC/2, AC/5, AC/10, AC/10, NOT ultras/LB/RAC.
@@ -56,7 +58,7 @@ public abstract class ACWeapon extends AmmoWeapon {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * megamek.common.weapons.Weapon#getCorrectHandler(megamek.common.ToHitData,
      * megamek.common.actions.WeaponAttackAction, megamek.common.Game,
@@ -72,27 +74,27 @@ public abstract class ACWeapon extends AmmoWeapon {
             RapidfireACWeaponHandler ah = new RapidfireACWeaponHandler(toHit, waa, game, gameManager);
             return ah;
         }
-        if (atype.getMunitionType() == AmmoType.M_ARMOR_PIERCING) {
+        if (atype.getMunitionType().contains(AmmoType.Munitions.M_ARMOR_PIERCING)) {
             return new ACAPHandler(toHit, waa, game, gameManager);
         }
 
-        if (atype.getMunitionType() == AmmoType.M_FLECHETTE) {
+        if (atype.getMunitionType().contains(AmmoType.Munitions.M_FLECHETTE)) {
             return new ACFlechetteHandler(toHit, waa, game, gameManager);
         }
 
-        if (atype.getMunitionType() == AmmoType.M_INCENDIARY_AC) {
+        if (atype.getMunitionType().contains(AmmoType.Munitions.M_INCENDIARY_AC)) {
             return new ACIncendiaryHandler(toHit, waa, game, gameManager);
         }
 
-        if (atype.getMunitionType() == AmmoType.M_TRACER) {
+        if (atype.getMunitionType().contains(AmmoType.Munitions.M_TRACER)) {
             return new ACTracerHandler(toHit, waa, game, gameManager);
         }
 
-        if (atype.getMunitionType() == AmmoType.M_FLAK) {
+        if (atype.getMunitionType().contains(AmmoType.Munitions.M_FLAK)) {
             return new ACFlakHandler(toHit, waa, game, gameManager);
         }
-        
-        if (atype.getMunitionType() == AmmoType.M_CASELESS) {
+
+        if (atype.getMunitionType().contains(AmmoType.Munitions.M_CASELESS)) {
             return new ACCaselessHandler (toHit, waa, game, gameManager);
         }
 
@@ -106,13 +108,15 @@ public abstract class ACWeapon extends AmmoWeapon {
         if ((dmg != 5) && (dmg != 2)) {
             return dmg;
         }
-        GameOptions options = getGameOptions();
-        if (options == null) {
-            return dmg;
+
+        if (Server.getServerInstance() != null) {
+            IOption increasedAc = Server.getServerInstance().getGame()
+                    .getOptions().getOption(OptionsConstants.ADVCOMBAT_INCREASED_AC_DMG);
+            if ((increasedAc != null) && increasedAc.booleanValue()) {
+                dmg++;
+            }
         }
-        if (options.getOption(OptionsConstants.ADVCOMBAT_INCREASED_AC_DMG).booleanValue()) {
-            dmg++;
-        }
+
         return dmg;
     }
 
@@ -121,7 +125,7 @@ public abstract class ACWeapon extends AmmoWeapon {
         double damage = 0;
         if (range <= getLongRange()) {
             damage = getRackSize();
-            if (range == BattleForceElement.SHORT_RANGE && getMinimumRange() > 0) {
+            if ((range == AlphaStrikeElement.SHORT_RANGE) && (getMinimumRange() > 0)) {
                 damage = adjustBattleForceDamageForMinRange(damage);
             }
         }
@@ -138,7 +142,8 @@ public abstract class ACWeapon extends AmmoWeapon {
         super.adaptToGameOptions(gOp);
 
         // Modes for allowing standard and light AC rapid fire
-        if (gOp.booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_RAPID_AC)) {
+        IOption rapidAc = gOp.getOption(OptionsConstants.ADVCOMBAT_TACOPS_RAPID_AC);
+        if ((rapidAc != null) && rapidAc.booleanValue()) {
             addMode("");
             addMode(Weapon.MODE_AC_RAPID);
         } else {

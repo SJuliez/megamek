@@ -16,8 +16,8 @@ BattleArmor
 Ailette Zero-G Engineering Exoskeleton
 </Name>
 
-<Model>
-(Standard)(Sqd4)
+<model>
+(Sqd4)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ Ailette Zero-G Engineering Exoskeleton
 <type>
 IS Level 2
 </type>
+
+<role>
+None
+</role>
 
 <motion_type>
 Leg
@@ -68,7 +72,7 @@ ISBAExtendedLifeSupport:Body
 </Trooper 4 Equipment>
 
 <source>
-TRO Vehicle Annex (r) - Clan Invasion
+TRO: Vehicle Annex Revised
 </source>
 
 <chassis>

@@ -15,113 +15,27 @@
 package megamek.common.verifier;
 
 import megamek.common.*;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.ArmorType;
+import megamek.common.equipment.WeaponMounted;
+import megamek.common.options.OptionsConstants;
 import megamek.common.util.StringUtil;
 import megamek.common.weapons.bayweapons.BayWeapon;
 import megamek.common.weapons.capitalweapons.ScreenLauncherWeapon;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Validation and construction data for advanced aerospace units (jumpships, warships, space stations)
- * 
+ *
  * @author Neoancient
  *
  */
 public class TestAdvancedAerospace extends TestAero {
-    
+
     private final Jumpship vessel;
-
-    public enum CapitalArmor{
-        PRIMITIVE(EquipmentType.T_ARMOR_PRIMITIVE_AERO, false),   
-        STANDARD(EquipmentType.T_ARMOR_AEROSPACE, false),   
-        CLAN_STANDARD(EquipmentType.T_ARMOR_AEROSPACE, true),
-        IS_IMP_FERRO_ALUM(EquipmentType.T_ARMOR_LC_FERRO_IMP, false),
-        CLAN_IMP_FERRO_ALUM(EquipmentType.T_ARMOR_LC_FERRO_IMP, true),
-        IS_FERRO_CARBIDE(EquipmentType.T_ARMOR_LC_FERRO_CARBIDE, false),
-        CLAN_FERRO_CARBIDE(EquipmentType.T_ARMOR_LC_FERRO_CARBIDE, true),
-        IS_LAMELLOR(EquipmentType.T_ARMOR_LC_LAMELLOR_FERRO_CARBIDE, false),
-        CLAN_LAMELLOR(EquipmentType.T_ARMOR_LC_LAMELLOR_FERRO_CARBIDE, true);
-
-        /**
-         * The type, corresponding to types defined in 
-         * <code>EquipmentType</code>.
-         */
-        public int type;
-                
-        /**
-         * Denotes whether this armor is Clan or not.
-         */
-        public boolean isClan;
-        
-        CapitalArmor(int t, boolean c) {
-            type = t;
-            isClan = c;
-        }
-        
-        /**
-         * Given an armor type, return the <code>AerospaceArmor</code> instance that
-         * represents that type.
-         * 
-         * @param t  The armor type.
-         * @param c  Whether this armor type is Clan or not.
-         * @return   The <code>AeroArmor</code> that corresponds to the given 
-         *              type or null if no match was found.
-         */
-        public static CapitalArmor getArmor(int t, boolean c) {
-            for (CapitalArmor a : values()) {
-                if (a.type == t && a.isClan == c) {
-                    return a;
-                }
-            }
-            return null;
-        }
-        
-        /**
-         * Calculates and returns the points per ton of the armor type given the
-         * weight of the ship. 
-         * 
-         * @param vessel The ship
-         * @return       The number of points of capital armor per ton
-         */
-        public double pointsPerTon(Jumpship vessel) {
-            double ppt = 0.8;
-            if (type == EquipmentType.T_ARMOR_LC_FERRO_IMP) {
-                ppt += 0.2;
-            } else if (type == EquipmentType.T_ARMOR_LC_FERRO_CARBIDE) {
-                ppt += 0.4;
-            } else if (type == EquipmentType.T_ARMOR_LC_LAMELLOR_FERRO_CARBIDE) {
-                ppt += 0.6;
-            }
-            if (vessel.getWeight() >= 250000) {
-                ppt -= 0.4;
-                if (isClan) {
-                    ppt += 0.1;
-                }
-            } else if (vessel.getWeight() >= 150000) {
-                ppt -= 0.2;
-                if (isClan) {
-                    ppt += 0.1;
-                }
-            } else if (isClan) {
-                ppt += 0.2;
-            }
-            // Deal with potential rounding errors
-            ppt = Math.round(ppt * 10.0) / 10.0;
-            if (type == EquipmentType.T_ARMOR_PRIMITIVE_AERO) {
-                ppt *= EquipmentType.armorPointMultipliers[EquipmentType.T_ARMOR_PRIMITIVE_AERO];
-            }
-            return ppt;
-        }
-        
-        /**
-         * @return The <code>MiscType</code> for this armor.
-         */
-        public EquipmentType getArmorEqType() {
-            String name = EquipmentType.getArmorTypeName(type, isClan);
-            return EquipmentType.get(name);
-        }
-    }
 
     /**
      * Filters all capital armor according to given tech constraints
@@ -129,36 +43,27 @@ public class TestAdvancedAerospace extends TestAero {
      * @param techManager Constraints used to filter the possible armor types
      * @return A list of all armors that meet the tech constraints
      */
-    public static List<EquipmentType> legalArmorsFor(ITechManager techManager, boolean primitive) {
+    public static List<ArmorType> legalArmorsFor(ITechManager techManager, boolean primitive) {
         if (primitive) {
-            return Collections.singletonList(CapitalArmor.PRIMITIVE.getArmorEqType());
+            return Collections.singletonList(ArmorType.of(EquipmentType.T_ARMOR_PRIMITIVE_AERO, false));
+        } else {
+            return ArmorType.allArmorTypes().stream()
+                    .filter(at -> at.hasFlag(MiscType.F_JS_EQUIPMENT) && techManager.isLegal(at))
+                    .collect(Collectors.toList());
         }
-        List<EquipmentType> retVal = new ArrayList<>();
-        for (CapitalArmor armor : CapitalArmor.values()) {
-            final EquipmentType eq = armor.getArmorEqType();
-            if ((null != eq) && techManager.isLegal(eq)) {
-                retVal.add(eq);
-            }
-        }
-        return retVal;
     }
     
     public static int maxArmorPoints(Jumpship vessel) {
-        CapitalArmor a = CapitalArmor.getArmor(vessel.getArmorType(0),
-                TechConstants.isClan(vessel.getArmorTechLevel(0)));
-        if (null == a) {
-            return 0;
-        }
         // The ship gets a number of armor points equal to 10% of the SI, rounded normally, per facing.
         double freeSI = Math.round(vessel.get0SI() / 10.0) * 6;
         // Primitive jumpships multiply the armor by a factor of 0.66. Per errata, the armor is calculated
         // based on standard armor then rounded down, and the free SI armor is rounded down separately.
         if (vessel.isPrimitive()) {
-            return (int) (Math.floor(CapitalArmor.STANDARD.pointsPerTon(vessel)
-                    * maxArmorWeight(vessel) * 0.66)
+            return (int) (Math.floor(ArmorType.of(EquipmentType.T_ARMOR_PRIMITIVE_AERO, false)
+                    .getPointsPerTon(vessel) * maxArmorWeight(vessel))
                 + Math.floor(freeSI * 0.66));
         }
-        return (int) Math.floor(a.pointsPerTon(vessel) * maxArmorWeight(vessel) + freeSI);
+        return (int) Math.floor(ArmorType.forEntity(vessel).getPointsPerTon(vessel) * maxArmorWeight(vessel) + freeSI);
     }
     
     /**
@@ -180,9 +85,9 @@ public class TestAdvancedAerospace extends TestAero {
     }
     
     public static double armorPointsPerTon(Jumpship vessel, int at, boolean clan) {
-        CapitalArmor arm = CapitalArmor.getArmor(at, clan);
+        ArmorType arm = ArmorType.of(at, clan);
         if (null != arm) {
-            return arm.pointsPerTon(vessel);
+            return arm.getPointsPerTon(vessel);
         } else {
             return 0;
         }
@@ -406,26 +311,6 @@ public class TestAdvancedAerospace extends TestAero {
     }
 
     @Override
-    public boolean isTank() {
-        return false;
-    }
-
-    @Override
-    public boolean isMech() {
-        return false;
-    }
-    
-    @Override
-    public boolean isAero() {
-        return true;
-    }
-    
-    @Override
-    public boolean isSmallCraft() {
-        return false;
-    }
-    
-    @Override
     public boolean isAdvancedAerospace() {
         return true;
     }
@@ -618,21 +503,19 @@ public class TestAdvancedAerospace extends TestAero {
             return super.printWeapon();
         }
         StringBuffer buffer = new StringBuffer();
-        for (Mounted m : getEntity().getWeaponBayList()) {
+        for (WeaponMounted m : getEntity().getWeaponBayList()) {
             buffer.append(m.getName()).append(" ")
                 .append(getLocationAbbr(m.getLocation()));
             if (m.isRearMounted()) {
                 buffer.append(" (R)");
             }
             buffer.append("\n");
-            for (Integer wNum : m.getBayWeapons()) {
-                final Mounted w = getEntity().getEquipment(wNum);
+            for (WeaponMounted w : m.getBayWeapons()) {
                 buffer.append("   ").append(StringUtil.makeLength(w.getName(),
                         getPrintSize() - 25)).append(w.getTonnage())
                     .append("\n");
             }
-            for (Integer aNum : m.getBayAmmo()) {
-                final Mounted a = getEntity().getEquipment(aNum);
+            for (AmmoMounted a : m.getBayAmmo()) {
                 double weight = ceil(a.getTonnage()
                         * a.getBaseShotsLeft() / ((AmmoType) a.getType()).getShots(), Ceil.HALFTON);
                 buffer.append("   ").append(StringUtil.makeLength(a.getName(),
@@ -657,20 +540,14 @@ public class TestAdvancedAerospace extends TestAero {
 
     @Override
     public String printWeightControls() {
-        StringBuffer retVal = new StringBuffer(StringUtil.makeLength(
-                "Control Systems:", getPrintSize() - 5));
-        retVal.append(makeWeightString(getWeightControls()));
-        retVal.append("\n");
-        return retVal.toString();
+        return StringUtil.makeLength("Control Systems:", getPrintSize() - 5)
+                + makeWeightString(getWeightControls()) + "\n";
     }
         
     @Override
     public String printWeightFuel() {
-        StringBuffer retVal = new StringBuffer(StringUtil.makeLength(
-                "Fuel: ", getPrintSize() - 5));
-        retVal.append(makeWeightString(getWeightFuel()));
-        retVal.append("\n");
-        return retVal.toString();
+        return StringUtil.makeLength("Fuel: ", getPrintSize() - 5)
+                + makeWeightString(getWeightFuel()) + "\n";
     }
 
     @Override
@@ -682,16 +559,11 @@ public class TestAdvancedAerospace extends TestAero {
         return vessel;
     }
 
-    @Override
-    public String printArmorLocProp(int loc, int wert) {
-        return " is greater than " + wert + "!";
-    }
-
     /**
      * Checks to see if this unit has valid armor assignment.
      * 
-     * @param buff
-     * @return
+     * @param buff The StringBuffer to receive error descriptions
+     * @return False when something is invalid, true otherwise
      */
     @Override
     public boolean correctArmor(StringBuffer buff) {
@@ -711,16 +583,16 @@ public class TestAdvancedAerospace extends TestAero {
     /**
      * Checks that the heatsink type is a legal value.
      * 
-     * @param buff
-     * @return
+     * @param buff The StringBuffer to receive error descriptions
+     * @return False when something is invalid, true otherwise
      */
     @Override
     public boolean correctHeatSinks(StringBuffer buff) {
         if ((vessel.getHeatType() != Aero.HEAT_SINGLE) 
                 && (vessel.getHeatType() != Aero.HEAT_DOUBLE)) {
-            buff.append("Invalid heatsink type!  Valid types are "
-                    + Aero.HEAT_SINGLE + " and " + Aero.HEAT_DOUBLE
-                    + ".  Found " + vessel.getHeatType() + ".");
+            buff.append("Invalid heatsink type!  Valid types are " + Aero.HEAT_SINGLE + " and "
+                            + Aero.HEAT_DOUBLE + ".  Found ")
+                    .append(vessel.getHeatType()).append(".");
             return false;
         }
         return true;
@@ -741,8 +613,7 @@ public class TestAdvancedAerospace extends TestAero {
         if (getCountHeatSinks() < weightFreeHeatSinks(vessel)) {
             buff.append("Heat Sinks:\n");
             buff.append(" Total     " + getCountHeatSinks() + "\n");
-            buff.append(" Required  " + weightFreeHeatSinks(vessel)
-                    + "\n");
+            buff.append(" Required  " + weightFreeHeatSinks(vessel) + "\n");
             correct = false;
         }                
         
@@ -760,7 +631,9 @@ public class TestAdvancedAerospace extends TestAero {
         correct &= correctGravDecks(buff);
         correct &= correctBays(buff);
         correct &= correctCriticals(buff);
-
+        if (getEntity().hasQuirk(OptionsConstants.QUIRK_NEG_ILLEGAL_DESIGN)) {
+            correct = true;
+        }
         return correct;
     }
 
@@ -770,34 +643,21 @@ public class TestAdvancedAerospace extends TestAero {
         
         // Make sure all bays have at least one weapon and that there are at least
         // ten shots of ammo for each ammo-using weapon in the bay.
-        for (Mounted bay : vessel.getWeaponBayList()) {
+        for (WeaponMounted bay : vessel.getWeaponBayList()) {
             if (bay.getBayWeapons().isEmpty()) {
                 buff.append("Bay ").append(bay.getName()).append(" has no weapons\n");
                 illegal = true;
             }
             Map<Integer,Integer> ammoWeaponCount = new HashMap<>();
             Map<Integer,Integer> ammoTypeCount = new HashMap<>();
-            for (Integer wNum : bay.getBayWeapons()) {
-                final Mounted w = vessel.getEquipment(wNum);
-                if (w.isOneShotWeapon()) {
+            for (WeaponMounted w : bay.getBayWeapons()) {
+                if (w.isOneShot()) {
                     continue;
                 }
-                if (w.getType() instanceof WeaponType) {
-                    ammoWeaponCount.merge(((WeaponType) w.getType()).getAmmoType(), 1, Integer::sum);
-                } else {
-                    buff.append(w.getName()).append(" in bay ").append(bay.getName()).append(" is not a weapon\n");
-                    illegal = true;
-                }
+                ammoWeaponCount.merge(w.getType().getAmmoType(), 1, Integer::sum);
             }
-            for (Integer aNum : bay.getBayAmmo()) {
-                final Mounted a = vessel.getEquipment(aNum);
-                if (a.getType() instanceof AmmoType) {
-                    ammoTypeCount.merge(((AmmoType) a.getType()).getAmmoType(), a.getUsableShotsLeft(),
-                            Integer::sum);
-                } else {
-                    buff.append(a.getName()).append(" in bay ").append(bay.getName()).append(" is not ammo\n");
-                    illegal = true;
-                }
+            for (AmmoMounted a : bay.getBayAmmo()) {
+                ammoTypeCount.merge(a.getType().getAmmoType(), a.getUsableShotsLeft(), Integer::sum);
             }
             for (Integer at : ammoWeaponCount.keySet()) {
                 if (at != AmmoType.T_NA) {
@@ -1103,7 +963,7 @@ public class TestAdvancedAerospace extends TestAero {
     }
     
     @Override
-    public double calculateWeight() {
+    public double calculateWeightExact() {
         double weight = 0;
         weight += getWeightStructure();
         weight += getWeightEngine();

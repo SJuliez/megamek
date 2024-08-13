@@ -92,6 +92,9 @@ public final class Configuration {
     /** The default force generator directory name (under the data directory). */
     private static final String DEFAULT_DIR_NAME_FONTS = "fonts";
 
+    /** The default story arcs directory name (under the data directory). */
+    private static final String DEFAULT_DIR_NAME_STORY_ARCS = "storyarcs";
+
     // **************************************************************************
     // These are all directories that normally appear under 'data/images'.
 
@@ -115,6 +118,12 @@ public final class Configuration {
 
     /** The default widgets directory name (under the images directory). */
     private static final String DEFAULT_DIR_NAME_WIDGETS = "widgets";
+
+    /** The default universe directory name (under the images directory). */
+    private static final String DEFAULT_DIR_NAME_IMG_UNIVERSE = "universe";
+
+    private Configuration() {
+    }
 
     // **************************************************************************
     // Static methods for accessing and modifying configuration data.
@@ -327,6 +336,11 @@ public final class Configuration {
         return new File(imagesDir(), DEFAULT_DIR_NAME_FLUFF_IMAGES);
     }
 
+    /** @return {@link File} containing the path to the universe images directory (having e.g. era, faction images). */
+    public static File universeImagesDir() {
+        return new File(imagesDir(), DEFAULT_DIR_NAME_IMG_UNIVERSE);
+    }
+
     /**
      * Return the configured images directory, if set, otherwise return the
      * default path, relative to the configured data directory.
@@ -473,6 +487,15 @@ public final class Configuration {
      */
     public static File portraitImagesDir() {
         return new File(imagesDir(), DEFAULT_DIR_NAME_PORTRAIT_IMAGES);
+    }
+
+    /**
+     * Return the story arcs directory, which is relative to the directory.
+     *
+     * @return {@link File} containing the path to the portrait directory.
+     */
+    public static File storyarcsDir() {
+        return new File(dataDir(), DEFAULT_DIR_NAME_STORY_ARCS);
     }
 
     /**

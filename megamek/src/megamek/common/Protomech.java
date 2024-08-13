@@ -14,14 +14,18 @@
 package megamek.common;
 
 import megamek.client.ui.swing.calculationReport.CalculationReport;
-import megamek.common.battlevalue.ProtoMekBVCalculator;
 import megamek.common.cost.ProtoMekCostCalculator;
 import megamek.common.enums.AimingMode;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.ArmorType;
+import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.Atmosphere;
 import megamek.common.preference.PreferenceManager;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -87,17 +91,41 @@ public class Protomech extends Entity {
     public static final int[] POSSIBLE_PILOT_DAMAGE = { 0, 1, 3, 1, 1, 1, 0 };
 
     public static final String[] systemNames = { "Arm", "Leg", "Head", "Torso" };
+    
+    /**
+     * Contains a mapping of locations which are blocked when carrying cargo in the "key" location
+     */
+    public static final Map<Integer, List<Integer>> BLOCKED_FIRING_LOCATIONS;
+    
+    static {
+    	BLOCKED_FIRING_LOCATIONS = new HashMap<>();
+    	BLOCKED_FIRING_LOCATIONS.put(LOC_LARM, new ArrayList<>());
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_LARM).add(LOC_LARM);
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_LARM).add(LOC_TORSO);
+    	
+    	BLOCKED_FIRING_LOCATIONS.put(LOC_RARM, new ArrayList<>());
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_RARM).add(LOC_RARM);
+    	BLOCKED_FIRING_LOCATIONS.get(LOC_RARM).add(LOC_TORSO);
+    }
 
     // For grapple attacks
     private int grappled_id = Entity.NONE;
 
     private boolean isGrappleAttacker = false;
-    
+
     private boolean grappledThisRound = false;
 
     private boolean edpCharged = true;
 
     private int edpChargeTurns = 0;
+
+    // jump types
+    public static final int JUMP_UNKNOWN = -1;
+    public static final int JUMP_NONE = 0;
+    public static final int JUMP_STANDARD = 1;
+    public static final int JUMP_IMPROVED = 2;
+
+    private int jumpType = JUMP_UNKNOWN;
 
     private boolean isQuad = false;
     private boolean isGlider = false;
@@ -219,70 +247,52 @@ public class Protomech extends Entity {
     }
 
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getWalkMP(MPCalculationSetting mpCalculationSetting) {
         if (isEngineHit()) {
             return 0;
         }
-        int wmp = getOriginalWalkMP();
-        int j;
-        if (null != game) {
-            int weatherMod = game.getPlanetaryConditions()
-                    .getMovementMods(this);
-            if (weatherMod != 0) {
-                wmp = Math.max(wmp + weatherMod, 0);
-            }
+        int mp = getOriginalWalkMP();
+
+        if (!mpCalculationSetting.ignoreWeather && (game != null)) {
+            int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
+            mp = Math.max(mp + weatherMod, 0);
         }
         // Gravity, Protos can't get faster
-        if (gravity) {
-            j = applyGravityEffectsOnMP(wmp);
-        } else {
-            j = wmp;
+        if (!mpCalculationSetting.ignoreGravity) {
+            mp = Math.min(mp, applyGravityEffectsOnMP(mp));
         }
-        if (j < wmp) {
-            wmp = j;
-        }
+
         if (isGlider()) {
             // Torso crits reduce glider mp as jump
-            int torsoCrits = getCritsHit(LOC_TORSO);
-            switch (torsoCrits) {
-                case 0:
-                    break;
-                case 1:
-                    if (wmp > 0) {
-                        wmp--;
-                    }
-                    break;
-                case 2:
-                    wmp /= 2;
-                    break;
+            int torsoCrits = getCritsHit(Protomech.LOC_TORSO);
+            if (torsoCrits == 1) {
+                mp--;
+            } else if (torsoCrits == 2) {
+                mp /= 2;
             }
             // Near misses damage the wings/flight systems, which reduce MP by one per hit.
-            wmp = Math.max(0, wmp - wingHits);
+            mp -= getWingHits();
         } else {
-            int legCrits = getCritsHit(LOC_LEG);
-            switch (legCrits) {
-                case 0:
-                    break;
-                case 1:
-                    wmp--;
-                    break;
-                case 2:
-                    wmp = wmp / 2;
-                    break;
-                case 3:
-                    wmp = 0;
-                    break;
+            int legCrits = getCritsHit(Protomech.LOC_LEG);
+            if (legCrits == 1) {
+                mp--;
+            } else if (legCrits == 2) {
+                mp /= 2;
+            } else if (legCrits == 3) {
+                mp = 0;
             }
         }
-        return wmp;
+
+        return Math.max(mp, 0);
     }
 
     @Override
     public String getRunMPasString() {
         if (hasMyomerBooster()) {
-            return getRunMPwithoutMyomerBooster(true, false, false) + "(" + getRunMP() + ")";
+            return getRunMP(MPCalculationSetting.NO_MYOMERBOOSTER) + "(" + getRunMP() + ")";
+        } else {
+            return Integer.toString(getRunMP());
         }
-        return Integer.toString(getRunMP());
     }
 
     /**
@@ -312,7 +322,7 @@ public class Protomech extends Entity {
     public PilotingRollData addEntityBonuses(PilotingRollData roll) {
         return roll;
     }
-    
+
     /**
      * Returns the number of total critical slots in a location
      */
@@ -334,7 +344,7 @@ public class Protomech extends Entity {
         }
         return 0;
     }
-    
+
     public static final TechAdvancement TA_STANDARD_PROTOMECH = new TechAdvancement(TECH_BASE_CLAN)
             .setClanAdvancement(3055, 3059, 3060).setClanApproximate(true, false, false)
             .setPrototypeFactions(F_CSJ).setProductionFactions(F_CSJ)
@@ -405,18 +415,18 @@ public class Protomech extends Entity {
             }
         }
         setSecondaryFacing(getFacing());
-        
+
         grappledThisRound = false;
-        
+
         super.newRound(roundNumber);
 
     } // End public void newRound()
 
-    /**
-     * This pmech's jumping MP modified for missing jump jets and gravity.
-     */
     @Override
-    public int getJumpMP(boolean gravity) {
+    public int getJumpMP(MPCalculationSetting mpCalculationSetting) {
+        if (mpCalculationSetting.ignoreSubmergedJumpJets && isUnderwater()) {
+            return 0;
+        }
         int jump = jumpMP;
         int torsoCrits = getCritsHit(LOC_TORSO);
         switch (torsoCrits) {
@@ -431,54 +441,28 @@ public class Protomech extends Entity {
                 jump = jump / 2;
                 break;
         }
-        if (hasWorkingMisc(MiscType.F_PARTIAL_WING)) {
-            int atmo = PlanetaryConditions.ATMO_STANDARD;
+        if (!mpCalculationSetting.ignoreWeather && hasWorkingMisc(MiscType.F_PARTIAL_WING)) {
+            Atmosphere atmo = Atmosphere.STANDARD;
             if (game != null) {
                 atmo = game.getPlanetaryConditions().getAtmosphere();
             }
             switch (atmo) {
-                case PlanetaryConditions.ATMO_VHIGH:
-                case PlanetaryConditions.ATMO_HIGH:
+                case VERY_HIGH:
+                case HIGH:
                     jump += 3;
                     break;
-                case PlanetaryConditions.ATMO_STANDARD:
-                case PlanetaryConditions.ATMO_THIN:
+                case STANDARD:
+                case THIN:
                     jump += 2;
                     break;
-                case PlanetaryConditions.ATMO_TRACE:
+                case TRACE:
                     jump += 1;
                     break;
+                default:
             }
         }
-        if (!gravity) {
-            return jump;
-        } else {
-            if (applyGravityEffectsOnMP(jump) > jump) {
-                return jump;
-            }
-            return applyGravityEffectsOnMP(jump);
-        }
-    }
 
-    public int getJumpJets() {
-        return jumpMP;
-    }
-
-    /**
-     * Returns this mech's jumping MP, modified for missing and underwater jets.
-     */
-    @Override
-    public int getJumpMPWithTerrain() {
-        if (getPosition() == null) {
-            return getJumpMP();
-        }
-
-        int waterLevel = game.getBoard().getHex(getPosition())
-                .terrainLevel(Terrains.WATER);
-        if ((waterLevel <= 0) || (getElevation() >= 0)) {
-            return getJumpMP();
-        }
-        return 0;
+        return mpCalculationSetting.ignoreGravity ? jump : Math.min(applyGravityEffectsOnMP(jump), jump);
     }
 
     @Override
@@ -545,7 +529,7 @@ public class Protomech extends Entity {
 
     @Override
     public boolean canChangeSecondaryFacing() {
-        return !(getCritsHit(LOC_LEG) > 2) && !isBracing();
+        return !((getCritsHit(LOC_LEG) > 2) || isBracing() || getAlreadyTwisted());
     }
 
     @Override
@@ -584,42 +568,82 @@ public class Protomech extends Entity {
 
     @Override
     public double getArmorWeight() {
-        return RoundWeight.standard(EquipmentType.getProtomechArmorWeightPerPoint(getArmorType(LOC_TORSO))
-                * getTotalOArmor(), this);
+        return RoundWeight.standard(ArmorType.forEntity(this).getWeightPerPoint() * getTotalOArmor(), this);
     }
 
     @Override
     public boolean hasRearArmor(int loc) {
         return false;
     }
-
+    
     /**
-     * get this ProtoMech's run MP without factoring in a possible myomer
-     * booster
-     *
-     * @param gravity
-     * @param ignoreheat
-     * @return
+     * Returns true if the entity can pick up ground objects
      */
-    public int getRunMPwithoutMyomerBooster(boolean gravity,
-            boolean ignoreheat, boolean ignoremodulararmor) {
-        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+    public boolean canPickupGroundObject() {
+    	return !isLocationBad(Protomech.LOC_LARM) && (getCarriedObject(Protomech.LOC_LARM) == null) ||
+    			!isLocationBad(Protomech.LOC_RARM) && (getCarriedObject(Protomech.LOC_RARM) == null);
+    }
+    
+    /**
+     * The maximum tonnage of ground objects that can be picked up by this unit
+     */
+    public double maxGroundObjectTonnage() {
+    	double percentage = 0.0;
+    	
+    	if (!isLocationBad(Protomech.LOC_LARM) && (getCarriedObject(Protomech.LOC_LARM) == null)) {
+    		percentage += 0.05;
+    	}
+    	if (!isLocationBad(Protomech.LOC_RARM) && (getCarriedObject(Protomech.LOC_RARM) == null)) {
+    		percentage += 0.05;
+    	}
+    	
+    	double heavyLifterMultiplier = hasAbility(OptionsConstants.PILOT_HVY_LIFTER) ? 1.5 : 1.0;
+    	
+    	return getWeight() * percentage * heavyLifterMultiplier;
+    }
+    
+    @Override
+    public List<Integer> getDefaultPickupLocations() {
+    	List<Integer> result = new ArrayList<>();
+    	
+    	if ((getCarriedObject(Protomech.LOC_LARM) == null) && !isLocationBad(Protomech.LOC_LARM)) {
+    		result.add(Protomech.LOC_LARM);
+    	}
+    	if ((getCarriedObject(Protomech.LOC_RARM) == null) && !isLocationBad(Protomech.LOC_RARM)) {
+    		result.add(Protomech.LOC_RARM);
+    	}
+    	
+    	return result;
+    }
+    
+    @Override
+    public List<Integer> getValidHalfWeightPickupLocations(ICarryable cargo) {
+    	List<Integer> result = new ArrayList<>();
+    	
+    	// if we can pick the object up according to "one handed pick up rules" in TacOps
+    	if (cargo.getTonnage() <= (getWeight() / 20)) {
+    		if ((getCarriedObject(Protomech.LOC_LARM) == null) && !isLocationBad(Protomech.LOC_LARM)) {
+    			result.add(Protomech.LOC_LARM);
+    		}
+    		
+    		if ((getCarriedObject(Protomech.LOC_RARM) == null) && !isLocationBad(Protomech.LOC_RARM)) {
+    			result.add(Protomech.LOC_RARM);
+    		}
+    	}
+    	
+    	return result;
     }
 
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
-        if (hasMyomerBooster()) {
-            return (getWalkMP(gravity, ignoreheat, ignoremodulararmor) * 2);
+    public int getRunMP(MPCalculationSetting mpCalculationSetting) {
+        if (!mpCalculationSetting.ignoreMyomerBooster && hasMyomerBooster()) {
+            return (getWalkMP(mpCalculationSetting) * 2);
+        } else {
+            return super.getRunMP(mpCalculationSetting);
         }
-        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
     }
 
-    /**
-     * does this protomech mount a myomer booster?
-     *
-     * @return
-     */
+    /** @return True if this ProtoMek mounts an operable Myomer Booster. See {@link Mounted#isOperable()}. */
     public boolean hasMyomerBooster() {
         for (Mounted mEquip : getMisc()) {
             MiscType mtype = (MiscType) mEquip.getType();
@@ -804,7 +828,7 @@ public class Protomech extends Entity {
 
         return LOC_NONE;
     }
-    
+
     @Override
     public int firstArmorIndex() {
         return LOC_HEAD;
@@ -912,17 +936,17 @@ public class Protomech extends Entity {
     }
 
     @Override
-    public Mounted addEquipment(EquipmentType etype, int loc,
+    public Mounted<?> addEquipment(EquipmentType etype, int loc,
             boolean rearMounted) throws LocationFullException {
-        Mounted mounted = new Mounted(this, etype);
+        Mounted<?> mounted = Mounted.createMounted(this, etype);
         addEquipment(mounted, loc, rearMounted, -1);
         return mounted;
     }
 
     @Override
-    public Mounted addEquipment(EquipmentType etype, int loc,
+    public Mounted<?> addEquipment(EquipmentType etype, int loc,
             boolean rearMounted, int shots) throws LocationFullException {
-        Mounted mounted = new Mounted(this, etype);
+        Mounted<?> mounted = Mounted.createMounted(this, etype);
         addEquipment(mounted, loc, rearMounted, shots);
         return mounted;
 
@@ -932,14 +956,14 @@ public class Protomech extends Entity {
      * Mounts the specified weapon in the specified location.
      */
     @Override
-    protected void addEquipment(Mounted mounted, int loc, boolean rearMounted,
+    protected void addEquipment(Mounted<?> mounted, int loc, boolean rearMounted,
             int shots) throws LocationFullException {
-        if (mounted.getType() instanceof AmmoType) {
+        if (mounted instanceof AmmoMounted) {
             // Damn protomech ammo; nasty hack, should be cleaner
             if (-1 != shots) {
                 mounted.setShotsLeft(shots);
                 mounted.setOriginalShots(shots);
-                mounted.setAmmoCapacity(shots * ((AmmoType) mounted.getType()).getKgPerShot() / 1000);
+                ((AmmoMounted) mounted).setAmmoCapacity(shots * ((AmmoMounted) mounted).getType().getKgPerShot() / 1000);
                 super.addEquipment(mounted, loc, rearMounted);
                 return;
             }
@@ -989,11 +1013,6 @@ public class Protomech extends Entity {
             default:
                 return 0;
         }
-    }
-
-    @Override
-    protected int doBattleValueCalculation(boolean ignoreC3, boolean ignoreSkill, CalculationReport calculationReport) {
-        return ProtoMekBVCalculator.calculateBV(this, ignoreSkill, calculationReport);
     }
 
     @Override
@@ -1231,12 +1250,12 @@ public class Protomech extends Entity {
     public int getGrappled() {
         return grappled_id;
     }
-    
+
     @Override
     public boolean isGrappledThisRound() {
         return grappledThisRound;
     }
-    
+
     @Override
     public void setGrappledThisRound(boolean grappled) {
         grappledThisRound = grappled;
@@ -1301,70 +1320,17 @@ public class Protomech extends Entity {
     }
 
     @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
-        return getRunMP(gravity, ignoreheat, ignoremodulararmor);
-    }
-
-    @Override
-    public void setAlphaStrikeMovement(Map<String,Integer> moves) {
-        double walk = getWalkMP();
-        if (hasMyomerBooster()) {
-            walk *= 1.25;
-        }
-        int baseWalk = (int) Math.round(walk * 2);
-        int baseJump = getJumpMP() * 2;
-        if (baseJump > 0) {
-            if (baseJump != baseWalk) {
-                moves.put("", baseWalk);
-            }
-            moves.put("j", baseJump);
-        } else {
-            moves.put(getMovementModeAsBattleForceString(), baseWalk);
-        }
-    }
-    
-    @Override
-    /*
-     * Each ProtoMech has 1 Structure point
-     */
-    public int getBattleForceStructurePoints() {
-        return 1;
-    }
-
-    @Override
-    public void addBattleForceSpecialAbilities(Map<BattleForceSPA,Integer> specialAbilities) {
-        super.addBattleForceSpecialAbilities(specialAbilities);
-        for (Mounted m : getEquipment()) {
-            if (!(m.getType() instanceof MiscType)) {
-                continue;
-            }
-            if (m.getType().hasFlag(MiscType.F_MAGNETIC_CLAMP)) {
-                if (getWeight() < 10) {
-                    specialAbilities.put(BattleForceSPA.MCS, null);
-                } else {
-                    specialAbilities.put(BattleForceSPA.UCS, null);                    
-                }
-            }
-        }
-        specialAbilities.put(BattleForceSPA.SOA, null);
-        if (getMovementMode().equals(EntityMovementMode.WIGE)) {
-            specialAbilities.put(BattleForceSPA.GLD, null);
-        }
-    }
-    
-    @Override
     public int getEngineHits() {
         if (this.isEngineHit()) {
             return 1;
         }
         return 0;
     }
-    
+
     public int getWingHits() {
         return wingHits;
     }
-    
+
     public void setWingHits(int hits) {
         wingHits = hits;
     }
@@ -1395,29 +1361,29 @@ public class Protomech extends Entity {
     public void setIsQuad(boolean isQuad) {
         this.isQuad = isQuad;
     }
-    
+
     public boolean isGlider() {
         return isGlider;
     }
-    
+
     public void setIsGlider(boolean isGlider) {
         this.isGlider = isGlider;
     }
-    
+
     /**
      * WoB protomech interface allows it to be piloted by a quadruple amputee with a VDNI implant.
      * No effect on game play.
-     * 
+     *
      * @return Whether the protomech is equipped with an Inner Sphere Protomech Interface.
      */
     public boolean hasInterfaceCockpit() {
         return interfaceCockpit;
     }
-    
+
     /**
      * Sets whether the protomech has an Inner Sphere Protomech Interface. This will also determine
      * whether it is a mixed tech unit.
-     * 
+     *
      * @param interfaceCockpit Whether the protomech has an IS interface
      */
     public void setInterfaceCockpit(boolean interfaceCockpit) {
@@ -1445,7 +1411,7 @@ public class Protomech extends Entity {
         }
         return true;
     }
-    
+
     @Override
     public boolean isCrippled(boolean checkCrew) {
         return isCrippled();
@@ -1536,7 +1502,7 @@ public class Protomech extends Entity {
     public long getEntityType() {
         return Entity.ETYPE_PROTOMECH;
     }
-    
+
     @Override
     public PilotingRollData checkLandingInHeavyWoods(EntityMovementType overallMoveType,
                                                      Hex curHex) {
@@ -1544,21 +1510,21 @@ public class Protomech extends Entity {
         roll.addModifier(TargetRoll.CHECK_FALSE, "ProtoMeks cannot fall");
         return roll;
     }
-    
+
     /**
      * Based on the ProtoMek's current damage status, return valid brace locations.
      */
     @Override
     public List<Integer> getValidBraceLocations() {
         List<Integer> validLocations = new ArrayList<>();
-        
+
         if (!isLocationBad(Protomech.LOC_MAINGUN)) {
             validLocations.add(Protomech.LOC_MAINGUN);
         }
-        
+
         return validLocations;
     }
-    
+
     /**
      * Protomechs can brace if not prone, crew conscious and have a main gun
      */
@@ -1568,9 +1534,81 @@ public class Protomech extends Entity {
                 getCrew().isActive() &&
                 !isLocationBad(Protomech.LOC_MAINGUN);
     }
-    
+
     @Override
     public int getBraceMPCost() {
         return 0;
+    }
+
+    @Override
+    public boolean isProtoMek() {
+        return true;
+    }
+
+
+    /**
+     * Returns the type of jump jet system the Protomech has.
+     */
+    @Override
+    public int getJumpType() {
+        jumpType = JUMP_NONE;
+        for (Mounted m : miscList) {
+            if (m.getType().hasFlag(MiscType.F_JUMP_JET)) {
+                if (m.getType().hasSubType(MiscType.S_IMPROVED)) {
+                    jumpType = JUMP_IMPROVED;
+                } else {
+                    jumpType = JUMP_STANDARD;
+                }
+            }
+
+        }
+        return jumpType;
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(3.385 + 1.093*Math.log(getWeight())));
+    }
+
+    @Override
+    public int slotNumber(Mounted<?> mounted) {
+        int location = mounted.getLocation();
+        if (location != Entity.LOC_NONE) {
+            int slot = 0;
+            for (Mounted<?> equipment : getEquipment()) {
+                if (equipment.getLocation() == location) {
+                    if (equipment == mounted) {
+                        return slot;
+                    } else {
+                        slot++;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    protected Mounted<?> getEquipmentForWeaponQuirk(QuirkEntry quirkEntry) {
+        int location = getLocationFromAbbr(quirkEntry.getLocation());
+        int slot = quirkEntry.getSlot();
+        for (Mounted<?> equipment : getEquipment()) {
+            if (equipment.getLocation() == location) {
+                if (slot == 0) {
+                    return equipment;
+                } else {
+                    slot--;
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Method that returns the mapping between locations which, if cargo is carried,
+     * block other locations from firing.
+     */
+    protected Map<Integer, List<Integer>> getBlockedFiringLocations() {
+    	return BLOCKED_FIRING_LOCATIONS;
     }
 }

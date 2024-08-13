@@ -33,8 +33,12 @@ Gnome Battle Armor
 </originalBuildYear>
 
 <type>
-Mixed (IS Chassis) Experimental
+Mixed (Clan Chassis) Advanced
 </type>
+
+<role>
+Juggernaut
+</role>
 
 <motion_type>
 Jump
@@ -109,7 +113,7 @@ TARGETING:Unknown
 </systemManufacturers>
 
 <source>
-TRO 3058U - Clan Invasion
+XTR: Royal Fantasy
 </source>
 
 <chassis>

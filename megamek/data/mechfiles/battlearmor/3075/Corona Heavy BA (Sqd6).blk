@@ -17,11 +17,11 @@ Corona Heavy Battle Armor
 </Name>
 
 <model>
-(Standard) (Sqd6)
+(Sqd6)
 </model>
 
 <mul id:>
-8976
+8977
 </mul id:>
 
 <chassis>
@@ -56,6 +56,10 @@ InfantryAssaultRifle:RA:APM
 Clan Level 2
 </type>
 
+<role>
+Ambusher
+</role>
+
 <year>
 3060
 </year>
@@ -65,7 +69,7 @@ Leg
 </motion_type>
 
 <source>
-TRO 3075 - Clan Invasion
+TRO: 3075
 </source>
 
 <armor_type>

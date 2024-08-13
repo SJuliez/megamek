@@ -14,7 +14,6 @@
 package megamek.common.commandline;
 
 import megamek.MMConstants;
-import megamek.MegaMek;
 import megamek.client.ui.Messages;
 import megamek.common.Configuration;
 import megamek.common.annotations.Nullable;
@@ -22,9 +21,7 @@ import megamek.server.Server;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
+import java.net.URI;
 
 public class ClientServerCommandLineParser extends AbstractCommandLineParser {
 
@@ -116,13 +113,13 @@ public class ClientServerCommandLineParser extends AbstractCommandLineParser {
     protected void start() throws ParseException {
         while (getTokenType() != TOK_EOF) {
             int tokenType = getTokenType();
-            final String tokenValue = getTokenValue();
+            final String value = getTokenValue();
             switch (tokenType) {
                 case TOK_OPTION:
                     try {
-                        switch (ClientServerCommandLineFlag.parseFromString(tokenValue)) {
+                        switch (ClientServerCommandLineFlag.parseFromString(value)) {
                             case HELP:
-                                MegaMek.printToOut(help());
+                                System.out.println(help());
                                 System.exit(0);
                             case PORT:
                                 nextToken();
@@ -161,24 +158,19 @@ public class ClientServerCommandLineParser extends AbstractCommandLineParser {
                                 break;
                         }
                     } catch (ParseException ex) {
-                        PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out));
-                        out.print(formatErrorMessage(ex));
-                        out.close();
-                        MegaMek.printToOut(help());
+                        LogManager.getLogger().error("Incorrect arguments:" + ex.getMessage() + '\n' + help());
                         throw ex;
                     }
                     break;
                 case TOK_LITERAL:
-                    // this is old behavior, but it didn't seem to work
-                    // It works now and I left it in just in case
-                    saveGameFileName = tokenValue;
+                    saveGameFileName = value;
                     nextToken();
                     break;
                 case TOK_EOF:
                     // Do nothing, although this shouldn't happen
                     break;
                 default:
-                    throw new ParseException(String.format("Unexpected input %s", tokenValue));
+                    throw new ParseException(String.format("Unexpected input %s", value));
             }
             nextToken();
         }
@@ -265,9 +257,10 @@ public class ClientServerCommandLineParser extends AbstractCommandLineParser {
     }
 
     public class Resolver {
-        public final String playerName, serverAddress, password, saveGameFileName, announceUrl, mailPropertiesFile;
+        public final String playerName, serverAddress, password, announceUrl, mailPropertiesFile;
         public final boolean registerServer;
         public final int port;
+        protected final String saveGameFileName;
 
         public Resolver(ClientServerCommandLineParser parser, String defaultPassword, int defaultPort,
                         String defaultServerAddress, String defaultPlayerName)
@@ -275,7 +268,7 @@ public class ClientServerCommandLineParser extends AbstractCommandLineParser {
             try {
                 parser.parse();
             } catch (AbstractCommandLineParser.ParseException e) {
-                LogManager.getLogger().error(parser.formatErrorMessage(e));
+                LogManager.getLogger().error("Incorrect arguments:" + e.getMessage() + '\n' + parser.help());
             }
 
             String playerName = parser.getPlayerName();
@@ -331,6 +324,36 @@ public class ClientServerCommandLineParser extends AbstractCommandLineParser {
             this.announceUrl = announceUrl;
             this.registerServer = registerServer;
             this.mailPropertiesFile = mailPropertiesFile;
+        }
+
+        /**
+         * path resolves the saveGameFileName arg if it was provided.
+         * If it is an absolute path, uses that, otherwise looks first in
+         * current working directory and then in ./savegame/
+         * @return File object if valid file, null if not
+         */
+        public File getSaveGameFile() {
+            if (saveGameFileName == null) {
+                return null;
+            }
+            File gameFile = new File(saveGameFileName);
+
+            if (gameFile.canRead()) {
+                return gameFile;
+            } else if (gameFile.isAbsolute()) {
+                LogManager.getLogger().error("Unable to read savegame file: " + gameFile.getAbsolutePath());
+                return null;
+            } else {
+                String searched = '"'+ gameFile.getAbsolutePath()+'"';
+                gameFile = new File("./savegames", saveGameFileName);
+                if (gameFile.canRead()) {
+                    return gameFile;
+                } else {
+                    searched += " or \"" + gameFile.getAbsolutePath()+'"';
+                    LogManager.getLogger().error("Unable to read savegame file at " + searched);
+                    return null;
+                }
+            }
         }
     }
 }

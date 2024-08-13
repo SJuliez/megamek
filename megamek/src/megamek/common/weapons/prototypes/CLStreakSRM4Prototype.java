@@ -19,6 +19,8 @@
  */
 package megamek.common.weapons.prototypes;
 
+import megamek.common.Mounted;
+import megamek.common.alphaStrike.AlphaStrikeElement;
 /**
  * @author Sebastian Brocks
  */
@@ -45,7 +47,7 @@ public class CLStreakSRM4Prototype extends CLPrototypeStreakSRMWeapon {
         extremeRange = 12;
         tonnage = 3.0;
         criticals = 2;
-        bv = 39;
+        bv = 59;
         cost = 60000;
         shortAV = 4;
         maxRange = RANGE_SHORT;
@@ -59,5 +61,10 @@ public class CLStreakSRM4Prototype extends CLPrototypeStreakSRMWeapon {
             .setClanAdvancement(2819, DATE_NONE, DATE_NONE, 2826, DATE_NONE)
             .setClanApproximate(true, false, false, true, false)
             .setPrototypeFactions(F_CSA);
+    }
+
+    @Override
+    public double getBattleForceDamage(int range, Mounted fcs) {
+        return (range <= AlphaStrikeElement.MEDIUM_RANGE) ? 0.84 :0;
     }
 }

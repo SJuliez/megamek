@@ -1,35 +1,42 @@
-Version:1.0
-Phoenix Hawk
-PXH-1c (Special)
+generator:MegaMek Suite 0.50.0-SNAPSHOT on 2024-07-11
+chassis:Phoenix Hawk
+model:PXH-1c 'Special'
 mul id:2493
 
 Config:Biped
-TechBase:Inner Sphere
-Era:2765
-Source:TRO 3075
-Rules Level:4
+techbase:Inner Sphere
+era:2765
+source:TRO: 3075
+rules level:4
+role:Striker
 
-Mass:45
-Engine:270 XL Engine(IS)
-Structure:IS Endo Steel
-Myomer:Standard
+quirk:command_mech
+quirk:ubiquitous_clan
+quirk:ubiquitous_is
+quirk:imp_com
+weaponquirk:jettison_capable:RA:4:ISSNPPC
 
-Heat Sinks:10 Double
-Walk MP:6
-Jump MP:6
+mass:45
+engine:270 XL Engine(IS)
+structure:IS Endo Steel
+myomer:Standard
 
-Armor:Standard(Inner Sphere)
-LA Armor:12
-RA Armor:12
-LT Armor:18
-RT Armor:18
-CT Armor:23
-HD Armor:8
-LL Armor:20
-RL Armor:20
-RTL Armor:4
-RTR Armor:4
-RTC Armor:5
+heat sinks:10 IS Double
+walk mp:6
+jump mp:6
+
+armor:Standard(Inner Sphere)
+LA armor:12
+RA armor:12
+LT armor:18
+RT armor:18
+CT armor:23
+HD armor:8
+LL armor:20
+RL armor:20
+RTL armor:4
+RTR armor:4
+RTC armor:5
 
 Weapons:6
 Medium Laser, Left Arm

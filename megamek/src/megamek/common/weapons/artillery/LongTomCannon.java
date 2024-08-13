@@ -14,6 +14,8 @@
 package megamek.common.weapons.artillery;
 
 import megamek.common.AmmoType;
+import megamek.common.alphaStrike.AlphaStrikeElement;
+import megamek.common.Mounted;
 import megamek.common.SimpleTechLevel;
 
 /**
@@ -33,6 +35,7 @@ public class LongTomCannon extends ArtilleryCannonWeapon {
         addLookupName("CLLongTomCannon");
         addLookupName("CLLongTomArtilleryCannon");
         addLookupName("CL Long Tom Cannon");
+        sortingName = "Cannon Arty Long Tom";
         heat = 20;
         rackSize = 20;
         ammoType = AmmoType.T_LONG_TOM_CANNON;
@@ -59,5 +62,16 @@ public class LongTomCannon extends ArtilleryCannonWeapon {
                 .setClanApproximate(false, true, false, false, false)
                 .setPrototypeFactions(F_LC,F_CWF).setProductionFactions(F_LC)
                 .setStaticTechLevel(SimpleTechLevel.ADVANCED);
+    }
+
+    @Override
+    public double getBattleForceDamage(int range, Mounted fcs) {
+        if (range == AlphaStrikeElement.SHORT_RANGE) {
+            return 1.32;
+        } else if (range < AlphaStrikeElement.EXTREME_RANGE) {
+            return 3;
+        } else {
+            return 0;
+        }
     }
 }

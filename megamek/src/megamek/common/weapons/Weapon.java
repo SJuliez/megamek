@@ -13,13 +13,7 @@
  */
 package megamek.common.weapons;
 
-import java.io.Serializable;
-
-import megamek.common.AmmoType;
-import megamek.common.Game;
-import megamek.common.TargetRoll;
-import megamek.common.ToHitData;
-import megamek.common.WeaponType;
+import megamek.common.*;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.annotations.Nullable;
 import megamek.common.options.GameOptions;
@@ -27,6 +21,8 @@ import megamek.common.options.OptionsConstants;
 import megamek.common.weapons.bayweapons.CapitalLaserBayWeapon;
 import megamek.common.weapons.bayweapons.SubCapLaserBayWeapon;
 import megamek.server.GameManager;
+
+import java.io.Serializable;
 
 /**
  * A class representing a weapon.
@@ -80,6 +76,7 @@ public abstract class Weapon extends WeaponType implements Serializable {
     public static final String MODE_GAUSS_POWERED_DOWN = "Powered Down";
     
     public static final String MODE_MISSILE_INDIRECT = "Indirect";
+    public static final String MODE_INDIRECT_HEAT = "Indirect/Heat";
     
     public static final String MODE_PPC_CHARGE = "Charge";
     

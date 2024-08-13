@@ -16,8 +16,8 @@ BattleArmor
 Krise PA(L)
 </Name>
 
-<Model>
-(Standard)(Sqd6)
+<model>
+(Sqd6)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ Krise PA(L)
 <type>
 IS Level 2
 </type>
+
+<role>
+None
+</role>
 
 <motion_type>
 Jump
@@ -58,7 +62,7 @@ ISImprovedSensors:Body
 </Squad Equipment>
 
 <source>
-TRO Vehicle Annex (r) - Civil War
+TRO: Vehicle Annex Revised
 </source>
 
 <chassis>

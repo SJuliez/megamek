@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import megamek.common.enums.AimingMode;
+import megamek.common.equipment.MiscMounted;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 import megamek.common.preference.PreferenceManager;
 import org.apache.logging.log4j.LogManager;
 
@@ -95,6 +97,16 @@ public class TripodMech extends Mech {
         return Entity.ETYPE_MECH | Entity.ETYPE_TRIPOD_MECH;
     }
 
+    @Override
+    public boolean isTripodMek() {
+        return true;
+    }
+
+    @Override
+    public CrewType defaultCrewType() {
+        return isSuperHeavy() ? CrewType.SUPERHEAVY_TRIPOD : CrewType.TRIPOD;
+    }
+
     /**
      * Returns true if the entity can flip its arms
      */
@@ -122,18 +134,79 @@ public class TripodMech extends Mech {
 
         return canFlip;
     }
+    
+    /**
+     * Returns true if the entity can pick up ground objects
+     */
+    public boolean canPickupGroundObject() {
+    	return hasSystem(Mech.ACTUATOR_HAND, Mech.LOC_LARM) && (getCarriedObject(Mech.LOC_LARM) == null) ||
+    			hasSystem(Mech.ACTUATOR_HAND, Mech.LOC_RARM) && (getCarriedObject(Mech.LOC_RARM) == null);
+    }
+    
+    /**
+     * The maximum tonnage of ground objects that can be picked up by this unit
+     */
+    public double maxGroundObjectTonnage() {
+    	double percentage = 0.0;
+    	
+    	if (hasSystem(Mech.ACTUATOR_HAND, Mech.LOC_LARM) && (getCarriedObject(Mech.LOC_LARM) == null)) {
+    		percentage += 0.05;
+    	}
+    	if (hasSystem(Mech.ACTUATOR_HAND, Mech.LOC_RARM) && (getCarriedObject(Mech.LOC_RARM) == null)) {
+    		percentage += 0.05;
+    	}
+    	
+    	double heavyLifterMultiplier = hasAbility(OptionsConstants.PILOT_HVY_LIFTER) ? 1.5 : 1.0;
+    	
+    	return getWeight() * percentage * heavyLifterMultiplier;
+    }
+    
+    @Override
+    public List<Integer> getDefaultPickupLocations() {
+    	List<Integer> result = new ArrayList<>();
+    	
+    	if (hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_LARM) && (getCarriedObject(Mech.LOC_LARM) == null) &&
+    			!isLocationBad(Mech.LOC_LARM)) {
+    		result.add(Mech.LOC_LARM);
+    	}
+    	if (hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_RARM) && (getCarriedObject(Mech.LOC_RARM) == null) &&
+    			!isLocationBad(Mech.LOC_RARM)) {
+    		result.add(Mech.LOC_RARM);
+    	}
+    	
+    	return result;
+    }
+    
+    @Override
+    public List<Integer> getValidHalfWeightPickupLocations(ICarryable cargo) {
+    	List<Integer> result = new ArrayList<>();
+    	
+    	// if we can pick the object up according to "one handed pick up rules" in TacOps
+    	if (cargo.getTonnage() <= (getWeight() / 20)) {
+    		if (hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_LARM) && (getCarriedObject(Mech.LOC_LARM) == null) &&
+        			!isLocationBad(Mech.LOC_LARM)) {
+    			result.add(Mech.LOC_LARM);
+    		}
+    		
+    		if (hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_RARM) && (getCarriedObject(Mech.LOC_RARM) == null) &&
+        			!isLocationBad(Mech.LOC_RARM)) {
+    			result.add(Mech.LOC_RARM);
+    		}
+    	}
+    	
+    	return result;
+    }
 
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat,
-                         boolean ignoremodulararmor) {
-        int wmp = getOriginalWalkMP();
+    public int getWalkMP(MPCalculationSetting mpCalculationSetting) {
+        int mp = getOriginalWalkMP();
         int legsDestroyed = 0;
         int hipHits = 0;
         int actuatorHits = 0;
 
         //A Mech using tracks has its movement reduced by 1/3 per leg or track destroyed, based
         //on analogy with biped and quad mechs.
-        if (getMovementMode() == EntityMovementMode.TRACKED) {
+        if (getMovementMode().isTracked()) {
             for (Mounted m : getMisc()) {
                 if (m.getType().hasFlag(MiscType.F_TRACKS)) {
                     if (m.isHit() || isLocationBad(m.getLocation())) {
@@ -141,7 +214,7 @@ public class TripodMech extends Mech {
                     }
                 }
             }
-            wmp = (wmp * (3 - legsDestroyed)) / 3; 
+            mp = (mp * (3 - legsDestroyed)) / 3;
         } else {
             for (int i = 0; i < locations(); i++) {
                 if (locationIsLeg(i)) {
@@ -163,97 +236,84 @@ public class TripodMech extends Mech {
 
             // leg damage effects
             if (legsDestroyed > 0) {
-                wmp = (legsDestroyed == 1) ? 1 : 0;
+                mp = (legsDestroyed == 1) ? 1 : 0;
             } else {
                 if (hipHits > 0) {
                     if ((game != null)
                         && game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_LEG_DAMAGE)) {
-                        wmp = (hipHits >= 1) ? wmp - (2 * hipHits) : 0;
+                        mp = mp - 2 * hipHits;
                     } else {
-                        wmp = (hipHits == 1) ? (int) Math.ceil(wmp / 2.0) : 0;
+                        mp = (hipHits == 1) ? (int) Math.ceil(mp / 2.0) : 0;
                     }
                 }
-                wmp -= actuatorHits;
+                mp -= actuatorHits;
             }
         }
 
         if (hasShield()) {
-            wmp -= getNumberOfShields(MiscType.S_SHIELD_LARGE);
-            wmp -= getNumberOfShields(MiscType.S_SHIELD_MEDIUM);
+            mp -= getNumberOfShields(MiscType.S_SHIELD_LARGE);
+            mp -= getNumberOfShields(MiscType.S_SHIELD_MEDIUM);
         }
 
-        if (!ignoremodulararmor && hasModularArmor()) {
-            wmp--;
+        if (!mpCalculationSetting.ignoreModularArmor && hasModularArmor()) {
+            mp--;
         }
 
-        if (!ignoreheat) {
+        if (!mpCalculationSetting.ignoreHeat) {
             // factor in heat
             if ((game != null)
                 && game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_HEAT)) {
                 if (heat < 30) {
-                    wmp -= (heat / 5);
+                    mp -= (heat / 5);
                 } else if (heat >= 49) {
-                    wmp -= 9;
+                    mp -= 9;
                 } else if (heat >= 43) {
-                    wmp -= 8;
+                    mp -= 8;
                 } else if (heat >= 37) {
-                    wmp -= 7;
+                    mp -= 7;
                 } else if (heat >= 31) {
-                    wmp -= 6;
+                    mp -= 6;
                 } else {
-                    wmp -= 5;
+                    mp -= 5;
                 }
             } else {
-                wmp -= (heat / 5);
+                mp -= (heat / 5);
             }
             // TSM negates some heat
             if ((heat >= 9) && hasTSM(false) && legsDestroyed == 0 && movementMode != EntityMovementMode.TRACKED) {
-                wmp += 2;
+                mp += 2;
             }
         }
-        wmp = Math.max(wmp - getCargoMpReduction(this), 0);
-        if (null != game) {
-            int weatherMod = game.getPlanetaryConditions()
-                                 .getMovementMods(this);
-            if (weatherMod != 0) {
-                wmp = Math.max(wmp + weatherMod, 0);
+
+        if (!mpCalculationSetting.ignoreCargo) {
+            mp = Math.max(mp - getCargoMpReduction(this), 0);
+        }
+
+        if (!mpCalculationSetting.ignoreWeather && (null != game)) {
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
+            mp = Math.max(mp + weatherMod, 0);
+            if (getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_WIND)
+                    && conditions.getWeather().isClear()
+                    && conditions.getWind().isTornadoF1ToF3()) {
+                mp += 1;
             }
         }
-        // gravity
-        if (gravity) {
-            wmp = applyGravityEffectsOnMP(wmp);
+
+        if (!mpCalculationSetting.ignoreGravity) {
+            mp = applyGravityEffectsOnMP(mp);
         }
 
-        // For sanity sake...
-        wmp = Math.max(0, wmp);
-
-        return wmp;
+        return Math.max(0, mp);
     }
 
-    /**
-     * Returns this mech's running/flank mp modified for leg loss and stuff.
-     */
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat,
-                        boolean ignoremodulararmor) {
+    public int getRunMP(MPCalculationSetting mpCalculationSetting) {
         if (countBadLegs() == 0) {
-            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            return super.getRunMP(mpCalculationSetting);
+        } else {
+            return getWalkMP(mpCalculationSetting);
         }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor);
-    }
-
-    /**
-     * Returns run MP without considering MASC modified for leg loss and stuff.
-     */
-
-    @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat,
-                                   boolean ignoremodulararmor) {
-        if (countBadLegs() == 0) {
-            return super.getRunMPwithoutMASC(gravity, ignoreheat,
-                                             ignoremodulararmor);
-        }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor);
     }
 
     /**
@@ -288,7 +348,7 @@ public class TripodMech extends Mech {
         } else {
             roll.addModifier(2, "pilot incapacitated");
         }
-        
+
         int[] locsToCheck = new int[3];
 
         locsToCheck[0] = Mech.LOC_RLEG;
@@ -686,11 +746,10 @@ public class TripodMech extends Mech {
                 continue;
             }
 
-            Mounted m = cs.getMount();
-            EquipmentType type = m.getType();
-            if ((type instanceof MiscType) && ((MiscType) type).isShield()
+            Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted) && ((MiscMounted) m).getType().isShield()
                 && m.curMode().equals(MiscType.S_ACTIVE_SHIELD)) {
-                return m.getCurrentDamageCapacity(this, m.getLocation()) > 0;
+                return ((MiscMounted) m).getCurrentDamageCapacity(this, m.getLocation()) > 0;
             }
         }
         return false;
@@ -758,11 +817,10 @@ public class TripodMech extends Mech {
                 continue;
             }
 
-            Mounted m = cs.getMount();
-            EquipmentType type = m.getType();
-            if ((type instanceof MiscType) && ((MiscType) type).isShield()
+            Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted) && ((MiscMounted) m).getType().isShield()
                 && m.curMode().equals(MiscType.S_PASSIVE_SHIELD)) {
-                return m.getCurrentDamageCapacity(this, m.getLocation()) > 0;
+                return ((MiscMounted) m).getCurrentDamageCapacity(this, m.getLocation()) > 0;
             }
         }
         return false;
@@ -793,10 +851,9 @@ public class TripodMech extends Mech {
                 continue;
             }
 
-            Mounted m = cs.getMount();
-            EquipmentType type = m.getType();
-            if ((type instanceof MiscType)
-                && ((MiscType) type).isShield()
+            Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted)
+                && ((MiscMounted) m).getType().isShield()
                 && (m.curMode().equals(MiscType.S_NO_SHIELD)
                     || isShutDown() || // if
                     // he
@@ -809,7 +866,7 @@ public class TripodMech extends Mech {
                     // defense mode
                     getCrew().isKoThisRound() || getCrew()
                     .isUnconscious())) {
-                return m.getCurrentDamageCapacity(this, m.getLocation()) > 0;
+                return ((MiscMounted) m).getCurrentDamageCapacity(this, m.getLocation()) > 0;
             }
         }
         return false;
@@ -1034,8 +1091,7 @@ public class TripodMech extends Mech {
                 // normal front hits
                 switch (roll) {
                     case 2:
-                        if ((getCrew().hasEdgeRemaining() && getCrew()
-                                .getOptions().booleanOption(OptionsConstants.EDGE_WHEN_TAC))
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
                             && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
@@ -1068,9 +1124,7 @@ public class TripodMech extends Mech {
                     case 11:
                         return new HitData(Mech.LOC_LARM);
                     case 12:
-                        if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(
-                                "edge_when_headhit")) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                                              aimedLocation, aimingMode, cover);
@@ -1083,8 +1137,7 @@ public class TripodMech extends Mech {
                 // normal left side hits
                 switch (roll) {
                     case 2:
-                        if ((getCrew().hasEdgeRemaining() && getCrew()
-                                .getOptions().booleanOption(OptionsConstants.EDGE_WHEN_TAC))
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
                             && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
@@ -1125,9 +1178,7 @@ public class TripodMech extends Mech {
                     case 10:
                         return new HitData(Mech.LOC_RARM);
                     case 12:
-                        if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(
-                                "edge_when_headhit")) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                                              aimedLocation, aimingMode, cover);
@@ -1140,8 +1191,7 @@ public class TripodMech extends Mech {
                 // normal right side hits
                 switch (roll) {
                     case 2:
-                        if ((getCrew().hasEdgeRemaining() && getCrew()
-                                .getOptions().booleanOption(OptionsConstants.EDGE_WHEN_TAC))
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
                             && !game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_NO_TAC)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
@@ -1182,9 +1232,7 @@ public class TripodMech extends Mech {
                     case 10:
                         return new HitData(Mech.LOC_LARM);
                     case 12:
-                        if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(
-                                "edge_when_headhit")) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                                              aimedLocation, aimingMode, cover);
@@ -1200,9 +1248,7 @@ public class TripodMech extends Mech {
                     && isProne()) {
                     switch (roll) {
                         case 2:
-                            if ((getCrew().hasEdgeRemaining() && getCrew()
-                                    .getOptions()
-                                    .booleanOption(OptionsConstants.EDGE_WHEN_TAC))
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
                                 && !game.getOptions().booleanOption(
                                     OptionsConstants.ADVCOMBAT_NO_TAC)) {
                                 getCrew().decreaseEdge();
@@ -1236,9 +1282,7 @@ public class TripodMech extends Mech {
                         case 11:
                             return new HitData(Mech.LOC_LARM, true);
                         case 12:
-                            if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(
-                                    "edge_when_headhit")) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side,
                                                                  aimedLocation, aimingMode, cover);
@@ -1251,9 +1295,7 @@ public class TripodMech extends Mech {
                 } else {
                     switch (roll) {
                         case 2:
-                            if ((getCrew().hasEdgeRemaining() && getCrew()
-                                    .getOptions()
-                                    .booleanOption(OptionsConstants.EDGE_WHEN_TAC))
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_TAC)
                                 && !game.getOptions().booleanOption(
                                     OptionsConstants.ADVCOMBAT_NO_TAC)) {
                                 getCrew().decreaseEdge();
@@ -1287,9 +1329,7 @@ public class TripodMech extends Mech {
                         case 11:
                             return new HitData(Mech.LOC_LARM, true);
                         case 12:
-                            if (getCrew().hasEdgeRemaining()
-                                && getCrew().getOptions().booleanOption(
-                                    "edge_when_headhit")) {
+                            if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                                 getCrew().decreaseEdge();
                                 HitData result = rollHitLocation(table, side,
                                                                  aimedLocation, aimingMode, cover);
@@ -1332,9 +1372,7 @@ public class TripodMech extends Mech {
                     case 5:
                         return new HitData(Mech.LOC_RARM);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(
-                                "edge_when_headhit")) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                                              aimedLocation, aimingMode, cover);
@@ -1356,9 +1394,7 @@ public class TripodMech extends Mech {
                     case 5:
                         return new HitData(Mech.LOC_LARM);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(
-                                "edge_when_headhit")) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                                              aimedLocation, aimingMode, cover);
@@ -1380,9 +1416,7 @@ public class TripodMech extends Mech {
                     case 5:
                         return new HitData(Mech.LOC_RARM);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(
-                                "edge_when_headhit")) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                                              aimedLocation, aimingMode, cover);
@@ -1406,9 +1440,7 @@ public class TripodMech extends Mech {
                     case 5:
                         return new HitData(Mech.LOC_RARM, true);
                     case 6:
-                        if (getCrew().hasEdgeRemaining()
-                            && getCrew().getOptions().booleanOption(
-                                "edge_when_headhit")) {
+                        if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                             getCrew().decreaseEdge();
                             HitData result = rollHitLocation(table, side,
                                                              aimedLocation, aimingMode, cover);
@@ -1496,9 +1528,7 @@ public class TripodMech extends Mech {
             // Swarm attack locations.
             switch (roll) {
                 case 2:
-                    if (getCrew().hasEdgeRemaining()
-                        && getCrew().getOptions().booleanOption(
-                            "edge_when_headhit")) {
+                    if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                         getCrew().decreaseEdge();
                         HitData result = rollHitLocation(table, side,
                                                          aimedLocation, aimingMode, cover);
@@ -1526,9 +1556,7 @@ public class TripodMech extends Mech {
                 case 11:
                     return new HitData(Mech.LOC_CT, true, effects);
                 case 12:
-                    if (getCrew().hasEdgeRemaining()
-                        && getCrew().getOptions().booleanOption(
-                            "edge_when_headhit")) {
+                    if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                         getCrew().decreaseEdge();
                         HitData result = rollHitLocation(table, side,
                                                          aimedLocation, aimingMode, cover);
@@ -1567,9 +1595,7 @@ public class TripodMech extends Mech {
                 case 5:
                     return new HitData(Mech.LOC_RARM, (side == ToHitData.SIDE_REAR));
                 case 6:
-                    if (getCrew().hasEdgeRemaining()
-                        && getCrew().getOptions().booleanOption(
-                            "edge_when_headhit")) {
+                    if (shouldUseEdge(OptionsConstants.EDGE_WHEN_HEADHIT)) {
                         getCrew().decreaseEdge();
                         HitData result = rollHitLocation(table, side,
                                                          aimedLocation, aimingMode, cover);
@@ -1631,22 +1657,22 @@ public class TripodMech extends Mech {
     public boolean isValidSecondaryFacing(int dir) {
         return canChangeSecondaryFacing();
     }
-    
+
     /**
      * Based on the mech's current damage status, return valid brace locations.
      */
     @Override
     public List<Integer> getValidBraceLocations() {
         List<Integer> validLocations = new ArrayList<>();
-        
+
         if (!isLocationBad(Mech.LOC_RARM)) {
             validLocations.add(Mech.LOC_RARM);
         }
-        
+
         if (!isLocationBad(Mech.LOC_LARM)) {
             validLocations.add(Mech.LOC_LARM);
         }
-        
+
         return validLocations;
     }
 
@@ -1659,7 +1685,7 @@ public class TripodMech extends Mech {
                 || !isLocationBad(Mech.LOC_LARM))
                 && !isProne();
     }
-    
+
     @Override
     public int getBraceMPCost() {
         return 1;

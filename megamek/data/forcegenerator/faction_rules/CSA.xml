@@ -10,9 +10,9 @@
 	
 	<toc>
 		<unitType>
-			<option ifDateBetween="3060,">null,Mek,ProtoMek,Tank,VTOL,Infantry,BattleArmor,Aero,Conventional Fighter,Warship,Dropship,Jumpship</option>
-			<option ifDateBetween="2870,3059">null,Mek,Tank,VTOL,Infantry,BattleArmor,Aero,Conventional Fighter,Warship,Dropship,Jumpship</option>
-			<option ifDateBetween=",2869">null,Mek,Tank,VTOL,Infantry,Aero,Conventional Fighter,Warship,Dropship,Jumpship</option>
+			<option ifDateBetween="3060,">null,Mek,ProtoMek,Tank,VTOL,Infantry,BattleArmor,AeroSpaceFighter,Conventional Fighter,Warship,Dropship,Jumpship</option>
+			<option ifDateBetween="2870,3059">null,Mek,Tank,VTOL,Infantry,BattleArmor,AeroSpaceFighter,Conventional Fighter,Warship,Dropship,Jumpship</option>
+			<option ifDateBetween=",2869">null,Mek,Tank,VTOL,Infantry,AeroSpaceFighter,Conventional Fighter,Warship,Dropship,Jumpship</option>
 		</unitType>
 		
 		<eschelon>
@@ -135,7 +135,7 @@
 				fluffName="CSA Stellar Serpent">%ELEMENT%</subforce>
 			<subforce chassis="McKenna Battleship"
 				fluffName="CSA Sovereign Right">%ELEMENT%</subforce>
-			<subforce chassis="Black Lion Battlecruiser"
+			<subforce chassis="Black Lion II Battlecruiser"
 				fluffName="CSA Admiral William S. Preston"
 				ifDateBetween=",3072">%ELEMENT%</subforce>
 			<subforce chassis="Liberator Cruiser" ifDateBetween="3059,3068"
@@ -146,7 +146,7 @@
 				chassis="Nightlord Battleship">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Exodus Ranger" 
 				ifDateBetween="2950,3075"
-				chassis="York Destroyer Carrier">%ELEMENT%</subforce>
+				chassis="York Destroyer-Carrier">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Hagar"
 				chassis="Lola III Destroyer">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Vritra" ifDateBetween=",3067"
@@ -156,27 +156,27 @@
 			<subforce fluffName="CSA Divine Conquest" ifDateBetween=",3075"
 				chassis="Sovetskii Soyuz Heavy Cruiser">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Star Fire" ifDateBetween="2950,3060"
-				chassis="York Destroyer Carrier">%ELEMENT%</subforce>
+				chassis="York Destroyer-Carrier">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Eagle" ifDateBetween=",3072"
-				chassis="Essex Destroyer">%ELEMENT%</subforce>
+				chassis="Essex II Destroyer">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Vicious Fang" ifDateBetween="2962,"
-				chassis="Fredasa Corvette Raider">%ELEMENT%</subforce>
+				chassis="Fredasa (Corvette-Raider)">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Black Adder" ifDateBetween="2962,3072"
 				chassis="Carrack Transport">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Exodus Sentinel" ifDateBetween="2950,"
-				chassis="York Destroyer Carrier">%ELEMENT%</subforce>
+				chassis="York Destroyer-Carrier">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Warlock"
 				chassis="Lola III Destroyer">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Yodan" ifDateBetween=",3072"
 				chassis="Lola III Destroyer">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Tehuantepec" ifDateBetween=",3072"
-				chassis="Essex Destroyer">%ELEMENT%</subforce>
+				chassis="Essex II Destroyer">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Arcadian Asp" ifDateBetween="2962,"
-				chassis="Fredasa Corvette Raider">%ELEMENT%</subforce>
+				chassis="Fredasa (Corvette-Raider)">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Exodus Crusader" ifDateBetween="2950,"
-				chassis="York Destroyer Carrier">%ELEMENT%</subforce>
+				chassis="York Destroyer-Carrier">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Exodus Avenger" ifDateBetween="2950,"
-				chassis="York Destroyer Carrier">%ELEMENT%</subforce>
+				chassis="York Destroyer-Carrier">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Pegasus" ifDateBetween=",3088"
 				chassis="Vincent Corvette">%ELEMENT%</subforce>
 			<subforce fluffName="CSA Cho Polu" ifDateBetween=",3068"
@@ -262,11 +262,11 @@
 			</subforceOption>
 			
 			<subforceOption>
-				<option unitType="Aero" weightClass="H"
+				<option unitType="AeroSpaceFighter" weightClass="H"
 					weight="3">%BINARY%</option>
-				<option unitType="Aero" weightClass="M"
+				<option unitType="AeroSpaceFighter" weightClass="M"
 					weight="2">%BINARY%</option>
-				<option unitType="Aero" weightClass="L">%BINARY%</option>
+				<option unitType="AeroSpaceFighter" weightClass="L">%BINARY%</option>
 			</subforceOption>		
 		</subforces>
 	</force>
@@ -336,9 +336,9 @@
 					unitType="Mek">%TRINARY%</option>
 			</subforceOption>
 			<subforceOption>
-				<option unitType="Aero" weightClass="H">%TRINARY%+</option>
-				<option unitType="Aero" weightClass="M">%TRINARY%+</option>
-				<option unitType="Aero" weightClass="L">%TRINARY%+</option>
+				<option unitType="AeroSpaceFighter" weightClass="H">%TRINARY%+</option>
+				<option unitType="AeroSpaceFighter" weightClass="M">%TRINARY%+</option>
+				<option unitType="AeroSpaceFighter" weightClass="L">%TRINARY%+</option>
 			</subforceOption>		
 		</subforces>
 		
@@ -456,21 +456,21 @@
 				<option ifFlags="guards|sentinels" weight="8" />
 			</subforceOption>
 			<subforceOption ifFlags="!cavalry">
-				<option unitType="Aero" weightClass="H"
+				<option unitType="AeroSpaceFighter" weightClass="H"
 					weight="3">%TRINARY%</option>
-				<option unitType="Aero" weightClass="M"
+				<option unitType="AeroSpaceFighter" weightClass="M"
 					weight="2">%TRINARY%</option>
-				<option unitType="Aero" weightClass="L">%TRINARY%</option>
-				<option unitType="Aero" weightClass="H"
+				<option unitType="AeroSpaceFighter" weightClass="L">%TRINARY%</option>
+				<option unitType="AeroSpaceFighter" weightClass="H"
 					weight="3">%BINARY%</option>
-				<option unitType="Aero" weightClass="M"
+				<option unitType="AeroSpaceFighter" weightClass="M"
 					weight="2">%BINARY%</option>
-				<option unitType="Aero" weightClass="L">%BINARY%</option>
-				<option unitType="Aero" weightClass="H"
+				<option unitType="AeroSpaceFighter" weightClass="L">%BINARY%</option>
+				<option unitType="AeroSpaceFighter" weightClass="H"
 					weight="3">%STAR%</option>
-				<option unitType="Aero" weightClass="M"
+				<option unitType="AeroSpaceFighter" weightClass="M"
 					weight="2">%STAR%</option>
-				<option unitType="Aero" weightClass="L">%STAR%</option>
+				<option unitType="AeroSpaceFighter" weightClass="L">%STAR%</option>
 			</subforceOption>		
 		</subforces>
 
@@ -572,16 +572,16 @@
 				<option unitType="Infantry">%BINARY%</option>
 			</subforceOption>
 			<subforceOption>
-				<option unitType="Aero" weightClass="H"
+				<option unitType="AeroSpaceFighter" weightClass="H"
 					weight="3">%BINARY%</option>
-				<option unitType="Aero" weightClass="M"
+				<option unitType="AeroSpaceFighter" weightClass="M"
 					weight="2">%BINARY%</option>
-				<option unitType="Aero" weightClass="L">%BINARY%</option>
-				<option unitType="Aero" weightClass="H" ifRating="SL"
+				<option unitType="AeroSpaceFighter" weightClass="L">%BINARY%</option>
+				<option unitType="AeroSpaceFighter" weightClass="H" ifRating="SL"
 					weight="3">%STAR%</option>
-				<option unitType="Aero" weightClass="M" ifRating="SL"
+				<option unitType="AeroSpaceFighter" weightClass="M" ifRating="SL"
 					weight="2">%STAR%</option>
-				<option unitType="Aero" weightClass="L"
+				<option unitType="AeroSpaceFighter" weightClass="L"
 					ifRating="SL">%STAR%</option>
 			</subforceOption>		
 		</subforces>

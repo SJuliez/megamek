@@ -14,20 +14,29 @@ package megamek.common;
 
 import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.common.cost.ConvFighterCostCalculator;
+import megamek.common.options.GameOptions;
 import megamek.common.options.OptionsConstants;
-
-import java.util.Map;
 
 /**
  * @author Jay Lawson
  * @since Jun 12, 2008
  */
-public class ConvFighter extends Aero {
+public class ConvFighter extends AeroSpaceFighter {
     private static final long serialVersionUID = 6297668284292929409L;
 
     @Override
     public int getUnitType() {
         return UnitType.CONV_FIGHTER;
+    }
+
+    @Override
+    public boolean isConventionalFighter() {
+        return true;
+    }
+
+    @Override
+    public boolean isAerospaceFighter() {
+        return false;
     }
 
     @Override
@@ -44,7 +53,7 @@ public class ConvFighter extends Aero {
     public int getHeatCapacity() {
         return DOES_NOT_TRACK_HEAT;
     }
-    
+
     @Override
     public boolean tracksHeat() {
         return false;
@@ -57,7 +66,7 @@ public class ConvFighter extends Aero {
 
     @Override
     public int getFuelUsed(int thrust) {
-        if (!hasEngine()) {
+        if (!hasEngine() || !requiresFuel()) {
             return 0;
         }
         int overThrust = Math.max(thrust - getWalkMP(), 0);
@@ -65,7 +74,7 @@ public class ConvFighter extends Aero {
         int used = safeThrust + (2 * overThrust);
         if (!getEngine().isFusion()) {
             used = (int) Math.floor(safeThrust * 0.5) + overThrust;
-        } else if (game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_CONV_FUSION_BONUS)) {
+        } else if (gameOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_CONV_FUSION_BONUS)) {
             used = (int) Math.floor(safeThrust * 0.5) + (2 * overThrust);
         }
         return used;
@@ -75,12 +84,12 @@ public class ConvFighter extends Aero {
                 .setAdvancement(DATE_NONE, 2470, 2490).setProductionFactions(F_TH)
                 .setTechRating(RATING_D).setAvailability(RATING_C, RATING_D, RATING_C, RATING_B)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
-    
+
     @Override
     public TechAdvancement getConstructionTechAdvancement() {
         return TA_CONV_FIGHTER;
     }
-    
+
     @Override
     public double getBVTypeModifier() {
         return 1.1;
@@ -117,15 +126,14 @@ public class ConvFighter extends Aero {
         }
         return (getEngine().getRating() / (int) weight);
     }
-    
-    @Override
-    public void addBattleForceSpecialAbilities(Map<BattleForceSPA,Integer> specialAbilities) {
-        super.addBattleForceSpecialAbilities(specialAbilities);
-        specialAbilities.put(BattleForceSPA.ATMO, null);
-    }
-    
+
     @Override
     public long getEntityType() {
         return Entity.ETYPE_AERO | Entity.ETYPE_CONV_FIGHTER;
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(2.943 + 0.795*Math.log(getWeight())));
     }
 }

@@ -4,6 +4,7 @@ import megamek.client.ui.Messages;
 import megamek.client.ui.swing.widget.IndexedRadioButton;
 import megamek.common.*;
 import megamek.common.enums.AimingMode;
+import megamek.common.equipment.WeaponMounted;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -92,7 +93,9 @@ class AimedShotHandler implements ActionListener, ItemListener {
                     this.firingDisplay.clientgui.frame,
                     Messages.getString("FiringDisplay.AimedShotDialog.title"),
                     Messages.getString("FiringDisplay.AimedShotDialog.message"),
-                    options, enabled, aimingAt, this, this);
+                    options, enabled, aimingAt,
+                    this.firingDisplay.clientgui, this.firingDisplay.target,
+                    this, this);
 
             asd.setVisible(true);
             this.firingDisplay.updateTarget();
@@ -305,7 +308,7 @@ class AimedShotHandler implements ActionListener, ItemListener {
             if (this.firingDisplay.target instanceof GunEmplacement) {
                 return GunEmplacement.HIT_LOCATION_NAMES[aimingAt];
             } else if (this.firingDisplay.target instanceof Entity) {
-                return ((Entity) this.firingDisplay.target).getLocationAbbrs()[aimingAt];
+                return ((Entity) this.firingDisplay.target).getLocationName(aimingAt);
             }
         }
         return null;
@@ -357,7 +360,7 @@ class AimedShotHandler implements ActionListener, ItemListener {
      * @param weapon
      * @return
      */
-    public boolean allowAimedShotWith(Mounted weapon) {
+    public boolean allowAimedShotWith(WeaponMounted weapon) {
         return Compute.allowAimedShotWith(weapon, aimingMode);
     }
 

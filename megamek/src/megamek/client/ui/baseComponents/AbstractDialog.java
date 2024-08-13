@@ -21,7 +21,6 @@ package megamek.client.ui.baseComponents;
 import megamek.MegaMek;
 import megamek.client.ui.preferences.JWindowPreference;
 import megamek.client.ui.preferences.PreferencesNode;
-import megamek.common.util.EncodeControl;
 import org.apache.logging.log4j.LogManager;
 
 import javax.swing.*;
@@ -63,13 +62,20 @@ public abstract class AbstractDialog extends JDialog implements WindowListener {
      * modal dialogs.
      */
     protected AbstractDialog(final JFrame frame, final boolean modal, final String name, final String title) {
-        this(frame, modal, ResourceBundle.getBundle("megamek.client.messages", 
-                MegaMek.getMMOptions().getLocale(), new EncodeControl()), name, title);
+        this(frame, modal, ResourceBundle.getBundle("megamek.client.messages",
+                MegaMek.getMMOptions().getLocale()), name, title);
     }
 
     /**
      * This creates an AbstractDialog using the specified resource bundle. This is not recommended
      * by default.
+     *
+     * @param frame the dialog's parent frame
+     * @param modal if this dialog is modal
+     * @param resources the resource bundle for this dialog
+     * @param name the dialog's name
+     * @param title the dialog's title resource key. This is required for accessibility reasons, and
+     *              the method will error out if it isn't valid.
      */
     protected AbstractDialog(final JFrame frame, final boolean modal, final ResourceBundle resources,
                              final String name, final String title) {
@@ -79,6 +85,29 @@ public abstract class AbstractDialog extends JDialog implements WindowListener {
         setFrame(frame);
         this.resources = resources;
     }
+
+    /**
+     * This allows Swing to create the dialog with another dialog as the parent. Which dialog swing renders on top
+     * is somewhat undefined, depending on the window manager. This can cause problems in the case of modal dialogs
+     * that show up behind other dialogs and you cannot get to them.
+     *
+     * @param dialog Owning dialog, for dialogs on dialogs
+     * @param frame Owning frame
+     * @param modal if this dialog is modal
+     * @param resources the resource bundle for this dialog
+     * @param name the dialog's name
+     * @param title the dialog's title resource key. This is required for accessibility reasons, and
+     *              the method will error out if it isn't valid.
+     */
+    protected AbstractDialog(final JDialog dialog, JFrame frame, final boolean modal, final ResourceBundle resources,
+                             final String name, final String title) {
+        super(dialog, modal);
+        setTitle(resources.getString(title));
+        setName(name);
+        setFrame(frame);
+        this.resources = resources;
+    }
+
     //endregion Constructors
 
     //region Getters/Setters
@@ -143,6 +172,31 @@ public abstract class AbstractDialog extends JDialog implements WindowListener {
         addWindowListener(this);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setPreferences();
+    }
+
+    /**
+     * Re-sizes the dialog to a maximum width and height of 80% of the screen size when necessary.
+     * If the dialog goes off-screen, center it
+     */
+    protected void fit() {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int maxWidth = (int) (screenSize.width * 0.8);
+        int maxHeight = (int) (screenSize.height * 0.8);
+
+        int width = Math.min(maxWidth, getWidth());
+        int height = Math.min(maxHeight, getHeight());
+
+        setSize(new Dimension(width, height));
+        // get again in case changed by setSize
+        width = getSize().width;
+        height = getSize().height;
+
+        // center if dialog out of screen bounds
+        Point p = getLocation();
+        if (p.x < 0 || (p.x + width) > screenSize.width
+                || p.y < 0 || (p.y + height) > screenSize.height) {
+            setLocation((screenSize.width - width) / 2, (screenSize.height - height) / 2);
+        }
     }
 
     /**

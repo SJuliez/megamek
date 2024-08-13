@@ -1,27 +1,24 @@
 /**
  * MegaMek - Copyright (C) 2005 Ben Mazur (bmazur@sev.org)
- * 
- *  This program is free software; you can redistribute it and/or modify it 
- *  under the terms of the GNU General Public License as published by the Free 
- *  Software Foundation; either version 2 of the License, or (at your option) 
+ *
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by the Free
+ *  Software Foundation; either version 2 of the License, or (at your option)
  *  any later version.
- * 
- *  This program is distributed in the hope that it will be useful, but 
- *  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
- *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+ *
+ *  This program is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  *  for more details.
  */
 package megamek.common.weapons;
 
-import megamek.common.AmmoType;
-import megamek.common.Game;
-import megamek.common.Mounted;
-import megamek.common.RangeType;
-import megamek.common.ToHitData;
-import megamek.common.WeaponType;
+import megamek.common.*;
+import megamek.common.AmmoType.Munitions;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.WeaponMounted;
 import megamek.server.GameManager;
-import megamek.server.Server;
 
 /**
  * @author Jay Lawson
@@ -51,7 +48,7 @@ public class AmmoBayWeaponHandler extends BayWeaponHandler {
      * function because I may run out of ammo while going through the loop Sine
      * this function is called in the WeaponHandler constructor it should be ok
      * to use the ammo here
-     * 
+     *
      * @return an <code>int</code> representing the attack value at that range.
      */
     @Override
@@ -60,25 +57,23 @@ public class AmmoBayWeaponHandler extends BayWeaponHandler {
         double av = 0;
         int range = RangeType.rangeBracket(nRange, wtype.getATRanges(), true, false);
 
-        for (int wId : weapon.getBayWeapons()) {
-            Mounted bayW = ae.getEquipment(wId);
+        for (WeaponMounted bayW : weapon.getBayWeapons()) {
             // check the currently loaded ammo
-            Mounted bayWAmmo = bayW.getLinked();
+            AmmoMounted bayWAmmo = bayW.getLinkedAmmo();
             if (null == bayWAmmo || bayWAmmo.getUsableShotsLeft() < 1) {
                 // try loading something else
                 ae.loadWeaponWithSameAmmo(bayW);
-                bayWAmmo = bayW.getLinked();
+                bayWAmmo = bayW.getLinkedAmmo();
             }
             if (!bayW.isBreached()
                     && !bayW.isDestroyed()
                     && !bayW.isJammed()
                     && bayWAmmo != null
-                    && ae.getTotalAmmoOfType(bayWAmmo.getType()) >= bayW
-                            .getCurrentShots()) {
-                WeaponType bayWType = ((WeaponType) bayW.getType());
+                    && ae.getTotalAmmoOfType(bayWAmmo.getType()) >= bayW.getCurrentShots()) {
+                WeaponType bayWType = bayW.getType();
                 // need to cycle through weapons and add av
                 double current_av = 0;
-                AmmoType atype = (AmmoType) bayWAmmo.getType();
+                AmmoType atype = bayWAmmo.getType();
 
                 if (range == WeaponType.RANGE_SHORT) {
                     current_av = bayWType.getShortAV();
@@ -90,7 +85,7 @@ public class AmmoBayWeaponHandler extends BayWeaponHandler {
                     current_av = bayWType.getExtAV();
                 }
                 current_av = updateAVforAmmo(current_av, atype, bayWType,
-                        range, wId);
+                        range, bayW.getEquipmentNum());
                 av = av + current_av;
                 // now use the ammo that we had loaded
                 if (current_av > 0) {
@@ -100,7 +95,7 @@ public class AmmoBayWeaponHandler extends BayWeaponHandler {
                                 || bayWAmmo.getUsableShotsLeft() < 1) {
                             // try loading something else
                             ae.loadWeaponWithSameAmmo(bayW);
-                            bayWAmmo = bayW.getLinked();
+                            bayWAmmo = bayW.getLinkedAmmo();
                         }
                         if (null != bayWAmmo) {
                             bayWAmmo.setShotsLeft(bayWAmmo.getBaseShotsLeft() - 1);
@@ -118,13 +113,13 @@ public class AmmoBayWeaponHandler extends BayWeaponHandler {
     }
 
     /*
-     * check for special munitions and their effect on av 
+     * check for special munitions and their effect on av
      */
     protected double updateAVforAmmo(double current_av, AmmoType atype,
             WeaponType bayWType, int range, int wId) {
 
-        if (atype.getMunitionType() == AmmoType.M_CLUSTER) {
-            current_av = Math.floor(0.6 * current_av);            
+        if (atype.getMunitionType().contains(Munitions.M_CLUSTER)) {
+            current_av = Math.floor(0.6 * current_av);
         }
         return current_av;
     }

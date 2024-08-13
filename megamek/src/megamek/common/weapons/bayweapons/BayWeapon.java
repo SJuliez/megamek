@@ -13,19 +13,14 @@
  */
 package megamek.common.weapons.bayweapons;
 
-import megamek.common.Entity;
-import megamek.common.Game;
-import megamek.common.Mounted;
-import megamek.common.SimpleTechLevel;
-import megamek.common.TechAdvancement;
-import megamek.common.ToHitData;
-import megamek.common.WeaponType;
+import megamek.common.*;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.weapons.AttackHandler;
 import megamek.common.weapons.BayWeaponHandler;
 import megamek.common.weapons.Weapon;
 import megamek.server.GameManager;
-import megamek.server.Server;
 
 /**
  * This is my attempt to get weapon bays treated as normal weapons rather than the current hack in
@@ -56,7 +51,7 @@ public abstract class BayWeapon extends Weapon {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * megamek.common.weapons.Weapon#getCorrectHandler(megamek.common.ToHitData,
      * megamek.common.actions.WeaponAttackAction, megamek.common.Game)
@@ -66,17 +61,23 @@ public abstract class BayWeapon extends Weapon {
             WeaponAttackAction waa, Game game, GameManager manager) {
         return new BayWeaponHandler(toHit, waa, game, manager);
     }
-    
+
     @Override
-    public int getMaxRange(Mounted weapon) {
+    public int getMaxRange(WeaponMounted weapon) {
+        return getMaxRange(weapon, null);
+    }
+
+    @Override
+    public int getMaxRange(WeaponMounted weapon, AmmoMounted ammo) {
         int mrange = RANGE_SHORT;
         Entity ae = weapon.getEntity();
+        AmmoMounted mAmmo;
         if (null != ae) {
-            for (int wId : weapon.getBayWeapons()) {
-                Mounted bayW = ae.getEquipment(wId);
-                WeaponType bayWType = (WeaponType) bayW.getType();
-                if (bayWType.getMaxRange(bayW) > mrange) {
-                    mrange = bayWType.getMaxRange(bayW);
+            for (WeaponMounted bayW : weapon.getBayWeapons()) {
+                mAmmo = (ammo != null) ? ammo : bayW.getLinkedAmmo();
+                WeaponType bayWType = bayW.getType();
+                if (bayWType.getMaxRange(bayW, mAmmo) > mrange) {
+                    mrange = bayWType.getMaxRange(bayW, mAmmo);
                 }
             }
         }

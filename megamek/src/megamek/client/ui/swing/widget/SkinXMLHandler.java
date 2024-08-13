@@ -49,7 +49,7 @@ public class SkinXMLHandler {
         StringBuffer sb = new StringBuffer();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         sb.append("<!--\n");
-        sb.append("  This is the default skin for Megamek\n");
+        sb.append("  This is the a skin for Megamek\n");
         sb.append("\n");
         sb.append("  New skins can be created by specifying UI_Element tags\n");
         sb.append("\n");
@@ -70,7 +70,7 @@ public class SkinXMLHandler {
     /**
      * The file name for the default Skin XML file, found in the config dir.
      */
-    public static String defaultSkinXML = "defaultSkin.xml";
+    public static String defaultSkinXML = "/defaultSkin.xml";
 
     // General XML Tags
     public static String UI_ELEMENT = "UI_Element";
@@ -141,7 +141,7 @@ public class SkinXMLHandler {
      * @return
      */
     public static boolean validSkinSpecFile(String fileName) {
-        File file = new MegaMekFile(Configuration.skinsDir(), fileName).getFile();
+        File file = new MegaMekFile(fileName).getFile();
         if (!file.exists() || !file.isFile()) {
             return false;
         }
@@ -181,10 +181,14 @@ public class SkinXMLHandler {
             return false;
         }
 
-        File file = new MegaMekFile(Configuration.skinsDir(), filename).getFile();
+        File file = new MegaMekFile(filename).getFile();
         if (!file.exists() || !file.isFile()) {
-            LogManager.getLogger().error("Cannot initialize skin based on a non-existent file with filename " + filename);
-            return false;
+            // for backwards compatibility, also check the skins filename as if it is only a relative path
+            file = new MegaMekFile(Configuration.skinsDir(), filename).getFile();
+            if (!file.exists() || !file.isFile()) {
+                LogManager.getLogger().error("Cannot initialize skin based on a non-existent file with filename " + filename);
+                return false;
+            }
         }
 
         // Build the XML document.
@@ -207,6 +211,9 @@ public class SkinXMLHandler {
                 }
 
                 SkinSpecification skinSpec;
+                // Parse no border
+                Element plainEle = (Element) borderList.getElementsByTagName(PLAIN).item(0);
+
                 // Parse no border
                 Element noBorderEle = (Element) borderList.getElementsByTagName(NO_BORDER).item(0);
                 boolean noBorder = false;
@@ -231,6 +238,8 @@ public class SkinXMLHandler {
                     skinSpec = new SkinSpecification(name);
                     skinSpec.noBorder = noBorder;
                 }
+
+                skinSpec.plain = plainEle != null;
 
                 // Get the background specs
                 if (plainTag == null) {
@@ -508,7 +517,7 @@ public class SkinXMLHandler {
      * @param filename
      */
     public static void writeSkinToFile(String filename) {
-        try (FileOutputStream fos = new FileOutputStream(new MegaMekFile(Configuration.skinsDir(), filename).getFile());
+        try (FileOutputStream fos = new FileOutputStream(new MegaMekFile(filename).getFile());
              OutputStreamWriter osw = new OutputStreamWriter(fos);
              Writer output = new BufferedWriter(osw)) {
             output.write(SKIN_HEADER);
@@ -662,11 +671,19 @@ public class SkinXMLHandler {
 
         SkinSpecification skinSpec = getSkin(component);
 
+        if (skinSpec.plain) {
+            out.write("\t\t<" + PLAIN + "/>\n");// Close UI_ELEMENT tag
+            out.write("\t</" + UI_ELEMENT + ">\n\n");
+            return;
+        }
+
         // Write Border
         out.write("\t\t<" + NO_BORDER + ">");
         out.write(((Boolean) skinSpec.noBorder).toString());
         out.write("</" + NO_BORDER + ">\n");
-        writeBorder(skinSpec, out);
+        if (!skinSpec.noBorder) {
+            writeBorder(skinSpec, out);
+        }
 
         // Write background
         for (String bgImg : skinSpec.backgrounds) {
@@ -706,7 +723,7 @@ public class SkinXMLHandler {
         // Write font name
         if (skinSpec.fontName != null) {
             out.write("\t\t<" + FONT_SIZE + ">");
-            out.write(skinSpec.fontSize);
+            out.write(skinSpec.fontSize + "");
             out.write("</" + FONT_SIZE + ">\n");
         }
 

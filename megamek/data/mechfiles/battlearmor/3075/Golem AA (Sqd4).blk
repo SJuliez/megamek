@@ -16,8 +16,8 @@ BattleArmor
 Golem Assault Armor
 </Name>
 
-<Model>
-(Standard)(Sqd4)
+<model>
+(Sqd4)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ Golem Assault Armor
 <type>
 Clan Level 2
 </type>
+
+<role>
+Juggernaut
+</role>
 
 <motion_type>
 Leg
@@ -63,7 +67,7 @@ Clan BA Fire Resistant:RA
 </Point Equipment>
 
 <source>
-TRO 3075 - Civil War
+TRO: 3075
 </source>
 
 <chassis>

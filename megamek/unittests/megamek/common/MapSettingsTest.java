@@ -70,6 +70,7 @@ public class MapSettingsTest {
         assertEquals(4, testMe.getMinForestSize());
         assertEquals(12, testMe.getMaxForestSize());
         assertEquals(30, testMe.getProbHeavy());
+        assertEquals(0, testMe.getProbUltra());
         assertEquals(2, testMe.getMinRoughSpots());
         assertEquals(10, testMe.getMaxRoughSpots());
         assertEquals(1, testMe.getMinRoughSize());
@@ -78,6 +79,10 @@ public class MapSettingsTest {
         assertEquals(10, testMe.getMaxSandSpots());
         assertEquals(1, testMe.getMinSandSize());
         assertEquals(2, testMe.getMaxSandSize());
+        assertEquals(0, testMe.getMinSnowSize());
+        assertEquals(0, testMe.getMaxSnowSize());
+        assertEquals(0, testMe.getMinSnowSpots());
+        assertEquals(0, testMe.getMaxSnowSpots());
         assertEquals(2, testMe.getMinPlantedFieldSpots());
         assertEquals(10, testMe.getMaxPlantedFieldSpots());
         assertEquals(1, testMe.getMinPlantedFieldSize());

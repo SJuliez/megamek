@@ -12,11 +12,7 @@
  */
 package megamek.common;
 
-import java.text.NumberFormat;
-import java.util.Map;
-
 import megamek.client.ui.swing.calculationReport.CalculationReport;
-import megamek.common.cost.MekCostCalculator;
 import megamek.common.cost.WarShipCostCalculator;
 import megamek.common.options.OptionsConstants;
 
@@ -31,8 +27,8 @@ public class Warship extends Jumpship {
     public static final int LOC_LBS = 7;
     public static final int LOC_RBS = 8;
 
-    private static String[] LOCATION_ABBRS = { "NOS", "FLS", "FRS", "AFT", "ALS", "ARS", "HULL", "LBS", "RBS" };
-    private static String[] LOCATION_NAMES = { "Nose", "Left Front Side", "Right Front Side",
+    private static final String[] LOCATION_ABBRS = { "NOS", "FLS", "FRS", "AFT", "ALS", "ARS", "HULL", "LBS", "RBS" };
+    private static final String[] LOCATION_NAMES = { "Nose", "Left Front Side", "Right Front Side",
             "Aft", "Aft Left Side", "Aft Right Side", "Hull", "Left Broadsides", "Right Broadsides" };
 
     public Warship() {
@@ -48,7 +44,7 @@ public class Warship extends Jumpship {
 
     // ASEW Missile Effects, per location
     // Values correspond to Locations, as seen above: NOS, FLS, FRS, AFT, ALS, ARS, LBS, RBS
-    private int[] asewAffectedTurns = { 0, 0, 0, 0, 0, 0, 0, 0 };
+    private final int[] asewAffectedTurns = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
     /*
      * Accessor for the asewAffectedTurns array, which may be different for inheriting classes.
@@ -112,7 +108,7 @@ public class Warship extends Jumpship {
     public int getWeaponArc(int wn) {
         final Mounted mounted = getEquipment(wn);
         
-        int arc = Compute.ARC_NOSE;
+        int arc;
         switch (mounted.getLocation()) {
             case LOC_NOSE:
                 if (mounted.isInWaypointLaunchMode()) {
@@ -222,160 +218,6 @@ public class Warship extends Jumpship {
         return range;
     }
 
-    /**
-     * find the adjacent firing arc on this vessel clockwise
-     */
-    @Override
-    public int getAdjacentArcCW(int arc) {
-        switch (arc) {
-            case Compute.ARC_NOSE:
-                return Compute.ARC_RIGHTSIDE_SPHERE;
-            case Compute.ARC_LEFTSIDE_SPHERE:
-                return Compute.ARC_NOSE;
-            case Compute.ARC_RIGHTSIDE_SPHERE:
-                return Compute.ARC_RIGHT_BROADSIDE;
-            case Compute.ARC_LEFTSIDEA_SPHERE:
-                return Compute.ARC_LEFT_BROADSIDE;
-            case Compute.ARC_RIGHTSIDEA_SPHERE:
-                return Compute.ARC_AFT;
-            case Compute.ARC_LEFT_BROADSIDE:
-                return Compute.ARC_LEFTSIDE_SPHERE;
-            case Compute.ARC_RIGHT_BROADSIDE:
-                return Compute.ARC_RIGHTSIDEA_SPHERE;
-            case Compute.ARC_AFT:
-                return Compute.ARC_LEFTSIDEA_SPHERE;
-            default:
-                return Integer.MIN_VALUE;
-        }
-    }
-
-    /**
-     * find the adjacent firing arc on this vessel counter-clockwise
-     */
-    @Override
-    public int getAdjacentArcCCW(int arc) {
-        switch (arc) {
-            case Compute.ARC_NOSE:
-                return Compute.ARC_LEFTSIDE_SPHERE;
-            case Compute.ARC_RIGHTSIDE_SPHERE:
-                return Compute.ARC_NOSE;
-            case Compute.ARC_LEFTSIDE_SPHERE:
-                return Compute.ARC_LEFT_BROADSIDE;
-            case Compute.ARC_LEFTSIDEA_SPHERE:
-                return Compute.ARC_AFT;
-            case Compute.ARC_RIGHTSIDEA_SPHERE:
-                return Compute.ARC_RIGHT_BROADSIDE;
-            case Compute.ARC_LEFT_BROADSIDE:
-                return Compute.ARC_LEFTSIDEA_SPHERE;
-            case Compute.ARC_RIGHT_BROADSIDE:
-                return Compute.ARC_RIGHTSIDE_SPHERE;
-            case Compute.ARC_AFT:
-                return Compute.ARC_RIGHTSIDEA_SPHERE;
-            default:
-                return Integer.MIN_VALUE;
-        }
-    }
-
-    @Override
-    public double getBVTypeModifier() {
-        return 0.8;
-    }
-
-    @Override
-    public void setAlphaStrikeMovement(Map<String,Integer> moves) {
-        moves.put("", getWalkMP());
-    }
-
-    @Override
-    public int getBattleForceSize() {
-        // The tables are on page 356 of StartOps
-        if (getWeight() < 500000) {
-            return 1;
-        }
-        if (getWeight() < 800000) {
-            return 2;
-        }
-        if (getWeight() < 1200000) {
-            return 3;
-        }
-        return 4;
-    }
-
-    @Override
-    public int getBattleForceStructurePoints() {
-        return (int) Math.ceil(this.getSI() * 0.66);
-    }
-
-    @Override
-    public int getNumBattleForceWeaponsLocations() {
-        return 8;
-    }
-
-    @Override
-    public int getNumAlphaStrikeWeaponsLocations() {
-        return 4;
-    }
-
-    @Override
-    public double getBattleForceLocationMultiplier(int index, int location, boolean rearMounted) {
-        if (index == location) {
-            return 1.0;
-        }
-        return 0;
-    }
-    
-    @Override
-    public double getAlphaStrikeLocationMultiplier(int index, int location, boolean rearMounted) {
-        switch (location) {
-            case LOC_NOSE:
-            case LOC_FLS:
-            case LOC_FRS:
-                if (index == 0) {
-                    return 1.0;
-                }
-                break;
-            case LOC_LBS:
-                if (index == 1) {
-                    return 1.0;
-                }
-                break;
-            case LOC_RBS:
-                if (index == 2) {
-                    return 1.0;
-                }
-                break;
-            case LOC_AFT:
-            case LOC_ALS:
-            case LOC_ARS:
-                if (index == 3) {
-                    return 1.0;
-                }
-                break;
-        }
-        return 0;
-    }
-
-    @Override
-    public String getBattleForceLocationName(int index) {
-        return getLocationAbbrs()[index];
-    }
-    
-    @Override
-    public String getAlphaStrikeLocationName(int index) {
-        switch (index) {
-            case 0:
-                return getLocationAbbrs()[LOC_NOSE];
-            case 1:
-                return getLocationAbbrs()[LOC_LBS];
-            case 2:
-                return getLocationAbbrs()[LOC_RBS];
-            case 3:
-                return getLocationAbbrs()[LOC_AFT];
-            default:
-                return "";
-        }
-    }
-    
     @Override
     public long getEntityType() {
         return Entity.ETYPE_AERO | Entity.ETYPE_JUMPSHIP | Entity.ETYPE_WARSHIP;
@@ -435,12 +277,23 @@ public class Warship extends Jumpship {
         setSecondaryFacing(getFacing());
     }
     
-    /**
-     * Utility function that handles situations where a facing change
-     * has some kind of permanent effect on the entity.
-     */
     @Override
     public void postProcessFacingChange() {
         mpUsed += 2;
+    }
+
+    @Override
+    public boolean isJumpShip() {
+        return false;
+    }
+
+    @Override
+    public boolean isWarShip() {
+        return true;
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(-1.3484 + 0.9382*Math.log(getWeight())));
     }
 }

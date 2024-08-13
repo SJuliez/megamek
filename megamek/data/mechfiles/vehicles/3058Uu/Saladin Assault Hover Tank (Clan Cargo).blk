@@ -1,13 +1,4 @@
-#building block data file
-<BlockVersion>
-1
-</BlockVersion>
-
-# Write the version number just in case...
-<Version>
-MAM0
-</Version>
-
+#Saved from version 0.49.19.1 on 2024-05-26
 <UnitType>
 Tank
 </UnitType>
@@ -28,13 +19,25 @@ Saladin Assault Hover Tank
 3050
 </year>
 
+<originalBuildYear>
+3050
+</originalBuildYear>
+
 <type>
 Clan Level 2
 </type>
 
+<role>
+Scout
+</role>
+
 <motion_type>
 Hover
 </motion_type>
+
+<transporters>
+cargobay:17.0:1:1::-1:0
+</transporters>
 
 <cruiseMP>
 8
@@ -43,6 +46,10 @@ Hover
 <engine_type>
 1
 </engine_type>
+
+<clan_engine>
+false
+</clan_engine>
 
 <armor_type>
 1
@@ -60,23 +67,6 @@ Hover
 </armor>
 
 <Body Equipment>
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
-Cargo (1 ton)
 </Body Equipment>
 
 <Front Equipment>
@@ -92,9 +82,14 @@ Cargo (1 ton)
 </Rear Equipment>
 
 <source>
-Clan Invasion
+TRO: 3058
 </source>
 
 <tonnage>
 35.0
 </tonnage>
+
+<fuelType>
+PETROCHEMICALS
+</fuelType>
+

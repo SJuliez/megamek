@@ -21,7 +21,7 @@ Elemental Battle Armor
 </Model>
 
 <mul id:>
-8491
+8498
 </mul id:>
 
 <year>
@@ -35,6 +35,10 @@ Elemental Battle Armor
 <type>
 Clan Level 2
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Jump
@@ -84,7 +88,7 @@ BABattleClaw:LA
 </Trooper 5 Equipment>
 
 <source>
-TRO 3058U - Succession Wars
+TRO: 3058 Upgrade
 </source>
 
 <chassis>

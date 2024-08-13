@@ -20,17 +20,25 @@ IS Standard Battle Armor
 (Baka) [SL](Sqd4)
 </Model>
 
+<mul id:>
+8023
+</mul id:>
+
 <year>
-3150
+3086
 </year>
 
 <originalBuildYear>
-3150
+3086
 </originalBuildYear>
 
 <type>
 IS Level 2
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Leg
@@ -75,7 +83,7 @@ ISBASmallLaser:RA
 </Trooper 4 Equipment>
 
 <source>
-Dark Age
+TRO: Dark Age
 </source>
 
 <chassis>

@@ -36,6 +36,10 @@ C
 Clan Level 2
 </type>
 
+<role>
+Dogfighter
+</role>
+
 <motion_type>
 Aerodyne
 </motion_type>
@@ -116,7 +120,7 @@ Clan Gauss Ammo:OMNI
 </Fuselage Equipment>
 
 <source>
-TRO 3055u - Succession Wars
+TRO: 3055 Update
 </source>
 
 <tonnage>
@@ -128,7 +132,7 @@ Developed when Clan Jade Falcon warriors demanded their own super-heavy OmniFigh
 </overview>
 
 <deployment>
-A ranged combat variant, the Scytha C mounts a Gauss Rifle and ER PPC underslug on each wing, support by twin nose-mounted Medium Pulse Lasers. A single ER small laser defends the aft of the craft, while two tons of Gauss Rifle reloads allows the C variant to keep its heat in check at least in the early stages of an engagement.
+A ranged combat variant, the Scytha C mounts a Gauss Rifle and ER PPC underslung on each wing, support by twin nose-mounted Medium Pulse Lasers. A single ER small laser defends the aft of the craft, while two tons of Gauss Rifle reloads allows the C variant to keep its heat in check at least in the early stages of an engagement.
 </deployment>
 
 <manufacturer>

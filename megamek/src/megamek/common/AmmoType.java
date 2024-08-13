@@ -1,25 +1,32 @@
 /*
- * MegaMek -
- * Copyright (C) 2000-2005 Ben Mazur (bmazur@sev.org)
+ * MegaMek - Copyright (C) 2000-2005 Ben Mazur (bmazur@sev.org)
+ * Copyright (c) 2018-2024 - The MegaMek Team. All Rights Reserved.
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 of the License, or (at your option) any later
+ * version.
  *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * for more details.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  */
 package megamek.common;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Set;
+import java.util.Vector;
+
+import org.apache.commons.lang3.ArrayUtils;
+
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.OptionsConstants;
 
-import java.math.BigInteger;
-import java.util.*;
-
-@SuppressWarnings(value = "unchecked")
 public class AmmoType extends EquipmentType {
 
     // ammo types
@@ -64,10 +71,10 @@ public class AmmoType extends EquipmentType {
     public static final int T_EXLRM = 37;
     public static final int T_APGAUSS = 38;
     public static final int T_MAGSHOT = 39;
-    //Removed
-    //public static final int T_PXLRM = 40;
+    // Removed
+    // public static final int T_PXLRM = 40;
     // public static final int T_HSRM = 41;
-    //public static final int T_MRM_STREAK = 42;
+    // public static final int T_MRM_STREAK = 42;
     public static final int T_MPOD = 43;
     public static final int T_HAG = 44;
     public static final int T_MML = 45;
@@ -145,11 +152,28 @@ public class AmmoType extends EquipmentType {
      * Contains the {@code AmmoType}s that could share ammo (e.g. SRM 2 and SRM 6,
      * both fire SRM rounds).
      */
-    private static final Integer[] ALLOWED_BY_TYPE_ARRAY = { AmmoType.T_LRM, AmmoType.T_LRM_PRIMITIVE,
-            AmmoType.T_LRM_STREAK, AmmoType.T_LRM_TORPEDO, AmmoType.T_LRM_TORPEDO_COMBO, AmmoType.T_SRM,
-            AmmoType.T_SRM_ADVANCED, AmmoType.T_SRM_PRIMITIVE, AmmoType.T_SRM_STREAK, AmmoType.T_SRM_TORPEDO,
-            AmmoType.T_MRM, AmmoType.T_ROCKET_LAUNCHER, AmmoType.T_EXLRM, AmmoType.T_MML, AmmoType.T_NLRM, AmmoType.T_MG, AmmoType.T_MG_LIGHT, AmmoType.T_MG_HEAVY,
-            AmmoType.T_NAIL_RIVET_GUN, };
+    private static final Integer[] ALLOWED_BY_TYPE_ARRAY = {
+            AmmoType.T_LRM,
+            AmmoType.T_LRM_PRIMITIVE,
+            AmmoType.T_LRM_STREAK,
+            AmmoType.T_LRM_TORPEDO,
+            AmmoType.T_LRM_TORPEDO_COMBO,
+            AmmoType.T_SRM,
+            AmmoType.T_SRM_ADVANCED,
+            AmmoType.T_SRM_PRIMITIVE,
+            AmmoType.T_SRM_STREAK,
+            AmmoType.T_SRM_TORPEDO,
+            AmmoType.T_MRM,
+            AmmoType.T_ROCKET_LAUNCHER,
+            AmmoType.T_EXLRM,
+            AmmoType.T_MML,
+            AmmoType.T_NLRM,
+            AmmoType.T_MG,
+            AmmoType.T_MG_LIGHT,
+            AmmoType.T_MG_HEAVY,
+            AmmoType.T_NAIL_RIVET_GUN,
+            AmmoType.T_ATM,
+            AmmoType.T_IATM };
 
     /**
      * Contains the set of {@code AmmoType}s which could share ammo (e.g. SRM 2 and
@@ -164,7 +188,10 @@ public class AmmoType extends EquipmentType {
     public static final BigInteger F_BATTLEARMOR = BigInteger.valueOf(1).shiftLeft(1); // only used by BA squads
     public static final BigInteger F_PROTOMECH = BigInteger.valueOf(1).shiftLeft(2); // only used by ProtoMeks
     public static final BigInteger F_HOTLOAD = BigInteger.valueOf(1).shiftLeft(3); // Ammo can be hotloaded
-    public static final BigInteger F_ENCUMBERING = BigInteger.valueOf(1).shiftLeft(4); // BA can't jump or make antimech until dumped
+
+    // BA can't jump or make antimech until dumped
+    public static final BigInteger F_ENCUMBERING = BigInteger.valueOf(1).shiftLeft(4);
+
     public static final BigInteger F_MML_LRM = BigInteger.valueOf(1).shiftLeft(5); // LRM type
     public static final BigInteger F_AR10_WHITE_SHARK = BigInteger.valueOf(1).shiftLeft(6); // White shark type
     public static final BigInteger F_AR10_KILLER_WHALE = BigInteger.valueOf(1).shiftLeft(7); // Killer Whale type
@@ -175,7 +202,9 @@ public class AmmoType extends EquipmentType {
     public static final BigInteger F_TELE_MISSILE = BigInteger.valueOf(1).shiftLeft(10); // Tele-Missile
     public static final BigInteger F_CAP_MISSILE = BigInteger.valueOf(1).shiftLeft(11); // Other Capital-Missile
     public static final BigInteger F_SPACE_BOMB = BigInteger.valueOf(1).shiftLeft(12); // can be used to space bomb
-    public static final BigInteger F_GROUND_BOMB = BigInteger.valueOf(1).shiftLeft(13); // can be used to ground bomb
+
+    // can be used to ground bomb
+    public static final BigInteger F_GROUND_BOMB = BigInteger.valueOf(1).shiftLeft(13);
     public static final BigInteger F_MML_SRM = BigInteger.valueOf(1).shiftLeft(14); // SRM type
 
     // Numbers 14-15 out of order. See nuclear missiles, above
@@ -189,151 +218,166 @@ public class AmmoType extends EquipmentType {
     // Used by MHQ for loading ammo bins
     public static final BigInteger F_SCREEN = BigInteger.valueOf(1).shiftLeft(18);
 
-    // ammo munitions, used for custom loadouts
-    // N.B. we play bit-shifting games to allow "incendiary"
+    // Used for Internal Bomb Bay bombs; to differentiate them from
+    public static final BigInteger F_INTERNAL_BOMB = BigInteger.valueOf(1).shiftLeft(19);
+
+    // ammo munitions, used for custom load outs
+    // N.B. We use EnumSet<Munitions> allow "incendiary"
     // to be combined to other munition types.
+    public enum Munitions {
+        M_STANDARD,
 
-    // M_STANDARD can be used for anything.
-    public static final long M_STANDARD = 0;
+        // AC Munition Types
+        M_CLUSTER,
+        M_ARMOR_PIERCING,
+        M_FLECHETTE,
+        M_INCENDIARY_AC,
+        M_PRECISION,
+        M_TRACER,
+        M_FLAK,
+        M_CASELESS,
 
-    // AC Munition Types
-    public static final long M_CLUSTER = 1L << 0;
-    public static final long M_ARMOR_PIERCING = 1L << 1;
-    public static final long M_FLECHETTE = 1L << 2;
-    public static final long M_INCENDIARY_AC = 1L << 3;
-    public static final long M_PRECISION = 1L << 4;
-    public static final long M_TRACER = 1L << 5;
-    public static final long M_FLAK = 1L << 6;
-    public static final long M_CASELESS = 1L << 62;
+        // ATM Munition Types
+        M_EXTENDED_RANGE,
+        M_HIGH_EXPLOSIVE,
+        M_IATM_IMP,
+        M_IATM_IIW,
 
-    // ATM Munition Types
-    public static final long M_EXTENDED_RANGE = 1L << 7;
-    public static final long M_HIGH_EXPLOSIVE = 1L << 8;
-    public static final long M_IATM_IMP = 1L << 57;
-    public static final long M_IATM_IIW = 1L << 58;
+        // LRM & SRM Munition Types
+        M_FRAGMENTATION,
+        M_LISTEN_KILL,
+        M_ANTI_TSM,
+        M_NARC_CAPABLE,
+        M_ARTEMIS_CAPABLE,
+        M_DEAD_FIRE,
+        M_HEAT_SEEKING,
+        M_TANDEM_CHARGE,
+        M_ARTEMIS_V_CAPABLE,
+        M_SMOKE_WARHEAD,
+        // Mine Clearance munition type defined later, to maintain order
 
-    // LRM & SRM Munition Types
-    public static final long M_FRAGMENTATION = 1L << 9;
-    public static final long M_LISTEN_KILL = 1L << 10;
-    public static final long M_ANTI_TSM = 1L << 11;
-    public static final long M_NARC_CAPABLE = 1L << 12;
-    public static final long M_ARTEMIS_CAPABLE = 1L << 13;
-    public static final long M_DEAD_FIRE = 1L << 14;
-    public static final long M_HEAT_SEEKING = 1L << 15;
-    public static final long M_TANDEM_CHARGE = 1L << 16;
-    public static final long M_ARTEMIS_V_CAPABLE = 1L << 17;
-    public static final long M_SMOKE_WARHEAD = 1L << 18;
-    // Mine Clearance munition type defined later, to maintain order
+        // LRM Munition Types
+        // Incendiary is special, though...
+        // FIXME - I'm not implemented!!!
+        M_INCENDIARY_LRM,
+        M_FLARE,
+        M_SEMIGUIDED,
+        M_SWARM,
+        M_SWARM_I,
+        M_THUNDER,
+        M_THUNDER_AUGMENTED,
+        M_THUNDER_INFERNO,
+        M_THUNDER_VIBRABOMB,
+        M_THUNDER_ACTIVE,
+        M_FOLLOW_THE_LEADER,
+        M_MULTI_PURPOSE,
 
-    // LRM Munition Types
-    // Incendiary is special, though...
-    // FIXME - I'm not implemented!!!
-    public static final long M_INCENDIARY_LRM = 1L << 19;
-    public static final long M_FLARE = 1L << 20;
-    public static final long M_SEMIGUIDED = 1L << 21;
-    public static final long M_SWARM = 1L << 22;
-    public static final long M_SWARM_I = 1L << 23;
-    public static final long M_THUNDER = 1L << 24;
-    public static final long M_THUNDER_AUGMENTED = 1L << 25;
-    public static final long M_THUNDER_INFERNO = 1L << 26;
-    public static final long M_THUNDER_VIBRABOMB = 1L << 27;
-    public static final long M_THUNDER_ACTIVE = 1L << 28;
-    public static final long M_FOLLOW_THE_LEADER = 1L << 29;
-    public static final long M_MULTI_PURPOSE = 1L << 30;
-    // SRM Munition Types
-    // TODO: Inferno should be available to fluid guns and vehicle flamers
-    // TO page 362
-    public static final long M_INFERNO = 1L << 31;
-    public static final long M_AX_HEAD = 1L << 32;
-    // HARPOON
+        // SRM Munition Types
+        // TODO: Inferno should be available to fluid guns and vehicle flamers
+        // TO page 362
+        M_INFERNO,
+        M_AX_HEAD,
+        // HARPOON
 
-    // SRM, MRM and LRM
-    public static final long M_TORPEDO = 1L << 33;
+        // SRM, MRM and LRM
+        M_TORPEDO,
 
-    // iNarc Munition Types
-    public static final long M_NARC_EX = 1L << 34;
-    public static final long M_ECM = 1L << 35;
-    public static final long M_HAYWIRE = 1L << 36;
-    public static final long M_NEMESIS = 1L << 37;
+        // iNarc Munition Types
+        M_NARC_EX,
+        M_ECM,
+        M_HAYWIRE,
+        M_NEMESIS,
 
-    public static final long M_EXPLOSIVE = 1L << 38;
+        M_EXPLOSIVE,
 
-    // Arrow IV Munition Types
-    public static final long M_HOMING = 1L << 39;
-    public static final long M_FASCAM = 1L << 40;
-    public static final long M_INFERNO_IV = 1L << 41;
-    public static final long M_VIBRABOMB_IV = 1L << 42;
-//  public static final long M_ACTIVE_IV   
-    public static final long M_SMOKE = 1L << 43;
-    public static final long M_LASER_INHIB = 1L << 44;
+        // Arrow IV Munition Types
+        M_HOMING,
+        M_FASCAM,
+        M_INFERNO_IV,
+        M_VIBRABOMB_IV,
+        M_ADA,
 
-    // Nuclear Munitions
-    public static final long M_DAVY_CROCKETT_M = 1L << 45;
-//    public static final long M_SANTA_ANNA = 1L << 46;
+        // M_ACTIVE_IV
+        M_SMOKE,
+        M_LASER_INHIB,
 
-    // fluid gun
-    // TODO: implement all of these except coolant
-    // water should also be used for vehicle flamers
-    // TO page 361-363
-    public static final long M_WATER = 1L << 48;
-    public static final long M_PAINT_OBSCURANT = 1L << 49;
-    public static final long M_OIL_SLICK = 1L << 50;
-    public static final long M_ANTI_FLAME_FOAM = 1L << 51;
-    public static final long M_CORROSIVE = 1L << 52;
-    public static final long M_COOLANT = 1L << 53;
+        // Nuclear Munitions
+        M_DAVY_CROCKETT_M,
+        // M_SANTA_ANNA,
 
-    // vehicular grenade launcher
-    public static final long M_CHAFF = 1L << 54;
-    public static final long M_INCENDIARY = 1L << 55;
-    // Number 56 was M_SMOKEGRENADE, but that has now been merged with M_SMOKE
+        // fluid gun
+        // TODO: implement all of these except coolant
+        // water should also be used for vehicle flamers
+        // TO page 361-363
+        M_WATER,
+        M_PAINT_OBSCURANT,
+        M_OIL_SLICK,
+        M_ANTI_FLAME_FOAM,
+        M_CORROSIVE,
+        M_COOLANT,
 
-    // Number 57 is used for iATMs IMP ammo in the ATM section above.
-    // and 58 for IIW
+        // vehicular grenade launcher
+        M_CHAFF,
+        M_INCENDIARY,
+        // Number 56 was M_SMOKEGRENADE, but that has now been merged with M_SMOKE
 
-    // Mek mortar munitions
-    public static final long M_AIRBURST = 1L << 59;
-    public static final long M_ANTI_PERSONNEL = 1L << 60;
-    // The rest were already defined
-    // Flare
-    // Semi-guided
-    // Smoke
+        // Number 57 is used for iATMs IMP ammo in the ATM section above.
+        // and 58 for IIW
 
-    // More SRM+LRM Munitions types
-    public static final long M_MINE_CLEARANCE = 1L << 61;
+        // Mek mortar munitions
+        M_AIRBURST,
+        M_ANTI_PERSONNEL,
+        // The rest were already defined
+        // Flare
+        // Semi-guided
+        // Smoke
 
-    // note that 62 is in use above
-    // this area is a primary target for the introduction of an enum or some other
-    // kind of refactoring
-    public static final long M_FAE = 1L << 63;
+        // More SRM+LRM Munitions types
+        M_MINE_CLEARANCE,
 
-    // If you want to add another munition type, tough luck: longs can only be
-    // bit-shifted 63 times.
+        // note that 62 is in use above
+        // this area is a primary target for the introduction of an enum or some other
+        // kind of refactoring
+        M_FAE
+    }
 
-    private static Vector<AmmoType>[] m_vaMunitions = new Vector[NUM_TYPES];
+    private static Vector<Vector<AmmoType>> m_vaMunitions = new Vector<Vector<AmmoType>>(NUM_TYPES);
 
     public static Vector<AmmoType> getMunitionsFor(int nAmmoType) {
-        return m_vaMunitions[nAmmoType];
+        return m_vaMunitions.get(nAmmoType);
     }
 
     protected int damagePerShot;
     protected int rackSize;
     protected int ammoType;
-    protected long munitionType;
+    protected EnumSet<Munitions> munitionType = EnumSet.of(Munitions.M_STANDARD);
     protected int shots;
     private double kgPerShot = -1;
 
     // ratio for capital ammo
     private double ammoRatio;
-    /**
-     * Used for returning the submunition name for a submunition, such as precision
-     * AC-10. The submunition name is pre-pended onto the <code>shortName</code> and
-     * this variable keeps track of the index of the end of the submunition name.
-     */
-    public int subMunitionBegin = 0;
-    public int subMunitionLength = 0;
+    private String subMunitionName = "";
 
     // Short name of Ammo or RS Printing
     protected String shortName = "";
+
+    // short name of base ammo type shared by all munitions
+    protected String baseName = "";
+
+    // Collate artillery / artillery cannon types for flak check
+    // Add ADA here when implemented
+    private int[] ARTILLERY_TYPES = {
+            T_LONG_TOM,
+            T_SNIPER,
+            T_THUMPER,
+            T_ARROW_IV
+    };
+    private int[] ARTILLERY_CANNON_TYPES = {
+            T_LONG_TOM_CANNON,
+            T_SNIPER_CANNON,
+            T_THUMPER_CANNON
+    };
+    private EnumSet<Munitions> ARTILLERY_FLAK_MUNITIONS = EnumSet.of(Munitions.M_CLUSTER, Munitions.M_STANDARD);
 
     public AmmoType() {
         criticals = 1;
@@ -405,7 +449,7 @@ public class AmmoType extends EquipmentType {
         }
 
         // MML Launchers, ugh.
-        if ((is(T_MML) || other.is(T_MML)) && (getMunitionType() == other.getMunitionType())) {
+        if ((is(T_MML) || other.is(T_MML)) && (getMunitionType().equals(other.getMunitionType()))) {
             // LRMs...
             if (is(T_MML) && hasFlag(F_MML_LRM) && other.is(T_LRM)) {
                 return true;
@@ -421,8 +465,15 @@ public class AmmoType extends EquipmentType {
             }
         }
 
+        // ATM Launchers
+        if (((is(T_ATM) && other.is(T_IATM)) || (is(T_IATM) && other.is(T_ATM)))
+                && (getMunitionType() == other.getMunitionType())) {
+            // Ammo exclusive to iATMs couldn't have the same munition type as standard ATMs
+            return true;
+        }
+
         // General Launchers
-        if (is(other.getAmmoType()) && (getMunitionType() == other.getMunitionType())) {
+        if (is(other.getAmmoType()) && (getMunitionType().equals(other.getMunitionType()))) {
             return true;
         }
 
@@ -434,6 +485,24 @@ public class AmmoType extends EquipmentType {
     }
 
     /**
+     * Analog to WeaponType.getFireTNRoll(), but based on munitions.
+     * See TO:AR pg 42
+     * @return
+     */
+    public int getFireTN() {
+        if (munitionType.contains(Munitions.M_INFERNO)) {
+            return TargetRoll.AUTOMATIC_SUCCESS;
+        } else if (EnumSet.of(
+                Munitions.M_INCENDIARY,
+                Munitions.M_INCENDIARY_AC,
+                Munitions.M_INCENDIARY_LRM).containsAll(munitionType)) {
+            return 5;
+        } else {
+            return 9;
+        }
+    }
+
+    /**
      * Gets a value indicating whether this is a certain ammo type.
      *
      * @param ammoType The ammo type to compare against.
@@ -442,7 +511,32 @@ public class AmmoType extends EquipmentType {
         return getAmmoType() == ammoType;
     }
 
-    public long getMunitionType() {
+    /**
+     * We need a way to quickly determine if a given ammo type / munition counts as
+     * "Flak"
+     *
+     * Note, not _is_ Flak (as in the case of M_FLAK) but can be considered Flak by
+     * TW/TO/IO rules.
+     *
+     * Arrow IV missiles with M_CLUSTER, M_ADA, or M_STANDARD (not M_HOMING) count
+     * as Flak (TO:AU&E pp166-167, 224)
+     *
+     * @return counts true if this ammo can be considered Flak in some situations
+     */
+    public boolean countsAsFlak() {
+        boolean counts = false;
+
+        if (ArrayUtils.contains(ARTILLERY_TYPES, this.getAmmoType())) {
+            // Air-Defense Arrow IV _is_ Flak, but is _not_ Artillery
+            counts = ARTILLERY_FLAK_MUNITIONS.containsAll(this.getMunitionType())
+                    || this.getMunitionType().contains(Munitions.M_ADA);
+        } else if (ArrayUtils.contains(ARTILLERY_CANNON_TYPES, this.getAmmoType())) {
+            counts = this.getMunitionType().contains(Munitions.M_STANDARD);
+        }
+        return counts;
+    }
+
+    public EnumSet<Munitions> getMunitionType() {
         return munitionType;
     }
 
@@ -472,16 +566,19 @@ public class AmmoType extends EquipmentType {
     }
 
     /**
-     * Used by units that are constructed using per-shot weights (BA and ProtoMeks). Some ammo is
-     * defined in the rules rounded to a set number of decimal places.
+     * Used by units that are constructed using per-shot weights (BA and ProtoMeks).
+     * Some ammo is defined in the rules rounded to a set number of decimal places.
      *
      * @return
      */
     public double getKgPerShot() {
-        // kgPerShot is initialized to -1. Some ammo types are set by the rules to round
-        // to a certain number of decimal places and can do that by setting the
-        // kgPerShot field.
-        // For those that are not set we calculate it.
+        /*
+         * kgPerShot is initialized to -1. Some ammo types are set by the rules to round
+         * to a certain number of decimal places and can do that by setting the
+         * kgPerShot field.
+         *
+         * For those that are not set we calculate it.
+         */
         if (kgPerShot < 0) {
             return 1000.0 / shots;
         }
@@ -500,16 +597,18 @@ public class AmmoType extends EquipmentType {
         switch (ammoType) {
             case T_AC_LBX:
             case T_SBGAUSS:
-                return munitionType == M_CLUSTER;
+                return munitionType.contains(Munitions.M_CLUSTER);
             case T_ATM:
             case T_IATM:
-                return (munitionType == M_STANDARD) || (munitionType == M_HIGH_EXPLOSIVE)
-                        || (munitionType == M_EXTENDED_RANGE);
+                return (munitionType.contains(Munitions.M_STANDARD))
+                        || (munitionType.contains(Munitions.M_HIGH_EXPLOSIVE))
+                        || (munitionType.contains(Munitions.M_EXTENDED_RANGE));
             case T_AR10:
                 return true;
             default:
-                return (munitionType == M_STANDARD) || (munitionType == M_ARTEMIS_CAPABLE)
-                        || (munitionType == M_ARTEMIS_V_CAPABLE);
+                return (munitionType.contains(Munitions.M_STANDARD))
+                        || (munitionType.contains(Munitions.M_ARTEMIS_CAPABLE))
+                        || (munitionType.contains(Munitions.M_ARTEMIS_V_CAPABLE));
         }
     }
 
@@ -529,31 +628,47 @@ public class AmmoType extends EquipmentType {
             switch (ammoType) {
                 case T_AC_LBX:
                 case T_SBGAUSS:
-                    return munitionType == M_CLUSTER;
+                    return munitionType.contains(Munitions.M_CLUSTER);
                 case T_ATM:
                 case T_IATM:
-                    return (munitionType == M_STANDARD) || (munitionType == M_HIGH_EXPLOSIVE)
-                            || (munitionType == M_EXTENDED_RANGE);
+                    return (munitionType.contains(Munitions.M_STANDARD))
+                            || (munitionType.contains(Munitions.M_HIGH_EXPLOSIVE))
+                            || (munitionType.contains(Munitions.M_EXTENDED_RANGE));
                 case T_AR10:
                     return true;
                 case T_ARROW_IV:
-                    return (munitionType == M_FLARE) || (munitionType == M_CLUSTER) || (munitionType == M_HOMING)
-                            || (munitionType == M_INFERNO_IV) || (munitionType == M_LASER_INHIB)
-                            || (munitionType == M_SMOKE) || (munitionType == M_FASCAM)
-                            || (munitionType == M_DAVY_CROCKETT_M) || (munitionType == M_VIBRABOMB_IV)
-                            || (munitionType == M_STANDARD);
+                    return (munitionType.contains(Munitions.M_FLARE))
+                            || (munitionType.contains(Munitions.M_CLUSTER))
+                            || (munitionType.contains(Munitions.M_HOMING))
+                            || (munitionType.contains(Munitions.M_INFERNO_IV))
+                            || (munitionType.contains(Munitions.M_LASER_INHIB))
+                            || (munitionType.contains(Munitions.M_SMOKE))
+                            || (munitionType.contains(Munitions.M_FASCAM))
+                            || (munitionType.contains(Munitions.M_DAVY_CROCKETT_M))
+                            || (munitionType.contains(Munitions.M_VIBRABOMB_IV))
+                            || (munitionType.contains(Munitions.M_STANDARD));
                 case T_LONG_TOM:
-                    return (munitionType == M_FLARE) || (munitionType == M_CLUSTER) || (munitionType == M_HOMING)
-                            || (munitionType == M_FLECHETTE) || (munitionType == M_SMOKE) || (munitionType == M_FASCAM)
-                            || (munitionType == M_DAVY_CROCKETT_M) || (munitionType == M_STANDARD);
+                    return (munitionType.contains(Munitions.M_FLARE))
+                            || (munitionType.contains(Munitions.M_CLUSTER))
+                            || (munitionType.contains(Munitions.M_HOMING))
+                            || (munitionType.contains(Munitions.M_FLECHETTE))
+                            || (munitionType.contains(Munitions.M_SMOKE))
+                            || (munitionType.contains(Munitions.M_FASCAM))
+                            || (munitionType.contains(Munitions.M_DAVY_CROCKETT_M))
+                            || (munitionType.contains(Munitions.M_STANDARD));
                 case T_SNIPER:
                 case T_THUMPER:
-                    return (munitionType == M_FLARE) || (munitionType == M_CLUSTER) || (munitionType == M_HOMING)
-                            || (munitionType == M_FLECHETTE) || (munitionType == M_SMOKE) || (munitionType == M_FASCAM)
-                            || (munitionType == M_STANDARD);
+                    return (munitionType.contains(Munitions.M_FLARE))
+                            || (munitionType.contains(Munitions.M_CLUSTER))
+                            || (munitionType.contains(Munitions.M_HOMING))
+                            || (munitionType.contains(Munitions.M_FLECHETTE))
+                            || (munitionType.contains(Munitions.M_SMOKE))
+                            || (munitionType.contains(Munitions.M_FASCAM))
+                            || (munitionType.contains(Munitions.M_STANDARD));
                 default:
-                    return (munitionType == M_STANDARD) || (munitionType == M_ARTEMIS_CAPABLE)
-                            || (munitionType == M_ARTEMIS_V_CAPABLE);
+                    return (munitionType.contains(Munitions.M_STANDARD))
+                            || (munitionType.contains(Munitions.M_ARTEMIS_CAPABLE))
+                            || (munitionType.contains(Munitions.M_ARTEMIS_V_CAPABLE));
             }
         } else {
             return canAeroUse();
@@ -581,11 +696,13 @@ public class AmmoType extends EquipmentType {
                 return at;
             }
         }
-        // found none, let's try again with techlevelyear 3071
+        // found none, let's try again with tech level year 3071
         for (int i = 0; i < vAmmo.size(); i++) {
             at = vAmmo.elementAt(i);
-            if ((at.getRackSize() == wt.getRackSize()) && (TechConstants.isLegal(mounted.getType().getTechLevel(3071),
-                    at.getTechLevel(3071), false, mounted.getEntity().isMixedTech()))) {
+            if ((at.getRackSize() == wt.getRackSize())
+                    && (TechConstants.isLegal(mounted.getType().getTechLevel(3071),
+                            at.getTechLevel(3071), false,
+                            mounted.getEntity().isMixedTech()))) {
                 return at;
             }
         }
@@ -594,45 +711,46 @@ public class AmmoType extends EquipmentType {
 
     public static void initializeTypes() {
         // Save copies of the SRM and LRM ammos to use to create munitions.
-        ArrayList<AmmoType> srmAmmos = new ArrayList<>();
-        ArrayList<AmmoType> clanSrmAmmos = new ArrayList<>();
-        ArrayList<AmmoType> baSrmAmmos = new ArrayList<>();
-        ArrayList<AmmoType> clanBaLrmAmmos = new ArrayList<>();
-        ArrayList<AmmoType> isBaLrmAmmos = new ArrayList<>();
-        ArrayList<AmmoType> lrmAmmos = new ArrayList<>(26);
-        ArrayList<AmmoType> clanLrmAmmos = new ArrayList<>();
-        ArrayList<AmmoType> enhancedlrmAmmos = new ArrayList<>(26);
-        ArrayList<AmmoType> acAmmos = new ArrayList<>(4);
-        ArrayList<AmmoType> arrowAmmos = new ArrayList<>(4);
-        ArrayList<AmmoType> protoarrowAmmos = new ArrayList<>(4);
-        ArrayList<AmmoType> clanArrowAmmos = new ArrayList<>(4);
-        ArrayList<AmmoType> thumperAmmos = new ArrayList<>(3);
-        ArrayList<AmmoType> thumperCannonAmmos = new ArrayList<>(3);
-        ArrayList<AmmoType> sniperAmmos = new ArrayList<>(3);
-        ArrayList<AmmoType> sniperCannonAmmos = new ArrayList<>(3);
-        ArrayList<AmmoType> longTomAmmos = new ArrayList<>(4);
-        ArrayList<AmmoType> longTomCannonAmmos = new ArrayList<>(4);
-        ArrayList<AmmoType> mortarAmmos = new ArrayList<>(4);
-        ArrayList<AmmoType> clanMortarAmmos = new ArrayList<>(4);
-        ArrayList<AmmoType> lrtAmmos = new ArrayList<>(26);
-        ArrayList<AmmoType> clanLrtAmmos = new ArrayList<>();
-        ArrayList<AmmoType> srtAmmos = new ArrayList<>(26);
-        ArrayList<AmmoType> clanSrtAmmos = new ArrayList<>();
-        ArrayList<AmmoType> vglAmmos = new ArrayList<>();
-        ArrayList<AmmoType> clanVGLAmmos = new ArrayList<>();
-        ArrayList<AmmoType> vehicleFlamerAmmos = new ArrayList<>();
-        ArrayList<AmmoType> clanVehicleFlamerAmmos = new ArrayList<>();
-        ArrayList<AmmoType> heavyFlamerAmmos = new ArrayList<>();
-        ArrayList<AmmoType> clanHeavyFlamerAmmos = new ArrayList<>();
-        ArrayList<AmmoType> fluidGunAmmos = new ArrayList<>();
-        ArrayList<AmmoType> clanFluidGunAmmos = new ArrayList<>();
-        ArrayList<AmmoType> clanImprovedLrmsAmmo = new ArrayList<>();
-        ArrayList<AmmoType> clanImprovedSrmsAmmo = new ArrayList<>();
-        ArrayList<AmmoType> clanImprovedAcAmmo = new ArrayList<>();
-        ArrayList<AmmoType> primLongTomAmmos = new ArrayList<>();
-        ArrayList<AmmoType> clanProtoAcAmmo = new ArrayList<>();
+        ArrayList<AmmoType> srmAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> clanSrmAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> baSrmAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> clanBaLrmAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> isBaLrmAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> lrmAmmos = new ArrayList<AmmoType>(26);
+        ArrayList<AmmoType> clanLrmAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> enhancedLRMAmmos = new ArrayList<AmmoType>(26);
+        ArrayList<AmmoType> acAmmos = new ArrayList<AmmoType>(4);
+        ArrayList<AmmoType> arrowAmmos = new ArrayList<AmmoType>(4);
+        ArrayList<AmmoType> protoArrowAmmos = new ArrayList<AmmoType>(4);
+        ArrayList<AmmoType> clanArrowAmmos = new ArrayList<AmmoType>(4);
+        ArrayList<AmmoType> thumperAmmos = new ArrayList<AmmoType>(3);
+        ArrayList<AmmoType> thumperCannonAmmos = new ArrayList<AmmoType>(3);
+        ArrayList<AmmoType> sniperAmmos = new ArrayList<AmmoType>(3);
+        ArrayList<AmmoType> sniperCannonAmmos = new ArrayList<AmmoType>(3);
+        ArrayList<AmmoType> longTomAmmos = new ArrayList<AmmoType>(4);
+        ArrayList<AmmoType> longTomCannonAmmos = new ArrayList<AmmoType>(4);
+        ArrayList<AmmoType> baTubeAmmos = new ArrayList<AmmoType>(2);
+        ArrayList<AmmoType> mortarAmmos = new ArrayList<AmmoType>(4);
+        ArrayList<AmmoType> clanMortarAmmos = new ArrayList<AmmoType>(4);
+        ArrayList<AmmoType> lrtAmmos = new ArrayList<AmmoType>(26);
+        ArrayList<AmmoType> clanLrtAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> srtAmmos = new ArrayList<AmmoType>(26);
+        ArrayList<AmmoType> clanSrtAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> vglAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> clanVGLAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> vehicleFlamerAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> clanVehicleFlamerAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> heavyFlamerAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> clanHeavyFlamerAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> fluidGunAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> clanFluidGunAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> clanImprovedLRMsAmmo = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> clanImprovedSRMsAmmo = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> clanImprovedAcAmmo = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> primLongTomAmmos = new ArrayList<AmmoType>();
+        ArrayList<AmmoType> clanProtoAcAmmo = new ArrayList<AmmoType>();
 
-        ArrayList<MunitionMutator> munitions = new ArrayList<>();
+        ArrayList<MunitionMutator> munitions = new ArrayList<MunitionMutator>();
 
         AmmoType base;
 
@@ -710,16 +828,16 @@ public class AmmoType extends EquipmentType {
         // Level 3 Ammo
         // Note, some level 3 stuff is mixed into level 2.
         base = AmmoType.createISEnhancedLRM5Ammo();
-        enhancedlrmAmmos.add(base);
+        enhancedLRMAmmos.add(base);
         EquipmentType.addType(base);
         base = AmmoType.createISEnhancedLRM10Ammo();
-        enhancedlrmAmmos.add(base);
+        enhancedLRMAmmos.add(base);
         EquipmentType.addType(base);
         base = AmmoType.createISEnhancedLRM15Ammo();
-        enhancedlrmAmmos.add(base);
+        enhancedLRMAmmos.add(base);
         EquipmentType.addType(base);
         base = AmmoType.createISEnhancedLRM20Ammo();
-        enhancedlrmAmmos.add(base);
+        enhancedLRMAmmos.add(base);
         EquipmentType.addType(base);
         base = AmmoType.createISLAC2Ammo();
         acAmmos.add(base);
@@ -801,8 +919,11 @@ public class AmmoType extends EquipmentType {
         EquipmentType.addType(AmmoType.createISThunderbolt15Ammo());
         EquipmentType.addType(AmmoType.createISThunderbolt20Ammo());
         EquipmentType.addType(AmmoType.createISMagshotGRAmmo());
-        //Removed all references to Phoenix/Hawk/Streak MRM. Was ammo only with 
-        //no weapon or code to support them.
+
+        /*
+         * Removed all references to Phoenix/Hawk/Streak MRM. Was ammo only with no
+         * weapon or code to support them.
+         */
         EquipmentType.addType(AmmoType.createISHeavyMGAmmo());
         EquipmentType.addType(AmmoType.createISHeavyMGAmmoHalf());
         EquipmentType.addType(AmmoType.createISLightMGAmmo());
@@ -845,26 +966,26 @@ public class AmmoType extends EquipmentType {
         EquipmentType.addType(base);
 
         base = AmmoType.createCLImprovedLRM5Ammo();
-        clanImprovedLrmsAmmo.add(base);
+        clanImprovedLRMsAmmo.add(base);
         EquipmentType.addType(base);
         base = AmmoType.createCLImprovedLRM10Ammo();
-        clanImprovedLrmsAmmo.add(base);
+        clanImprovedLRMsAmmo.add(base);
         EquipmentType.addType(base);
         base = AmmoType.createCLImprovedLRM15Ammo();
-        clanImprovedLrmsAmmo.add(base);
+        clanImprovedLRMsAmmo.add(base);
         EquipmentType.addType(base);
         base = AmmoType.createCLImprovedLRM20Ammo();
-        clanImprovedLrmsAmmo.add(base);
+        clanImprovedLRMsAmmo.add(base);
         EquipmentType.addType(base);
 
         base = AmmoType.createCLImprovedSRM2Ammo();
-        clanImprovedSrmsAmmo.add(base);
+        clanImprovedSRMsAmmo.add(base);
         EquipmentType.addType(base);
         base = AmmoType.createCLImprovedSRM4Ammo();
-        clanImprovedSrmsAmmo.add(base);
+        clanImprovedSRMsAmmo.add(base);
         EquipmentType.addType(base);
         base = AmmoType.createCLImprovedSRM6Ammo();
-        clanImprovedSrmsAmmo.add(base);
+        clanImprovedSRMsAmmo.add(base);
         EquipmentType.addType(base);
 
         base = AmmoType.createISMML3LRMAmmo();
@@ -925,7 +1046,7 @@ public class AmmoType extends EquipmentType {
         EquipmentType.addType(base);
 
         base = AmmoType.createPrototypeArrowIVAmmo();
-        protoarrowAmmos.add(base);
+        protoArrowAmmos.add(base);
         EquipmentType.addType(base);
 
         EquipmentType.addType(AmmoType.createCLLB2XAmmo());
@@ -1175,7 +1296,9 @@ public class AmmoType extends EquipmentType {
         EquipmentType.addType(AmmoType.createISMRM4Ammo());
         EquipmentType.addType(AmmoType.createISMRM5Ammo());
         EquipmentType.addType(AmmoType.createISBATaserAmmo());
-        EquipmentType.addType(AmmoType.createBATubeArtyAmmo());
+        base = AmmoType.createBATubeArtyAmmo();
+        EquipmentType.addType(base);
+        baTubeAmmos.add(base);
         base = AmmoType.createBAISLRM1Ammo();
         isBaLrmAmmos.add(base);
         EquipmentType.addType(base);
@@ -1292,94 +1415,121 @@ public class AmmoType extends EquipmentType {
         clanMortarAmmos.add(base);
 
         // Create the munition types for IS Mek mortars
-        munitions.add(new MunitionMutator("Airburst", 1, M_AIRBURST,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Airburst", 1, Munitions.M_AIRBURST,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_B, RATING_D, RATING_C, RATING_D)
                         .setISAdvancement(2540, 2544, DATE_NONE, 2819, 3043)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("Anti-personnel", 1, M_ANTI_PERSONNEL,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Anti-personnel", 1, Munitions.M_ANTI_PERSONNEL,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
                         .setISAdvancement(2526, 2531, 3052, 2819, 3043)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
         // Armor Piercing is the base ammo type see further down.
 
-        munitions.add(new MunitionMutator("Flare", 1, M_FLARE, new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
-                .setUnofficial(false).setTechRating(RATING_B).setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
-                .setISAdvancement(2533, 2536, DATE_NONE, 2819, 3043).setISApproximate(true, false, false, false, false)
-                .setPrototypeFactions(F_TH).setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED), "374, TO"));
-
-        munitions.add(new MunitionMutator("Semi-Guided", 1, M_SEMIGUIDED,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
-                        .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
-                        .setISAdvancement(3055, 3064, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
-                        .setProductionFactions(F_FW).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+        munitions.add(new MunitionMutator("Flare", 1, Munitions.M_FLARE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
+                        .setUnofficial(false).setTechRating(RATING_B)
+                        .setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
+                        .setISAdvancement(2533, 2536, DATE_NONE, 2819, 3043)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH).setProductionFactions(F_TH)
+                        .setReintroductionFactions(F_FS, F_LC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "374, TO"));
 
-        munitions.add(new MunitionMutator("Smoke", 1, M_SMOKE_WARHEAD,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Semi-Guided", 1, Munitions.M_SEMIGUIDED,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
+                        .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
+                        .setISAdvancement(3055, 3064, DATE_NONE, DATE_NONE, DATE_NONE)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FW)
+                        .setProductionFactions(F_FW)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                "374, TO"));
+
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE_WARHEAD,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
                         .setISAdvancement(2526, 2531, DATE_NONE, 2819, 3043)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "375, TO"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(mortarAmmos, munitions);
 
         // Create the munition types for Clan Mek mortars
         munitions.clear();
-        munitions.add(new MunitionMutator("Airburst", 1, M_AIRBURST,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Airburst", 1, Munitions.M_AIRBURST,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_B, RATING_D, RATING_C, RATING_D)
                         .setClanAdvancement(2540, 2544, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("Anti-personnel", 1, M_ANTI_PERSONNEL,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Anti-personnel", 1, Munitions.M_ANTI_PERSONNEL,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
                         .setClanAdvancement(2540, 2544, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
         // Armor Piercing is the base ammo type see further down.
 
-        munitions.add(new MunitionMutator("Flare", 1, M_FLARE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Flare", 1, Munitions.M_FLARE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
                         .setClanAdvancement(2533, 2536, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "374, TO"));
 
-        munitions.add(new MunitionMutator("Semi-Guided", 1, M_SEMIGUIDED,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Semi-Guided", 1, Munitions.M_SEMIGUIDED,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                         .setClanAdvancement(3055, 3064, DATE_NONE, DATE_NONE, DATE_NONE)
                         .setClanApproximate(true, false, false, false, false)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "374, TO"));
 
-        munitions.add(new MunitionMutator("Smoke", 1, M_SMOKE_WARHEAD,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE_WARHEAD,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
                         .setClanAdvancement(2526, 2531, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "375, TO"));
 
         AmmoType.createMunitions(clanMortarAmmos, munitions);
@@ -1464,14 +1614,17 @@ public class AmmoType extends EquipmentType {
         // Create the munition types for IS SRM launchers.
         munitions.clear();
 
-        munitions.add(new MunitionMutator("Acid", 2, M_AX_HEAD,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
-                        .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F).setISAdvancement(3053)
-                        .setPrototypeFactions(F_FS, F_LC).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+        munitions.add(new MunitionMutator("Acid", 2, Munitions.M_AX_HEAD,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
+                        .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
+                        .setISAdvancement(3053)
+                        .setPrototypeFactions(F_FS, F_LC)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "367, TO"));
 
         /*
-         * munitions.add(new MunitionMutator("Harpoon", 2, M_HARPOON, new
+         * munitions.add(new MunitionMutator("Harpoon", 2, Munitions.M_HARPOON, new
          * TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).
          * setTechRating(RATING_C) .setAvailability(RATING_C, RATING_C, RATING_C,
          * RATING_C) .setISAdvancement(2395, 2400, 2415, DATE_NONE, DATE_NONE)
@@ -1479,35 +1632,46 @@ public class AmmoType extends EquipmentType {
          * false).setPrototypeFactions(F_LC) .setProductionFactions(F_LC), "369, TO"));
          */
 
-        munitions.add(new MunitionMutator("Heat-Seeking", 2, M_HEAT_SEEKING,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Heat-Seeking", 2, Munitions.M_HEAT_SEEKING,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_E, RATING_E, RATING_E, RATING_F)
                         .setISAdvancement(2365, 2370, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "369, TO"));
 
-        munitions.add(new MunitionMutator("Inferno", 1, M_INFERNO,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Inferno", 1, Munitions.M_INFERNO,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
                         .setISAdvancement(2370, 2380, 2400, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "231, TM"));
 
-        munitions.add(new MunitionMutator("Smoke", 1, M_SMOKE_WARHEAD,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE_WARHEAD,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
                         .setISAdvancement(2333, 2370, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "371, TO"));
 
-        munitions.add(new MunitionMutator("Tandem-Charge", 2, M_TANDEM_CHARGE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Tandem-Charge", 2, Munitions.M_TANDEM_CHARGE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setISAdvancement(2757, 3062, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_FS).setReintroductionFactions(F_FS)
                         .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "372, TO"));
@@ -1516,60 +1680,79 @@ public class AmmoType extends EquipmentType {
 
         // TODO Retro-Streak IO pg 132
 
-        munitions.add(new MunitionMutator("Anti-TSM", 1, M_ANTI_TSM,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Anti-TSM", 1, Munitions.M_ANTI_TSM,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
                         .setISAdvancement(3026, 3027, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "104, IO"));
 
-        munitions.add(new MunitionMutator("Artemis-capable", 1, M_ARTEMIS_CAPABLE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Artemis-capable", 1, Munitions.M_ARTEMIS_CAPABLE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setISAdvancement(2592, 2598, 3045, 2855, 3035)
-                        .setISApproximate(false, false, false, true, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(false, false, false, true, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        munitions.add(new MunitionMutator("Dead-Fire", 1, M_DEAD_FIRE,
+        munitions.add(new MunitionMutator("Dead-Fire", 1, Munitions.M_DEAD_FIRE,
                 new TechAdvancement(TECH_BASE_IS).setTechRating(RATING_C)
-                        .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E).setISAdvancement(3052)
-                        .setPrototypeFactions(F_DC).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+                        .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
+                        .setISAdvancement(3052)
+                        .setPrototypeFactions(F_DC)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "131, IO"));
 
-        munitions.add(new MunitionMutator("Fragmentation", 1, M_FRAGMENTATION,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("Fragmentation", 1, Munitions.M_FRAGMENTATION,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
                         .setISAdvancement(2375, 2377, 3058, 2790, 3054)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        munitions.add(new MunitionMutator("Listen-Kill", 1, M_LISTEN_KILL,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("Listen-Kill", 1, Munitions.M_LISTEN_KILL,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_X, RATING_F, RATING_X, RATING_X)
                         .setISAdvancement(3037, DATE_NONE, DATE_NONE, 3040, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS, F_LC)
                         .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "105, IO"));
 
         // TODO Mag Pulse see IO pg 62
 
-        munitions.add(new MunitionMutator("Mine Clearance", 1, M_MINE_CLEARANCE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Mine Clearance", 1, Munitions.M_MINE_CLEARANCE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                         .setISAdvancement(3065, 3069, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "370, TO"));
 
-        munitions.add(new MunitionMutator("Narc-capable", 1, M_NARC_CAPABLE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Narc-capable", 1, Munitions.M_NARC_CAPABLE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setISAdvancement(2520, 2587, 3049, 2795, 3035)
-                        .setISApproximate(true, false, false, true, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(true, false, false, true, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "142, TW"));
 
         // TODO Anti-Radiation Missiles (see IO pg 62)
@@ -1584,14 +1767,17 @@ public class AmmoType extends EquipmentType {
         // Create the munition types for Clan SRM launchers.
         munitions.clear();
 
-        munitions.add(new MunitionMutator("(Clan) Acid", 2, M_AX_HEAD,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
-                        .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F).setClanAdvancement(3053)
-                        .setPrototypeFactions(F_FS, F_LC).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+        munitions.add(new MunitionMutator("(Clan) Acid", 2, Munitions.M_AX_HEAD,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
+                        .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
+                        .setClanAdvancement(3053)
+                        .setPrototypeFactions(F_FS, F_LC)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "367, TO"));
 
         /*
-         * munitions.add(new MunitionMutator("Harpoon", 2, M_HARPOON, new
+         * munitions.add(new MunitionMutator("Harpoon", 2, Munitions.M_HARPOON, new
          * TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).
          * setTechRating(RATING_C) .setAvailability(RATING_C, RATING_C, RATING_C,
          * RATING_C) .setClanAdvancement(2395, 2400, 2415, DATE_NONE, DATE_NONE)
@@ -1599,100 +1785,132 @@ public class AmmoType extends EquipmentType {
          * false).setPrototypeFactions(F_LC) .setProductionFactions(F_LC), "369, TO"));
          */
 
-        munitions.add(new MunitionMutator("(Clan) Heat-Seeking", 2, M_HEAT_SEEKING,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("(Clan) Heat-Seeking", 2, Munitions.M_HEAT_SEEKING,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_E, RATING_E, RATING_E, RATING_F)
                         .setClanAdvancement(2365, 2370, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "369, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Inferno", 1, M_INFERNO,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("(Clan) Inferno", 1, Munitions.M_INFERNO,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
                         .setClanAdvancement(2370, 2380, 2400, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "231, TM"));
 
-        munitions.add(new MunitionMutator("(Clan) Smoke", 1, M_SMOKE_WARHEAD,
+        munitions.add(new MunitionMutator("(Clan) Smoke", 1, Munitions.M_SMOKE_WARHEAD,
 
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
                         .setClanAdvancement(2333, 2370, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "371, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Tandem-Charge", 2, M_TANDEM_CHARGE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Tandem-Charge", 2, Munitions.M_TANDEM_CHARGE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(2757, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "372, TO"));
 
         // TODO Tear Gas See IO pg 372
 
-        munitions.add(new MunitionMutator("(Clan) Anti-TSM", 1, M_ANTI_TSM,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Anti-TSM", 1, Munitions.M_ANTI_TSM,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
                         .setClanAdvancement(3026, 3027, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_FS)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "104, IO"));
 
-        munitions.add(new MunitionMutator("(Clan) Artemis-capable", 1, M_ARTEMIS_CAPABLE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Artemis-capable", 1, Munitions.M_ARTEMIS_CAPABLE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setClanAdvancement(DATE_NONE, DATE_NONE, 2818, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_CSA)
-                        .setProductionFactions(F_CSA).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_CSA)
+                        .setProductionFactions(F_CSA)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "207, TM"));
 
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        munitions.add(new MunitionMutator("(Clan) Artemis V-capable", 1, M_ARTEMIS_V_CAPABLE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        munitions.add(new MunitionMutator("(Clan) Artemis V-capable", 1, Munitions.M_ARTEMIS_V_CAPABLE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_F)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                         .setClanAdvancement(DATE_NONE, 3061, 3085, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, true, false, false).setPrototypeFactions(F_CGS)
-                        .setProductionFactions(F_CSF, F_RD).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(false, false, true, false, false)
+                        .setPrototypeFactions(F_CGS)
+                        .setProductionFactions(F_CSF, F_RD)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "283, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Dead-Fire", 1, M_DEAD_FIRE,
+        munitions.add(new MunitionMutator("(Clan) Dead-Fire", 1, Munitions.M_DEAD_FIRE,
                 new TechAdvancement(TECH_BASE_CLAN).setTechRating(RATING_C)
-                        .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E).setClanAdvancement(3052)
-                        .setPrototypeFactions(F_DC).setStaticTechLevel(SimpleTechLevel.UNOFFICIAL),
+                        .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
+                        .setClanAdvancement(3052)
+                        .setPrototypeFactions(F_DC)
+                        .setStaticTechLevel(SimpleTechLevel.UNOFFICIAL),
                 "131, IO"));
 
-        munitions.add(new MunitionMutator("(Clan) Fragmentation", 1, M_FRAGMENTATION,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("(Clan) Fragmentation", 1, Munitions.M_FRAGMENTATION,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
                         .setClanAdvancement(2375, 2377, 3058, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        munitions.add(new MunitionMutator("(Clan) Listen-Kill", 1, M_LISTEN_KILL,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("(Clan) Listen-Kill", 1, Munitions.M_LISTEN_KILL,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_X)
                         .setClanAdvancement(3037, DATE_NONE, DATE_NONE, 3040, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS, F_LC)
                         .setStaticTechLevel(SimpleTechLevel.UNOFFICIAL),
                 "230, TM"));
 
         // TODO Mag Pulse See IO pg 62
 
-        munitions.add(new MunitionMutator("(Clan) Mine Clearance", 1, M_MINE_CLEARANCE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("(Clan) Mine Clearance", 1, Munitions.M_MINE_CLEARANCE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                         .setClanAdvancement(3065, 3069, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "370, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Narc-capable", 1, M_NARC_CAPABLE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Narc-capable", 1, Munitions.M_NARC_CAPABLE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setClanAdvancement(DATE_NONE, DATE_NONE, 2828, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, false, false, false)
@@ -1703,69 +1921,74 @@ public class AmmoType extends EquipmentType {
 
         // TODO: Harpoon SRMs (TO 369), Tear Gas SRMs (TO 371), RETRO-STREAK (IO 193)
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(clanSrmAmmos, munitions);
-        AmmoType.createMunitions(clanImprovedSrmsAmmo, munitions);
+        AmmoType.createMunitions(clanImprovedSRMsAmmo, munitions);
         AmmoType.createMunitions(baSrmAmmos, munitions);
 
         // Create the munition types for CLAN BA SRM launchers.
         munitions.clear();
-        munitions.add(new MunitionMutator("(Clan) Torpedo", 1, M_TORPEDO,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Torpedo", 1, Munitions.M_TORPEDO,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setClanAdvancement(DATE_NONE, DATE_NONE, 2828, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, false, false, false)
                         .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        munitions.add(new MunitionMutator("(Clan) Multi-Purpose", 1, M_MULTI_PURPOSE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        munitions.add(new MunitionMutator("(Clan) Multi-Purpose", 1, Munitions.M_MULTI_PURPOSE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_F)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(3055, 3060, 3065, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CGS)
-                        .setProductionFactions(F_CGS).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CGS)
+                        .setProductionFactions(F_CGS)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "229, TW"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(baSrmAmmos, munitions);
 
         // Create the munition types for IS BA LRM launchers.
         munitions.clear();
-        munitions.add(new MunitionMutator("Torpedo", 1, M_TORPEDO,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Torpedo", 1, Munitions.M_TORPEDO,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setISAdvancement(DATE_NONE, DATE_NONE, 3052, DATE_NONE, DATE_NONE)
                         .setISApproximate(false, false, false, false, false)
                         .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(isBaLrmAmmos, munitions);
         AmmoType.createMunitions(baSrmAmmos, munitions);
 
         // Create the munition types for clan BA LRM launchers.
         munitions.clear();
-        munitions.add(new MunitionMutator("Multi-Purpose", 1, M_MULTI_PURPOSE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        munitions.add(new MunitionMutator("Multi-Purpose", 1, Munitions.M_MULTI_PURPOSE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_F)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(3055, 3060, 3065, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CGS)
-                        .setProductionFactions(F_CGS).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CGS)
+                        .setProductionFactions(F_CGS)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "229, TW"));
 
-        munitions.add(new MunitionMutator("Torpedo", 1, M_TORPEDO,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Torpedo", 1, Munitions.M_TORPEDO,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setClanAdvancement(DATE_NONE, DATE_NONE, 2828, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, false, false, false)
                         .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(clanBaLrmAmmos, munitions);
 
         // Create the munition types for IS LRM launchers.
@@ -1773,26 +1996,32 @@ public class AmmoType extends EquipmentType {
 
         // TODO Flare LRMs IO pg 230
 
-        munitions.add(new MunitionMutator("Follow The Leader", 2, M_FOLLOW_THE_LEADER,
+        munitions.add(new MunitionMutator("Follow The Leader", 2, Munitions.M_FOLLOW_THE_LEADER,
                 new TechAdvancement(TECH_BASE_IS).setTechRating(RATING_E)
                         .setAvailability(RATING_F, RATING_X, RATING_E, RATING_X)
                         .setISAdvancement(2750, DATE_NONE, DATE_NONE, 2770, 3046)
-                        .setISApproximate(true, false, false, true, false).setPrototypeFactions(F_TH)
-                        .setReintroductionFactions(F_FS, F_LC).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+                        .setISApproximate(true, false, false, true, false)
+                        .setPrototypeFactions(F_TH)
+                        .setReintroductionFactions(F_FS, F_LC)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "368, TO"));
 
-        munitions.add(new MunitionMutator("Heat-Seeking", 2, M_HEAT_SEEKING,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Heat-Seeking", 2, Munitions.M_HEAT_SEEKING,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_E, RATING_E, RATING_E, RATING_F)
                         .setISAdvancement(2365, 2370, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "369, TO"));
 
         // TODO Incendiary LRMs - IO pg 61, TO pg 369
 
         /*
-         * munitions.add(new MunitionMutator("Incendiary", 2, M_INCENDIARY_LRM, new
+         * munitions.add(new MunitionMutator("Incendiary", 2,
+         * Munitions.M_INCENDIARY_LRM, new
          * TechAdvancement(TECH_BASE_IS) .setIntroLevel(false) .setUnofficial(false)
          * .setTechRating(RATING_C) .setAvailability(RATING_E, RATING_E, RATING_E,
          * RATING_E) .setClanAdvancement(2341, 2342, 2352, DATE_NONE, DATE_NONE)
@@ -1800,164 +2029,217 @@ public class AmmoType extends EquipmentType {
          * .setPrototypeFactions(F_TH) .setProductionFactions(F_TH),"369, TO"));
          */
 
-        munitions.add(new MunitionMutator("Semi-guided", 1, M_SEMIGUIDED,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Semi-guided", 1, Munitions.M_SEMIGUIDED,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                         .setISAdvancement(3053, 3057, 3065, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
-                        .setProductionFactions(F_FW).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FW)
+                        .setProductionFactions(F_FW)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "231, TM"));
 
-        munitions.add(new MunitionMutator("Smoke", 1, M_SMOKE_WARHEAD,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE_WARHEAD,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
                         .setISAdvancement(2333, 2370, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "371, TO"));
 
-        //Note of Swarms the intro dates in IntOps are off and it allows Swarm-I to appear before Swarm during the 
-        //Clan Invasion. Proposed errata makes 3052 for Swarm-I a hard date, and 3053 for Swarm re-iintroduction a flexible date.
-        munitions.add(new MunitionMutator("Swarm", 1, M_SWARM, new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
-                .setUnofficial(false).setTechRating(RATING_E).setAvailability(RATING_E, RATING_X, RATING_D, RATING_D)
-                .setISAdvancement(2615, 2621, 3058, 2833, 3053).setISApproximate(true, false, false, false, true)
-                .setPrototypeFactions(F_TH).setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+        /*
+         * Note of Swarms the intro dates in IntOps are off and it allows Swarm-I to
+         * appear before Swarm during the Clan Invasion. Proposed errata makes 3052 for
+         * Swarm-I a hard date, and 3053 for Swarm re-introduction a flexible date.
+         */
+        munitions.add(new MunitionMutator("Swarm", 1, Munitions.M_SWARM,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
+                        .setUnofficial(false).setTechRating(RATING_E)
+                        .setAvailability(RATING_E, RATING_X, RATING_D, RATING_D)
+                        .setISAdvancement(2615, 2621, 3058, 2833, 3053)
+                        .setISApproximate(true, false, false, false, true)
+                        .setPrototypeFactions(F_TH).setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "371, TO"));
 
-        munitions.add(new MunitionMutator("Swarm-I", 1, M_SWARM_I,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Swarm-I", 1, Munitions.M_SWARM_I,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_X, RATING_D, RATING_D)
                         .setISAdvancement(3052, 3057, 3066, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FW)
-                        .setProductionFactions(F_FW).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_FW)
+                        .setProductionFactions(F_FW)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "371, TO"));
 
-        munitions.add(new MunitionMutator("Thunder", 1, M_THUNDER,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Thunder", 1, Munitions.M_THUNDER,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_D, RATING_X, RATING_D, RATING_D)
                         .setISAdvancement(2618, 2620, 2650, 2840, 3052)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_TH).setReintroductionFactions(F_LC, F_FS)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("Thunder-Active", 2, M_THUNDER_ACTIVE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Thunder-Active", 2, Munitions.M_THUNDER_ACTIVE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setISAdvancement(3054, 3058, 3064, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("Thunder-Augmented", 2, M_THUNDER_AUGMENTED,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Thunder-Augmented", 2, Munitions.M_THUNDER_AUGMENTED,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setISAdvancement(3054, 3057, 3064, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("Thunder-Vibrabomb", 2, M_THUNDER_VIBRABOMB,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Thunder-Vibrabomb", 2, Munitions.M_THUNDER_VIBRABOMB,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setISAdvancement(3054, 3056, 3064, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("Thunder-Inferno", 2, M_THUNDER_INFERNO,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Thunder-Inferno", 2, Munitions.M_THUNDER_INFERNO,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setISAdvancement(3054, 3056, 3062, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("Anti-TSM", 1, M_ANTI_TSM,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Anti-TSM", 1, Munitions.M_ANTI_TSM,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
                         .setISAdvancement(3026, 3027, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "104, IO"));
 
-        munitions.add(new MunitionMutator("Artemis-capable", 1, M_ARTEMIS_CAPABLE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Artemis-capable", 1, Munitions.M_ARTEMIS_CAPABLE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setISAdvancement(2592, 2598, 3045, 2855, 3035)
-                        .setISApproximate(false, false, false, true, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(false, false, false, true, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        munitions.add(new MunitionMutator("Dead-Fire", 1, M_DEAD_FIRE,
+        munitions.add(new MunitionMutator("Dead-Fire", 1, Munitions.M_DEAD_FIRE,
                 new TechAdvancement(TECH_BASE_IS).setTechRating(RATING_C)
-                        .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E).setISAdvancement(3052)
-                        .setPrototypeFactions(F_DC).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+                        .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
+                        .setISAdvancement(3052)
+                        .setPrototypeFactions(F_DC)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "131, IO"));
 
-        munitions.add(new MunitionMutator("Fragmentation", 1, M_FRAGMENTATION,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("Fragmentation", 1, Munitions.M_FRAGMENTATION,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
                         .setISAdvancement(2375, 2377, 3058, 2790, 3054)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
                         .setProductionFactions(F_FS).setReintroductionFactions(F_FW)
                         .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        munitions.add(new MunitionMutator("Listen-Kill", 1, M_LISTEN_KILL,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("Listen-Kill", 1, Munitions.M_LISTEN_KILL,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_X, RATING_F, RATING_X, RATING_X)
                         .setISAdvancement(3037, DATE_NONE, DATE_NONE, 3040, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS, F_LC)
                         .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "105, IO"));
 
         // TODO Mag Pulse see IO pg 62
 
-        munitions.add(new MunitionMutator("Mine Clearance", 1, M_MINE_CLEARANCE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Mine Clearance", 1, Munitions.M_MINE_CLEARANCE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                         .setISAdvancement(3065, 3069, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "370, TO"));
 
-        munitions.add(new MunitionMutator("Narc-capable", 1, M_NARC_CAPABLE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Narc-capable", 1, Munitions.M_NARC_CAPABLE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setISAdvancement(2520, 2587, 3049, 2795, 3035)
-                        .setISApproximate(true, false, false, true, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(true, false, false, true, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "142, TW"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(lrmAmmos, munitions);
-        AmmoType.createMunitions(enhancedlrmAmmos, munitions);
+        AmmoType.createMunitions(enhancedLRMAmmos, munitions);
         AmmoType.createMunitions(isBaLrmAmmos, munitions);
 
         // Create the munition types for Clan LRM launchers.
         munitions.clear();
-        munitions.add(new MunitionMutator("(Clan) Follow The Leader", 2, M_FOLLOW_THE_LEADER,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Follow The Leader", 2, Munitions.M_FOLLOW_THE_LEADER,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_F, RATING_X, RATING_E, RATING_X)
                         .setClanAdvancement(2750, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, true, false).setPrototypeFactions(F_TH)
-                        .setReintroductionFactions(F_FS, F_LC).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+                        .setClanApproximate(true, false, false, true, false)
+                        .setPrototypeFactions(F_TH)
+                        .setReintroductionFactions(F_FS, F_LC)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "368, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Heat-Seeking", 2, M_HEAT_SEEKING,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("(Clan) Heat-Seeking", 2, Munitions.M_HEAT_SEEKING,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_E, RATING_E, RATING_E, RATING_F)
                         .setClanAdvancement(2365, 2370, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "369, TO"));
 
         // TODO Incendiary LRMs - IO pg 61, TO pg 369
 
         /*
-         * munitions.add(new MunitionMutator("(Clan) Incendiary", 2, M_INCENDIARY_LRM,
+         * munitions.add(new MunitionMutator("(Clan) Incendiary", 2,
+         * Munitions.M_INCENDIARY_LRM,
          * new TechAdvancement(TECH_BASE_CLAN) .setIntroLevel(false)
          * .setUnofficial(false) .setTechRating(RATING_C) .setAvailability(RATING_E,
          * RATING_E, RATING_E, RATING_E) .setClanAdvancement(2341, 2342, 2352,
@@ -1965,408 +2247,516 @@ public class AmmoType extends EquipmentType {
          * .setPrototypeFactions(F_TH) .setProductionFactions(F_TH),"369, TO"));
          */
 
-        munitions.add(new MunitionMutator("(Clan) Semi-guided", 1, M_SEMIGUIDED,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Semi-guided", 1, Munitions.M_SEMIGUIDED,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                         .setClanAdvancement(3053, 3057, 3065, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
-                        .setProductionFactions(F_FW).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FW)
+                        .setProductionFactions(F_FW)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "231, TM"));
 
-        munitions.add(new MunitionMutator("(Clan) Smoke", 1, M_SMOKE_WARHEAD,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("(Clan) Smoke", 1, Munitions.M_SMOKE_WARHEAD,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
                         .setClanAdvancement(2333, 2370, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "371, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Swarm", 1, M_SWARM,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Swarm", 1, Munitions.M_SWARM,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_X, RATING_D, RATING_D)
                         .setClanAdvancement(2615, 2621, 3058, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "371, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Swarm-I", 1, M_SWARM_I,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Swarm-I", 1, Munitions.M_SWARM_I,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_X, RATING_D, RATING_D)
                         .setClanAdvancement(3052, 3057, 3066, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
-                        .setProductionFactions(F_FW).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FW)
+                        .setProductionFactions(F_FW)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "371, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Thunder", 1, M_THUNDER,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Thunder", 1, Munitions.M_THUNDER,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                         .setClanAdvancement(2618, 2620, 2650, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_TH).setReintroductionFactions(F_LC, F_FS)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Thunder-Active", 2, M_THUNDER_ACTIVE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Thunder-Active", 2, Munitions.M_THUNDER_ACTIVE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(3054, 3058, 3064, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Thunder-Augmented", 2, M_THUNDER_AUGMENTED,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Thunder-Augmented", 2, Munitions.M_THUNDER_AUGMENTED,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(3054, 3057, 3064, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Thunder-Vibrabomb", 2, M_THUNDER_VIBRABOMB,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Thunder-Vibrabomb", 2, Munitions.M_THUNDER_VIBRABOMB,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(3054, 3056, 3064, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Thunder-Inferno", 2, M_THUNDER_INFERNO,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Thunder-Inferno", 2, Munitions.M_THUNDER_INFERNO,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(3054, 3056, 3062, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "373, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Anti-TSM", 1, M_ANTI_TSM,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Anti-TSM", 1, Munitions.M_ANTI_TSM,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
                         .setClanAdvancement(3026, 3027, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_FS)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "104, IO"));
 
-        munitions.add(new MunitionMutator("(Clan) Artemis-capable", 1, M_ARTEMIS_CAPABLE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Artemis-capable", 1, Munitions.M_ARTEMIS_CAPABLE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setClanAdvancement(2592, 2598, 3045, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "207, TM"));
 
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        munitions.add(new MunitionMutator("(Clan) Artemis V-capable", 1, M_ARTEMIS_V_CAPABLE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        munitions.add(new MunitionMutator("(Clan) Artemis V-capable", 1, Munitions.M_ARTEMIS_V_CAPABLE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_F)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                         .setClanAdvancement(DATE_NONE, 3061, 3085, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, true, false, false).setPrototypeFactions(F_CGS)
-                        .setProductionFactions(F_CSF, F_RD).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(false, false, true, false, false)
+                        .setPrototypeFactions(F_CGS)
+                        .setProductionFactions(F_CSF, F_RD)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "283, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Dead-Fire", 1, M_DEAD_FIRE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("(Clan) Dead-Fire", 1, Munitions.M_DEAD_FIRE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(3052, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_DC)
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_DC)
                         .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "131, IO"));
 
-        munitions.add(new MunitionMutator("(Clan) Fragmentation", 1, M_FRAGMENTATION,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("(Clan) Fragmentation", 1, Munitions.M_FRAGMENTATION,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
                         .setClanAdvancement(2375, 2377, 3058, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        munitions.add(new MunitionMutator("(Clan) Listen-Kill", 1, M_LISTEN_KILL,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("(Clan) Listen-Kill", 1, Munitions.M_LISTEN_KILL,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_X)
                         .setClanAdvancement(3037, DATE_NONE, DATE_NONE, 3040, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS, F_LC)
                         .setStaticTechLevel(SimpleTechLevel.UNOFFICIAL),
                 "230, TM"));
 
         // TODO Mag Pulse see IO pg 62
 
-        munitions.add(new MunitionMutator("(Clan) Mine Clearance", 1, M_MINE_CLEARANCE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("(Clan) Mine Clearance", 1, Munitions.M_MINE_CLEARANCE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                         .setClanAdvancement(3065, 3069, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "370, TO"));
 
-        munitions.add(new MunitionMutator("(Clan) Multi-Purpose", 2, M_MULTI_PURPOSE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_F)
+        munitions.add(new MunitionMutator("(Clan) Multi-Purpose", 1, Munitions.M_MULTI_PURPOSE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_F)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(3055, 3060, 3065, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CGS)
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CGS)
                         .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "229, TW"));
 
-        munitions.add(new MunitionMutator("(Clan) Narc-capable", 1, M_NARC_CAPABLE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("(Clan) Narc-capable", 1, Munitions.M_NARC_CAPABLE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setClanAdvancement(2520, 2587, 3049, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "142, TW"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(clanLrmAmmos, munitions);
         AmmoType.createMunitions(clanBaLrmAmmos, munitions);
-        AmmoType.createMunitions(clanImprovedLrmsAmmo, munitions);
+        AmmoType.createMunitions(clanImprovedLRMsAmmo, munitions);
 
         // Create the munition types for AC rounds.
         munitions.clear();
-        munitions.add(new MunitionMutator("Armor-Piercing", 2, M_ARMOR_PIERCING,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Armor-Piercing", 2, Munitions.M_ARMOR_PIERCING,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setISAdvancement(3055, 3059, 3063, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_FS, F_LC)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "208, TM"));
 
-        munitions.add(new MunitionMutator("Caseless", 1, M_CASELESS,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("Caseless", 1, Munitions.M_CASELESS,
+                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                         .setISAdvancement(DATE_NONE, 3056, 3079, DATE_NONE, DATE_NONE)
                         .setISApproximate(false, false, false, false, false)
                         .setClanAdvancement(DATE_NONE, DATE_NONE, 3109, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, false, false, false)
                         .setPrototypeFactions(F_FS, F_LC)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.STANDARD),
-                "352, TO"));
-
-        munitions.add(new MunitionMutator("Flak", 1, M_FLAK,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
-                        .setAvailability(RATING_E, RATING_F, RATING_F, RATING_E)
-                        .setAdvancement(DATE_ES, 2310, 3070, DATE_NONE, DATE_NONE)
-                        .setApproximate(false, false, true, false, false).setProductionFactions(F_TA)
+                        .setProductionFactions(F_FS)
                         .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "352, TO"));
 
-        munitions.add(new MunitionMutator("Flechette", 1, M_FLECHETTE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Flak", 1, Munitions.M_FLAK,
+                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
+                        .setAvailability(RATING_E, RATING_F, RATING_F, RATING_E)
+                        .setAdvancement(DATE_ES, 2310, 3070, DATE_NONE, DATE_NONE)
+                        .setApproximate(false, false, true, false, false)
+                        .setProductionFactions(F_TA)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
+                "352, TO"));
+
+        munitions.add(new MunitionMutator("Flechette", 1, Munitions.M_FLECHETTE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setISAdvancement(3053, 3055, 3058, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_FS, F_LC)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "208, TM"));
 
-        munitions.add(new MunitionMutator("Precision", 2, M_PRECISION,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Precision", 2, Munitions.M_PRECISION,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setISAdvancement(3058, 3062, 3066, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_FS)
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "208, TM"));
 
-        munitions.add(new MunitionMutator("Tracer", 1, M_TRACER,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Tracer", 1, Munitions.M_TRACER,
+                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_D, RATING_E, RATING_F, RATING_E)
                         .setISAdvancement(DATE_ES, 2300, 3060, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, true, false, false, false).setProductionFactions(F_TA)
+                        .setISApproximate(false, true, false, false, false)
+                        .setProductionFactions(F_TA)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "353, TO"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(acAmmos, munitions);
 
         // Create the munition types for Clan Improved AC rounds. Since Improved AC go
         // extinct the ammo will as well.
         munitions.clear();
-        munitions.add(new MunitionMutator("Armor-Piercing", 2, M_ARMOR_PIERCING,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Armor-Piercing", 2, Munitions.M_ARMOR_PIERCING,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(DATE_NONE, DATE_NONE, 3109, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_CLAN)
-                        .setProductionFactions(F_CLAN).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_CLAN)
+                        .setProductionFactions(F_CLAN)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "208, TM"));
 
-        munitions.add(new MunitionMutator("Caseless", 1, M_CASELESS,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("Caseless", 1, Munitions.M_CASELESS,
+                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                         .setISAdvancement(DATE_NONE, 3056, 3079, DATE_NONE, DATE_NONE)
                         .setISApproximate(false, false, false, false, false)
                         .setClanAdvancement(DATE_NONE, DATE_NONE, 3109, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, false, false, false)
                         .setPrototypeFactions(F_FS, F_LC)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.STANDARD),
-                "352, TO"));
-
-        munitions.add(new MunitionMutator("Flak", 1, M_FLAK,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
-                        .setAvailability(RATING_E, RATING_F, RATING_F, RATING_E)
-                        .setAdvancement(DATE_ES, 2310, 3070, DATE_NONE, DATE_NONE)
-                        .setApproximate(false, false, true, false, false).setProductionFactions(F_TA)
+                        .setProductionFactions(F_FS)
                         .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "352, TO"));
 
+        munitions.add(new MunitionMutator("Flak", 1, Munitions.M_FLAK,
+                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
+                        .setAvailability(RATING_E, RATING_F, RATING_F, RATING_E)
+                        .setAdvancement(DATE_ES, 2310, 3070, DATE_NONE, DATE_NONE)
+                        .setApproximate(false, false, true, false, false)
+                        .setProductionFactions(F_TA)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
+                "352, TO"));
 
-        munitions.add(new MunitionMutator("Flechette", 1, M_FLECHETTE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Flechette", 1, Munitions.M_FLECHETTE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(DATE_NONE, DATE_NONE, 3105, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_CLAN)
-                        .setProductionFactions(F_CLAN).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_CLAN)
+                        .setProductionFactions(F_CLAN)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "208, TM"));
 
-        munitions.add(new MunitionMutator("Precision", 2, M_PRECISION,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Precision", 2, Munitions.M_PRECISION,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(3053, 3055, 3058, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, false, false, false)
                         .setStaticTechLevel(SimpleTechLevel.UNOFFICIAL),
                 "208, TM"));
 
-        munitions.add(new MunitionMutator("Tracer", 1, M_TRACER,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Tracer", 1, Munitions.M_TRACER,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_D, RATING_E, RATING_F, RATING_E)
                         .setClanAdvancement(DATE_NONE, 2815, 2818, 2833, 3080)
-                        .setClanApproximate(false, true, false, true, false).setPrototypeFactions(F_CLAN)
-                        .setProductionFactions(F_CLAN).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(false, true, false, true, false)
+                        .setPrototypeFactions(F_CLAN)
+                        .setProductionFactions(F_CLAN)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "353, TO"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(clanImprovedAcAmmo, munitions);
 
         // Create the munition types for Clan Protomek AC rounds. Ammo Tech Ratings
         // based off the weapon itself
         munitions.clear();
-        munitions.add(new MunitionMutator("Armor-Piercing", 2, M_ARMOR_PIERCING,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        munitions.add(new MunitionMutator("Armor-Piercing", 2, Munitions.M_ARMOR_PIERCING,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_F)
                         .setAvailability(RATING_X, RATING_X, RATING_X, RATING_E)
                         .setClanAdvancement(DATE_NONE, 3095, 3105, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, true, false, false, false).setProductionFactions(F_CJF)
+                        .setClanApproximate(false, true, false, false, false)
+                        .setProductionFactions(F_CJF)
                         .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "208, TM"));
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        munitions.add(new MunitionMutator("Caseless", 1, M_CASELESS,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        munitions.add(new MunitionMutator("Caseless", 1, Munitions.M_CASELESS,
+                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                         .setISAdvancement(DATE_NONE, 3056, 3079, DATE_NONE, DATE_NONE)
                         .setISApproximate(false, false, false, false, false)
                         .setClanAdvancement(DATE_NONE, DATE_NONE, 3109, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, false, false, false)
                         .setPrototypeFactions(F_FS, F_LC)
-                        .setProductionFactions(F_FS).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setProductionFactions(F_FS)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "352, TO"));
 
-        munitions.add(new MunitionMutator("Flak", 1, M_FLAK,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Flak", 1, Munitions.M_FLAK,
+                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_E, RATING_F, RATING_F, RATING_E)
                         .setAdvancement(DATE_ES, 2310, 3070, DATE_NONE, DATE_NONE)
-                        .setApproximate(false, false, true, false, false).setProductionFactions(F_TA)
+                        .setApproximate(false, false, true, false, false)
+                        .setProductionFactions(F_TA)
                         .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "352, TO"));
 
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        munitions.add(new MunitionMutator("Flechette", 1, M_FLECHETTE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        munitions.add(new MunitionMutator("Flechette", 1, Munitions.M_FLECHETTE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_F)
                         .setAvailability(RATING_X, RATING_X, RATING_X, RATING_E)
                         .setClanAdvancement(DATE_NONE, 3095, 3105, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, true, false, false, false).setProductionFactions(F_CHH)
+                        .setClanApproximate(false, true, false, false, false)
+                        .setProductionFactions(F_CHH)
                         .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "208, TM"));
 
-        munitions.add(new MunitionMutator("Precision", 2, M_PRECISION,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_F)
+        munitions.add(new MunitionMutator("Precision", 2, Munitions.M_PRECISION,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_F)
                         .setClanAdvancement(3070, 3073, 3145, DATE_NONE, DATE_NONE)
                         .setClanApproximate(true, false, false, false, false)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_CBS)
-                        .setProductionFactions(F_CBS).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_CBS)
+                        .setProductionFactions(F_CBS)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "208, TM"));
 
-        munitions.add(new MunitionMutator("Tracer", 1, M_TRACER,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        munitions.add(new MunitionMutator("Tracer", 1, Munitions.M_TRACER,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_F)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                         .setClanAdvancement(3070, 3073, 3145, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CBS)
-                        .setProductionFactions(F_CBS).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CBS)
+                        .setProductionFactions(F_CBS)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "353, TO"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(clanProtoAcAmmo, munitions);
 
         // Create the munition types for IS Arrow IV launchers.
         munitions.clear();
-        // TODO
-        /*
-         * munitions.add(new MunitionMutator("Air-Defense Arrow (ADA) Missiles", 1,
-         * M_XXXXXXX, new
-         * TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
-         * .setISAdvancement(3068, 3080, DATE_NONE, DATE_NONE, DATE_NONE)
-         * .setApproximate(false, false, false, false, false).setTechRating(RATING_E)
-         * .setAvailability(RATING_X, RATING_X, RATING_F,
-         * RATING_E).setPrototypeFactions(F_CC)
-         * .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED)
-         * , "353, TO"));
-         */
+        munitions.add(new MunitionMutator("Air-Defense Arrow (ADA) Missiles", 1, Munitions.M_ADA,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                        .setPrototypeFactions(F_CC)
+                        .setISAdvancement(3068, 3080, DATE_NONE, DATE_NONE, DATE_NONE)
+                        .setApproximate(false, false, false, false, false)
+                        .setTechRating(RATING_E)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                "165, TO:AU&E"));
 
-        munitions.add(new MunitionMutator("Cluster", 1, M_CLUSTER,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Cluster", 1, Munitions.M_CLUSTER,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
                         .setISAdvancement(2594, 2600, DATE_NONE, 2830, 3047)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_TH).setReintroductionFactions(F_CC)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "354, TO"));
 
-        munitions.add(new MunitionMutator("Homing", 1, M_HOMING, new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
-                .setUnofficial(false).setTechRating(RATING_E).setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
-                .setISAdvancement(2593, 2600, DATE_NONE, 2830, 3045).setISApproximate(false, false, false, false, false)
-                .setPrototypeFactions(F_TH).setProductionFactions(F_TH).setReintroductionFactions(F_CC)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED), "354, TO"));
+        munitions.add(new MunitionMutator("Homing", 1, Munitions.M_HOMING,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
+                        .setUnofficial(false).setTechRating(RATING_E)
+                        .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
+                        .setISAdvancement(2593, 2600, DATE_NONE, 2830, 3045)
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH).setProductionFactions(F_TH)
+                        .setReintroductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                "354, TO"));
 
-        munitions.add(new MunitionMutator("Illumination", 1, M_FLARE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Illumination", 1, Munitions.M_FLARE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
                         .setISAdvancement(2615, 2621, DATE_NONE, 2800, 3047)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_TH).setReintroductionFactions(F_CC)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "355, TO"));
 
-        munitions.add(new MunitionMutator("Inferno-IV", 1, M_INFERNO_IV,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Inferno-IV", 1, Munitions.M_INFERNO_IV,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                         .setISAdvancement(3053, 3083, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "355, TO"));
 
-        munitions.add(new MunitionMutator("Laser Inhibiting", 1, M_LASER_INHIB,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Laser Inhibiting", 1, Munitions.M_LASER_INHIB,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
                         .setISAdvancement(3053, 3083, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
-                        .setProductionFactions(F_FS, F_LC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_FS, F_LC)
+                        .setProductionFactions(F_FS, F_LC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "355, TO"));
 
-        munitions.add(new MunitionMutator("Smoke", 1, M_SMOKE, new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
-                .setUnofficial(false).setTechRating(RATING_E).setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
-                .setISAdvancement(2595, 2600, DATE_NONE, 2840, 3044).setISApproximate(false, false, false, false, false)
-                .setPrototypeFactions(F_TH).setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
+                        .setUnofficial(false).setTechRating(RATING_E)
+                        .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
+                        .setISAdvancement(2595, 2600, DATE_NONE, 2840, 3044)
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH).setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "356, TO"));
 
-        munitions.add(new MunitionMutator("Thunder (FASCAM)", 1, M_FASCAM,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Thunder (FASCAM)", 1, Munitions.M_FASCAM,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_D)
                         .setISAdvancement(2621, 2844, DATE_NONE, 2770, 3051)
-                        .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setISApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_CHH).setReintroductionFactions(F_CC)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "356, TO"));
 
         // TODO - Implement them.
         /*
-         * munitions.add(new MunitionMutator("Thunder-Active-IV", 1, M_ACTIVE_IV, new
+         * munitions.add(new MunitionMutator("Thunder-Active-IV", 1,
+         * Munitions.M_ACTIVE_IV, new
          * TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).
          * setTechRating(RATING_D) .setAvailability(RATING_X, RATING_X, RATING_E,
          * RATING_E) .setISAdvancement(3056, 3065, DATE_NONE, DATE_NONE, DATE_NONE)
@@ -2374,115 +2764,134 @@ public class AmmoType extends EquipmentType {
          * .setProductionFactions(F_CCC), "356, TO"));
          */
 
-        munitions.add(new MunitionMutator("Thunder Vibrabomb-IV", 1, M_VIBRABOMB_IV,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("Thunder Vibrabomb-IV", 1, Munitions.M_VIBRABOMB_IV,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setISAdvancement(3056, 3065, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setApproximate(false, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "357, TO"));
 
-        munitions.add(new MunitionMutator("Davy Crocket-M", 5, M_DAVY_CROCKETT_M,
+        munitions.add(new MunitionMutator("Davy Crockett-M", 5, Munitions.M_DAVY_CROCKETT_M,
                 new TechAdvancement(TECH_BASE_IS).setTechRating(RATING_D)
                         .setAvailability(RATING_F, RATING_F, RATING_F, RATING_F)
                         .setISAdvancement(2412, DATE_NONE, DATE_NONE, 2830, 3044)
                         .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "174, IO"));
 
-        munitions.add(new MunitionMutator("Fuel-Air", 1, M_FAE, new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
-                .setUnofficial(false).setTechRating(RATING_C).setAvailability(RATING_E, RATING_F, RATING_E, RATING_E)
-                .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, false, false, false).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+        munitions.add(new MunitionMutator("Fuel-Air", 1, Munitions.M_FAE,
+                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
+                        .setUnofficial(false).setTechRating(RATING_C)
+                        .setAvailability(RATING_E, RATING_F, RATING_E, RATING_E)
+                        .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
+                        .setISApproximate(false, false, false, false, false)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "165, IO"));
 
-        // TODO:
-        /*
-         * Arrow IV [Air-Defense Arrow (ADA) Missiles] - (TO 353), Arrow IV [Thunder
-         * Active-IV] - TO (357)
-         */
+        // TODO: Arrow IV [Thunder Active-IV] - TO (357)
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(arrowAmmos, munitions);
-        AmmoType.createMunitions(protoarrowAmmos, munitions);
+        AmmoType.createMunitions(protoArrowAmmos, munitions);
 
         // Create the munition types for Clan Arrow IV launchers.
         munitions.clear();
-        // TODO
-        /*
-         * munitions.add(new MunitionMutator("Air-Defense Arrow (ADA) Missiles", 1,
-         * M_XXXXXXX, new
-         * TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
-         * .setISAdvancement(3068, 3080, DATE_NONE, DATE_NONE, DATE_NONE)
-         * .setApproximate(false, false, false, false, false).setTechRating(RATING_E)
-         * .setAvailability(RATING_X, RATING_X, RATING_F,
-         * RATING_E).setPrototypeFactions(F_CC) .setProductionFactions(F_CC),
-         * "353, TO"));
-         */
 
-        munitions.add(new MunitionMutator("Cluster", 1, M_CLUSTER,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Air-Defense Arrow (ADA) Missiles", 1, Munitions.M_ADA,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
+                        .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                        .setClanAdvancement(3068, 3080, DATE_NONE, DATE_NONE, DATE_NONE)
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                "165, TO:AU&E"));
+
+        munitions.add(new MunitionMutator("Cluster", 1, Munitions.M_CLUSTER,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
                         .setClanAdvancement(2594, 2600, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_TH).setReintroductionFactions(F_CC)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "354, TO"));
 
-        munitions.add(new MunitionMutator("Homing", 1, M_HOMING,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Homing", 1, Munitions.M_HOMING,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
                         .setClanAdvancement(2593, 2600, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_TH).setReintroductionFactions(F_CC)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "354, TO"));
 
-        munitions.add(new MunitionMutator("Illumination", 1, M_FLARE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Illumination", 1, Munitions.M_FLARE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
                         .setClanAdvancement(2615, 2621, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_TH).setReintroductionFactions(F_CC)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "355, TO"));
 
-        munitions.add(new MunitionMutator("Inferno-IV", 1, M_INFERNO_IV,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Inferno-IV", 1, Munitions.M_INFERNO_IV,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                         .setClanAdvancement(3053, 3083, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "355, TO"));
 
-        munitions.add(new MunitionMutator("Laser Inhibiting", 1, M_LASER_INHIB,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Laser Inhibiting", 1, Munitions.M_LASER_INHIB,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
                         .setClanAdvancement(3053, 3083, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
-                        .setProductionFactions(F_FS, F_LC).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_FS, F_LC)
+                        .setProductionFactions(F_FS, F_LC)
+                        .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL),
                 "355, TO"));
 
-        munitions.add(new MunitionMutator("Smoke", 1, M_SMOKE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
                         .setClanAdvancement(2595, 2600, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "356, TO"));
 
-        munitions.add(new MunitionMutator("Thunder (FASCAM)", 1, M_FASCAM,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Thunder (FASCAM)", 1, Munitions.M_FASCAM,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_D)
                         .setClanAdvancement(2621, 2844, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
                         .setProductionFactions(F_CHH).setReintroductionFactions(F_CC)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "356, TO"));
 
         // TODO - Implement them.
         /*
-         * munitions.add(new MunitionMutator("Thunder-Active-IV", 1, M_ACTIVE_IV, new
+         * munitions.add(new MunitionMutator("Thunder-Active-IV", 1,
+         * Munitions.M_ACTIVE_IV, new
          * TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).
          * setTechRating(RATING_D) .setAvailability(RATING_X, RATING_X, RATING_E,
          * RATING_E) .setISAdvancement(3056, 3065, DATE_NONE, DATE_NONE, DATE_NONE)
@@ -2490,128 +2899,153 @@ public class AmmoType extends EquipmentType {
          * .setProductionFactions(F_CCC), "356, TO"));
          */
 
-        munitions.add(new MunitionMutator("Thunder Vibrabomb-IV", 1, M_VIBRABOMB_IV,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_D)
+        munitions.add(new MunitionMutator("Thunder Vibrabomb-IV", 1, Munitions.M_VIBRABOMB_IV,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(true)
+                        .setTechRating(RATING_D)
                         .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                         .setClanAdvancement(3056, 3065, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_CC)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_CC)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "357, TO"));
 
-        // TODO:
-        // Fuel-Air Mutators (See IO 165)
+        // TODO: Fuel-Air Mutators (See IO 165)
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(clanArrowAmmos, munitions);
 
         // create the munition types for clan vehicular grenade launchers
         munitions.clear();
-        munitions.add(new MunitionMutator("Chaff", 1, M_CHAFF,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Chaff", 1, Munitions.M_CHAFF,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_D, RATING_E, RATING_E, RATING_E)
                         .setClanAdvancement(DATE_NONE, DATE_PS, 3080, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, true, false, false)
                         .setPrototypeFactions(F_CLAN)
-                        .setProductionFactions(F_CLAN).setStaticTechLevel(SimpleTechLevel.STANDARD), "363, TO"));
+                        .setProductionFactions(F_CLAN)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
+                "363, TO"));
 
-        munitions.add(new MunitionMutator("Incendiary", 1, M_INCENDIARY,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Incendiary", 1, Munitions.M_INCENDIARY,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
                         .setClanAdvancement(DATE_NONE, DATE_PS, 3080, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, true, false, false)
                         .setPrototypeFactions(F_CLAN)
-                        .setProductionFactions(F_CLAN).setStaticTechLevel(SimpleTechLevel.STANDARD), "364, TO"));
+                        .setProductionFactions(F_CLAN)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
+                "364, TO"));
 
-        munitions.add(new MunitionMutator("Smoke", 1, M_SMOKE, new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false)
-                .setUnofficial(false).setTechRating(RATING_B).setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
-                .setClanAdvancement(DATE_NONE, DATE_PS, 3080, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, false, true, false, false)
-                .setPrototypeFactions(F_CLAN)
-                .setProductionFactions(F_CLAN).setStaticTechLevel(SimpleTechLevel.STANDARD), "364, TO"));
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false)
+                        .setUnofficial(false).setTechRating(RATING_B)
+                        .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
+                        .setClanAdvancement(DATE_NONE, DATE_PS, 3080, DATE_NONE, DATE_NONE)
+                        .setClanApproximate(false, false, true, false, false)
+                        .setPrototypeFactions(F_CLAN)
+                        .setProductionFactions(F_CLAN)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
+                "364, TO"));
 
         AmmoType.createMunitions(clanVGLAmmos, munitions);
 
         // create the munition types for IS vehicular grenade launchers
         munitions.clear();
-        munitions.add(new MunitionMutator("Chaff", 1, M_CHAFF, new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
-                .setUnofficial(false).setTechRating(RATING_B).setAvailability(RATING_X, RATING_E, RATING_E, RATING_E)
-                .setISAdvancement(DATE_NONE, DATE_PS, 3080, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false)
-                .setStaticTechLevel(SimpleTechLevel.STANDARD), "363, TO"));
+        munitions.add(new MunitionMutator("Chaff", 1, Munitions.M_CHAFF,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
+                        .setUnofficial(false).setTechRating(RATING_B)
+                        .setAvailability(RATING_X, RATING_E, RATING_E, RATING_E)
+                        .setISAdvancement(DATE_NONE, DATE_PS, 3080, DATE_NONE, DATE_NONE)
+                        .setISApproximate(false, false, true, false, false)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
+                "363, TO"));
 
-        munitions.add(new MunitionMutator("Incendiary", 1, M_INCENDIARY,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        munitions.add(new MunitionMutator("Incendiary", 1, Munitions.M_INCENDIARY,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_B)
                         .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
                         .setISAdvancement(DATE_NONE, DATE_PS, 3080, DATE_NONE, DATE_NONE)
                         .setISApproximate(false, false, true, false, false)
-                        .setStaticTechLevel(SimpleTechLevel.STANDARD), "363, TO"));
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
+                "363, TO"));
 
-        munitions.add(new MunitionMutator("Smoke", 1, M_SMOKE, new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
-                .setUnofficial(false).setTechRating(RATING_B).setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
-                .setISAdvancement(DATE_NONE, DATE_PS, 3080, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false)
-                .setStaticTechLevel(SimpleTechLevel.STANDARD), "363, TO"));
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false)
+                        .setUnofficial(false).setTechRating(RATING_B)
+                        .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
+                        .setISAdvancement(DATE_NONE, DATE_PS, 3080, DATE_NONE, DATE_NONE)
+                        .setISApproximate(false, false, true, false, false)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
+                "363, TO"));
 
         AmmoType.createMunitions(vglAmmos, munitions);
 
         // Create the munition types for Artillery launchers.
         munitions.clear();
-        munitions.add(new MunitionMutator("Cluster", 1, M_CLUSTER,
+        munitions.add(new MunitionMutator("Cluster", 1, Munitions.M_CLUSTER,
                 new TechAdvancement(TECH_BASE_ALL).setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
                         .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "354, TO"));
 
-        munitions.add(new MunitionMutator("Copperhead", 1, M_HOMING,
+        munitions.add(new MunitionMutator("Copperhead", 1, Munitions.M_HOMING,
                 new TechAdvancement(TECH_BASE_ALL).setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
-                        .setISAdvancement(2640, 2645, DATE_NONE, 2800, 3051).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISAdvancement(2640, 2645, DATE_NONE, 2800, 3051)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "354, TO"));
 
-        munitions.add(new MunitionMutator("FASCAM", 1, M_FASCAM,
+        munitions.add(new MunitionMutator("FASCAM", 1, Munitions.M_FASCAM,
                 new TechAdvancement(TECH_BASE_ALL).setTechRating(RATING_C)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_D)
-                        .setISAdvancement(2621, 2844, DATE_NONE, 2770, 3051).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setISAdvancement(2621, 2844, DATE_NONE, 2770, 3051)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_CC)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "355, TO"));
 
-        munitions.add(new MunitionMutator("Flechette", 1, M_FLECHETTE,
+        munitions.add(new MunitionMutator("Flechette", 1, Munitions.M_FLECHETTE,
                 new TechAdvancement(TECH_BASE_ALL).setTechRating(RATING_C)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_D)
                         .setISAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "355, TO"));
 
-        munitions.add(new MunitionMutator("Illumination", 1, M_FLARE,
+        munitions.add(new MunitionMutator("Illumination", 1, Munitions.M_FLARE,
                 new TechAdvancement(TECH_BASE_ALL).setTechRating(RATING_C)
                         .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
                         .setISAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "355, TO"));
 
-        munitions.add(new MunitionMutator("Smoke", 1, M_SMOKE,
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE,
                 new TechAdvancement(TECH_BASE_ALL).setTechRating(RATING_B)
                         .setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
                         .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "355, TO"));
 
-        munitions.add(new MunitionMutator("Fuel-Air", 1, M_FAE, new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
-                .setUnofficial(false).setTechRating(RATING_C).setAvailability(RATING_E, RATING_F, RATING_E, RATING_E)
-                .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, false, false, false).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+        munitions.add(new MunitionMutator("Fuel-Air", 1, Munitions.M_FAE,
+                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
+                        .setUnofficial(false).setTechRating(RATING_C)
+                        .setAvailability(RATING_E, RATING_F, RATING_E, RATING_E)
+                        .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
+                        .setISApproximate(false, false, false, false, false)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "165, IO"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(sniperAmmos, munitions);
         AmmoType.createMunitions(thumperAmmos, munitions);
 
         // Make Davy Crockett-Ms for Long Toms, but not Thumper or Sniper.
-        munitions.add(new MunitionMutator("Davy Crocket-M", 5, M_DAVY_CROCKETT_M,
+        munitions.add(new MunitionMutator("Davy Crockett-M", 5, Munitions.M_DAVY_CROCKETT_M,
                 new TechAdvancement(TECH_BASE_IS).setTechRating(RATING_D)
                         .setAvailability(RATING_F, RATING_F, RATING_F, RATING_F)
                         .setISAdvancement(2412, DATE_NONE, DATE_NONE, 2830, 3044)
@@ -2619,188 +3053,157 @@ public class AmmoType extends EquipmentType {
                 "174, IO"));
         AmmoType.createMunitions(longTomAmmos, munitions);
 
-        // Create the munition types for Artillery Cannons.
-        // These were taken out in TacOps errata, so are unofficial.
+        // Create the munition types for Artillery Cannons. These were taken out in
+        // TacOps errata, so are unofficial.
         munitions.clear();
-        munitions.add(new MunitionMutator("Cluster", 1, M_CLUSTER,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
-                        .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
+
+        munitions.add(new MunitionMutator("Fuel-Air", 1, Munitions.M_FAE,
+                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
+                        .setUnofficial(false).setTechRating(RATING_C)
+                        .setAvailability(RATING_E, RATING_F, RATING_E, RATING_E)
                         .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
                         .setISApproximate(false, false, false, false, false)
-                        .setClanAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false),
-                "354, TO"));
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                "159, IO"));
 
-        munitions.add(new MunitionMutator("Copperhead", 1, M_HOMING,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
-                        .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
-                        .setISAdvancement(2640, 2645, DATE_NONE, 2800, 3051)
-                        .setISApproximate(false, false, false, false, false)
-                        .setClanAdvancement(2640, 2645, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH),
-                "354, TO"));
-
-        munitions.add(new MunitionMutator("FASCAM", 1, M_FASCAM, new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
-                .setUnofficial(true).setTechRating(RATING_C).setAvailability(RATING_E, RATING_F, RATING_D, RATING_D)
-                .setISAdvancement(2621, 2844, DATE_NONE, 2770, 3051).setISApproximate(false, false, false, false, false)
-                .setClanAdvancement(2621, 2844, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_CHH), "355, TO"));
-
-        munitions.add(new MunitionMutator("Flechette", 1, M_FLECHETTE,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_C)
-                        .setAvailability(RATING_E, RATING_F, RATING_D, RATING_D)
-                        .setISAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false)
-                        .setClanAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false),
-                "355, TO"));
-
-        munitions.add(new MunitionMutator("Illumination", 1, M_FLARE,
-                new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_C)
-                        .setAvailability(RATING_D, RATING_D, RATING_D, RATING_D)
-                        .setISAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setISApproximate(false, false, false, false, false)
-                        .setClanAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false),
-                "355, TO"));
-
-        munitions.add(new MunitionMutator("Smoke", 1, M_SMOKE, new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
-                .setUnofficial(true).setTechRating(RATING_B).setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
-                .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, false, false, false)
-                .setClanAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, false, false, false, false).setStaticTechLevel(SimpleTechLevel.ADVANCED),
-                "356, TO"));
-
-        munitions.add(new MunitionMutator("Fuel-Air", 1, M_FAE, new TechAdvancement(TECH_BASE_ALL).setIntroLevel(false)
-                .setUnofficial(false).setTechRating(RATING_C).setAvailability(RATING_E, RATING_F, RATING_E, RATING_E)
-                .setISAdvancement(DATE_PS, DATE_PS, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, false, false, false).setStaticTechLevel(SimpleTechLevel.ADVANCED),
-                "165, IO"));
-
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(sniperCannonAmmos, munitions);
         AmmoType.createMunitions(thumperCannonAmmos, munitions);
-
-        // Make Davy Crockett-Ms for Long Toms, but not Thumper or Sniper.
-        munitions.add(new MunitionMutator("Davy Crocket-M", 5, M_DAVY_CROCKETT_M,
-                new TechAdvancement(TECH_BASE_IS).setTechRating(RATING_D)
-                        .setAvailability(RATING_F, RATING_F, RATING_F, RATING_F)
-                        .setISAdvancement(2412, DATE_NONE, DATE_NONE, 2830, 3044)
-                        .setStaticTechLevel(SimpleTechLevel.UNOFFICIAL),
-                "174, IO"));
         AmmoType.createMunitions(longTomCannonAmmos, munitions);
+
+        munitions.clear();
+        munitions.add(new MunitionMutator("Smoke", 1, Munitions.M_SMOKE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
+                        .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                        .setISAdvancement(3070, 3075, DATE_NONE, DATE_NONE, DATE_NONE)
+                        .setISApproximate(true, false, false, false, false)
+                        .setPrototypeFactions(F_CS)
+                        .setProductionFactions(F_CS),
+                "375, TO"));
+        AmmoType.createMunitions(baTubeAmmos, munitions);
 
         // Create the munition types for SRT launchers.
         munitions.clear();
-        munitions.add(new MunitionMutator("Artemis-capable", 1, M_ARTEMIS_CAPABLE,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Artemis-capable", 1, Munitions.M_ARTEMIS_CAPABLE,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setISAdvancement(2592, 2598, 3045, 2855, 3035)
-                        .setISApproximate(false, false, false, true, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setISApproximate(false, false, false, true, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(srtAmmos, munitions);
         AmmoType.createMunitions(lrtAmmos, munitions);
 
         // Create the munition types for Clan SRT launchers.
         munitions.clear();
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        munitions.add(new MunitionMutator("(Clan) Artemis V-capable", 1, M_ARTEMIS_V_CAPABLE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        munitions.add(new MunitionMutator("(Clan) Artemis V-capable", 1, Munitions.M_ARTEMIS_V_CAPABLE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_F)
                         .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                         .setClanAdvancement(DATE_NONE, 3061, 3085, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, true, false, false).setPrototypeFactions(F_CGS)
-                        .setProductionFactions(F_CSF, F_RD).setStaticTechLevel(SimpleTechLevel.ADVANCED),
+                        .setClanApproximate(false, false, true, false, false)
+                        .setPrototypeFactions(F_CGS)
+                        .setProductionFactions(F_CSF, F_RD)
+                        .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "283, TO"));
-        munitions.add(new MunitionMutator("Artemis-capable", 1, M_ARTEMIS_CAPABLE,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        munitions.add(new MunitionMutator("Artemis-capable", 1, Munitions.M_ARTEMIS_CAPABLE,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_E)
                         .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
                         .setClanAdvancement(2592, 2598, 3045, DATE_NONE, DATE_NONE)
-                        .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
-                        .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD),
+                        .setClanApproximate(false, false, false, false, false)
+                        .setPrototypeFactions(F_TH)
+                        .setProductionFactions(F_TH)
+                        .setStaticTechLevel(SimpleTechLevel.STANDARD),
                 "230, TM"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(clanSrtAmmos, munitions);
         AmmoType.createMunitions(clanLrtAmmos, munitions);
 
         // TODO : Need Corrosive, Flame-Retardant, Oil Slick, Paint and Water Ammo's for
         // all Fluid Guns/Sprayers
-        // Create the munition types for vehicle flamers
-        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        // December 2021 - CGL requested we move this to Advanced for all fluid gun ammos.
+        //
+        // Create the munition types for vehicle flamers Tech Progression tweaked to
+        // combine IntOps with TRO Prototypes/3145 NTNU RS
+        // December 2021 - CGL requested we move this to Advanced for all fluid gun
+        // ammos.
         munitions.clear();
-        munitions.add(new MunitionMutator("Coolant", 1, M_COOLANT,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Coolant", 1, Munitions.M_COOLANT,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
                         .setISAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
                         .setISApproximate(false, false, false, false, false)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "360, TO"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(vehicleFlamerAmmos, munitions);
 
         munitions.clear();
-        munitions.add(new MunitionMutator("(Clan) Coolant", 1, M_COOLANT,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("(Clan) Coolant", 1, Munitions.M_COOLANT,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
                         .setClanAdvancement(DATE_ES, DATE_ES, DATE_NONE, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, false, false, false)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "360, TO"));
 
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(clanVehicleFlamerAmmos, munitions);
 
         // Create the munition types for heavy flamers
         munitions.clear();
-        munitions.add(new MunitionMutator("Coolant", 1, M_COOLANT,
-                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("Coolant", 1, Munitions.M_COOLANT,
+                new TechAdvancement(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
                         .setISAdvancement(DATE_ES, DATE_ES, DATE_ES, DATE_NONE, DATE_NONE)
                         .setISApproximate(false, false, false, false, false)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "360, TO"));
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(heavyFlamerAmmos, munitions);
 
         munitions.clear();
-        munitions.add(new MunitionMutator("(Clan) Coolant", 1, M_COOLANT,
-                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        munitions.add(new MunitionMutator("(Clan) Coolant", 1, Munitions.M_COOLANT,
+                new TechAdvancement(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
+                        .setTechRating(RATING_C)
                         .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
                         .setClanAdvancement(DATE_ES, DATE_ES, DATE_ES, DATE_NONE, DATE_NONE)
                         .setClanApproximate(false, false, false, false, false)
                         .setStaticTechLevel(SimpleTechLevel.ADVANCED),
                 "360, TO"));
-        // Walk through both the base types and the
-        // mutators, and create munition types.
+
+        // Walk through both the base types and the mutators, and create munition types.
         AmmoType.createMunitions(clanHeavyFlamerAmmos, munitions);
 
-        // cache types that share a launcher for loadout purposes
-        for (Enumeration<EquipmentType> e = EquipmentType.getAllTypes(); e.hasMoreElements();) {
-            EquipmentType et = e.nextElement();
-            if (!(et instanceof AmmoType)) {
+        // cache types that share a launcher for load out purposes
+        m_vaMunitions.setSize(EquipmentType.allTypes().size());
+        for (Enumeration<EquipmentType> equipmentTypes = EquipmentType.getAllTypes(); equipmentTypes
+                .hasMoreElements();) {
+            EquipmentType equipmentType = equipmentTypes.nextElement();
+            if (!(equipmentType instanceof AmmoType)) {
                 continue;
             }
-            AmmoType at = (AmmoType) et;
-            int nType = at.getAmmoType();
-            if (m_vaMunitions[nType] == null) {
-                m_vaMunitions[nType] = new Vector<>();
+
+            AmmoType ammoType = (AmmoType) equipmentType;
+            int nType = ammoType.getAmmoType();
+            if (m_vaMunitions.elementAt(nType) == null) {
+                m_vaMunitions.set(nType, new Vector<AmmoType>());
             }
 
-            m_vaMunitions[nType].addElement(at);
+            m_vaMunitions.get(nType).addElement(ammoType);
         }
     }
 
@@ -2818,19 +3221,20 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Anti-Missile System Ammo [IS]";
-        ammo.shortName = "AMS";
+        ammo.shortName = "AMS Ammo";
         ammo.setInternalName("ISAMS Ammo");
         ammo.addLookupName("IS Ammo AMS");
         ammo.addLookupName("IS AMS Ammo");
-        ammo.damagePerShot = 1; // only used for ammo crits
-        ammo.rackSize = 2; // only used for ammo crits
+        ammo.damagePerShot = 1; // only used for ammo criticals
+        ammo.rackSize = 2; // only used for ammo criticals
         ammo.ammoType = AmmoType.T_AMS;
         ammo.shots = 12;
         ammo.bv = 11;
         ammo.cost = 2000;
         ammo.rulesRefs = "204, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C).setISAdvancement(2613, 2617, 3048, 2835, 3045)
+                .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
+                .setISAdvancement(2613, 2617, 3048, 2835, 3045)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_CC);
         return ammo;
@@ -2840,12 +3244,12 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Anti-Missile System Ammo [Clan]";
-        ammo.shortName = "AMS";
+        ammo.shortName = "AMS Ammo";
         ammo.setInternalName("CLAMS Ammo");
         ammo.addLookupName("Clan Ammo AMS");
         ammo.addLookupName("Clan AMS Ammo");
-        ammo.damagePerShot = 1; // only used for ammo crits
-        ammo.rackSize = 2; // only used for ammo crits
+        ammo.damagePerShot = 1; // only used for ammo criticals
+        ammo.rackSize = 2; // only used for ammo criticals
         ammo.ammoType = AmmoType.T_AMS;
         ammo.shots = 24;
         ammo.bv = 22;
@@ -2878,9 +3282,11 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 30;
         ammo.cost = 10000;
         ammo.rulesRefs = "284, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
-                .setISAdvancement(2593, 2600, DATE_NONE, 2830, 3044).setISApproximate(false, false, false, false, false)
+                .setISAdvancement(2593, 2600, DATE_NONE, 2830, 3044)
+                .setISApproximate(false, false, false, false, false)
                 .setPrototypeFactions(F_TH).setProductionFactions(F_TH);
         return ammo;
     }
@@ -2962,7 +3368,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "284, TO";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_B)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
-                .setAdvancement(DATE_PS, DATE_PS, DATE_PS, DATE_NONE, DATE_NONE).setPrototypeFactions(F_TH)
+                .setAdvancement(DATE_PS, DATE_PS, DATE_PS, DATE_NONE, DATE_NONE)
+                .setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH);
         return ammo;
     }
@@ -3013,15 +3420,15 @@ public class AmmoType extends EquipmentType {
         ammo.tonnage = 25;
         ammo.flags = ammo.flags.or(F_CRUISE_MISSILE);
         ammo.rulesRefs = "284, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS)
-            .setTechRating(RATING_E)
-            .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setISAdvancement(3065, 3095, DATE_NONE, DATE_NONE, DATE_NONE)
-            .setISApproximate(false, true, false, false, false)
-            .setPrototypeFactions(F_FS)
-            .setProductionFactions(F_FS)
-            .setStaticTechLevel(SimpleTechLevel.ADVANCED);
+                .setTechRating(RATING_E)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setISAdvancement(3065, 3095, DATE_NONE, DATE_NONE, DATE_NONE)
+                .setISApproximate(false, true, false, false, false)
+                .setPrototypeFactions(F_FS)
+                .setProductionFactions(F_FS)
+                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
         return ammo;
     }
 
@@ -3039,15 +3446,15 @@ public class AmmoType extends EquipmentType {
         ammo.tonnage = 35;
         ammo.flags = ammo.flags.or(F_CRUISE_MISSILE);
         ammo.rulesRefs = "284, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS)
-            .setTechRating(RATING_E)
-            .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setISAdvancement(3065, 3095, DATE_NONE, DATE_NONE, DATE_NONE)
-            .setISApproximate(false, true, false, false, false)
-            .setPrototypeFactions(F_FS)
-            .setProductionFactions(F_FS)
-            .setStaticTechLevel(SimpleTechLevel.ADVANCED);
+                .setTechRating(RATING_E)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setISAdvancement(3065, 3095, DATE_NONE, DATE_NONE, DATE_NONE)
+                .setISApproximate(false, true, false, false, false)
+                .setPrototypeFactions(F_FS)
+                .setProductionFactions(F_FS)
+                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
         return ammo;
     }
 
@@ -3065,15 +3472,15 @@ public class AmmoType extends EquipmentType {
         ammo.tonnage = 45;
         ammo.flags = ammo.flags.or(F_CRUISE_MISSILE);
         ammo.rulesRefs = "284, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS)
-            .setTechRating(RATING_E)
-            .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setISAdvancement(3065, 3095, DATE_NONE, DATE_NONE, DATE_NONE)
-            .setISApproximate(false, true, false, false, false)
-            .setPrototypeFactions(F_FS)
-            .setProductionFactions(F_FS)
-            .setStaticTechLevel(SimpleTechLevel.ADVANCED);
+                .setTechRating(RATING_E)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setISAdvancement(3065, 3095, DATE_NONE, DATE_NONE, DATE_NONE)
+                .setISApproximate(false, true, false, false, false)
+                .setPrototypeFactions(F_FS)
+                .setProductionFactions(F_FS)
+                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
         return ammo;
     }
 
@@ -3091,15 +3498,15 @@ public class AmmoType extends EquipmentType {
         ammo.tonnage = 60;
         ammo.flags = ammo.flags.or(F_CRUISE_MISSILE);
         ammo.rulesRefs = "284, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS)
-            .setTechRating(RATING_E)
-            .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setISAdvancement(3065, 3095, DATE_NONE, DATE_NONE, DATE_NONE)
-            .setISApproximate(false, true, false, false, false)
-            .setPrototypeFactions(F_FS)
-            .setProductionFactions(F_FS)
-            .setStaticTechLevel(SimpleTechLevel.ADVANCED);
+                .setTechRating(RATING_E)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setISAdvancement(3065, 3095, DATE_NONE, DATE_NONE, DATE_NONE)
+                .setISApproximate(false, true, false, false, false)
+                .setPrototypeFactions(F_FS)
+                .setProductionFactions(F_FS)
+                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
         return ammo;
     }
 
@@ -3127,12 +3534,12 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 41;
         ammo.cost = 20000;
         ammo.rulesRefs = "285, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_B)
                 .setAvailability(RATING_X, RATING_F, RATING_E, RATING_D)
-                .setISAdvancement(3012, 3079, DATE_NONE, DATE_NONE,DATE_NONE)
+                .setISAdvancement(3012, 3079, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, true, false, false, false)
-                .setClanAdvancement(3032, 3079, DATE_NONE, DATE_NONE,DATE_NONE)
+                .setClanAdvancement(3032, 3079, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(false, true, false, false, false)
                 .setPrototypeFactions(F_LC, F_CWF)
                 .setProductionFactions(F_LC)
@@ -3184,9 +3591,9 @@ public class AmmoType extends EquipmentType {
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_B)
                 .setAvailability(RATING_X, RATING_F, RATING_E, RATING_D)
-                .setISAdvancement(3012, 3079, DATE_NONE, DATE_NONE,DATE_NONE)
+                .setISAdvancement(3012, 3079, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, true, false, false, false)
-                .setClanAdvancement(3032, 3079, DATE_NONE, DATE_NONE,DATE_NONE)
+                .setClanAdvancement(3032, 3079, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(false, true, false, false, false)
                 .setPrototypeFactions(F_LC, F_CWF)
                 .setProductionFactions(F_LC)
@@ -3236,12 +3643,12 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 5;
         ammo.cost = 10000;
         ammo.rulesRefs = "285, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_B)
                 .setAvailability(RATING_X, RATING_F, RATING_E, RATING_D)
-                .setISAdvancement(3012, 3079, DATE_NONE, DATE_NONE,DATE_NONE)
+                .setISAdvancement(3012, 3079, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, true, false, false, false)
-                .setClanAdvancement(3032, 3079, DATE_NONE, DATE_NONE,DATE_NONE)
+                .setClanAdvancement(3032, 3079, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(false, true, false, false, false)
                 .setPrototypeFactions(F_LC, F_CWF)
                 .setProductionFactions(F_LC)
@@ -3273,7 +3680,6 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "BA Tube Artillery Ammo";
-        // TODO need mutator for Smoke Artillery
         ammo.shortName = "Tube Artillery";
         ammo.setInternalName("ISBATubeArtilleryAmmo");
         ammo.damagePerShot = 1;
@@ -3285,7 +3691,8 @@ public class AmmoType extends EquipmentType {
         ammo.kgPerShot = 15;
         ammo.cost = 900;
         ammo.rulesRefs = "284, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setISAdvancement(3070, 3075, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CS)
@@ -3411,7 +3818,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 4;
         ammo.cost = 2000;
         ammo.rulesRefs = "207, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_B)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setISAdvancement(3062, 3068, 3070, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -3435,7 +3843,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 8;
         ammo.cost = 5000;
         ammo.rulesRefs = "207, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_B)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setISAdvancement(3062, 3068, 3070, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -3460,10 +3869,10 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 1200;
         ammo.rulesRefs = "286, TO";
         ammo.kgPerShot = 25;
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setClanAdvancement(DATE_NONE, 3070, 3073, DATE_NONE,DATE_NONE)
+                .setClanAdvancement(DATE_NONE, 3070, 3073, DATE_NONE, DATE_NONE)
                 .setClanApproximate(false, true, false, false, false)
                 .setPrototypeFactions(F_CBS).setProductionFactions(F_CBS)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
@@ -3486,10 +3895,10 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 4800;
         ammo.rulesRefs = "286, TO";
         ammo.kgPerShot = 50;
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setClanAdvancement(DATE_NONE, 3070, 3073, DATE_NONE,DATE_NONE)
+                .setClanAdvancement(DATE_NONE, 3070, 3073, DATE_NONE, DATE_NONE)
                 .setClanApproximate(false, true, false, false, false)
                 .setPrototypeFactions(F_CBS).setProductionFactions(F_CBS)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
@@ -3512,10 +3921,10 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 6300;
         ammo.kgPerShot = 100;
         ammo.rulesRefs = "286, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setClanAdvancement(DATE_NONE, 3070, 3073, DATE_NONE,DATE_NONE)
+                .setClanAdvancement(DATE_NONE, 3070, 3073, DATE_NONE, DATE_NONE)
                 .setClanApproximate(false, true, false, false, false)
                 .setPrototypeFactions(F_CBS).setProductionFactions(F_CBS)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
@@ -3538,7 +3947,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 7;
         ammo.cost = 3000;
         ammo.rulesRefs = "285, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E).setISAdvancement(3059, 3079)
                 .setISApproximate(false, false).setPrototypeFactions(F_CC).setProductionFactions(F_CC)
@@ -3561,7 +3970,7 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 15;
         ammo.bv = 14;
         ammo.cost = 10000;
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E).setISAdvancement(3059, 3079)
                 .setISApproximate(false, false).setPrototypeFactions(F_CC).setProductionFactions(F_CC)
@@ -3585,7 +3994,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 20;
         ammo.cost = 20000;
         ammo.rulesRefs = "285, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E).setISAdvancement(3059, 3079)
                 .setISApproximate(false, false).setPrototypeFactions(F_CC).setProductionFactions(F_CC)
@@ -3600,8 +4009,6 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "LB 2-X Cluster Ammo";
         ammo.shortName = "LB-2X Cluster";
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("Clan LB 2-X Cluster Ammo");
         ammo.addLookupName("Clan Ammo 2-X (CL)");
         // this isn't a true mtf code
@@ -3611,7 +4018,7 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 2;
         ammo.ammoType = AmmoType.T_AC_LBX;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 45;
         ammo.bv = 6;
         ammo.cost = 3300;
@@ -3629,8 +4036,6 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "LB 5-X Cluster Ammo";
         ammo.shortName = "LB-5X Cluster";
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("Clan LB 5-X Cluster Ammo");
         ammo.addLookupName("Clan Ammo 5-X (CL)");
         // this isn't a true mtf code
@@ -3640,7 +4045,7 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 5;
         ammo.ammoType = AmmoType.T_AC_LBX;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 20;
         ammo.bv = 12;
         ammo.cost = 15000;
@@ -3658,8 +4063,6 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "LB 10-X Cluster Ammo";
         ammo.shortName = "LB-10X Cluster";
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("Clan LB 10-X Cluster Ammo");
         ammo.addLookupName("Clan Ammo 10-X (CL)");
         // this isn't a true mtf code
@@ -3669,7 +4072,7 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 10;
         ammo.ammoType = AmmoType.T_AC_LBX;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 10;
         ammo.bv = 19;
         ammo.cost = 20000;
@@ -3688,8 +4091,6 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "LB 20-X Cluster Ammo";
         ammo.shortName = "LB-20X Cluster";
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("Clan LB 20-X Cluster Ammo");
         ammo.addLookupName("Clan Ammo 20-X (CL)");
         // this isn't a true mtf code
@@ -3699,7 +4100,7 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 20;
         ammo.ammoType = AmmoType.T_AC_LBX;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 5;
         ammo.bv = 30;
         ammo.cost = 34000;
@@ -3717,8 +4118,6 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "LB 2-X Cluster Ammo";
         ammo.shortName = "LB 2-X Cluster";
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("IS LB 2-X Cluster Ammo");
         ammo.addLookupName("IS Ammo 2-X (CL)");
         // this isn't a true mtf code
@@ -3728,12 +4127,13 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 2;
         ammo.ammoType = AmmoType.T_AC_LBX;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 45;
         ammo.bv = 5;
         ammo.cost = 3300;
         ammo.rulesRefs = "TM 207";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -3746,8 +4146,6 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "LB 5-X Cluster Ammo";
         ammo.shortName = "LB 5-X Cluster";
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("IS LB 5-X Cluster Ammo");
         ammo.addLookupName("IS Ammo 5-X (CL)");
         // this isn't a true mtf code
@@ -3757,12 +4155,13 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 5;
         ammo.ammoType = AmmoType.T_AC_LBX;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 20;
         ammo.bv = 10;
         ammo.cost = 15000;
         ammo.rulesRefs = "207, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -3775,8 +4174,6 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "LB 10-X Cluster Ammo";
         ammo.shortName = "LB 10-X Cluster";
-        ammo.subMunitionBegin = 8;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("IS LB 10-X Cluster Ammo");
         ammo.addLookupName("IS Ammo 10-X (CL)");
         // this isn't a true mtf code
@@ -3786,13 +4183,15 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 10;
         ammo.ammoType = AmmoType.T_AC_LBX;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 10;
         ammo.bv = 19;
         ammo.cost = 20000;
         ammo.rulesRefs = "207, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
-                .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C).setISAdvancement(2590, 2595, 3040, 2840, 3035)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
+                .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
+                .setISAdvancement(2590, 2595, 3040, 2840, 3035)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FS);
         return ammo;
@@ -3803,8 +4202,6 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "LB 20-X Cluster Ammo";
         ammo.shortName = "LB 20-X Cluster";
-        ammo.subMunitionBegin = 8;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("IS LB 20-X Cluster Ammo");
         ammo.addLookupName("IS Ammo 20-X (CL)");
         // this isn't a true mtf code
@@ -3814,12 +4211,13 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 20;
         ammo.ammoType = AmmoType.T_AC_LBX;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 5;
         ammo.bv = 30;
         ammo.cost = 34000;
         ammo.rulesRefs = "TM 207";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -3942,7 +4340,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 5;
         ammo.cost = 2000;
         ammo.rulesRefs = "TM 207";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -3966,7 +4365,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 10;
         ammo.cost = 9000;
         ammo.rulesRefs = "207, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -3990,8 +4390,10 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 19;
         ammo.cost = 12000;
         ammo.rulesRefs = "207, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
-                .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C).setISAdvancement(2590, 2595, 3040, 2840, 3035)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
+                .setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
+                .setISAdvancement(2590, 2595, 3040, 2840, 3035)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FS);
         return ammo;
@@ -4013,7 +4415,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 30;
         ammo.cost = 20000;
         ammo.rulesRefs = "TM 207";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -4131,7 +4534,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 7;
         ammo.cost = 1000;
         ammo.rulesRefs = "208, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3057, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
@@ -4154,8 +4558,10 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 14;
         ammo.cost = 9000;
         ammo.rulesRefs = "208, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
-                .setAvailability(RATING_D, RATING_F, RATING_D, RATING_D).setISAdvancement(2635, 2640, 3040, 2915, 3035)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
+                .setAvailability(RATING_D, RATING_F, RATING_D, RATING_D)
+                .setISAdvancement(2635, 2640, 3040, 2915, 3035)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FS);
         return ammo;
@@ -4176,7 +4582,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 26;
         ammo.cost = 12000;
         ammo.rulesRefs = "208, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3057, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
@@ -4199,7 +4606,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 35;
         ammo.cost = 20000;
         ammo.rulesRefs = "208, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3057, 3060, 3061, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
@@ -4222,7 +4630,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 15;
         ammo.cost = 3000;
         ammo.rulesRefs = "207, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3060, 3062, 3071, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -4245,7 +4654,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 31;
         ammo.cost = 12000;
         ammo.rulesRefs = "207, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3060, 3062, 3071, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -4269,13 +4679,13 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 5000;
         ammo.kgPerShot = 22.2;
         ammo.rulesRefs = "286, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN)
-            .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setClanAdvancement(3073, DATE_NONE, 3104, DATE_NONE, DATE_NONE)
-            .setClanApproximate(false, false, false, false, false)
-            .setPrototypeFactions(F_CSF).setProductionFactions(F_CSF)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setClanAdvancement(3073, DATE_NONE, 3104, DATE_NONE, DATE_NONE)
+                .setClanApproximate(false, false, false, false, false)
+                .setPrototypeFactions(F_CSF).setProductionFactions(F_CSF)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -4294,13 +4704,13 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 43;
         ammo.cost = 13000;
         ammo.rulesRefs = "286, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN)
-            .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setClanAdvancement(3073, DATE_NONE, 3104, DATE_NONE, DATE_NONE)
-            .setClanApproximate(false, false, false, false, false)
-            .setPrototypeFactions(F_CSF).setProductionFactions(F_CSF)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setClanAdvancement(3073, DATE_NONE, 3104, DATE_NONE, DATE_NONE)
+                .setClanApproximate(false, false, false, false, false)
+                .setPrototypeFactions(F_CSF).setProductionFactions(F_CSF)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -4319,12 +4729,12 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 3;
         ammo.cost = 1000;
         ammo.rulesRefs = "338, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_B)
-            .setAvailability(RATING_C, RATING_F, RATING_X, RATING_D)
-            .setISAdvancement(DATE_PS, DATE_NONE, 3084, DATE_NONE, DATE_NONE)
-            .setISApproximate(false, false, true, false, false)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
+                .setAvailability(RATING_C, RATING_F, RATING_X, RATING_D)
+                .setISAdvancement(DATE_PS, DATE_NONE, 3084, DATE_NONE, DATE_NONE)
+                .setISApproximate(false, false, true, false, false)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -4343,12 +4753,12 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 6;
         ammo.cost = 1000;
         ammo.rulesRefs = "338, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_B)
-            .setAvailability(RATING_C, RATING_F, RATING_X, RATING_D)
-            .setISAdvancement(DATE_PS, DATE_NONE, 3084, DATE_NONE, DATE_NONE)
-            .setISApproximate(false, false, true, false, false)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
+                .setAvailability(RATING_C, RATING_F, RATING_X, RATING_D)
+                .setISAdvancement(DATE_PS, DATE_NONE, 3084, DATE_NONE, DATE_NONE)
+                .setISApproximate(false, false, true, false, false)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -4367,16 +4777,16 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 11;
         ammo.cost = 1000;
         ammo.rulesRefs = "338, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_B)
-            .setAvailability(RATING_C, RATING_F, RATING_X, RATING_D)
-            .setISAdvancement(DATE_PS, DATE_NONE, 3084, DATE_NONE, DATE_NONE)
-            .setISApproximate(false, false, true, false, false)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
+                .setAvailability(RATING_C, RATING_F, RATING_X, RATING_D)
+                .setISAdvancement(DATE_PS, DATE_NONE, 3084, DATE_NONE, DATE_NONE)
+                .setISApproximate(false, false, true, false, false)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
-//Chemical Laser Ammos
+    // Chemical Laser Ammos
 
     private static AmmoType createCLSmallChemicalLaserAmmo() {
         AmmoType ammo = new AmmoType();
@@ -4395,7 +4805,8 @@ public class AmmoType extends EquipmentType {
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
-                .setClanAdvancement(DATE_NONE, 3059, 3083, DATE_NONE, DATE_NONE).setPrototypeFactions(F_CHH)
+                .setClanAdvancement(DATE_NONE, 3059, 3083, DATE_NONE, DATE_NONE)
+                .setPrototypeFactions(F_CHH)
                 .setProductionFactions(F_CHH).setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
@@ -4417,7 +4828,8 @@ public class AmmoType extends EquipmentType {
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
-                .setClanAdvancement(DATE_NONE, 3059, 3083, DATE_NONE, DATE_NONE).setPrototypeFactions(F_CHH)
+                .setClanAdvancement(DATE_NONE, 3059, 3083, DATE_NONE, DATE_NONE)
+                .setPrototypeFactions(F_CHH)
                 .setProductionFactions(F_CHH).setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
@@ -4439,13 +4851,13 @@ public class AmmoType extends EquipmentType {
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
-                .setClanAdvancement(DATE_NONE, 3059, 3083, DATE_NONE, DATE_NONE).setPrototypeFactions(F_CHH)
+                .setClanAdvancement(DATE_NONE, 3059, 3083, DATE_NONE, DATE_NONE)
+                .setPrototypeFactions(F_CHH)
                 .setProductionFactions(F_CHH).setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
-
     }
 
-//Flamer and Fluid Gun/Sprayer Ammo (Mutators Above)
+    // Flamer and Fluid Gun/Sprayer Ammo (Mutators Above)
 
     private static AmmoType createISHeavyFlamerAmmo() {
         AmmoType ammo = new AmmoType();
@@ -4463,7 +4875,8 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 2000;
         ammo.rulesRefs = "312, TO";
 
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(DATE_NONE, 3068, 3079, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_LC)
@@ -4516,7 +4929,8 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 1000;
         ammo.rulesRefs = "218, TM";
         ammo.kgPerShot = 50;
-        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false).setTechRating(RATING_B)
+        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false)
+                .setTechRating(RATING_B)
                 .setAvailability(RATING_A, RATING_A, RATING_B, RATING_A)
                 .setISAdvancement(DATE_PS, DATE_PS, DATE_PS, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -4531,7 +4945,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "Fluid Gun Ammo";
         ammo.shortName = "Fluid Gun";
         ammo.setInternalName("ISFluidGun Ammo");
-        ammo.damagePerShot = 2; // only used for ammo crits
+        ammo.damagePerShot = 2; // only used for ammo criticals
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_FLUID_GUN;
         ammo.shots = 20;
@@ -4539,7 +4953,8 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 500;
         ammo.explosive = false;
         ammo.rulesRefs = "313, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_B)
                 .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
                 .setISAdvancement(DATE_PS, DATE_PS, DATE_PS, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false);
@@ -4552,7 +4967,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "Fluid Gun Ammo";
         ammo.shortName = "Fluid Gun";
         ammo.setInternalName("CLFluidGun Ammo");
-        ammo.damagePerShot = 2; // only used for ammo crits
+        ammo.damagePerShot = 2; // only used for ammo criticals
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_FLUID_GUN;
         ammo.shots = 20;
@@ -4566,13 +4981,13 @@ public class AmmoType extends EquipmentType {
         return ammo;
     }
 
-//Gauss Rifle Ammos
+    // Gauss Rifle Ammos
 
     private static AmmoType createISGaussAmmo() {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Gauss Rifle Ammo [IS]";
-        ammo.shortName = "Gauss";
+        ammo.shortName = "Gauss Ammo";
         ammo.setInternalName("IS Gauss Ammo");
         ammo.addLookupName("IS Ammo Gauss");
         ammo.addLookupName("ISGauss Ammo");
@@ -4585,15 +5000,19 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 40;
         ammo.cost = 20000;
         ammo.rulesRefs = "219, TM";
-        // This is going to be a rare difference between TT and MM. Removing the
-        // Extinction date on Gauss ammo.
-        // The prototype share the base ammo and rather than make a whole new ammo, just
-        // going say the IS can figure out
-        // how to make large round steel balls.
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        /*
+         * This is going to be a rare difference between TT and MM. Removing the
+         * Extinction date on Gauss ammo. The prototype share the base ammo and rather
+         * than make a whole new ammo, just going say the IS can figure out how to make
+         * large round steel balls.
+         */
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_D, RATING_F, RATING_D, RATING_C)
-                .setISAdvancement(2587, 2590, 3045, DATE_NONE, 3038).setISApproximate(false, false, false, false, true)
-                .setPrototypeFactions(F_TH).setProductionFactions(F_TH).setReintroductionFactions(F_FC, F_FW, F_DC);
+                .setISAdvancement(2587, 2590, 3045, DATE_NONE, 3038)
+                .setISApproximate(false, false, false, false, true)
+                .setPrototypeFactions(F_TH).setProductionFactions(F_TH)
+                .setReintroductionFactions(F_FC, F_FW, F_DC);
 
         return ammo;
     }
@@ -4602,7 +5021,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Gauss Rifle Ammo [Clan]";
-        ammo.shortName = "Gauss";
+        ammo.shortName = "Gauss Ammo";
         ammo.setInternalName("Clan Gauss Ammo");
         ammo.addLookupName("Clan Ammo Gauss");
         ammo.addLookupName("CLGauss Ammo");
@@ -4639,7 +5058,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 20;
         ammo.cost = 20000;
         ammo.rulesRefs = "219, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3049, 3056, 3065, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
@@ -4662,7 +5082,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 43;
         ammo.cost = 20000;
         ammo.rulesRefs = "218, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3051, 3061, 3067, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
@@ -4674,7 +5095,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Anti-Personnel Gauss Rifle Ammo";
-        ammo.shortName = "AP Gauss";
+        ammo.shortName = "AP Gauss Ammo";
         ammo.setInternalName("CLAPGaussRifle Ammo");
         ammo.addLookupName("Clan AP Gauss Rifle Ammo");
         ammo.addLookupName("Clan Anti-Personnel Gauss Rifle Ammo");
@@ -4698,7 +5119,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Hyper-Assault Gauss Rifle/20 Ammo";
-        ammo.shortName = "HAG 20";
+        ammo.shortName = "HAG/20 Ammo";
         ammo.setInternalName(ammo.name);
         ammo.addLookupName("CLHAG20 Ammo");
         ammo.addLookupName("Clan HAG 20 Ammo");
@@ -4724,7 +5145,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Hyper-Assault Gauss Rifle/30 Ammo";
-        ammo.shortName = "HAG 30";
+        ammo.shortName = "HAG/30 Ammo";
         ammo.setInternalName(ammo.name);
         ammo.addLookupName("CLHAG30 Ammo");
         ammo.addLookupName("Clan HAG 30 Ammo");
@@ -4749,7 +5170,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Hyper-Assault Gauss Rifle/40 Ammo";
-        ammo.shortName = "HAG 40";
+        ammo.shortName = "HAG/40 Ammo";
         ammo.setInternalName(ammo.name);
         ammo.addLookupName("CLHAG40 Ammo");
         ammo.addLookupName("Clan HAG 40 Ammo");
@@ -4774,7 +5195,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved Heavy Gauss Rifle Ammo";
-        ammo.shortName = "iHeavy Gauss";
+        ammo.shortName = "iHeavy Gauss Ammo";
         ammo.setInternalName("ISImprovedHeavyGauss Ammo");
         ammo.addLookupName("IS Improved Heavy Gauss Rifle Ammo");
         ammo.addLookupName("ISImprovedHeavyGaussRifle Ammo");
@@ -4797,7 +5218,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Magshot Gauss Rifle Ammo";
-        ammo.shortName = "Magshot";
+        ammo.shortName = "Magshot Ammo";
         ammo.setInternalName("ISMagshotGR Ammo");
         ammo.addLookupName("IS Magshot GR Ammo");
         ammo.damagePerShot = 2;
@@ -4807,8 +5228,9 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 2;
         ammo.cost = 1000;
         ammo.rulesRefs = "314, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_C)
                 .setISAdvancement(3059, 3072, 3078, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false)
@@ -4821,7 +5243,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Silver Bullet Gauss Rifle Ammo";
-        ammo.shortName = "Silver Bullet";
+        ammo.shortName = "Silver Bullet Ammo";
         ammo.setInternalName("Silver Bullet Gauss Ammo");
         ammo.addLookupName("IS SBGauss Rifle Ammo");
         ammo.addLookupName("ISSBGauss Ammo");
@@ -4830,13 +5252,13 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 15;
         ammo.ammoType = AmmoType.T_SBGAUSS;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 8;
         ammo.bv = 25;
         ammo.cost = 25000;
         ammo.toHitModifier = -1;
         ammo.rulesRefs = "314, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setISAdvancement(3051, DATE_NONE, 3080, DATE_NONE, DATE_NONE)
@@ -4845,14 +5267,12 @@ public class AmmoType extends EquipmentType {
         return ammo;
     }
 
-//Grenade Launcher Ammo (See Mutators above)
+    // Grenade Launcher Ammo (See Mutators above)
 
     private static AmmoType createISVGLAmmo() {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Fragmentation Grenades [VGL]";
-        ammo.subMunitionBegin = 4;
-        ammo.subMunitionLength = 13;
         ammo.shortName = "VGL Fragmentation";
         ammo.setInternalName("IS Ammo VGL");
         ammo.addLookupName("ISVehicularGrenadeLauncherAmmo");
@@ -4861,7 +5281,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 0;
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_VGL;
-        ammo.munitionType = AmmoType.M_STANDARD;
+        ammo.munitionType = EnumSet.of(Munitions.M_STANDARD);
         ammo.shots = 1;
         ammo.bv = 0;
         ammo.cost = 0;
@@ -4872,24 +5292,21 @@ public class AmmoType extends EquipmentType {
                 .setISAdvancement(DATE_PS, DATE_ES, 3080, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, true, false, false)
                 .setClanAdvancement(DATE_PS, DATE_ES, 3080, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, false, true, false, false).setStaticTechLevel(SimpleTechLevel.STANDARD);
+                .setClanApproximate(false, false, true, false, false)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
-
 
     private static AmmoType createCLVGLAmmo() {
         AmmoType ammo = new AmmoType();
         ammo.name = "Fragmentation Grenades [VGL]";
-        ammo.subMunitionBegin = 4;
-        ammo.subMunitionLength = 13;
         ammo.shortName = "VGL Fragmentation";
         ammo.setInternalName("CL Ammo VGL");
         ammo.addLookupName("CLVehicularGrenadeLauncherAmmo");
         ammo.damagePerShot = 0;
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_VGL;
-        ammo.munitionType =
-        AmmoType.M_STANDARD;
+        ammo.munitionType = EnumSet.of(Munitions.M_STANDARD);
         ammo.shots = 1;
         ammo.bv = 0;
         ammo.cost = 0;
@@ -4904,14 +5321,14 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(false, false, false, true, false);
         return ammo;
     }
-    
+
     // Machine Gun Ammos
     // Standard MGs
     private static AmmoType createISMGAmmo() {
         AmmoType ammo = new AmmoType();
 
-        ammo.name = "Machine Gun Ammo";
-        ammo.shortName = "Machine Gun";
+        ammo.name = "Machine Gun Ammo [Full]";
+        ammo.shortName = "MG Ammo";
         ammo.setInternalName("IS Ammo MG - Full");
         ammo.addLookupName("ISMG Ammo (200)");
         ammo.addLookupName("ISMG Ammo Full");
@@ -4924,7 +5341,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 1;
         ammo.cost = 1000;
         ammo.rulesRefs = "228, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false).setTechRating(RATING_B)
+        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false)
+                .setTechRating(RATING_B)
                 .setAvailability(RATING_A, RATING_A, RATING_B, RATING_A)
                 .setISAdvancement(DATE_PS, DATE_PS, DATE_PS, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -4936,8 +5354,8 @@ public class AmmoType extends EquipmentType {
     private static AmmoType createCLMGAmmo() {
         AmmoType ammo = new AmmoType();
 
-        ammo.name = "Machine Gun Ammo";
-        ammo.shortName = "Machine Gun";
+        ammo.name = "Machine Gun Ammo [Full]";
+        ammo.shortName = "MG Ammo";
         ammo.setInternalName("Clan Machine Gun Ammo - Full");
         ammo.addLookupName("Clan Ammo MG - Full");
         ammo.addLookupName("CLMG Ammo (200)");
@@ -4962,13 +5380,14 @@ public class AmmoType extends EquipmentType {
     private static AmmoType createISMGAmmoHalf() {
         AmmoType ammo = new AmmoType();
 
-        ammo.name = "Half Machine Gun Ammo";
-        ammo.shortName = "Machine Gun";
+        ammo.name = "Machine Gun Ammo [Half]";
+        ammo.shortName = "MG Ammo";
         ammo.setInternalName("IS Machine Gun Ammo - Half");
         ammo.addLookupName("IS Ammo MG - Half");
         ammo.addLookupName("ISMG Ammo (100)");
         ammo.addLookupName("ISMG Ammo Half");
         ammo.addLookupName("IS Machine Gun Ammo (1/2 ton)");
+        ammo.addLookupName("Half Machine Gun Ammo");
         ammo.damagePerShot = 1;
         ammo.rackSize = 2;
         ammo.ammoType = AmmoType.T_MG;
@@ -4978,7 +5397,8 @@ public class AmmoType extends EquipmentType {
         ammo.tonnage = 0.5f;
         ammo.cost = 500;
         ammo.rulesRefs = "228, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false).setTechRating(RATING_B)
+        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false)
+                .setTechRating(RATING_B)
                 .setAvailability(RATING_A, RATING_A, RATING_B, RATING_A)
                 .setISAdvancement(DATE_PS, DATE_PS, DATE_PS, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -4990,12 +5410,13 @@ public class AmmoType extends EquipmentType {
     private static AmmoType createCLMGAmmoHalf() {
         AmmoType ammo = new AmmoType();
 
-        ammo.name = "Half Machine Gun Ammo";
-        ammo.shortName = "Machine Gun";
+        ammo.name = "Machine Gun Ammo [Half]";
+        ammo.shortName = "MG Ammo";
         ammo.setInternalName("Clan Machine Gun Ammo - Half");
         ammo.addLookupName("Clan Ammo MG - Half");
         ammo.addLookupName("CLMG Ammo (100)");
         ammo.addLookupName("Clan Machine Gun Ammo (1/2 ton)");
+        ammo.addLookupName("Half Machine Gun Ammo");
         ammo.damagePerShot = 1;
         ammo.rackSize = 2;
         ammo.ammoType = AmmoType.T_MG;
@@ -5020,7 +5441,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Light Machine Gun Ammo [Full]";
-        ammo.shortName = "Light Machine Gun";
+        ammo.shortName = "LMG Ammo";
         ammo.setInternalName("IS Light Machine Gun Ammo - Full");
         ammo.addLookupName("ISLightMG Ammo (200)");
         ammo.addLookupName("IS Light Machine Gun Ammo");
@@ -5033,7 +5454,8 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 500;
         ammo.kgPerShot = 5;
         ammo.rulesRefs = "228, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_B)
                 .setAvailability(RATING_X, RATING_X, RATING_C, RATING_B)
                 .setISAdvancement(3064, 3068, 3070, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
@@ -5045,7 +5467,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Light Machine Gun Ammo [Full]";
-        ammo.shortName = "Light Machine Gun";
+        ammo.shortName = "LMG Ammo";
         ammo.setInternalName("Clan Light Machine Gun Ammo - Full");
         ammo.addLookupName("CLLightMG Ammo (200)");
         ammo.addLookupName("Clan Light Machine Gun Ammo");
@@ -5070,7 +5492,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Light Machine Gun Ammo [Half]";
-        ammo.shortName = "Light Machine Gun";
+        ammo.shortName = "LMG Ammo";
         ammo.setInternalName("IS Light Machine Gun Ammo - Half");
         ammo.addLookupName("ISLightMG Ammo (100)");
         ammo.addLookupName("IS Light Machine Gun Ammo (1/2 ton)");
@@ -5083,7 +5505,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.5f;
         ammo.cost = 250;
         ammo.rulesRefs = "228, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_B)
                 .setAvailability(RATING_X, RATING_X, RATING_C, RATING_B)
                 .setISAdvancement(3064, 3068, 3070, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
@@ -5095,7 +5518,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Light Machine Gun Ammo [Half]";
-        ammo.shortName = "Light Machine Gun";
+        ammo.shortName = "LMG Ammo";
         ammo.setInternalName("Clan Light Machine Gun Ammo - Half");
         ammo.addLookupName("CLLightMG Ammo (100)");
         ammo.addLookupName("Clan Light Machine Gun Ammo (1/2 ton)");
@@ -5123,7 +5546,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Heavy Machine Gun Ammo [Full]";
-        ammo.shortName = "Heavy Machine Gun";
+        ammo.shortName = "HMG Ammo";
         ammo.setInternalName("IS Heavy Machine Gun Ammo - Full");
         ammo.addLookupName("ISHeavyMG Ammo (100)");
         ammo.addLookupName("IS Heavy Machine Gun Ammo");
@@ -5135,7 +5558,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 1;
         ammo.cost = 1000;
         ammo.rulesRefs = "228, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_B)
                 .setAvailability(RATING_X, RATING_C, RATING_C, RATING_B)
                 .setISAdvancement(3063, 3068, 3070, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TC)
@@ -5147,7 +5571,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Heavy Machine Gun Ammo [Half]";
-        ammo.shortName = "Heavy Machine Gun";
+        ammo.shortName = "HMG Ammo";
         ammo.setInternalName("IS Heavy Machine Gun Ammo - Half");
         ammo.addLookupName("ISHeavyMG Ammo (50)");
         ammo.addLookupName("IS Heavy Machine Gun Ammo (1/2 ton)");
@@ -5160,7 +5584,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.5f;
         ammo.cost = 500;
         ammo.rulesRefs = "228, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_B)
                 .setAvailability(RATING_X, RATING_C, RATING_C, RATING_B)
                 .setISAdvancement(3063, 3068, 3070, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TC)
@@ -5172,7 +5597,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Heavy Machine Gun Ammo [Full]";
-        ammo.shortName = "Heavy Machine Gun";
+        ammo.shortName = "HMG Ammo";
         ammo.setInternalName("Clan Heavy Machine Gun Ammo - Full");
         ammo.addLookupName("CLHeavyMG Ammo (100)");
         ammo.addLookupName("Clan Heavy Machine Gun Ammo");
@@ -5197,7 +5622,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Heavy Machine Gun Ammo [Half]";
-        ammo.shortName = "Heavy Machine Gun";
+        ammo.shortName = "HMG Ammo";
         ammo.setInternalName("Clan Heavy Machine Gun Ammo - Half");
         ammo.addLookupName("CLHeavyMG Ammo (50)");
         ammo.addLookupName("Clan Heavy Machine Gun Ammo (1/2 ton)");
@@ -5219,9 +5644,10 @@ public class AmmoType extends EquipmentType {
         return ammo;
     }
 
-    // Mines - See Minefield.java TODO - Need EMP mines (See IO pg 61 and TO 365)
+    // Mines - See Minefield.java
+    // TODO - Need EMP mines (See IO pg 61 and TO 365)
 
-// Missile Launcher Munitions
+    // Missile Launcher Munitions
     // Standard ATMs
 
     private static AmmoType createCLATM3Ammo() {
@@ -5336,9 +5762,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 3;
         ammo.ammoType = AmmoType.T_ATM;
-        ammo.munitionType = M_EXTENDED_RANGE;
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_EXTENDED_RANGE);
         ammo.shots = 20;
         ammo.bv = 14;
         ammo.cost = 75000;
@@ -5364,9 +5788,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 6;
         ammo.ammoType = AmmoType.T_ATM;
-        ammo.munitionType = M_EXTENDED_RANGE;
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_EXTENDED_RANGE);
         ammo.shots = 10;
         ammo.bv = 26;
         ammo.cost = 75000;
@@ -5392,9 +5814,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 9;
         ammo.ammoType = AmmoType.T_ATM;
-        ammo.munitionType = M_EXTENDED_RANGE;
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_EXTENDED_RANGE);
         ammo.shots = 7;
         ammo.bv = 36;
         ammo.cost = 75000;
@@ -5420,9 +5840,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 12;
         ammo.ammoType = AmmoType.T_ATM;
-        ammo.munitionType = M_EXTENDED_RANGE;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_EXTENDED_RANGE);
         ammo.shots = 5;
         ammo.bv = 52;
         ammo.cost = 75000;
@@ -5449,9 +5867,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 3;
         ammo.rackSize = 3;
         ammo.ammoType = AmmoType.T_ATM;
-        ammo.munitionType = M_HIGH_EXPLOSIVE;
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_HIGH_EXPLOSIVE);
         ammo.shots = 20;
         ammo.bv = 14;
         ammo.cost = 75000;
@@ -5475,9 +5891,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 3;
         ammo.rackSize = 6;
         ammo.ammoType = AmmoType.T_ATM;
-        ammo.munitionType = M_HIGH_EXPLOSIVE;
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_HIGH_EXPLOSIVE);
         ammo.shots = 10;
         ammo.bv = 26;
         ammo.cost = 75000;
@@ -5501,9 +5915,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 3;
         ammo.rackSize = 9;
         ammo.ammoType = AmmoType.T_ATM;
-        ammo.munitionType = M_HIGH_EXPLOSIVE;
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_HIGH_EXPLOSIVE);
         ammo.shots = 7;
         ammo.bv = 36;
         ammo.cost = 75000;
@@ -5527,9 +5939,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 3;
         ammo.rackSize = 12;
         ammo.ammoType = AmmoType.T_ATM;
-        ammo.munitionType = M_HIGH_EXPLOSIVE;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_HIGH_EXPLOSIVE);
         ammo.shots = 5;
         ammo.bv = 52;
         ammo.cost = 75000;
@@ -5542,7 +5952,7 @@ public class AmmoType extends EquipmentType {
         return ammo;
     }
 
-//iATMs
+    // iATMs
     // iATM Standard
 
     private static AmmoType createCLIATM3Ammo() {
@@ -5563,7 +5973,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5588,7 +5998,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5613,7 +6023,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5638,7 +6048,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5657,9 +6067,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 3;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_EXTENDED_RANGE;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_EXTENDED_RANGE);
         ammo.shots = 20;
         ammo.bv = 21;
         ammo.cost = 75000;
@@ -5667,7 +6075,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5685,16 +6093,14 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 6;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_EXTENDED_RANGE;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_EXTENDED_RANGE);
         ammo.shots = 10;
         ammo.bv = 39;
         ammo.cost = 75000;
         ammo.flags = ammo.flags.or(F_HOTLOAD);
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5712,9 +6118,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 9;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_EXTENDED_RANGE;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_EXTENDED_RANGE);
         ammo.shots = 7;
         ammo.bv = 54;
         ammo.cost = 75000;
@@ -5722,7 +6126,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5740,9 +6144,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 12;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_EXTENDED_RANGE;
-        ammo.subMunitionBegin = 8;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_EXTENDED_RANGE);
         ammo.shots = 5;
         ammo.bv = 78;
         ammo.cost = 75000;
@@ -5750,7 +6152,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5769,9 +6171,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 3;
         ammo.rackSize = 3;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_HIGH_EXPLOSIVE;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_HIGH_EXPLOSIVE);
         ammo.shots = 20;
         ammo.bv = 21;
         ammo.cost = 75000;
@@ -5779,7 +6179,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5797,9 +6197,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 3;
         ammo.rackSize = 6;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_HIGH_EXPLOSIVE;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_HIGH_EXPLOSIVE);
         ammo.shots = 10;
         ammo.bv = 39;
         ammo.cost = 75000;
@@ -5807,7 +6205,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5825,9 +6223,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 3;
         ammo.rackSize = 9;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_HIGH_EXPLOSIVE;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_HIGH_EXPLOSIVE);
         ammo.shots = 7;
         ammo.bv = 54;
         ammo.cost = 75000;
@@ -5835,7 +6231,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5853,9 +6249,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 3;
         ammo.rackSize = 12;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_HIGH_EXPLOSIVE;
-        ammo.subMunitionBegin = 8;
-        ammo.subMunitionLength = 2;
+        ammo.munitionType = EnumSet.of(Munitions.M_HIGH_EXPLOSIVE);
         ammo.shots = 5;
         ammo.bv = 78;
         ammo.cost = 75000;
@@ -5863,7 +6257,7 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setClanAdvancement(3054, 3070, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY);
@@ -5883,17 +6277,20 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 2;
         ammo.rackSize = 3;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_IATM_IIW;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 3;
+        ammo.munitionType = EnumSet.of(Munitions.M_IATM_IIW);
         ammo.shots = 20;
         ammo.bv = 27; // 21 * 1.3 = 27.3, round down (?)
         ammo.cost = 75000;
         ammo.flags = ammo.flags.or(F_HOTLOAD);
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
+        /*
+         * IntOPs doesn't have an extinct date for IIW but code indicates its extinct.
+         * Giving benefit of the doubt and assigning F code for Dark Age for Homeworld
+         * Clans.
+         */
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_X)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
                 .setClanAdvancement(3070, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
@@ -5912,17 +6309,20 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 2;
         ammo.rackSize = 6;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_IATM_IIW;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 3;
+        ammo.munitionType = EnumSet.of(Munitions.M_IATM_IIW);
         ammo.shots = 10;
         ammo.bv = 51; // 50.7 round up (?)
         ammo.cost = 75000;
         ammo.flags = ammo.flags.or(F_HOTLOAD);
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
+        /*
+         * IntOPs doesn't have an extinct date for IIW but code indicates its extinct.
+         * Giving benefit of the doubt and assigning F code for Dark Age for Homeworld
+         * Clans.
+         */
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_X)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
                 .setClanAdvancement(3070, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
@@ -5941,17 +6341,20 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 2;
         ammo.rackSize = 9;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_IATM_IIW;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 3;
+        ammo.munitionType = EnumSet.of(Munitions.M_IATM_IIW);
         ammo.shots = 7;
         ammo.bv = 70; // 54 * 1.3 = 70.2, round down (?)
         ammo.cost = 75000;
         ammo.flags = ammo.flags.or(F_HOTLOAD);
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
+        /*
+         * IntOPs doesn't have an extinct date for IIW but code indicates its extinct.
+         * Giving benefit of the doubt and assigning F code for Dark Age for Homeworld
+         * Clans.
+         */
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_X)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
                 .setClanAdvancement(3070, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
@@ -5970,17 +6373,20 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 2;
         ammo.rackSize = 12;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_IATM_IIW;
-        ammo.subMunitionBegin = 8;
-        ammo.subMunitionLength = 3;
+        ammo.munitionType = EnumSet.of(Munitions.M_IATM_IIW);
         ammo.shots = 5;
         ammo.bv = 101; // 78 * 1.3 = 101.4, round down (?)
         ammo.cost = 75000;
         ammo.flags = ammo.flags.or(F_HOTLOAD);
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "65, IO";
+        /*
+         * IntOPs doesn't have an extinct date for IIW but code indicates its extinct.
+         * Giving benefit of the doubt and assigning F code for Dark Age for Homeworld
+         * Clans.
+         */
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_X)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_F)
                 .setClanAdvancement(3070, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CCY)
                 .setProductionFactions(F_CCY).setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
@@ -6000,9 +6406,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 3;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_IATM_IMP;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 3;
+        ammo.munitionType = EnumSet.of(Munitions.M_IATM_IMP);
         ammo.shots = 20;
         ammo.bv = 42; // 21 * 2 = 42
         ammo.cost = 75000;
@@ -6029,9 +6433,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 6;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_IATM_IMP;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 3;
+        ammo.munitionType = EnumSet.of(Munitions.M_IATM_IMP);
         ammo.shots = 10;
         ammo.bv = 78; // 39 * 2 = 78
         ammo.cost = 75000;
@@ -6058,9 +6460,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 9;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_IATM_IMP;
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 3;
+        ammo.munitionType = EnumSet.of(Munitions.M_IATM_IMP);
         ammo.shots = 7;
         ammo.bv = 108; // 54 * 2 = 108
         ammo.cost = 75000;
@@ -6087,9 +6487,7 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 1;
         ammo.rackSize = 12;
         ammo.ammoType = AmmoType.T_IATM;
-        ammo.munitionType = M_IATM_IMP;
-        ammo.subMunitionBegin = 8;
-        ammo.subMunitionLength = 3;
+        ammo.munitionType = EnumSet.of(Munitions.M_IATM_IMP);
         ammo.shots = 5;
         ammo.bv = 156; // 78 * 2 = 156
         ammo.cost = 75000;
@@ -6104,7 +6502,7 @@ public class AmmoType extends EquipmentType {
         return ammo;
     }
 
-// Standard LRMs (see Mutators Above)
+    // Standard LRMs (see Mutators Above)
 
     private static AmmoType createISLRM5Ammo() {
         AmmoType ammo = new AmmoType();
@@ -6123,7 +6521,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 6;
         ammo.cost = 30000;
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
                 .setISAdvancement(2295, 2300, 2400, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -6150,7 +6549,8 @@ public class AmmoType extends EquipmentType {
         ammo.flags = ammo.flags.or(F_HOTLOAD);
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
                 .setISAdvancement(2295, 2300, 2400, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -6177,7 +6577,8 @@ public class AmmoType extends EquipmentType {
         ammo.flags = ammo.flags.or(F_HOTLOAD);
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
                 .setISAdvancement(2295, 2300, 2400, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -6204,7 +6605,8 @@ public class AmmoType extends EquipmentType {
         ammo.flags = ammo.flags.or(F_HOTLOAD);
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
                 .setISAdvancement(2295, 2300, 2400, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -6232,13 +6634,13 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 31000;
         ammo.rulesRefs = "326, TO";
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-       ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-            .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setISAdvancement(3058,DATE_NONE, 3082,DATE_NONE,DATE_NONE)
-            .setPrototypeFactions(F_FS)
-            .setProductionFactions(F_FS)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
-        
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setISAdvancement(3058, DATE_NONE, 3082, DATE_NONE, DATE_NONE)
+                .setPrototypeFactions(F_FS)
+                .setProductionFactions(F_FS)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
+
         return ammo;
     }
 
@@ -6258,12 +6660,12 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 31000;
         ammo.rulesRefs = "326, TO";
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-       ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-            .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setISAdvancement(3058,DATE_NONE, 3082,DATE_NONE,DATE_NONE)
-            .setPrototypeFactions(F_FS)
-            .setProductionFactions(F_FS)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setISAdvancement(3058, DATE_NONE, 3082, DATE_NONE, DATE_NONE)
+                .setPrototypeFactions(F_FS)
+                .setProductionFactions(F_FS)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -6283,12 +6685,12 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 31000;
         ammo.rulesRefs = "326, TO";
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-       ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-            .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setISAdvancement(3058,DATE_NONE, 3082,DATE_NONE,DATE_NONE)
-            .setPrototypeFactions(F_FS)
-            .setProductionFactions(F_FS)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setISAdvancement(3058, DATE_NONE, 3082, DATE_NONE, DATE_NONE)
+                .setPrototypeFactions(F_FS)
+                .setProductionFactions(F_FS)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -6308,12 +6710,12 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 31000;
         ammo.rulesRefs = "326, TO";
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-       ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-            .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setISAdvancement(3058,DATE_NONE, 3082,DATE_NONE,DATE_NONE)
-            .setPrototypeFactions(F_FS)
-            .setProductionFactions(F_FS)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
+                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
+                .setISAdvancement(3058, DATE_NONE, 3082, DATE_NONE, DATE_NONE)
+                .setPrototypeFactions(F_FS)
+                .setProductionFactions(F_FS)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -6341,7 +6743,7 @@ public class AmmoType extends EquipmentType {
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setISAdvancement(DATE_NONE, 3054, 3080,DATE_NONE, DATE_NONE)
+                .setISAdvancement(DATE_NONE, 3054, 3080, DATE_NONE, DATE_NONE)
                 .setPrototypeFactions(F_FS, F_LC).setProductionFactions(F_LC)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
@@ -6370,7 +6772,7 @@ public class AmmoType extends EquipmentType {
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setISAdvancement(DATE_NONE, 3054, 3080,DATE_NONE, DATE_NONE)
+                .setISAdvancement(DATE_NONE, 3054, 3080, DATE_NONE, DATE_NONE)
                 .setPrototypeFactions(F_FS, F_LC).setProductionFactions(F_LC)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
@@ -6399,7 +6801,7 @@ public class AmmoType extends EquipmentType {
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setISAdvancement(DATE_NONE, 3054, 3080,DATE_NONE, DATE_NONE)
+                .setISAdvancement(DATE_NONE, 3054, 3080, DATE_NONE, DATE_NONE)
                 .setPrototypeFactions(F_FS, F_LC).setProductionFactions(F_LC)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
@@ -6428,7 +6830,7 @@ public class AmmoType extends EquipmentType {
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setISAdvancement(DATE_NONE, 3054, 3080,DATE_NONE, DATE_NONE)
+                .setISAdvancement(DATE_NONE, 3054, 3080, DATE_NONE, DATE_NONE)
                 .setPrototypeFactions(F_FS, F_LC).setProductionFactions(F_LC)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
@@ -6549,7 +6951,7 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 60000;
         ammo.kgPerShot = 41.65;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6575,7 +6977,7 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 60000;
         ammo.kgPerShot = 83.3;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6601,7 +7003,7 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 60000;
         ammo.kgPerShot = 124.95;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6627,7 +7029,7 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 60000;
         ammo.kgPerShot = 166.6;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6655,7 +7057,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.016;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6681,7 +7083,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.033;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6707,7 +7109,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.05;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6733,7 +7135,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.067;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6759,7 +7161,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.1;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6785,7 +7187,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.117;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6811,7 +7213,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.133;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6837,7 +7239,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.15;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6863,7 +7265,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.183;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6889,7 +7291,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.2;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6915,7 +7317,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.216;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6941,7 +7343,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.233;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6967,7 +7369,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.266;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -6993,7 +7395,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.283;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -7019,7 +7421,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.3;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -7045,7 +7447,7 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0.316;
         ammo.cost = 60000;
         ammo.rulesRefs = "327, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setClanAdvancement(DATE_NONE, 3057, 3079, DATE_NONE, DATE_NONE)
@@ -7071,8 +7473,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 0.02;
         ammo.kgPerShot = 8.33;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7080,7 +7484,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM2Ammo() {
@@ -7098,8 +7501,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 3;
         ammo.kgPerShot = 16.66;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7107,7 +7512,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM3Ammo() {
@@ -7125,8 +7529,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 5;
         ammo.kgPerShot = 24.99;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7134,7 +7540,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM4Ammo() {
@@ -7152,8 +7557,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 6;
         ammo.kgPerShot = 33.32;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7161,7 +7568,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM6Ammo() {
@@ -7179,8 +7585,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 9;
         ammo.kgPerShot = 49.98;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7188,7 +7596,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM7Ammo() {
@@ -7206,8 +7613,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 10;
         ammo.kgPerShot = 58.31;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7215,7 +7624,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM8Ammo() {
@@ -7233,8 +7641,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 11;
         ammo.kgPerShot = 66.64;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7242,7 +7652,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM9Ammo() {
@@ -7260,8 +7669,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 12;
         ammo.kgPerShot = 74.97;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7269,7 +7680,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM11Ammo() {
@@ -7287,8 +7697,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 18;
         ammo.kgPerShot = 91.63;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7296,7 +7708,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM12Ammo() {
@@ -7314,8 +7725,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 18;
         ammo.kgPerShot = 99.96;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7323,7 +7736,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM13Ammo() {
@@ -7341,8 +7753,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 20;
         ammo.kgPerShot = 108.29;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7350,7 +7764,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM14Ammo() {
@@ -7368,8 +7781,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 21;
         ammo.kgPerShot = 116.62;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7377,7 +7792,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM16Ammo() {
@@ -7395,8 +7809,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 27;
         ammo.kgPerShot = 133.28;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7404,7 +7820,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM17Ammo() {
@@ -7422,8 +7837,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 27;
         ammo.kgPerShot = 141.61;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7431,7 +7848,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM18Ammo() {
@@ -7449,8 +7865,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 27;
         ammo.kgPerShot = 149.94;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7458,7 +7876,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRM19Ammo() {
@@ -7476,8 +7893,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 27;
         ammo.kgPerShot = 158.27;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7485,10 +7904,9 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
-//Standard MRMs
+    // Standard MRMs
     private static AmmoType createISMRM10Ammo() {
         AmmoType ammo = new AmmoType();
 
@@ -7503,7 +7921,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 7;
         ammo.cost = 5000;
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3052, 3058, 3063, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
@@ -7525,7 +7944,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 14;
         ammo.cost = 5000;
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3052, 3058, 3063, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
@@ -7547,7 +7967,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 21;
         ammo.cost = 5000;
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3052, 3058, 3063, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
@@ -7569,7 +7990,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 28;
         ammo.cost = 5000;
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3052, 3058, 3063, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
@@ -7593,7 +8015,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 3;
         ammo.cost = 27000;
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
                 .setISAdvancement(2365, 2370, 2400, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -7618,7 +8041,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 5;
         ammo.cost = 27000;
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
                 .setISAdvancement(2365, 2370, 2400, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -7643,7 +8067,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 7;
         ammo.cost = 27000;
         ammo.rulesRefs = "229, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(true).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
                 .setISAdvancement(2365, 2370, 2400, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -7669,8 +8094,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 2;
         ammo.kgPerShot = 10;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7718,8 +8145,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 4;
         ammo.kgPerShot = 30;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7767,8 +8196,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 6;
         ammo.kgPerShot = 50;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -7820,12 +8251,14 @@ public class AmmoType extends EquipmentType {
         ammo.flags = ammo.flags.or(F_HOTLOAD).or(F_MML_LRM);
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "229, TM";
-        //March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        // March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(DATE_NONE, 3067, 3073, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false)
-                .setProductionFactions(F_MERC,F_WB);
+                .setISApproximate(false, true, false, false, false)
+                .setProductionFactions(F_MERC, F_WB)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -7845,12 +8278,14 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 4;
         ammo.cost = 27000;
         ammo.rulesRefs = "229, TM";
-        //March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        // March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(DATE_NONE, 3067, 3073, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false)
-                .setProductionFactions(F_MERC,F_WB);
+                .setISApproximate(false, true, false, false, false)
+                .setProductionFactions(F_MERC, F_WB)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -7872,11 +8307,13 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "229, TM";
         // March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(DATE_NONE, 3067, 3073, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false)
-                .setProductionFactions(F_MERC,F_WB);
+                .setISApproximate(false, true, false, false, false)
+                .setProductionFactions(F_MERC, F_WB)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -7897,11 +8334,13 @@ public class AmmoType extends EquipmentType {
         ammo.flags = ammo.flags.or(F_HOTLOAD).or(F_MML_SRM);
         ammo.rulesRefs = "229, TM";
         // March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(DATE_NONE, 3067, 3073, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false)
-                .setProductionFactions(F_MERC,F_WB);
+                .setISApproximate(false, true, false, false, false)
+                .setProductionFactions(F_MERC, F_WB)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -7923,11 +8362,13 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "229, TM";
         // March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(DATE_NONE, 3067, 3073, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false)
-                .setProductionFactions(F_MERC,F_WB);
+                .setISApproximate(false, true, false, false, false)
+                .setProductionFactions(F_MERC, F_WB)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -7948,11 +8389,13 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 27000;
         ammo.rulesRefs = "229, TM";
         // March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(DATE_NONE, 3067, 3073, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false)
-                .setProductionFactions(F_MERC,F_WB);
+                .setISApproximate(false, true, false, false, false)
+                .setProductionFactions(F_MERC, F_WB)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -7974,11 +8417,13 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "229, TM";
         // March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(DATE_NONE, 3067, 3073, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false)
-                .setProductionFactions(F_MERC,F_WB);
+                .setISApproximate(false, true, false, false, false)
+                .setProductionFactions(F_MERC, F_WB)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -7998,12 +8443,14 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 11;
         ammo.cost = 27000;
         ammo.rulesRefs = "229, TM";
-        //March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        // March 2022 - CGL (Greekfire) requested MML adjustments to Tech Progression.
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(DATE_NONE, 3067, 3073, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false)
-                .setProductionFactions(F_MERC,F_WB);
+                .setISApproximate(false, true, false, false, false)
+                .setProductionFactions(F_MERC, F_WB)
+                .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
@@ -8160,8 +8607,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 3;
         ammo.kgPerShot = 10;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But SRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * SRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "230, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
@@ -8184,8 +8633,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 7;
         ammo.kgPerShot = 30;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But SRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * SRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "230, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
@@ -8208,8 +8659,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 13;
         ammo.kgPerShot = 50;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But SRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * SRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "230, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
@@ -8237,7 +8690,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "230, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_E, RATING_E, RATING_D, RATING_D)
-                .setISAdvancement(2645, 2647, 2650, 2845, 3035).setISApproximate(false, false, true, false, false)
+                .setISAdvancement(2645, 2647, 2650, 2845, 3035)
+                .setISApproximate(false, false, true, false, false)
                 .setClanAdvancement(2645, 2647, 2650, 2845, DATE_NONE)
                 .setClanApproximate(false, false, true, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH);
@@ -8259,7 +8713,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 7;
         ammo.cost = 54000;
         ammo.rulesRefs = "230, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_E, RATING_D, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, true, false, false).setPrototypeFactions(F_DC)
@@ -8282,7 +8737,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 11;
         ammo.cost = 54000;
         ammo.rulesRefs = "230, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_E, RATING_D, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, true, false, false).setPrototypeFactions(F_DC)
@@ -8303,7 +8759,7 @@ public class AmmoType extends EquipmentType {
         ammo.addLookupName("CLNarc Pods");
         ammo.addLookupName("Clan Ammo Narc");
         ammo.addLookupName("Clan Narc Missile Beacon Ammo");
-        ammo.damagePerShot = 2; // only used for ammo crits
+        ammo.damagePerShot = 2; // only used for ammo criticals
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_NARC;
         ammo.shots = 6;
@@ -8313,7 +8769,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "141, TW";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_E, RATING_F, RATING_D, RATING_C)
-                .setISAdvancement(2580, 2587, 3049, 2795, 3035).setISApproximate(true, false, false, false, false)
+                .setISAdvancement(2580, 2587, 3049, 2795, 3035)
+                .setISApproximate(true, false, false, false, false)
                 .setClanAdvancement(DATE_NONE, DATE_NONE, 2818, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC);
@@ -8325,19 +8782,18 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "Narc Explosive Pods";
         ammo.shortName = "Narc Explosive";
-        ammo.subMunitionBegin = 5;
-        ammo.subMunitionLength = 9;
         ammo.setInternalName("ISNarc ExplosivePods");
         ammo.damagePerShot = 4;
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_NARC;
-        ammo.munitionType = M_NARC_EX;
+        ammo.munitionType = EnumSet.of(Munitions.M_NARC_EX);
         ammo.shots = 6;
         ammo.bv = 0;
         ammo.cost = 1500;
         ammo.kgPerShot = 150;
         ammo.rulesRefs = "141, TW";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setISAdvancement(3054, 3060, 3064, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
@@ -8349,13 +8805,11 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
         ammo.name = "Narc Explosive Pods";
         ammo.shortName = "Narc Explosive";
-        ammo.subMunitionBegin = 5;
-        ammo.subMunitionLength = 9;
         ammo.setInternalName("CLNarc Explosive Pods");
         ammo.damagePerShot = 4;
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_NARC;
-        ammo.munitionType = AmmoType.M_NARC_EX;
+        ammo.munitionType = EnumSet.of(Munitions.M_NARC_EX);
         ammo.shots = 6;
         ammo.bv = 0;
         ammo.cost = 1500;
@@ -8380,14 +8834,15 @@ public class AmmoType extends EquipmentType {
         ammo.addLookupName("IS Ammo iNarc");
         ammo.addLookupName("IS iNarc Missile Beacon Ammo");
         ammo.addLookupName("iNarc Ammo");
-        ammo.damagePerShot = 3; // only used for ammo crits
+        ammo.damagePerShot = 3; // only used for ammo criticals
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_INARC;
         ammo.shots = 4;
         ammo.bv = 0;
         ammo.cost = 7500;
         ammo.rulesRefs = "141, TW";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3054, 3062, 3066, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CS)
@@ -8400,19 +8855,18 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "iNarc ECM Pods";
         ammo.shortName = "iNarc ECM";
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 3;
         ammo.setInternalName("ISiNarc ECM Pods");
         ammo.addLookupName("iNarc ECM Ammo");
-        ammo.damagePerShot = 3; // only used for ammo crits
+        ammo.damagePerShot = 3; // only used for ammo criticals
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_INARC;
-        ammo.munitionType = AmmoType.M_ECM;
+        ammo.munitionType = EnumSet.of(Munitions.M_ECM);
         ammo.shots = 4;
         ammo.bv = 0;
         ammo.cost = 15000;
         ammo.rulesRefs = "141, TW";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setISAdvancement(3054, 3062, 3066, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CS)
@@ -8425,19 +8879,18 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "iNarc Explosive Pods";
         ammo.shortName = "iNarc Explosive";
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 9;
         ammo.setInternalName("ISiNarc Explosive Pods");
         ammo.addLookupName("iNarc Explosive Ammo");
-        ammo.damagePerShot = 6; // only used for ammo crits
+        ammo.damagePerShot = 6; // only used for ammo criticals
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_INARC;
-        ammo.munitionType = AmmoType.M_EXPLOSIVE;
+        ammo.munitionType = EnumSet.of(Munitions.M_EXPLOSIVE);
         ammo.shots = 4;
         ammo.bv = 0;
         ammo.cost = 1500;
         ammo.rulesRefs = "141, TW";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setISAdvancement(3054, 3062, 3066, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CS)
@@ -8450,19 +8903,18 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "iNarc Haywire Pods";
         ammo.shortName = "iNarc Haywire";
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("ISiNarc Haywire Pods");
         ammo.addLookupName("iNarc Haywire Ammo");
-        ammo.damagePerShot = 3; // only used for ammo crits
+        ammo.damagePerShot = 3; // only used for ammo criticals
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_INARC;
-        ammo.munitionType = AmmoType.M_HAYWIRE;
+        ammo.munitionType = EnumSet.of(Munitions.M_HAYWIRE);
         ammo.shots = 4;
         ammo.bv = 0;
         ammo.cost = 20000;
         ammo.rulesRefs = "141, TW";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setISAdvancement(3054, 3062, 3066, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CS)
@@ -8475,19 +8927,18 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "iNarc Nemesis Pods";
         ammo.shortName = "iNarc Nemesis";
-        ammo.subMunitionBegin = 6;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("ISiNarc Nemesis Pods");
         ammo.addLookupName("iNarc Nemesis Ammo");
-        ammo.damagePerShot = 3; // only used for ammo crits
+        ammo.damagePerShot = 3; // only used for ammo criticals
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_INARC;
-        ammo.munitionType = AmmoType.M_NEMESIS;
+        ammo.munitionType = EnumSet.of(Munitions.M_NEMESIS);
         ammo.shots = 4;
         ammo.bv = 0;
         ammo.cost = 10000;
         ammo.rulesRefs = "141, TW";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_D)
                 .setISAdvancement(3054, 3062, 3066, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CS)
@@ -8514,7 +8965,8 @@ public class AmmoType extends EquipmentType {
         ammo.flags = ammo.flags.or(F_HOTLOAD);
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "230, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
                 .setISAdvancement(2370, 2380, 2400, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_TH)
@@ -8616,8 +9068,10 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 3;
         ammo.cost = 27000;
         ammo.rulesRefs = "230, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
-                .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C).setISAdvancement(2370, 2380, 2400)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
+                .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
+                .setISAdvancement(2370, 2380, 2400)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FW);
         return ammo;
@@ -8639,8 +9093,10 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 5;
         ammo.cost = 27000;
         ammo.rulesRefs = "230, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
-                .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C).setISAdvancement(2370, 2380, 2400)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
+                .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
+                .setISAdvancement(2370, 2380, 2400)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FW);
         return ammo;
@@ -8662,8 +9118,10 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 7;
         ammo.cost = 27000;
         ammo.rulesRefs = "230, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
-                .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C).setISAdvancement(2370, 2380, 2400)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
+                .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
+                .setISAdvancement(2370, 2380, 2400)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FW);
         return ammo;
@@ -8686,8 +9144,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 2;
         ammo.kgPerShot = 8.33;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -8695,7 +9155,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT2Ammo() {
@@ -8713,8 +9172,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 3;
         ammo.kgPerShot = 16.66;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -8722,7 +9183,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT3Ammo() {
@@ -8740,8 +9200,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 5;
         ammo.kgPerShot = 24.99;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -8749,7 +9211,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT4Ammo() {
@@ -8767,8 +9228,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 6;
         ammo.kgPerShot = 33.32;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -8776,7 +9239,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT5Ammo() {
@@ -8819,8 +9281,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 9;
         ammo.kgPerShot = 49.98;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -8828,7 +9292,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT7Ammo() {
@@ -8846,8 +9309,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 10;
         ammo.kgPerShot = 58.31;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -8855,7 +9320,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT8Ammo() {
@@ -8873,8 +9337,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 11;
         ammo.kgPerShot = 66.64;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -8882,7 +9348,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT9Ammo() {
@@ -8900,8 +9365,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 12;
         ammo.kgPerShot = 74.97;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -8909,7 +9376,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT10Ammo() {
@@ -8952,8 +9418,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 18;
         ammo.kgPerShot = 91.63;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -8961,7 +9429,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT12Ammo() {
@@ -8979,8 +9446,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 18;
         ammo.kgPerShot = 99.96;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -8988,7 +9457,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT13Ammo() {
@@ -9006,8 +9474,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 20;
         ammo.kgPerShot = 108.29;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -9015,7 +9485,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT14Ammo() {
@@ -9033,8 +9502,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 21;
         ammo.kgPerShot = 116.62;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -9042,7 +9513,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT15Ammo() {
@@ -9085,8 +9555,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 27;
         ammo.kgPerShot = 133.28;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -9094,7 +9566,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT17Ammo() {
@@ -9112,8 +9583,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 27;
         ammo.kgPerShot = 141.61;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -9121,7 +9594,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT18Ammo() {
@@ -9139,8 +9611,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 27;
         ammo.kgPerShot = 149.94;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -9148,7 +9622,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT19Ammo() {
@@ -9166,8 +9639,10 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.bv = 27;
         ammo.kgPerShot = 158.27;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But LRM Tech Base and Avail Ratings.
+        /*
+         * Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But
+         * LRM Tech Base and Avail Ratings.
+         */
         ammo.rulesRefs = "231, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_C, RATING_C)
@@ -9175,7 +9650,6 @@ public class AmmoType extends EquipmentType {
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CSJ)
                 .setProductionFactions(F_CSJ);
         return ammo;
-
     }
 
     private static AmmoType createCLLRT20Ammo() {
@@ -9399,7 +9873,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "324, TO";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_B).setAvailability(RATING_D, RATING_F, RATING_F, RATING_E)
-                .setISAdvancement(2526, 2531, 3052, 2819, 3043).setISApproximate(true, false, false, false, false)
+                .setISAdvancement(2526, 2531, 3052, 2819, 3043)
+                .setISApproximate(true, false, false, false, false)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC);
         return ammo;
     }
@@ -9421,7 +9896,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "324, TO";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_B).setAvailability(RATING_D, RATING_F, RATING_F, RATING_E)
-                .setISAdvancement(2526, 2531, 3052, 2819, 3043).setISApproximate(true, false, false, false, false)
+                .setISAdvancement(2526, 2531, 3052, 2819, 3043)
+                .setISApproximate(true, false, false, false, false)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC);
         return ammo;
     }
@@ -9443,7 +9919,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "324, TO";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_B).setAvailability(RATING_D, RATING_F, RATING_F, RATING_E)
-                .setISAdvancement(2526, 2531, 3052, 2819, 3043).setISApproximate(true, false, false, false, false)
+                .setISAdvancement(2526, 2531, 3052, 2819, 3043)
+                .setISApproximate(true, false, false, false, false)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC);
         return ammo;
     }
@@ -9557,7 +10034,8 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 30000;
         ammo.explosive = false;
         ammo.rulesRefs = "234, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3061, 3068, 3072, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
@@ -9596,14 +10074,15 @@ public class AmmoType extends EquipmentType {
         ammo.name = "RISC Advanced Point Defense System Ammo";
         ammo.shortName = "RISC APDS";
         ammo.setInternalName("ISAPDS Ammo");
-        ammo.damagePerShot = 1; // only used for ammo crits
-        ammo.rackSize = 2; // only used for ammo crits
+        ammo.damagePerShot = 1; // only used for ammo criticals
+        ammo.rackSize = 2; // only used for ammo criticals
         ammo.ammoType = AmmoType.T_APDS;
         ammo.shots = 12;
         ammo.bv = 22;
         ammo.cost = 2000;
         ammo.rulesRefs = "91, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_X, RATING_E)
                 .setISAdvancement(3134, 3137, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_RS)
@@ -9627,7 +10106,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 5;
         ammo.cost = 2000;
         ammo.rulesRefs = "346, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setISAdvancement(3065, 3084, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS)
@@ -9641,8 +10121,8 @@ public class AmmoType extends EquipmentType {
     /*
      * Because ammo by ton is not in whole number I am doing this as single shot
      * with a function to change the number of shots which will be called from the
-     * BLK file. This means I also have to convertBV and cost per ton to BV and cost
-     * per shot
+     * BLK file. This means I also have to convert BV and cost per ton to BV and
+     * cost per shot
      */
 
     private static AmmoType createLightMassDriverAmmo() {
@@ -9654,12 +10134,14 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 60;
         ammo.ammoType = AmmoType.T_LMASS;
         ammo.shots = 1;
+        ammo.tonnage = 30;
         ammo.bv = 882;
         ammo.cost = 150000;
-        ammo.ammoRatio = 30;
+        ammo.ammoRatio = 1;
         ammo.capital = true;
         ammo.rulesRefs = "323, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_F, RATING_X, RATING_F, RATING_F)
                 .setISAdvancement(2715, DATE_NONE, DATE_NONE, 2855, 3066)
                 .setISApproximate(true, false, false, true, false)
@@ -9677,12 +10159,14 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 100;
         ammo.ammoType = AmmoType.T_MMASS;
         ammo.shots = 1;
+        ammo.tonnage = 60;
         ammo.bv = 1470;
         ammo.cost = 300000;
-        ammo.ammoRatio = 30;
+        ammo.ammoRatio = 1;
         ammo.capital = true;
         ammo.rulesRefs = "323, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_F, RATING_X, RATING_F, RATING_F)
                 .setISAdvancement(2715, DATE_NONE, DATE_NONE, 2855, 3066)
                 .setISApproximate(true, false, false, true, false)
@@ -9700,12 +10184,15 @@ public class AmmoType extends EquipmentType {
         ammo.damagePerShot = 140;
         ammo.ammoType = AmmoType.T_HMASS;
         ammo.shots = 1;
+        ammo.tonnage = 90;
+        ammo.shots = 1;
         ammo.bv = 2058;
         ammo.cost = 600000;
-        ammo.ammoRatio = 30;
+        ammo.ammoRatio = 1;
         ammo.capital = true;
         ammo.rulesRefs = "323, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_D)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_F, RATING_X, RATING_F, RATING_F)
                 .setISAdvancement(2715, DATE_NONE, DATE_NONE, 2855, 3066)
                 .setISApproximate(true, false, false, true, false)
@@ -9731,7 +10218,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "323, TO";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_E, RATING_X, RATING_E, RATING_E)
-                .setISAdvancement(2440, 2448, DATE_NONE, 2950, 3052).setISApproximate(true, true, false, true, false)
+                .setISAdvancement(2440, 2448, DATE_NONE, 2950, 3052)
+                .setISApproximate(true, true, false, true, false)
                 .setClanAdvancement(2440, 2448, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, true, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_DC);
@@ -9755,7 +10243,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "323, TO";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_E, RATING_X, RATING_E, RATING_E)
-                .setISAdvancement(2440, 2448, DATE_NONE, 2950, 3052).setISApproximate(true, true, false, true, false)
+                .setISAdvancement(2440, 2448, DATE_NONE, 2950, 3052)
+                .setISApproximate(true, true, false, true, false)
                 .setClanAdvancement(2440, 2448, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, true, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_DC);
@@ -9779,7 +10268,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "323, TO";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_E, RATING_X, RATING_E, RATING_E)
-                .setISAdvancement(2440, 2448, DATE_NONE, 2950, 3052).setISApproximate(true, true, false, true, false)
+                .setISAdvancement(2440, 2448, DATE_NONE, 2950, 3052)
+                .setISApproximate(true, true, false, true, false)
                 .setClanAdvancement(2440, 2448, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, true, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_DC);
@@ -9961,7 +10451,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "210, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_D, RATING_E, RATING_E, RATING_D)
-                .setISAdvancement(2200, 2305, 3055, 2950, 3051).setISApproximate(true, false, false, true, false)
+                .setISAdvancement(2200, 2305, 3055, 2950, 3051)
+                .setISApproximate(true, false, false, true, false)
                 .setClanAdvancement(2200, 2305, 3055, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
                 .setProductionFactions(F_TA).setReintroductionFactions(F_FS, F_LC);
@@ -9987,7 +10478,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "210, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_D, RATING_E, RATING_E, RATING_D)
-                .setISAdvancement(2200, 2305, 3055, 2950, 3051).setISApproximate(true, false, false, true, false)
+                .setISAdvancement(2200, 2305, 3055, 2950, 3051)
+                .setISApproximate(true, false, false, true, false)
                 .setClanAdvancement(2200, 2305, 3055, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
                 .setProductionFactions(F_TA).setReintroductionFactions(F_FS, F_LC);
@@ -10011,7 +10503,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "210, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_D, RATING_E, RATING_E, RATING_D)
-                .setISAdvancement(2200, 2305, 3055, 2950, 3051).setISApproximate(true, false, false, true, false)
+                .setISAdvancement(2200, 2305, 3055, 2950, 3051)
+                .setISApproximate(true, false, false, true, false)
                 .setClanAdvancement(2200, 2305, 3055, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
                 .setProductionFactions(F_TA).setReintroductionFactions(F_FS, F_LC);
@@ -10026,6 +10519,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "Barracuda (Tele-Operated) Ammo";
         ammo.setInternalName("Ammo Barracuda-T");
         ammo.addLookupName("BarracudaT Ammo");
+        ammo.shortName = "Barracuda-T";
         ammo.damagePerShot = 2;
         ammo.ammoType = AmmoType.T_BARRACUDA_T;
         ammo.shots = 1;
@@ -10036,7 +10530,8 @@ public class AmmoType extends EquipmentType {
         ammo.capital = true;
         ammo.flags = ammo.flags.or(F_TELE_MISSILE).or(F_CAP_MISSILE);
         ammo.rulesRefs = "251, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3053, 3056, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, true, false).setPrototypeFactions(F_CS, F_DC)
@@ -10050,6 +10545,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "White Shark (Tele-Operated) Ammo";
         ammo.setInternalName("Ammo White Shark-T");
         ammo.addLookupName("WhiteSharkT Ammo");
+        ammo.shortName = "White Shark-T";
         ammo.damagePerShot = 3;
         ammo.ammoType = AmmoType.T_WHITE_SHARK_T;
         ammo.shots = 1;
@@ -10059,7 +10555,8 @@ public class AmmoType extends EquipmentType {
         ammo.capital = true;
         ammo.flags = ammo.flags.or(F_TELE_MISSILE).or(F_CAP_MISSILE);
         ammo.rulesRefs = "251, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3053, 3056, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, true, false).setPrototypeFactions(F_CS, F_DC)
@@ -10073,6 +10570,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "Killer Whale (Tele-Operated) Ammo";
         ammo.setInternalName("Ammo Killer Whale-T");
         ammo.addLookupName("KillerWhaleT Ammo");
+        ammo.shortName = "Killer Whale-T";
         ammo.damagePerShot = 4;
         ammo.ammoType = AmmoType.T_KILLER_WHALE_T;
         ammo.shots = 1;
@@ -10082,7 +10580,8 @@ public class AmmoType extends EquipmentType {
         ammo.capital = true;
         ammo.flags = ammo.flags.or(F_TELE_MISSILE).or(F_CAP_MISSILE);
         ammo.rulesRefs = "251, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3053, 3056, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, true, false).setPrototypeFactions(F_CS, F_DC)
@@ -10096,6 +10595,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "Kraken (Tele-Operated) Ammo";
         ammo.setInternalName("Ammo KrakenT");
         ammo.addLookupName("KrakenT Ammo");
+        ammo.shortName = "Kraken-T";
         ammo.damagePerShot = 10;
         ammo.ammoType = AmmoType.T_KRAKEN_T;
         ammo.shots = 1;
@@ -10105,7 +10605,8 @@ public class AmmoType extends EquipmentType {
         ammo.capital = true;
         ammo.flags = ammo.flags.or(F_TELE_MISSILE).or(F_CAP_MISSILE);
         ammo.rulesRefs = "251, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3053, 3057, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, true, false).setPrototypeFactions(F_CS, F_DC)
@@ -10127,7 +10628,8 @@ public class AmmoType extends EquipmentType {
         ammo.capital = true;
         ammo.flags = ammo.flags.or(F_CAP_MISSILE);
         ammo.rulesRefs = "Unofficial";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_F)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3053, 3057, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_CS, F_DC)
@@ -10149,7 +10651,8 @@ public class AmmoType extends EquipmentType {
         ammo.cost = 10000;
         ammo.flags = ammo.flags.or(F_SCREEN);
         ammo.rulesRefs = "237, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3053, 3055, 3057, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_DC)
@@ -10175,7 +10678,7 @@ public class AmmoType extends EquipmentType {
         ammo.ammoRatio = 2;
         ammo.capital = true;
         ammo.rulesRefs = "343, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL)
                 .setIntroLevel(false)
                 .setUnofficial(false)
@@ -10207,7 +10710,7 @@ public class AmmoType extends EquipmentType {
         ammo.ammoRatio = 1;
         ammo.capital = true;
         ammo.rulesRefs = "343, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL)
                 .setIntroLevel(false)
                 .setUnofficial(false)
@@ -10240,7 +10743,7 @@ public class AmmoType extends EquipmentType {
         ammo.ammoRatio = 0.5;
         ammo.capital = true;
         ammo.rulesRefs = "343, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL)
                 .setIntroLevel(false)
                 .setUnofficial(false)
@@ -10275,7 +10778,7 @@ public class AmmoType extends EquipmentType {
         ammo.capital = true;
         ammo.flags = ammo.flags.or(F_CAP_MISSILE);
         ammo.rulesRefs = "345, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL)
                 .setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_D)
@@ -10304,7 +10807,7 @@ public class AmmoType extends EquipmentType {
         ammo.ammoRatio = 15;
         ammo.flags = ammo.flags.or(F_CAP_MISSILE);
         ammo.rulesRefs = "345, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL)
                 .setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_D)
@@ -10320,8 +10823,8 @@ public class AmmoType extends EquipmentType {
     private static AmmoType createStingrayAmmo() {
         AmmoType ammo = new AmmoType();
 
-        ammo.name = "Stringray Ammo";
-        ammo.setInternalName("Ammo Stringray");
+        ammo.name = "Stingray Ammo";
+        ammo.setInternalName("Ammo Stingray");
         ammo.addLookupName("Stingray Ammo");
         ammo.addLookupName("ClStingray Ammo");
         ammo.damagePerShot = 3;
@@ -10334,7 +10837,7 @@ public class AmmoType extends EquipmentType {
         ammo.capital = true;
         ammo.flags = ammo.flags.or(F_CAP_MISSILE);
         ammo.rulesRefs = "345, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL)
                 .setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_D)
@@ -10364,7 +10867,7 @@ public class AmmoType extends EquipmentType {
         ammo.capital = true;
         ammo.flags = ammo.flags.or(F_CAP_MISSILE);
         ammo.rulesRefs = "345, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL)
                 .setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_D)
@@ -10377,8 +10880,9 @@ public class AmmoType extends EquipmentType {
         return ammo;
     }
 
-    // AR10 Ammo - TODO - Check to see if these can be eliminated as the AR10 Fires
-    // standard missiles.
+    // AR10 Ammo
+    // TODO - Check to see if these can be eliminated as the AR10 Fires standard
+    // missiles.
 
     private static AmmoType createAR10BarracudaAmmo() {
         AmmoType ammo = new AmmoType();
@@ -10386,6 +10890,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "AR10 Barracuda Ammo";
         ammo.setInternalName("Ammo AR10 Barracuda");
         ammo.addLookupName("AR10 Barracuda Ammo");
+        ammo.shortName = "Barracuda";
         ammo.damagePerShot = 2;
         ammo.ammoType = AmmoType.T_AR10;
         ammo.shots = 1;
@@ -10400,7 +10905,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "210, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_D, RATING_E, RATING_E, RATING_D)
-                .setISAdvancement(2540, 2550, 3055, 2950, 3051).setISApproximate(true, false, false, true, false)
+                .setISAdvancement(2540, 2550, 3055, 2950, 3051)
+                .setISApproximate(true, false, false, true, false)
                 .setClanAdvancement(2540, 2550, 3055, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC);
@@ -10413,6 +10919,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "AR10 Killer Whale Ammo";
         ammo.setInternalName("Ammo AR10 Killer Whale");
         ammo.addLookupName("AR10 KillerWhale Ammo");
+        ammo.shortName = "Killer Whale";
         ammo.damagePerShot = 4;
         ammo.ammoType = AmmoType.T_AR10;
         ammo.shots = 1;
@@ -10426,7 +10933,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "210, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_D, RATING_E, RATING_E, RATING_D)
-                .setISAdvancement(2540, 2550, 3055, 2950, 3051).setISApproximate(true, false, false, true, false)
+                .setISAdvancement(2540, 2550, 3055, 2950, 3051)
+                .setISApproximate(true, false, false, true, false)
                 .setClanAdvancement(2540, 2550, 3055, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC);
@@ -10439,6 +10947,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "AR10 White Shark Ammo";
         ammo.setInternalName("Ammo AR10 White Shark");
         ammo.addLookupName("AR10 WhiteShark Ammo");
+        ammo.shortName = "White Shark";
         ammo.damagePerShot = 3;
         ammo.ammoType = AmmoType.T_AR10;
         ammo.shots = 1;
@@ -10452,7 +10961,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "210, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_D, RATING_E, RATING_E, RATING_D)
-                .setISAdvancement(2540, 2550, 3055, 2950, 3051).setISApproximate(true, false, false, true, false)
+                .setISAdvancement(2540, 2550, 3055, 2950, 3051)
+                .setISApproximate(true, false, false, true, false)
                 .setClanAdvancement(2540, 2550, 3055, DATE_NONE, DATE_NONE)
                 .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC);
@@ -10467,6 +10977,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "AR10 Barracuda (Tele-Operated) Ammo";
         ammo.setInternalName("Ammo AR10 Barracuda-T");
         ammo.addLookupName("AR10 BarracudaT Ammo");
+        ammo.shortName = "Barracuda-T";
         ammo.damagePerShot = 2;
         ammo.ammoType = AmmoType.T_AR10;
         ammo.shots = 1;
@@ -10480,7 +10991,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "251, TW";
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setISAdvancement(3053, 3056, 3060)
                 .setISApproximate(true, false, false).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D).setPrototypeFactions(F_CS, F_DC)
+                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
+                .setPrototypeFactions(F_CS, F_DC)
                 .setProductionFactions(F_DC).setReintroductionFactions(F_FS, F_LC)
                 .setStaticTechLevel(SimpleTechLevel.UNOFFICIAL);
         return ammo;
@@ -10492,6 +11004,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "AR10 Killer Whale (Tele-Operated) Ammo";
         ammo.setInternalName("Ammo AR10 Killer Whale-T");
         ammo.addLookupName("AR10 KillerWhaleT Ammo");
+        ammo.shortName = "Killer Whale-T";
         ammo.damagePerShot = 4;
         ammo.ammoType = AmmoType.T_AR10;
         ammo.shots = 1;
@@ -10504,7 +11017,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "251, TW";
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setISAdvancement(3053, 3056, 3060)
                 .setISApproximate(true, false, false).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D).setPrototypeFactions(F_CS, F_DC)
+                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
+                .setPrototypeFactions(F_CS, F_DC)
                 .setProductionFactions(F_DC).setReintroductionFactions(F_FS, F_LC)
                 .setStaticTechLevel(SimpleTechLevel.UNOFFICIAL);
         return ammo;
@@ -10516,6 +11030,7 @@ public class AmmoType extends EquipmentType {
         ammo.name = "AR10 White Shark (Tele-Operated) Ammo";
         ammo.setInternalName("Ammo AR10 White Shark-T");
         ammo.addLookupName("AR10 WhiteSharkT Ammo");
+        ammo.shortName = "White Shark-T";
         ammo.damagePerShot = 3;
         ammo.ammoType = AmmoType.T_AR10;
         ammo.shots = 1;
@@ -10528,7 +11043,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "251, TW";
         ammo.techAdvancement.setTechBase(TECH_BASE_IS).setISAdvancement(3053, 3056, 3060)
                 .setISApproximate(true, false, false).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D).setPrototypeFactions(F_CS, F_DC)
+                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
+                .setPrototypeFactions(F_CS, F_DC)
                 .setProductionFactions(F_DC).setReintroductionFactions(F_FS, F_LC)
                 .setStaticTechLevel(SimpleTechLevel.UNOFFICIAL);
         return ammo;
@@ -10598,7 +11114,7 @@ public class AmmoType extends EquipmentType {
         ammo.shortName = "C3 Remote Sensor";
         ammo.setInternalName("ISC3Sensors");
         ammo.explosive = false;
-        ammo.damagePerShot = 0; // only used for ammo crits
+        ammo.damagePerShot = 0; // only used for ammo criticals
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_C3_REMOTE_SENSOR;
         ammo.shots = 4;
@@ -10632,7 +11148,8 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "347, TO";
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setISAdvancement(3052, 3072, 3081, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS)
@@ -10660,7 +11177,8 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "347, TO";
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setISAdvancement(3052, 3072, 3081, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS)
@@ -10688,7 +11206,8 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "347, TO";
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setISAdvancement(3052, 3072, 3081, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS)
@@ -10716,7 +11235,8 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.rulesRefs = "347, TO";
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
                 .setISAdvancement(3052, 3072, 3081, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS)
@@ -10725,7 +11245,7 @@ public class AmmoType extends EquipmentType {
         return ammo;
     }
 
-// TODO : PRIMITIVE and PROTOTYPE
+    // TODO : PRIMITIVE and PROTOTYPE
 
     // PRIMITIVE AMMOs
     private static AmmoType createISAC2pAmmo() {
@@ -10743,10 +11263,11 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 5;
         ammo.cost = 1000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2290, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -10769,10 +11290,11 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 9;
         ammo.cost = 4500;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2240, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -10795,10 +11317,11 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 12;
         ammo.cost = 12000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2450, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -10821,10 +11344,11 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 22;
         ammo.cost = 10000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2488, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -10849,10 +11373,11 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.cost = 30000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2295, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -10877,10 +11402,11 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.cost = 30000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2295, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -10905,10 +11431,11 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.cost = 30000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2295, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -10933,10 +11460,11 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.cost = 30000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2295, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -10959,10 +11487,11 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 3;
         ammo.cost = 27000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2365, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -10985,10 +11514,11 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 5;
         ammo.cost = 27000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2365, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -11011,10 +11541,11 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 7;
         ammo.cost = 27000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2365, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -11036,10 +11567,11 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 35;
         ammo.cost = 10000;
         // IO Doesn't strictly define when these weapons stop production. Checked with
-        // Herb and they would always be around
-        // This to cover some of the back worlds in the Periphery.
+        // Herb and they would always be around. This to cover some of the back worlds
+        // in the Periphery.
         ammo.rulesRefs = "118, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
                 .setISAdvancement(2365, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TA)
@@ -11051,7 +11583,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Prototype Arrow IV Ammo";
-        ammo.shortName = "ProtoType Arrow IV";
+        ammo.shortName = "pArrow IV";
         ammo.setInternalName("ProtoTypeArrowIVAmmo");
         ammo.addLookupName("ProtoArrowIV Ammo");
         ammo.damagePerShot = 1;
@@ -11061,9 +11593,11 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 30;
         ammo.cost = 40000;
         ammo.rulesRefs = "217, IO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
-                .setISAdvancement(2593, 2600, DATE_NONE, 2830, 3044).setISApproximate(false, false, false, false, false)
+                .setISAdvancement(2593, 2600, DATE_NONE, 2830, 3044)
+                .setISApproximate(false, false, false, false, false)
                 .setPrototypeFactions(F_TH).setProductionFactions(F_TH);
         return ammo;
     }
@@ -11073,7 +11607,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved Autocannon/2 Ammo";
-        ammo.shortName = "Improved Autocannon/2 Ammo";
+        ammo.shortName = "iAC/2 Ammo";
         ammo.setInternalName("CLIMPAmmoAC2");
         ammo.damagePerShot = 1;
         ammo.rackSize = 2;
@@ -11094,7 +11628,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved Autocannon/5 Ammo";
-        ammo.shortName = "Improved Autocannon/5 Ammo";
+        ammo.shortName = "iAC/5 Ammo";
         ammo.setInternalName("CLIMPAmmoAC5");
         ammo.damagePerShot = 1;
         ammo.rackSize = 5;
@@ -11115,7 +11649,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved Autocannon/10 Ammo";
-        ammo.shortName = "Improved Autocannon/10 Ammo";
+        ammo.shortName = "iAC/10 Ammo";
         ammo.setInternalName("CLIMPAmmoAC10");
         ammo.damagePerShot = 1;
         ammo.rackSize = 10;
@@ -11136,7 +11670,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved Autocannon/20 Ammo";
-        ammo.shortName = "Improved Autocannon/20 Ammo";
+        ammo.shortName = "iAC/20 Ammo";
         ammo.setInternalName("CLIMPAmmoAC20");
         ammo.damagePerShot = 1;
         ammo.rackSize = 20;
@@ -11158,7 +11692,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved LRM 5 Ammo";
-        ammo.shortName = "Improved LRM 5";
+        ammo.shortName = "iLRM 5";
         ammo.setInternalName("ClanImprovedLRM5Ammo");
         ammo.addLookupName("CLImpLRM5Ammo");
         ammo.damagePerShot = 1;
@@ -11173,8 +11707,10 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "96, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_D, RATING_X, RATING_X)
-                .setClanAdvancement(2815, 2818, 2820, 2831, 3080).setClanApproximate(false, false, false, false, false)
-                .setPrototypeFactions(F_CCY).setProductionFactions(F_CCY).setReintroductionFactions(F_EI);
+                .setClanAdvancement(2815, 2818, 2820, 2831, 3080)
+                .setClanApproximate(false, false, false, false, false)
+                .setPrototypeFactions(F_CCY).setProductionFactions(F_CCY)
+                .setReintroductionFactions(F_EI);
         return ammo;
     }
 
@@ -11182,7 +11718,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved LRM 10 Ammo";
-        ammo.shortName = "Improved LRM 10";
+        ammo.shortName = "iLRM 10";
         ammo.setInternalName("ClanImprovedLRM10Ammo");
         ammo.addLookupName("CLImpLRM10Ammo");
         ammo.damagePerShot = 1;
@@ -11197,18 +11733,20 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "96, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_D, RATING_X, RATING_X)
-                .setClanAdvancement(2815, 2818, 2820, 2831, 3080).setClanApproximate(false, false, false, false, false)
-                .setPrototypeFactions(F_CCY).setProductionFactions(F_CCY).setReintroductionFactions(F_EI);
+                .setClanAdvancement(2815, 2818, 2820, 2831, 3080)
+                .setClanApproximate(false, false, false, false, false)
+                .setPrototypeFactions(F_CCY).setProductionFactions(F_CCY)
+                .setReintroductionFactions(F_EI);
         return ammo;
     }
 
     private static AmmoType createCLImprovedLRM15Ammo() {
         AmmoType ammo = new AmmoType();
 
-        ammo.shortName = "Improved LRM 15";
         ammo.name = "Improved LRM 15 Ammo";
         ammo.setInternalName("ClanImprovedLRM15Ammo");
         ammo.addLookupName("CLImpLRM15Ammo");
+        ammo.shortName = "iLRM 15";
         ammo.damagePerShot = 1;
         ammo.rackSize = 15;
         ammo.ammoType = AmmoType.T_LRM_IMP;
@@ -11221,8 +11759,10 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "96, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_D, RATING_X, RATING_X)
-                .setClanAdvancement(2815, 2818, 2820, 2831, 3080).setClanApproximate(false, false, false, false, false)
-                .setPrototypeFactions(F_CCY).setProductionFactions(F_CCY).setReintroductionFactions(F_EI);
+                .setClanAdvancement(2815, 2818, 2820, 2831, 3080)
+                .setClanApproximate(false, false, false, false, false)
+                .setPrototypeFactions(F_CCY).setProductionFactions(F_CCY)
+                .setReintroductionFactions(F_EI);
         return ammo;
     }
 
@@ -11230,7 +11770,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved LRM 20 Ammo";
-        ammo.shortName = "Improved LRM 20";
+        ammo.shortName = "iLRM 20";
         ammo.setInternalName("ClanImprovedLRM20Ammo");
         ammo.addLookupName("CLImpLRM20Ammo");
         ammo.damagePerShot = 1;
@@ -11245,8 +11785,10 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "96, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_D, RATING_X, RATING_X)
-                .setClanAdvancement(2815, 2818, 2820, 2831, 3080).setClanApproximate(false, false, false, false, false)
-                .setPrototypeFactions(F_CCY).setProductionFactions(F_CCY).setReintroductionFactions(F_EI);
+                .setClanAdvancement(2815, 2818, 2820, 2831, 3080)
+                .setClanApproximate(false, false, false, false, false)
+                .setPrototypeFactions(F_CCY).setProductionFactions(F_CCY)
+                .setReintroductionFactions(F_EI);
         return ammo;
     }
 
@@ -11254,7 +11796,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved Gauss Rifle Ammo";
-        ammo.shortName = "Improved Gauss";
+        ammo.shortName = "iGauss";
         ammo.setInternalName("CLImpGaussAmmo");
         ammo.damagePerShot = 15;
         ammo.explosive = false;
@@ -11266,8 +11808,10 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "96, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_E).setAvailability(RATING_X, RATING_E, RATING_X, RATING_E)
-                .setClanAdvancement(2818, 2821, 2822, 2837, 3080).setClanApproximate(true, false, false, false, false)
-                .setPrototypeFactions(F_CGS).setProductionFactions(F_CGS).setReintroductionFactions(F_EI);
+                .setClanAdvancement(2818, 2821, 2822, 2837, 3080)
+                .setClanApproximate(true, false, false, false, false)
+                .setPrototypeFactions(F_CGS).setProductionFactions(F_CGS)
+                .setReintroductionFactions(F_EI);
         return ammo;
     }
 
@@ -11276,7 +11820,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved SRM 2 Ammo";
-        ammo.shortName = "Improved SRM 2";
+        ammo.shortName = "iSRM 2";
         ammo.setInternalName("ClanImpAmmoSRM2");
         ammo.addLookupName("CLImpSRM2 Ammo");
         ammo.damagePerShot = 2;
@@ -11289,7 +11833,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "96, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_D, RATING_X, RATING_X)
-                .setClanAdvancement(2815, 2817, 2819, 2828, 3080).setClanApproximate(true, false, false, true, false)
+                .setClanAdvancement(2815, 2817, 2819, 2828, 3080)
+                .setClanApproximate(true, false, false, true, false)
                 .setPrototypeFactions(F_CCC).setProductionFactions(F_CCC)
                 .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
         return ammo;
@@ -11299,7 +11844,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved SRM 4 Ammo";
-        ammo.shortName = "Improved SRM 4";
+        ammo.shortName = "iSRM 4";
         ammo.setInternalName("ClImpAmmoSRM4");
         ammo.addLookupName("CLImpSRM4 Ammo");
         ammo.damagePerShot = 2;
@@ -11312,7 +11857,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "96, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_D, RATING_X, RATING_X)
-                .setClanAdvancement(2815, 2817, 2819, 2828, 3080).setClanApproximate(true, false, false, true, false)
+                .setClanAdvancement(2815, 2817, 2819, 2828, 3080)
+                .setClanApproximate(true, false, false, true, false)
                 .setPrototypeFactions(F_CCC).setProductionFactions(F_CCC)
                 .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
         return ammo;
@@ -11322,7 +11868,7 @@ public class AmmoType extends EquipmentType {
         AmmoType ammo = new AmmoType();
 
         ammo.name = "Improved SRM 6 Ammo";
-        ammo.shortName = "Improved SRM 6";
+        ammo.shortName = "iSRM 6";
         ammo.setInternalName("CLImpAmmoSRM6");
         ammo.addLookupName("CLImpSRM6 Ammo");
         ammo.damagePerShot = 2;
@@ -11335,7 +11881,8 @@ public class AmmoType extends EquipmentType {
         ammo.rulesRefs = "96, IO";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_F).setAvailability(RATING_X, RATING_D, RATING_X, RATING_X)
-                .setClanAdvancement(2815, 2817, 2819, 2828, 3080).setClanApproximate(true, false, false, true, false)
+                .setClanAdvancement(2815, 2817, 2819, 2828, 3080)
+                .setClanApproximate(true, false, false, true, false)
                 .setPrototypeFactions(F_CCC).setProductionFactions(F_CCC)
                 .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
         return ammo;
@@ -11432,7 +11979,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 0;
         ammo.cost = 15000;
         ammo.rulesRefs = "267, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_F)
                 .setISAdvancement(DATE_NONE, 3050, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
@@ -11456,8 +12004,8 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 100;
         ammo.kgPerShot = 10;
         ammo.bv = 1;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But MG Tech Base and Avail Ratings.
+        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But MG
+        // Tech Base and Avail Ratings.
         ammo.rulesRefs = "228, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_C).setAvailability(RATING_X, RATING_X, RATING_B, RATING_B)
@@ -11480,8 +12028,8 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 200;
         ammo.bv = 1;
         ammo.kgPerShot = 5;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But MG Tech Base and Avail Ratings.
+        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But MG
+        // Tech Base and Avail Ratings.
         ammo.rulesRefs = "228, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_C).setAvailability(RATING_X, RATING_X, RATING_B, RATING_A)
@@ -11505,8 +12053,8 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 200;
         ammo.bv = 1;
         ammo.kgPerShot = 5;
-        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression.
-        // But MG Tech Base and Avail Ratings.
+        // Per Herb all ProtoMech launcher use the ProtoMech Chassis progression. But MG
+        // Tech Base and Avail Ratings.
         ammo.rulesRefs = "228, TM";
         ammo.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_C).setAvailability(RATING_X, RATING_X, RATING_C, RATING_B)
@@ -11535,7 +12083,8 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.kgPerShot = 8.3;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3057, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -11561,7 +12110,8 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.kgPerShot = 16.6;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3057, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -11587,7 +12137,8 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.kgPerShot = 25;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3057, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -11613,7 +12164,8 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.kgPerShot = 33.4;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3057, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -11638,7 +12190,8 @@ public class AmmoType extends EquipmentType {
         ammo.setModes("", "HotLoad");
         ammo.kgPerShot = 41.5;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3057, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -11790,7 +12343,8 @@ public class AmmoType extends EquipmentType {
                 .setISAdvancement(3050, 3050, 3051, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false)
                 .setClanAdvancement(2865, 2868, 2870, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CWF, F_LC, F_FS)
+                .setClanApproximate(true, false, false, false, false)
+                .setPrototypeFactions(F_CWF, F_LC, F_FS)
                 .setProductionFactions(F_CWF, F_FS, F_LC);
         return ammo;
     }
@@ -11817,7 +12371,8 @@ public class AmmoType extends EquipmentType {
                 .setISAdvancement(3050, 3050, 3051, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false)
                 .setClanAdvancement(2865, 2868, 2870, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CWF, F_LC, F_FS)
+                .setClanApproximate(true, false, false, false, false)
+                .setPrototypeFactions(F_CWF, F_LC, F_FS)
                 .setProductionFactions(F_CWF, F_FS, F_LC);
         return ammo;
     }
@@ -11844,7 +12399,8 @@ public class AmmoType extends EquipmentType {
                 .setISAdvancement(3050, 3050, 3051, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false)
                 .setClanAdvancement(2865, 2868, 2870, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CWF, F_LC, F_FS)
+                .setClanApproximate(true, false, false, false, false)
+                .setPrototypeFactions(F_CWF, F_LC, F_FS)
                 .setProductionFactions(F_CWF, F_FS, F_LC);
         return ammo;
     }
@@ -11871,7 +12427,8 @@ public class AmmoType extends EquipmentType {
                 .setISAdvancement(3050, 3050, 3051, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false)
                 .setClanAdvancement(2865, 2868, 2870, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CWF, F_LC, F_FS)
+                .setClanApproximate(true, false, false, false, false)
+                .setPrototypeFactions(F_CWF, F_LC, F_FS)
                 .setProductionFactions(F_CWF, F_FS, F_LC);
         return ammo;
     }
@@ -11898,7 +12455,8 @@ public class AmmoType extends EquipmentType {
                 .setISAdvancement(3050, 3050, 3051, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false)
                 .setClanAdvancement(2865, 2868, 2870, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CWF, F_LC, F_FS)
+                .setClanApproximate(true, false, false, false, false)
+                .setPrototypeFactions(F_CWF, F_LC, F_FS)
                 .setProductionFactions(F_CWF, F_FS, F_LC);
         return ammo;
     }
@@ -11925,7 +12483,8 @@ public class AmmoType extends EquipmentType {
                 .setISAdvancement(3050, 3050, 3051, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false)
                 .setClanAdvancement(2865, 2868, 2870, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CWF, F_LC, F_FS)
+                .setClanApproximate(true, false, false, false, false)
+                .setPrototypeFactions(F_CWF, F_LC, F_FS)
                 .setProductionFactions(F_CWF, F_FS, F_LC);
         return ammo;
     }
@@ -12093,7 +12652,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 1;
         ammo.kgPerShot = 5;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_B)
                 .setISAdvancement(3058, 3060, 3067, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
@@ -12117,7 +12677,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 2;
         ammo.kgPerShot = 10;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_B)
                 .setISAdvancement(3058, 3060, 3067, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
@@ -12141,7 +12702,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 2;
         ammo.kgPerShot = 15;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_B)
                 .setISAdvancement(3058, 3060, 3067, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
@@ -12165,7 +12727,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 3;
         ammo.kgPerShot = 20;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_B)
                 .setISAdvancement(3058, 3060, 3067, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
@@ -12189,7 +12752,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 4;
         ammo.kgPerShot = 25;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_D, RATING_B)
                 .setISAdvancement(3058, 3060, 3067, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
@@ -12210,8 +12774,9 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 1;
         ammo.bv = 0;
         ammo.rulesRefs = "345, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_E)
                 .setISAdvancement(3067, 3084, DATE_NONE, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
@@ -12235,7 +12800,8 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 1;
         ammo.bv = 0;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_B, RATING_B)
                 .setISAdvancement(3050, 3050, 3052, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
@@ -12257,7 +12823,8 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 1;
         ammo.bv = 0;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_B, RATING_B)
                 .setISAdvancement(3050, 3050, 3052, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
@@ -12279,7 +12846,8 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 1;
         ammo.bv = 0;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_B, RATING_B)
                 .setISAdvancement(3050, 3050, 3052, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
@@ -12301,7 +12869,8 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 1;
         ammo.bv = 0;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_B, RATING_B)
                 .setISAdvancement(3050, 3050, 3052, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
@@ -12323,7 +12892,8 @@ public class AmmoType extends EquipmentType {
         ammo.shots = 1;
         ammo.bv = 0;
         ammo.rulesRefs = "261, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_B, RATING_B)
                 .setISAdvancement(3050, 3050, 3052, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
@@ -12374,13 +12944,14 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 15;
         ammo.ammoType = AmmoType.T_MPOD;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 1;
         ammo.bv = 0;
         ammo.cost = 0;
         ammo.tonnage = 0;
         ammo.rulesRefs = "330, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
+                .setTechRating(RATING_C)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3060, 3064, 3099, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_LC)
@@ -12399,7 +12970,7 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 15;
         ammo.ammoType = AmmoType.T_MPOD;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 1;
         ammo.bv = 0;
         ammo.cost = 0;
@@ -12418,6 +12989,7 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "Anti-BattleArmor Pods (B-Pods) Ammo";
         ammo.setInternalName("ISBPodAmmo");
+        ammo.shortName = "B-Pod";
         ammo.damagePerShot = 1;
         ammo.rackSize = 1;
         ammo.ammoType = AmmoType.T_BPOD;
@@ -12431,7 +13003,8 @@ public class AmmoType extends EquipmentType {
                 .setISAdvancement(3068, 3068, 3070, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false)
                 .setClanAdvancement(3065, 3068, 3070, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CWX, F_LC, F_WB, F_FW)
+                .setClanApproximate(true, false, false, false, false)
+                .setPrototypeFactions(F_CWX, F_LC, F_WB, F_FW)
                 .setProductionFactions(F_CWX);
         return ammo;
     }
@@ -12478,7 +13051,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 5;
         ammo.cost = 3000;
         ammo.rulesRefs = "THB (Unofficial)";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12502,7 +13076,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 11;
         ammo.cost = 15000;
         ammo.rulesRefs = "THB (Unofficial)";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12526,7 +13101,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 26;
         ammo.cost = 30000;
         ammo.rulesRefs = "THB (Unofficial)";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12541,8 +13117,6 @@ public class AmmoType extends EquipmentType {
         ammo.setInternalName("IS LB 2-X Cluster Ammo (THB)");
         ammo.addLookupName("IS Ammo 2-X (CL) (THB)");
         ammo.shortName = "LB 2-X Cluster";
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 7;
         // this isn't a true mtf code
         ammo.addLookupName("ISLBXAC2 CL Ammo (THB)");
         ammo.addLookupName("IS LB 2-X AC Ammo - Cluster (THB)");
@@ -12550,12 +13124,13 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 2;
         ammo.ammoType = AmmoType.T_AC_LBX_THB;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 40;
         ammo.bv = 5;
         ammo.cost = 4950;
         ammo.rulesRefs = "THB (Unofficial)";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12573,18 +13148,17 @@ public class AmmoType extends EquipmentType {
         ammo.addLookupName("IS LB 5-X AC Ammo - Cluster (THB)");
         ammo.name = "LB 5-X Cluster Ammo (THB)";
         ammo.shortName = "LB 5-X Cluster";
-        ammo.subMunitionBegin = 7;
-        ammo.subMunitionLength = 7;
         ammo.damagePerShot = 1;
         ammo.toHitModifier = -1;
         ammo.rackSize = 5;
         ammo.ammoType = AmmoType.T_AC_LBX_THB;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 16;
         ammo.bv = 11;
         ammo.cost = 25000;
         ammo.rulesRefs = "THB (Unofficial)";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12597,8 +13171,6 @@ public class AmmoType extends EquipmentType {
 
         ammo.name = "LB 20-X Cluster Ammo (THB)";
         ammo.shortName = "LB 20-X Cluster";
-        ammo.subMunitionBegin = 8;
-        ammo.subMunitionLength = 7;
         ammo.setInternalName("IS LB 20-X Cluster Ammo (THB)");
         ammo.addLookupName("IS Ammo 20-X (CL) (THB)");
         // this isn't a true mtf code
@@ -12608,12 +13180,13 @@ public class AmmoType extends EquipmentType {
         ammo.toHitModifier = -1;
         ammo.rackSize = 20;
         ammo.ammoType = AmmoType.T_AC_LBX_THB;
-        ammo.munitionType = M_CLUSTER;
+        ammo.munitionType = EnumSet.of(Munitions.M_CLUSTER);
         ammo.shots = 4;
         ammo.bv = 26;
         ammo.cost = 51000;
         ammo.rulesRefs = "THB (Unofficial)";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12636,7 +13209,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 8;
         ammo.cost = 2000;
         ammo.rulesRefs = "THB (Unofficial)";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12659,7 +13233,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 31;
         ammo.cost = 15000;
         ammo.rulesRefs = "THB (Unofficial)";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12682,7 +13257,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 42;
         ammo.cost = 30000;
         ammo.rulesRefs = "THB (Unofficial)";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3055, 3058, 3060, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12794,7 +13370,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 9;
         ammo.cost = 10000;
         ammo.rulesRefs = "207, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_D)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_C)
                 .setISAdvancement(3062, 3068, 3070, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12818,7 +13395,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 15;
         ammo.cost = 20000;
         ammo.rulesRefs = "207, TM";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_D)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_C)
                 .setISAdvancement(3062, 3068, 3070, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12840,15 +13418,14 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 51;
         ammo.cost = 20000;
         ammo.rulesRefs = "Unofficial";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3051, 3061, 3067, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
                 .setProductionFactions(F_FC);
         return ammo;
     }
-
-  
 
     private static AmmoType createISAC10iAmmo() {
         AmmoType ammo = new AmmoType();
@@ -12890,7 +13467,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 12;
         ammo.cost = 1000;
         ammo.rulesRefs = "207, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3060, 3062, 3071, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12913,7 +13491,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 22;
         ammo.cost = 1000;
         ammo.rulesRefs = "207, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3060, 3062, 3071, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12936,7 +13515,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 40;
         ammo.cost = 1000;
         ammo.rulesRefs = "207, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3060, 3062, 3071, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12959,7 +13539,8 @@ public class AmmoType extends EquipmentType {
         ammo.bv = 53;
         ammo.cost = 1000;
         ammo.rulesRefs = "207, TO";
-        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true).setTechRating(RATING_E)
+        ammo.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(true)
+                .setTechRating(RATING_E)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
                 .setISAdvancement(3060, 3062, 3071, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS)
@@ -12975,8 +13556,6 @@ public class AmmoType extends EquipmentType {
         ammo.setInternalName("Ammo AR10 Peacemaker");
         ammo.addLookupName("AR10 Peacemaker Ammo");
         ammo.shortName = "Peacemaker";
-        ammo.subMunitionBegin = 0;
-        ammo.subMunitionLength = ammo.shortName.length();
         ammo.damagePerShot = 1000;
         ammo.ammoType = AmmoType.T_AR10;
         ammo.tonnage = 50.0;
@@ -13001,8 +13580,6 @@ public class AmmoType extends EquipmentType {
         ammo.addLookupName("CLPeacemaker Ammo");
         ammo.addLookupName("Ammo Clan Peacemaker");
         ammo.shortName = "Peacemaker";
-        ammo.subMunitionBegin = 0;
-        ammo.subMunitionLength = ammo.shortName.length();
         ammo.damagePerShot = 1000;
         ammo.ammoType = AmmoType.T_KILLER_WHALE;
         ammo.tonnage = 50.0;
@@ -13025,8 +13602,6 @@ public class AmmoType extends EquipmentType {
         ammo.setInternalName("Ammo AR10 Santa Anna");
         ammo.addLookupName("AR10 SantaAnna Ammo");
         ammo.shortName = "Santa Anna";
-        ammo.subMunitionBegin = 0;
-        ammo.subMunitionLength = ammo.shortName.length();
         ammo.damagePerShot = 100;
         ammo.ammoType = AmmoType.T_AR10;
         ammo.tonnage = 40.0;
@@ -13050,8 +13625,6 @@ public class AmmoType extends EquipmentType {
         ammo.addLookupName("SantaAnna Ammo");
         ammo.addLookupName("CLSantaAnna Ammo");
         ammo.shortName = "Santa Anna";
-        ammo.subMunitionBegin = 0;
-        ammo.subMunitionLength = ammo.shortName.length();
         ammo.damagePerShot = 100;
         ammo.ammoType = AmmoType.T_WHITE_SHARK;
         ammo.tonnage = 40.0;
@@ -13095,7 +13668,8 @@ public class AmmoType extends EquipmentType {
         ammo.setInternalName(EquipmentTypeLookup.INFANTRY_AMMO);
         ammo.ammoType = AmmoType.T_INFANTRY;
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_A)
-                .setAdvancement(DATE_PS, DATE_PS, DATE_PS).setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
+                .setAdvancement(DATE_PS, DATE_PS, DATE_PS)
+                .setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
@@ -13105,40 +13679,47 @@ public class AmmoType extends EquipmentType {
         ammo.name = "Inferno Ammo";
         ammo.setInternalName(EquipmentTypeLookup.INFANTRY_INFERNO_AMMO);
         ammo.ammoType = AmmoType.T_INFANTRY;
-        ammo.munitionType = M_INFERNO;
-        ammo.subMunitionLength = ammo.name.indexOf(" ");
+        ammo.munitionType = EnumSet.of(Munitions.M_INFERNO);
         ammo.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_A)
-                .setAdvancement(DATE_PS, DATE_PS, DATE_PS).setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
+                .setAdvancement(DATE_PS, DATE_PS, DATE_PS)
+                .setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
         return ammo;
     }
 
     @Override
     public String toString() {
-        return "Ammo: " + name;
+        return "[Ammo] " + internalName;
     }
 
     public static boolean canClearMinefield(AmmoType at) {
         // first the normal munition types
         if (at != null) {
             // LRM-20's, RL-20's, and MRM 20, 30, and 40 can clear minefields
-            if (((at.getAmmoType() == T_LRM) || (at.getAmmoType() == T_LRM_IMP) || (at.getAmmoType() == T_LRM_STREAK)
+            if (((at.getAmmoType() == T_LRM) || (at.getAmmoType() == T_LRM_IMP)
+                    || (at.getAmmoType() == T_LRM_STREAK)
                     || (at.getAmmoType() == T_EXLRM) || (at.getAmmoType() == T_MRM)
                     || (at.getAmmoType() == T_ROCKET_LAUNCHER))
                     && (at.getRackSize() >= 20)
-                    && ((at.getMunitionType() == M_STANDARD) || (at.getMunitionType() == M_ARTEMIS_CAPABLE)
-                            || (at.getMunitionType() == M_ARTEMIS_V_CAPABLE)
-                            || (at.getMunitionType() == M_NARC_CAPABLE))) {
+                    && ((at.getMunitionType().contains(Munitions.M_STANDARD))
+                            || (at.getMunitionType().contains(Munitions.M_ARTEMIS_CAPABLE))
+                            || (at.getMunitionType()
+                                    .contains(Munitions.M_ARTEMIS_V_CAPABLE))
+                            || (at.getMunitionType().contains(Munitions.M_NARC_CAPABLE)))) {
                 return true;
             }
             // ATMs
-            if ((at.getAmmoType() == T_ATM) && ((at.getRackSize() >= 12 && at.getMunitionType() != M_EXTENDED_RANGE)
-                    || (at.getRackSize() >= 9 && at.getMunitionType() == M_HIGH_EXPLOSIVE))) {
+            if ((at.getAmmoType() == T_ATM) && ((at.getRackSize() >= 12
+                    && !(at.getMunitionType().contains(Munitions.M_EXTENDED_RANGE))
+                    || (at.getRackSize() >= 9 && at.getMunitionType()
+                            .contains(Munitions.M_HIGH_EXPLOSIVE))))) {
                 return true;
             }
             // Artillery
-            if (((at.getAmmoType() == T_ARROW_IV) || (at.getAmmoType() == T_LONG_TOM) || (at.getAmmoType() == T_SNIPER)
-                    || (at.getAmmoType() == T_THUMPER)) && (at.getMunitionType() == M_STANDARD)) {
+            if (((at.getAmmoType() == T_ARROW_IV) || (at.getAmmoType() == T_LONG_TOM)
+                    || (at.getAmmoType() == T_SNIPER)
+                    || (at.getAmmoType() == T_THUMPER))
+                    && (at.getMunitionType().contains(Munitions.M_STANDARD))) {
                 return true;
             }
         }
@@ -13151,10 +13732,11 @@ public class AmmoType extends EquipmentType {
         return (at != null)
                 && ((at.getAmmoType() == T_LRM) || (at.getAmmoType() == AmmoType.T_LRM_IMP)
                         || (at.getAmmoType() == AmmoType.T_MML))
-                && ((at.getMunitionType() == M_THUNDER) || (at.getMunitionType() == M_THUNDER_INFERNO)
-                        || (at.getMunitionType() == M_THUNDER_AUGMENTED)
-                        || (at.getMunitionType() == M_THUNDER_VIBRABOMB)
-                        || (at.getMunitionType() == M_THUNDER_ACTIVE));
+                && ((at.getMunitionType().contains(Munitions.M_THUNDER))
+                        || (at.getMunitionType().contains(Munitions.M_THUNDER_INFERNO))
+                        || (at.getMunitionType().contains(Munitions.M_THUNDER_AUGMENTED))
+                        || (at.getMunitionType().contains(Munitions.M_THUNDER_VIBRABOMB))
+                        || (at.getMunitionType().contains(Munitions.M_THUNDER_ACTIVE)));
     }
 
     private void addToEnd(AmmoType base, String modifier) {
@@ -13192,17 +13774,17 @@ public class AmmoType extends EquipmentType {
         /**
          * The munition flag(s) for this type.
          */
-        private long type;
+        private EnumSet<Munitions> type;
 
         protected String rulesRefs;
 
         private TechAdvancement techAdvancement;
 
-        public MunitionMutator(String munitionName, int weightRatio, long munitionType,
-                               TechAdvancement techAdvancement, String rulesRefs) {
+        public MunitionMutator(String munitionName, int weightRatio, Munitions munitionType,
+                TechAdvancement techAdvancement, String rulesRefs) {
             name = munitionName;
             weight = weightRatio;
-            type = munitionType;
+            type = EnumSet.of(munitionType);
             this.techAdvancement = new TechAdvancement(techAdvancement);
             this.rulesRefs = rulesRefs;
         }
@@ -13222,6 +13804,8 @@ public class AmmoType extends EquipmentType {
             // Create an uninitialized munition object.
             AmmoType munition = new AmmoType();
             munition.setTonnage(base.getTonnage(null));
+            munition.subMunitionName = name;
+            munition.baseName = base.shortName;
 
             // Manipulate the base round's names, depending on ammoType.
             switch (base.ammoType) {
@@ -13233,8 +13817,6 @@ public class AmmoType extends EquipmentType {
                     // Add the munition name to the beginning of the display name.
                     nameBuf = new StringBuilder(name);
                     nameBuf.append(" ");
-                    munition.subMunitionBegin = 0;
-                    munition.subMunitionLength = nameBuf.length();
                     nameBuf.append(base.name);
                     munition.name = nameBuf.toString();
 
@@ -13249,7 +13831,7 @@ public class AmmoType extends EquipmentType {
                     nameBuf.insert(index, ' ');
                     nameBuf.insert(index, name);
                     munition.setInternalName(nameBuf.toString());
-                    munition.shortName = munition.name;
+                    munition.shortName = munition.name.replace(base.name, base.shortName);
                     munition.addBeforeString(base, "Ammo", name + " ");
                     break;
                 case AmmoType.T_ARROWIV_PROTO:
@@ -13263,12 +13845,8 @@ public class AmmoType extends EquipmentType {
                     if (name.endsWith("-IV")) {
                         StringBuilder tempName = new StringBuilder(name);
                         tempName.setLength(tempName.length() - 3);
-                        munition.subMunitionBegin = nameBuf.length();
-                        munition.subMunitionLength = tempName.length();
                         nameBuf.insert(index, tempName);
                     } else {
-                        munition.subMunitionBegin = nameBuf.length();
-                        munition.subMunitionLength = name.length();
                         nameBuf.insert(index, name);
                     }
                     munition.name = nameBuf.toString();
@@ -13277,7 +13855,14 @@ public class AmmoType extends EquipmentType {
                     index = base.internalName.lastIndexOf("Ammo");
                     nameBuf.insert(index, name);
                     munition.setInternalName(nameBuf.toString());
-                    munition.shortName = munition.name;
+
+                    // ADA full name is embarrassingly long.
+                    if (base.name.contains("ADA")) {
+                        munition.shortName = "ADA Missile";
+                        munition.addLookupName("ADA");
+                    } else {
+                        munition.shortName = munition.name.replace("Prototype ", "p");
+                    }
 
                     munition.addBeforeString(base, "Ammo", name + " ");
                     munition.addToEnd(base, " - " + name);
@@ -13308,39 +13893,38 @@ public class AmmoType extends EquipmentType {
                     nameBuf = new StringBuilder(base.name);
                     index = base.name.lastIndexOf("Ammo");
                     nameBuf.insert(index, ' ');
-                    munition.subMunitionBegin = index;
-                    munition.subMunitionLength = name.length();
                     nameBuf.insert(index, name);
                     munition.name = nameBuf.toString();
-                    munition.shortName = munition.name;
+                    nameBuf = new StringBuilder(base.shortName);
+                    nameBuf.append(' ');
+                    nameBuf.append(name.replace("-capable", ""));
+                    munition.shortName = nameBuf.toString();
                     munition.addBeforeString(base, "Ammo", name + " ");
                     break;
                 case AmmoType.T_VGL:
                     // Replace "Fragmentation" with the submunition name
                     munition.name = base.name.replace("Fragmentation", name);
-                    munition.subMunitionBegin = base.subMunitionBegin;
-                    munition.subMunitionLength = name.length();
 
                     munition.shortName = base.shortName.replace("Fragmentation", name);
                     internalName = new StringBuilder(base.getInternalName());
-                    munition.setInternalName(internalName.insert(internalName.lastIndexOf("Ammo"), name + " ").toString());
+                    munition.setInternalName(internalName
+                            .insert(internalName.lastIndexOf("Ammo"), name + " ")
+                            .toString());
                     munition.addBeforeString(base, "Ammo", name + " ");
                     break;
                 case AmmoType.T_MEK_MORTAR:
                     // Replace "Shaped Charge" with the submunition name
                     munition.name = base.name.replace("Shaped Charge", name);
-                    munition.subMunitionBegin = base.subMunitionBegin;
-                    munition.subMunitionLength = name.length();
                     String abr = "SC";
-                    if (type == AmmoType.M_AIRBURST) {
+                    if (type.contains(Munitions.M_AIRBURST)) {
                         abr = "AB";
-                    } else if (type == AmmoType.M_ANTI_PERSONNEL) {
+                    } else if (type.contains(Munitions.M_ANTI_PERSONNEL)) {
                         abr = "AP";
-                    } else if (type == AmmoType.M_FLARE) {
+                    } else if (type.contains(Munitions.M_FLARE)) {
                         abr = "FL";
-                    } else if (type == AmmoType.M_SMOKE_WARHEAD) {
+                    } else if (type.contains(Munitions.M_SMOKE_WARHEAD)) {
                         abr = "SM";
-                    } else if (type == AmmoType.M_SEMIGUIDED) {
+                    } else if (type.contains(Munitions.M_SEMIGUIDED)) {
                         abr = "SG";
                     }
                     munition.shortName = base.shortName.replace("SC", abr);
@@ -13357,9 +13941,8 @@ public class AmmoType extends EquipmentType {
                 case AmmoType.T_VEHICLE_FLAMER:
                 case AmmoType.T_HEAVY_FLAMER:
                 case AmmoType.T_FLUID_GUN:
+                case AmmoType.T_BA_TUBE:
                     // Add the munition name to the beginning of the display name.
-                    munition.subMunitionBegin = 0;
-                    munition.subMunitionLength = name.length();
                     nameBuf = new StringBuilder(name);
                     nameBuf.append(" ");
                     nameBuf.append(base.name);
@@ -13372,8 +13955,12 @@ public class AmmoType extends EquipmentType {
                     munition.addBeforeString(base, "Ammo", name + " ");
                     break;
                 default:
-                    throw new IllegalArgumentException("Don't know how to create munitions for " + base.ammoType);
+                    throw new IllegalArgumentException(
+                            "Don't know how to create munitions for " + base.ammoType);
             }
+
+            munition.shortName = munition.shortName.replace("(Clan) ", "");
+            munition.subMunitionName = munition.shortName;
 
             // Assign our munition type.
             munition.munitionType = type;
@@ -13384,13 +13971,14 @@ public class AmmoType extends EquipmentType {
             } else {
                 munition.techAdvancement = new TechAdvancement(base.techAdvancement);
             }
-            munition.techAdvancement.setStaticTechLevel(SimpleTechLevel.max(techAdvancement.getStaticTechLevel(),
-                    base.techAdvancement.getStaticTechLevel()));
+            munition.techAdvancement
+                    .setStaticTechLevel(SimpleTechLevel.max(techAdvancement.getStaticTechLevel(),
+                            base.techAdvancement.getStaticTechLevel()));
 
             munition.rulesRefs = rulesRefs;
 
             // Reduce base number of shots to reflect the munition's weight.
-            if (munition.getMunitionType() == AmmoType.M_CASELESS) {
+            if (munition.getMunitionType().contains(Munitions.M_CASELESS)) {
                 munition.shots = Math.max(1, base.shots * 2);
                 munition.kgPerShot = base.kgPerShot * (weight / 2);
             } else {
@@ -13405,192 +13993,316 @@ public class AmmoType extends EquipmentType {
             double bv = base.bv;
 
             if (((munition.getAmmoType() == T_LONG_TOM) || (munition.getAmmoType() == T_LONG_TOM_CANNON)
-                    || (munition.getAmmoType() == T_SNIPER) || (munition.getAmmoType() == T_SNIPER_CANNON)
-                    || (munition.getAmmoType() == T_THUMPER) || (munition.getAmmoType() == T_THUMPER_CANNON))
-                    && munition.getMunitionType() == AmmoType.M_FAE) {
+                    || (munition.getAmmoType() == T_SNIPER)
+                    || (munition.getAmmoType() == T_SNIPER_CANNON)
+                    || (munition.getAmmoType() == T_THUMPER)
+                    || (munition.getAmmoType() == T_THUMPER_CANNON))
+                    && munition.getMunitionType().contains(Munitions.M_FAE)) {
                 bv *= 1.4;
                 cost *= 3;
             }
 
             if ((munition.getAmmoType() == T_AC) || (munition.getAmmoType() == T_LAC)
                     || (munition.getAmmoType() == T_PAC)) {
-                if (munition.getMunitionType() == AmmoType.M_ARMOR_PIERCING) {
+                if (munition.getMunitionType().contains(Munitions.M_ARMOR_PIERCING)) {
                     cost *= 4;
-                } else if ((munition.getMunitionType() == AmmoType.M_FLECHETTE)
-                        || (munition.getMunitionType() == AmmoType.M_FLAK)) {
+                } else if ((munition.getMunitionType().contains(Munitions.M_FLECHETTE))
+                        || (munition.getMunitionType().contains(Munitions.M_FLAK))) {
                     cost *= 1.5;
-                } else if (munition.getMunitionType() == AmmoType.M_TRACER) {
+                } else if (munition.getMunitionType().contains(Munitions.M_TRACER)) {
                     cost *= 1.5;
-                    bv *= 0.25;
-                } else if (munition.getMunitionType() == AmmoType.M_INCENDIARY_AC) {
+                    bv *= 1.25;
+                } else if (munition.getMunitionType().contains(Munitions.M_INCENDIARY_AC)) {
                     cost *= 2;
-                } else if (munition.getMunitionType() == AmmoType.M_PRECISION) {
+                } else if (munition.getMunitionType().contains(Munitions.M_PRECISION)) {
                     cost *= 6;
-                } else if (munition.getMunitionType() == AmmoType.M_CASELESS) {
+                } else if (munition.getMunitionType().contains(Munitions.M_CASELESS)) {
                     cost *= 1.5;
-                    bv *= 1.0;
+                    bv *= 2.0;
                 }
             }
 
             if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_MML)
-                    || (munition.getAmmoType() == AmmoType.T_SRM) || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_SRM)
+                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
                     || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_AX_HEAD)) {
+                    && (munition.getMunitionType().contains(Munitions.M_AX_HEAD))) {
+                cost *= 0.5;
+                bv *= 2;
+            }
+
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_SRM)
+                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_SMOKE_WARHEAD))) {
                 cost *= 0.5;
                 bv *= 1;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_SRM)
-                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_SMOKE_WARHEAD)) {
-                cost *= 0.5;
-                bv *= 1;
-            }
-
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_INCENDIARY_LRM)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_INCENDIARY_LRM))) {
                 cost *= 1.5;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_SRM) || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
+            if (((munition.getAmmoType() == AmmoType.T_SRM)
+                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
                     || (munition.getAmmoType() == AmmoType.T_MML))
-                    && (munition.getMunitionType() == AmmoType.M_INFERNO)) {
+                    && (munition.getMunitionType().contains(Munitions.M_INFERNO))) {
                 cost = 13500;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_SEMIGUIDED)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_SEMIGUIDED))) {
                 cost *= 3;
                 bv *= 1;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_SWARM)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_SWARM))) {
                 cost *= 2;
                 bv *= 1;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_SWARM_I)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_SWARM_I))) {
                 cost *= 3;
-                bv *= 0.2;
+                bv *= 1.2;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_THUNDER)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_THUNDER))) {
                 cost *= 2;
+                // TO:AUE, pp.185,197,198: Half the rack size on 7 hexes; standard mines
+                bv = base.rackSize * munition.shots / 5.0 * 4;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_THUNDER_AUGMENTED)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_THUNDER_AUGMENTED))) {
                 cost *= 4;
+                // TO:AUE, pp.185,197,198: Half the rack size on 7 hexes; standard mines
+                bv = Math.ceil(base.rackSize / 2.0) * 7 * munition.shots / 5.0 * 4;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_THUNDER_INFERNO)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_THUNDER_INFERNO))) {
                 cost *= 1;
+                // TO:AUE, pp.185,197,198
+                bv = base.rackSize * munition.shots;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_THUNDER_VIBRABOMB)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_THUNDER_VIBRABOMB))) {
                 cost *= 2.5;
+                // TO:AUE, pp.185,197,198
+                bv = base.rackSize * munition.shots;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_THUNDER_ACTIVE)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_THUNDER_ACTIVE))) {
                 cost *= 3;
+                // TO:AUE, pp.185,197,198
+                bv = base.rackSize * munition.shots / 5.0 * 6;
             }
 
-            if (munition.getMunitionType() == AmmoType.M_HOMING) {
+            if (munition.getMunitionType().contains(Munitions.M_HOMING)) {
                 cost = 15000;
                 // Allow Homing munitions to instantly switch between modes
                 munition.instantModeSwitch = true;
                 munition.setModes("Homing", "Non-Homing");
             }
 
-            if (munition.getMunitionType() == AmmoType.M_FASCAM) {
+            if (munition.getMunitionType().contains(Munitions.M_FASCAM)) {
                 cost *= 1.5;
+                // TO:AR, p.152 and TO:AUE, pp.197,198
+                int rackSize = base.getRackSize();
+                if (munition.getAmmoType() == AmmoType.T_ARROW_IV) {
+                    rackSize = munition.isClan() ? 30 : 20;
+                }
+                bv = rackSize * munition.shots / 5.0 * 4;
             }
 
-            if (munition.getMunitionType() == AmmoType.M_INFERNO_IV) {
+            if (munition.getMunitionType().contains(Munitions.M_INFERNO_IV)) {
                 cost *= 1;
             }
 
-            if (munition.getMunitionType() == AmmoType.M_VIBRABOMB_IV) {
+            if (munition.getMunitionType().contains(Munitions.M_VIBRABOMB_IV)) {
+                // TO:AR 152 and TO:AUE 197,198
+                bv = 20 * munition.shots;
                 cost *= 2;
             }
 
             // This is just a hack to make it expensive.
             // We don't actually have a price for this.
-            if (munition.getMunitionType() == AmmoType.M_DAVY_CROCKETT_M) {
+            if (munition.getMunitionType().contains(Munitions.M_DAVY_CROCKETT_M)) {
                 cost *= 50;
             }
-            if (munition.getMunitionType() == AmmoType.M_LASER_INHIB) {
+            if (munition.getMunitionType().contains(Munitions.M_LASER_INHIB)) {
                 cost *= 4;
             }
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_SRM)
-                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_NARC_CAPABLE)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_SRM)
+                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_NARC_CAPABLE))) {
                 cost *= 2;
             }
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_SRM)
-                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_ARTEMIS_CAPABLE)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_SRM)
+                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_ARTEMIS_CAPABLE))) {
                 cost *= 2;
             }
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_SRM)
-                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && (munition.getMunitionType() == AmmoType.M_LISTEN_KILL)) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_SRM)
+                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && (munition.getMunitionType().contains(Munitions.M_LISTEN_KILL))) {
                 cost *= 1.1;
             }
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_SRM)
-                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && ((munition.getMunitionType() == AmmoType.M_ANTI_TSM)
-                            || (munition.getMunitionType() == AmmoType.M_FRAGMENTATION))) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_SRM)
+                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && ((munition.getMunitionType().contains(Munitions.M_ANTI_TSM))
+                            || (munition.getMunitionType()
+                                    .contains(Munitions.M_FRAGMENTATION)))) {
                 cost *= 2;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_SRM)
-                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && ((munition.getMunitionType() == AmmoType.M_DEAD_FIRE))) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_SRM)
+                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && ((munition.getMunitionType().contains(Munitions.M_DEAD_FIRE)))) {
                 cost *= 0.6;
-                // TODO - DEAD-FIRE AMMO needs BV which is not a constant but launcher Ammo. 
+                // TODO - DEAD-FIRE AMMO needs BV which is not a constant but launcher Ammo.
             }
 
             if (((munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_SRM)
                     || (munition.getAmmoType() == AmmoType.T_SRM_IMP))
-                    && ((munition.getMunitionType() == AmmoType.M_TANDEM_CHARGE)
-                            || (munition.getMunitionType() == AmmoType.M_ARTEMIS_V_CAPABLE))) {
+                    && ((munition.getMunitionType().contains(Munitions.M_TANDEM_CHARGE))
+                            || (munition.getMunitionType()
+                                    .contains(Munitions.M_ARTEMIS_V_CAPABLE)))) {
                 cost *= 5;
+                bv *= 2;
             }
 
-            if (((munition.getAmmoType() == AmmoType.T_LRM) || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
-                    || (munition.getAmmoType() == AmmoType.T_MML) || (munition.getAmmoType() == AmmoType.T_SRM)
-                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP) || (munition.getAmmoType() == AmmoType.T_NLRM))
-                    && ((munition.getMunitionType() == AmmoType.M_HEAT_SEEKING)
-                            || (munition.getMunitionType() == AmmoType.M_FOLLOW_THE_LEADER))) {
+            if (((munition.getAmmoType() == AmmoType.T_LRM)
+                    || (munition.getAmmoType() == AmmoType.T_LRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_MML)
+                    || (munition.getAmmoType() == AmmoType.T_SRM)
+                    || (munition.getAmmoType() == AmmoType.T_SRM_IMP)
+                    || (munition.getAmmoType() == AmmoType.T_NLRM))
+                    && ((munition.getMunitionType().contains(Munitions.M_HEAT_SEEKING))
+                            || (munition.getMunitionType()
+                                    .contains(Munitions.M_FOLLOW_THE_LEADER)))) {
                 cost *= 2;
-                bv *= 0.5;
+                bv *= 1.5;
             }
+
+            if (munition.getMunitionType().contains(Munitions.M_DEAD_FIRE)) {
+                if (munition.getAmmoType() == AmmoType.T_MML) {
+                    if (base.rackSize == 3) {
+                        bv = base.hasFlag(F_MML_LRM) ? 3 : 4;
+                    } else if (base.rackSize == 5) {
+                        bv = base.hasFlag(F_MML_LRM) ? 4 : 6;
+                    } else if (base.rackSize == 7) {
+                        bv = base.hasFlag(F_MML_LRM) ? 6 : 10;
+                    } else if (base.rackSize == 9) {
+                        bv = base.hasFlag(F_MML_LRM) ? 8 : 14;
+                    }
+                } else {
+                    if (base.rackSize == 2) {
+                        bv = 2;
+                    } else if (base.rackSize == 4) {
+                        bv = 4;
+                    } else if (base.rackSize == 6) {
+                        bv = 5;
+                    } else if (base.rackSize == 10) {
+                        bv = 16;
+                    } else if (base.rackSize == 15) {
+                        bv = 27;
+                    } else if (base.rackSize == 20) {
+                        bv = 36;
+                    }
+                }
+            }
+
+            if (munition.getMunitionType().contains(Munitions.M_LISTEN_KILL)) {
+                if (munition.getAmmoType() == AmmoType.T_MML) {
+                    if (base.rackSize == 3) {
+                        bv = base.hasFlag(F_MML_LRM) ? 9 : 4;
+                    } else if (base.rackSize == 5) {
+                        bv = base.hasFlag(F_MML_LRM) ? 15 : 7;
+                    } else if (base.rackSize == 7) {
+                        bv = base.hasFlag(F_MML_LRM) ? 21 : 10;
+                    } else if (base.rackSize == 9) {
+                        bv = base.hasFlag(F_MML_LRM) ? 27 : 13;
+                    }
+                } else {
+                    if (base.rackSize == 2) {
+                        bv = 6;
+                    } else if (base.rackSize == 4) {
+                        bv = 12;
+                    } else if (base.rackSize == 6) {
+                        bv = 18;
+                    } else if (base.rackSize == 5) {
+                        bv = 7;
+                    } else if (base.rackSize == 10) {
+                        bv = 14;
+                    } else if (base.rackSize == 15) {
+                        bv = 21;
+                    } else if (base.rackSize == 20) {
+                        bv = 28;
+                    }
+                }
+            }
+
             if (((munition.getAmmoType() == AmmoType.T_VEHICLE_FLAMER)
                     || (munition.getAmmoType() == AmmoType.T_HEAVY_FLAMER)
                     || (munition.getAmmoType() == AmmoType.T_FLUID_GUN))
-                    && (munition.getMunitionType() == AmmoType.M_COOLANT)) {
+                    && (munition.getMunitionType().contains(Munitions.M_COOLANT))) {
                 cost = 3000;
             }
             // Account for floating point imprecision
@@ -13611,17 +14323,8 @@ public class AmmoType extends EquipmentType {
         }
     } // End private class MunitionMutator
 
-    /**
-     * get bv for ProtoMek loads
-     */
-    public double getProtoBV(int shots) {
-        return ((kgPerShot * shots) / 1000) * bv;
-    }
-
-    /**
-     * @return BV for BA loads
-     */
-    public double getBABV() {
+    /** @return The battle value for ProtoMek or BA ammo loads. */
+    public double getKgPerShotBV(int shots) {
         return ((kgPerShot * shots) / 1000) * bv;
     }
 
@@ -13630,12 +14333,12 @@ public class AmmoType extends EquipmentType {
         return shortName.isBlank() ? getName() : shortName;
     }
 
+    public String getBaseName() {
+        return baseName.isBlank() ? getShortName() : baseName;
+    }
+
     public String getSubMunitionName() {
-        if (ammoType == T_MEK_MORTAR) {
-            return name.substring(subMunitionBegin, subMunitionBegin + subMunitionLength);
-        } else {
-            return getShortName().substring(subMunitionBegin, subMunitionBegin + subMunitionLength);
-        }
+        return subMunitionName.isBlank() ? getShortName() : subMunitionName;
     }
 
     /**
@@ -13655,6 +14358,8 @@ public class AmmoType extends EquipmentType {
             return false;
         } else if (!(ammo.getType() instanceof AmmoType)) {
             return false;
+        } else if (weaponType.hasFlag(WeaponType.F_ONESHOT)) {
+            return ammo.getUsableShotsLeft() > 0 && isAmmoValid((AmmoType) ammo.getType(), weaponType);
         } else {
             return ammo.isAmmoUsable() && isAmmoValid((AmmoType) ammo.getType(), weaponType);
         }
@@ -13691,16 +14396,16 @@ public class AmmoType extends EquipmentType {
      * @return true/false - null arguments or linked ammo bin for the weapon result
      *         in false
      */
-    public static boolean canSwitchToAmmo(Mounted weapon, AmmoType otherAmmo) {
+    public static boolean canSwitchToAmmo(WeaponMounted weapon, AmmoType otherAmmo) {
         // no ammo switching if the weapon doesn't exist
         // or if it doesn't have an ammo bin
         // or the other ammo type doesn't exist
-        if ((weapon == null) || (weapon.getLinked() == null) || (!(weapon.getLinked().getType() instanceof AmmoType))
+        if ((weapon == null) || (weapon.getLinkedAmmo() == null)
                 || (otherAmmo == null)) {
             return false;
         }
 
-        AmmoType currentAmmoType = (AmmoType) weapon.getLinked().getType();
+        AmmoType currentAmmoType = weapon.getLinkedAmmo().getType();
 
         // Ammo of the same type and rack size should be allowed
         boolean ammoOfSameType = currentAmmoType.equalsAmmoTypeOnly(otherAmmo)
@@ -13712,7 +14417,8 @@ public class AmmoType extends EquipmentType {
                 && (otherAmmo.getAmmoType() == AmmoType.T_MML)
                 && (currentAmmoType.getRackSize() == otherAmmo.getRackSize());
 
-        // AR10 ammo is explicitly excluded in equalsAmmoTypeOnly(), therefore check here
+        // AR10 ammo is explicitly excluded in equalsAmmoTypeOnly(), therefore check
+        // here
         boolean ar10Match = (currentAmmoType.getAmmoType() == AmmoType.T_AR10)
                 && (otherAmmo.getAmmoType() == AmmoType.T_AR10);
 
@@ -13721,14 +14427,15 @@ public class AmmoType extends EquipmentType {
                 && (otherAmmo.getAmmoType() == AmmoType.T_AC_LBX)
                 && (currentAmmoType.getRackSize() == otherAmmo.getRackSize());
 
-        boolean caselessLoaded = currentAmmoType.getMunitionType() == AmmoType.M_CASELESS;
-        boolean otherBinCaseless = otherAmmo.getMunitionType() == AmmoType.M_CASELESS;
+        boolean caselessLoaded = currentAmmoType.getMunitionType().contains(Munitions.M_CASELESS);
+        boolean otherBinCaseless = otherAmmo.getMunitionType().contains(Munitions.M_CASELESS);
         boolean caselessMismatch = caselessLoaded != otherBinCaseless;
 
         boolean hasStaticFeed = weapon.hasQuirk(OptionsConstants.QUIRK_WEAP_NEG_STATIC_FEED);
         boolean staticFeedMismatch = hasStaticFeed
                 && (currentAmmoType.getMunitionType() != otherAmmo.getMunitionType());
 
-        return (ammoOfSameType || mmlAmmoMatch || lbxAmmoMatch || ar10Match) && !caselessMismatch && !staticFeedMismatch;
+        return (ammoOfSameType || mmlAmmoMatch || lbxAmmoMatch || ar10Match) && !caselessMismatch
+                && !staticFeedMismatch;
     }
 }

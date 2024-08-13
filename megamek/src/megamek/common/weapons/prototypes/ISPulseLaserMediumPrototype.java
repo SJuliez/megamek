@@ -65,7 +65,7 @@ public class ISPulseLaserMediumPrototype extends PulseLaserWeapon {
         waterExtremeRange = 6;
         tonnage = 2.0;
         criticals = 1;
-        bv = 48;
+        bv = 43;
         cost = 300000;
         rulesRefs = "71, IO";
         techAdvancement.setTechBase(TECH_BASE_IS)
@@ -92,5 +92,10 @@ public class ISPulseLaserMediumPrototype extends PulseLaserWeapon {
     protected AttackHandler getCorrectHandler(ToHitData toHit,
             WeaponAttackAction waa, Game game, GameManager manager) {
         return new PrototypeLaserHandler(toHit, waa, game, manager);
+    }
+
+    @Override
+    public int getAlphaStrikeHeat() {
+        return 7;
     }
 }

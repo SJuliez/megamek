@@ -16,8 +16,8 @@ BattleArmor
 Aerie PA(L)
 </Name>
 
-<Model>
-(Standard)(Sqd6)
+<model>
+(Sqd6)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ Aerie PA(L)
 <type>
 Clan Level 2
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Jump
@@ -80,7 +84,7 @@ CLBAExtendedLifeSupport:Body
 </Trooper 5 Equipment>
 
 <source>
-TRO 3075 - Civil War
+TRO: 3075
 </source>
 
 <chassis>

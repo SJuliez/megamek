@@ -21,7 +21,7 @@ Kobold Battle Armor
 </Model>
 
 <mul id:>
-4457
+8642
 </mul id:>
 
 <year>
@@ -31,6 +31,10 @@ Kobold Battle Armor
 <type>
 IS Level 2
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Jump
@@ -80,7 +84,7 @@ ISBAFlamer:SSWM:LA
 </Trooper 5 Equipment>
 
 <source>
-TRO 3075 - Jihad
+TRO: 3075
 </source>
 
 <chassis>

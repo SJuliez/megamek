@@ -14,6 +14,8 @@
 */
 package megamek.common;
 
+import java.util.List;
+
 /**
  * Implemented by any class that is subject to tech advancement (entities, equipment, systems, etc.)
  *
@@ -281,27 +283,38 @@ public interface ITechnology {
                 || year < getReintroductionDate());
     }
 
-    default boolean isAvailableIn(int year, boolean clan) {
-        return year >= getIntroductionDate(clan) && getIntroductionDate(clan) != DATE_NONE  && !isExtinct(year, clan);
+    default boolean isAvailableIn(int year, boolean clan, boolean ignoreExtinction) {
+        // For technology created in the IS after the Clan Invasion, Clan availability
+        // matches IS (TO pg 33)
+        clan = clan && ITechnology.getTechEra(year) < ITechnology.ERA_CLAN;
+        return year >= getIntroductionDate(clan) && (getIntroductionDate(clan) != DATE_NONE)
+                && (ignoreExtinction || !isExtinct(year, clan));
     }
 
-    default boolean isAvailableIn(int year) {
-        return year >= getIntroductionDate() && getIntroductionDate() != DATE_NONE && !isExtinct(year);
+    default boolean isAvailableIn(int year, boolean ignoreExtinction) {
+        return year >= getIntroductionDate() && (getIntroductionDate() != DATE_NONE)
+                && (ignoreExtinction || !isExtinct(year));
     }
 
     default boolean isAvailableIn(int year, boolean clan, int faction) {
+        // For technology created in the IS after the Clan Invasion, Clan availability
+        // matches IS (TO pg 33)
+        clan = clan && ITechnology.getTechEra(year) < ITechnology.ERA_CLAN;
         return year >= getIntroductionDate(clan, faction)
                 && getIntroductionDate(clan, faction) != DATE_NONE  && !isExtinct(year, clan, faction);
     }
 
     default boolean isLegal(int year, int techLevel, boolean mixedTech) {
         return isLegal(year, SimpleTechLevel.convertCompoundToSimple(techLevel),
-                TechConstants.isClan(techLevel), mixedTech);
+                TechConstants.isClan(techLevel), mixedTech, false);
     }
 
-    default boolean isLegal(int year, SimpleTechLevel simpleRulesLevel, boolean clanBase, boolean mixedTech) {
+    default boolean isLegal(int year, SimpleTechLevel simpleRulesLevel, boolean clanBase, boolean mixedTech, boolean ignoreExtinct) {
+        // For technology created in the IS after the Clan Invasion, Clan availability
+        // matches IS (TO pg 33)
+        clanBase = clanBase && ITechnology.getTechEra(year) < ITechnology.ERA_CLAN;
         if (mixedTech) {
-            if (!isAvailableIn(year)) {
+            if (!isAvailableIn(year, ignoreExtinct)) {
                 return false;
             } else {
                 return getSimpleLevel(year).ordinal() <= simpleRulesLevel.ordinal();
@@ -311,7 +324,7 @@ public interface ITechnology {
                     && clanBase != isClan()) {
                 return false;
             }
-            if (!isAvailableIn(year, clanBase)) {
+            if (!isAvailableIn(year, clanBase, ignoreExtinct)) {
                 return false;
             }
             return getSimpleLevel(year, clanBase).ordinal() <= simpleRulesLevel.ordinal();
@@ -435,6 +448,17 @@ public interface ITechnology {
             sb.append("-").append(endNonIncl - 1);
         }
         return sb.toString();
+    }
+
+    static int getCodeFromIOAbbr(String abbr) {
+        // Returns the F_* code used at the top of this file,
+        // as they are the indices of the IO Faction Codes
+        return List.of(IO_FACTION_CODES).indexOf(abbr);
+    }
+
+    static int getCodeFromMMAbbr(String abbr) {
+        // These abbreviations may have sub-faction dot codes; strip them.
+        return List.of(MM_FACTION_CODES).indexOf((String) abbr.split("\\.")[0]);
     }
 
     default String getExperimentalRange(boolean clan) {

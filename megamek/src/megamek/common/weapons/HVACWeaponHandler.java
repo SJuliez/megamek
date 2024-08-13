@@ -25,6 +25,7 @@ import megamek.common.*;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.enums.GamePhase;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 import megamek.server.GameManager;
 import megamek.server.SmokeCloud;
 
@@ -53,8 +54,9 @@ public class HVACWeaponHandler extends ACWeaponHandler {
      */
     @Override
     public boolean handle(GamePhase phase, Vector<Report> vPhaseReport) {
+        PlanetaryConditions conditions = game.getPlanetaryConditions();
         if (game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_START_FIRE)
-                && (game.getPlanetaryConditions().getAtmosphere() >= PlanetaryConditions.ATMO_TRACE)) {
+                && !conditions.getAtmosphere().isVacuum()) {
             int rear = (ae.getFacing() + 3 + (weapon.isMechTurretMounted() ? weapon.getFacing() : 0)) % 6;
             Coords src = ae.getPosition();
             Coords rearCoords = src.translated(rear);
@@ -88,7 +90,7 @@ public class HVACWeaponHandler extends ACWeaponHandler {
             return true;
         }
         
-        if (roll == 2) {
+        if (roll.getIntValue() == 2) {
             Report r = new Report(3162);
             r.subject = subjectId;
             weapon.setJammed(true);

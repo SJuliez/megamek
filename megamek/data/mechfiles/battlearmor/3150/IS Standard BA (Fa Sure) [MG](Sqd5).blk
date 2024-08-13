@@ -20,12 +20,20 @@ IS Standard Battle Armor
 (Fa Sure) [MG](Sqd5)
 </Model>
 
+<mul id:>
+9527
+</mul id:>
+
+<role>
+Ambusher
+</role>
+
 <year>
-3150
+3140
 </year>
 
 <originalBuildYear>
-3150
+3140
 </originalBuildYear>
 
 <type>
@@ -59,27 +67,31 @@ LegAttack
 BABasicManipulatorMineClearance:LA
 BABasicManipulatorMineClearance:RA
 BA-Magnetic Clamp:LA
-ISBAMineDispenser:Body
 CLBAMG:RA
 </Squad Equipment>
 
 <Trooper 1 Equipment>
+ISBAMineDispenser:Body
 </Trooper 1 Equipment>
 
 <Trooper 2 Equipment>
+ISBAMineDispenser:Body
 </Trooper 2 Equipment>
 
 <Trooper 3 Equipment>
+ISBAMineDispenser:Body
 </Trooper 3 Equipment>
 
 <Trooper 4 Equipment>
+ISBAMineDispenser:Body
 </Trooper 4 Equipment>
 
 <Trooper 5 Equipment>
+ISBAMineDispenser:Body
 </Trooper 5 Equipment>
 
 <source>
-Dark Age
+TRO: 3150
 </source>
 
 <chassis>

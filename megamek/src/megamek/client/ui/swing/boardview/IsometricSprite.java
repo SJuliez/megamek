@@ -1,5 +1,6 @@
 package megamek.client.ui.swing.boardview;
 
+import megamek.MMConstants;
 import megamek.client.ui.swing.GUIPreferences;
 import megamek.client.ui.swing.util.EntityWreckHelper;
 import megamek.common.Coords;
@@ -15,22 +16,24 @@ import java.awt.image.ImageObserver;
 /**
  * Sprite used for isometric rendering to render an entity partially hidden behind a hill.
  */
-class IsometricSprite extends Sprite {
+class IsometricSprite extends HexSprite {
 
     Entity entity;
     private Image radarBlipImage;
     private Rectangle modelRect;
     private int secondaryPos;
 
+    private static final GUIPreferences GUIP = GUIPreferences.getInstance();
+
     public IsometricSprite(BoardView boardView1, Entity entity, int secondaryPos, Image radarBlipImage) {
-        super(boardView1);
+        super(boardView1, secondaryPos == -1 ? entity.getPosition() : entity.getSecondaryPositions().get(secondaryPos));
         this.entity = entity;
         this.radarBlipImage = radarBlipImage;
         this.secondaryPos = secondaryPos;
         String shortName = entity.getShortName();
-        Font font = new Font("SansSerif", Font.PLAIN, 10);
-        modelRect = new Rectangle(47, 55, bv.getFontMetrics(font).stringWidth(
-                shortName) + 1, bv.getFontMetrics(font).getAscent());
+        Font font = new Font(MMConstants.FONT_SANS_SERIF, Font.PLAIN, 10);
+        modelRect = new Rectangle(47, 55, bv.getPanel().getFontMetrics(font).stringWidth(
+                shortName) + 1, bv.getPanel().getFontMetrics(font).getAscent());
 
         int altAdjust = 0;
         if (bv.useIsometric()
@@ -173,6 +176,7 @@ class IsometricSprite extends Sprite {
 
     @Override
     public void prepare() {
+        updateBounds();
         // create image for buffer
         GraphicsConfiguration config = GraphicsEnvironment
                 .getLocalGraphicsEnvironment().getDefaultScreenDevice()
@@ -183,8 +187,7 @@ class IsometricSprite extends Sprite {
 
         // draw the unit icon translucent if hidden from the enemy 
         // (and activated graphics setting); or submerged
-        boolean translucentHiddenUnits = GUIPreferences.getInstance()
-                .getBoolean(GUIPreferences.ADVANCED_TRANSLUCENT_HIDDEN_UNITS);
+        boolean translucentHiddenUnits = GUIP.getTranslucentHiddenUnits();
         
         if ((trackThisEntitiesVisibilityInfo(entity)
                 && !entity.isVisibleToEnemy() && translucentHiddenUnits)
@@ -235,6 +238,6 @@ class IsometricSprite extends Sprite {
 
     @Override
     protected int getSpritePriority() {
-        return entity.getSpriteDrawPriority();
+        return entity.getSpriteDrawPriority() + 10;
     }
 }

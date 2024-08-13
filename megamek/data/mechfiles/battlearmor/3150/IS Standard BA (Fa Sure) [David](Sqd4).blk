@@ -20,17 +20,25 @@ IS Standard Battle Armor
 (Fa Sure) [David](Sqd4)
 </Model>
 
+<mul id:>
+8025
+</mul id:>
+
 <year>
-3150
+3140
 </year>
 
 <originalBuildYear>
-3150
+3140
 </originalBuildYear>
 
 <type>
 IS Level 2
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Jump
@@ -60,23 +68,26 @@ BABasicManipulatorMineClearance:LA
 BABasicManipulatorMineClearance:RA
 BADavidLightGaussRifle:RA
 BA-Magnetic Clamp:LA
-ISBAMineDispenser:Body
 </Squad Equipment>
 
 <Trooper 1 Equipment>
+ISBAMineDispenser:Body
 </Trooper 1 Equipment>
 
 <Trooper 2 Equipment>
+ISBAMineDispenser:Body
 </Trooper 2 Equipment>
 
 <Trooper 3 Equipment>
+ISBAMineDispenser:Body
 </Trooper 3 Equipment>
 
 <Trooper 4 Equipment>
+ISBAMineDispenser:Body
 </Trooper 4 Equipment>
 
 <source>
-Dark Age
+TRO: 3150
 </source>
 
 <chassis>

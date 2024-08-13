@@ -20,7 +20,7 @@
 package megamek.common.weapons.mortars;
 
 import megamek.common.AmmoType;
-import megamek.common.BattleForceElement;
+import megamek.common.alphaStrike.AlphaStrikeElement;
 import megamek.common.Compute;
 import megamek.common.Game;
 import megamek.common.ToHitData;
@@ -47,41 +47,40 @@ public abstract class MekMortarWeapon extends AmmoWeapon {
         super();
         ammoType = AmmoType.T_MEK_MORTAR;
         damage = DAMAGE_BY_CLUSTERTABLE;
-        atClass = CLASS_NONE;
-        flags = flags.or(F_MEK_MORTAR).or(F_MECH_WEAPON).or(F_MISSILE)
-                .or(F_TANK_WEAPON);
+        atClass = CLASS_MORTAR;
+        flags = flags.or(F_MEK_MORTAR).or(F_MORTARTYPE_INDIRECT).or(F_MECH_WEAPON).or(F_MISSILE).or(F_TANK_WEAPON);
         infDamageClass = WEAPON_CLUSTER_MISSILE;
     }
 
     @Override
     protected AttackHandler getCorrectHandler(ToHitData toHit,
             WeaponAttackAction waa, Game game, GameManager manager) {
-        
+
         AmmoType atype = (AmmoType) game.getEntity(waa.getEntityId())
                 .getEquipment(waa.getWeaponId()).getLinked().getType();
-        if (atype.getMunitionType() == AmmoType.M_AIRBURST) {
+        if (atype.getMunitionType().contains(AmmoType.Munitions.M_AIRBURST)) {
             return new MekMortarAirburstHandler(toHit, waa, game, manager);
-        } else if (atype.getMunitionType() == AmmoType.M_ANTI_PERSONNEL) {
+        } else if (atype.getMunitionType().contains(AmmoType.Munitions.M_ANTI_PERSONNEL)) {
             return new MekMortarAntiPersonnelHandler(toHit, waa, game, manager);
-        } else if (atype.getMunitionType() == AmmoType.M_FLARE) {
+        } else if (atype.getMunitionType().contains(AmmoType.Munitions.M_FLARE)) {
             return new MekMortarFlareHandler(toHit, waa, game, manager);
-        } else if (atype.getMunitionType() == AmmoType.M_SEMIGUIDED) {
+        } else if (atype.getMunitionType().contains(AmmoType.Munitions.M_SEMIGUIDED)) {
             // Semi-guided works like shaped-charge, but can benefit from tag
             return new MekMortarHandler(toHit, waa, game, manager);
-        } else if (atype.getMunitionType() == AmmoType.M_SMOKE_WARHEAD) {
+        } else if (atype.getMunitionType().contains(AmmoType.Munitions.M_SMOKE_WARHEAD)) {
             return new MekMortarSmokeHandler(toHit, waa, game, manager);
         }
         // If it doesn't match other types, it's the default armor-piercing
         return new MekMortarHandler(toHit, waa, game, manager);
     }
-    
+
     @Override
     public double getBattleForceDamage(int range) {
         if (range > getLongRange()) {
             return 0;
         }
         double damage = Compute.calculateClusterHitTableAmount(7, getRackSize()) * 2;
-        if (range == BattleForceElement.SHORT_RANGE && getMinimumRange() > 0) {
+        if ((range == AlphaStrikeElement.SHORT_RANGE) && (getMinimumRange() > 0)) {
             damage = adjustBattleForceDamageForMinRange(damage);
         }
         return damage / 10.0;
@@ -91,7 +90,7 @@ public abstract class MekMortarWeapon extends AmmoWeapon {
     public boolean hasIndirectFire() {
         return true;
     }
-    
+
     @Override
     public void adaptToGameOptions(GameOptions gOp) {
         super.adaptToGameOptions(gOp);

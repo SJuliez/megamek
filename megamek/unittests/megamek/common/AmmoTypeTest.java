@@ -18,8 +18,13 @@
  */
 package megamek.common;
 
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.MiscMounted;
+import megamek.common.equipment.WeaponMounted;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.EnumSet;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,23 +40,23 @@ import static org.mockito.Mockito.when;
 public class AmmoTypeTest {
     static WeaponType mockAC5 = mock(WeaponType.class);
     static AmmoType mockAC5AmmoType = mock(AmmoType.class);
-    static Mounted mockAmmoAC5 = mock(Mounted.class);
-    static Mounted mockAmmoAC5Empty = mock(Mounted.class);
+    static AmmoMounted mockAmmoAC5 = mock(AmmoMounted.class);
+    static AmmoMounted mockAmmoAC5Empty = mock(AmmoMounted.class);
     static AmmoType mockAC10AmmoType = mock(AmmoType.class);
-    static Mounted mockAmmoAC10 = mock(Mounted.class);
+    static AmmoMounted mockAmmoAC10 = mock(AmmoMounted.class);
 
     static WeaponType mockPPC = mock(WeaponType.class);
 
     static WeaponType mockSRM4 = mock(WeaponType.class);
     static AmmoType mockSRM4AmmoType = mock(AmmoType.class);
-    static Mounted mockAmmoSrm4 = mock(Mounted.class);
+    static AmmoMounted mockAmmoSrm4 = mock(AmmoMounted.class);
     static AmmoType mockSRM6AmmoType = mock(AmmoType.class);
-    static Mounted mockAmmoSrm6 = mock(Mounted.class);
+    static AmmoMounted mockAmmoSrm6 = mock(AmmoMounted.class);
     static AmmoType mockInferno4AmmoType = mock(AmmoType.class);
-    static Mounted mockAmmoInferno4 = mock(Mounted.class);
+    static AmmoMounted mockAmmoInferno4 = mock(AmmoMounted.class);
 
     static MiscType notAmmoType = mock(MiscType.class);
-    static Mounted mockNotAmmo = mock(Mounted.class);
+    static MiscMounted mockNotAmmo = mock(MiscMounted.class);
 
     @BeforeAll
     public static void beforeAll() {
@@ -65,14 +70,15 @@ public class AmmoTypeTest {
         when(mockAC5AmmoType.getRackSize()).thenReturn(5);
         when(mockSRM4AmmoType.getAmmoType()).thenReturn(AmmoType.T_SRM);
         when(mockSRM4AmmoType.getRackSize()).thenReturn(4);
-        when(mockSRM4AmmoType.getMunitionType()).thenReturn(AmmoType.M_STANDARD);
+        when(mockSRM4AmmoType.getMunitionType()).thenReturn(EnumSet.of(AmmoType.Munitions.M_STANDARD));
         when(mockInferno4AmmoType.getAmmoType()).thenReturn(AmmoType.T_SRM);
         when(mockInferno4AmmoType.getRackSize()).thenReturn(4);
-        when(mockInferno4AmmoType.getMunitionType()).thenReturn(AmmoType.M_INFERNO);
+        when(mockInferno4AmmoType.getMunitionType()).thenReturn(EnumSet.of(AmmoType.Munitions.M_INFERNO));
         when(mockAC10AmmoType.getAmmoType()).thenReturn(AmmoType.T_AC);
         when(mockAC10AmmoType.getRackSize()).thenReturn(10);
         when(mockSRM6AmmoType.getAmmoType()).thenReturn(AmmoType.T_SRM);
         when(mockSRM6AmmoType.getRackSize()).thenReturn(6);
+        when(mockSRM6AmmoType.getMunitionType()).thenReturn(EnumSet.of(AmmoType.Munitions.M_STANDARD));
 
         when(mockAmmoSrm4.getType()).thenReturn(mockSRM4AmmoType);
         when(mockAmmoSrm4.isAmmoUsable()).thenReturn(true);
@@ -106,7 +112,7 @@ public class AmmoTypeTest {
         assertFalse(AmmoType.isAmmoValid(mockAmmoAC5Empty, mockAC5));
 
         // Test null ammo.
-        assertFalse(AmmoType.isAmmoValid((Mounted) null, mockAC5));
+        assertFalse(AmmoType.isAmmoValid((AmmoMounted) null, mockAC5));
         assertFalse(AmmoType.isAmmoValid((AmmoType) null, mockAC5));
 
         // Test incompatible ammo.
@@ -123,8 +129,8 @@ public class AmmoTypeTest {
 
     @Test
     public void testCanSwitchToAmmo() {
-        Mounted mockWeapon = mock(Mounted.class);
-        when(mockWeapon.getLinked()).thenReturn(mockAmmoSrm4);
+        WeaponMounted mockWeapon = mock(WeaponMounted.class);
+        when(mockWeapon.getLinkedAmmo()).thenReturn(mockAmmoSrm4);
 
         assertTrue(AmmoType.canSwitchToAmmo(mockWeapon, mockInferno4AmmoType));
 

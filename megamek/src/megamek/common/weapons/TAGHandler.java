@@ -21,14 +21,7 @@ package megamek.common.weapons;
 
 import java.util.Vector;
 
-import megamek.common.Building;
-import megamek.common.Entity;
-import megamek.common.EquipmentMode;
-import megamek.common.Game;
-import megamek.common.Report;
-import megamek.common.TagInfo;
-import megamek.common.Targetable;
-import megamek.common.ToHitData;
+import megamek.common.*;
 import megamek.common.actions.WeaponAttackAction;
 import megamek.common.enums.GamePhase;
 import megamek.server.GameManager;
@@ -53,32 +46,21 @@ public class TAGHandler extends WeaponHandler {
             r.subject = subjectId;
             vPhaseReport.addElement(r);
         } else {
-            int priority = 1;
-            EquipmentMode mode = (weapon.curMode());
-            if (mode != null) {
-                if (mode.getName() == "1-shot") {
-                    priority = 1;
-                } else if (mode.getName() == "2-shot") {
-                    priority = 2;
-                } else if (mode.getName() == "3-shot") {
-                    priority = 3;
-                } else if (mode.getName() == "4-shot") {
-                    priority = 4;
-                }
-            }
-            if (priority < 1) {
-                priority = 1;
-            }
-            // it is possible for 2 or more tags to hit the same entity
+
             TagInfo info = new TagInfo(ae.getId(), Targetable.TYPE_ENTITY,
-                    entityTarget, priority, false);
+                    entityTarget, false);
             game.addTagInfo(info);
             entityTarget.setTaggedBy(ae.getId());
-            
+
+            if (weapon.isInternalBomb()) {
+                // Firing an internally-mounted TAG pod counts for bomb bay explosion check
+                ((IBomber) ae).increaseUsedInternalBombs(1);
+            }
+
             // per errata, being painted by a TAG also spots the target for indirect fire
             ae.setSpotting(true);
             ae.setSpotTargetId(entityTarget.getId());
-            
+
             Report r = new Report(3188);
             r.subject = subjectId;
             vPhaseReport.addElement(r);
@@ -88,25 +70,8 @@ public class TAGHandler extends WeaponHandler {
     @Override
     protected boolean handleSpecialMiss(Entity entityTarget, boolean bldgDamagedOnMiss,
                                         Building bldg, Vector<Report> vPhaseReport) {
-        int priority = 1;
-        EquipmentMode mode = (weapon.curMode());
-        if (mode != null) {
-            switch (mode.getName()) {
-                case "2-shot":
-                    priority = 2;
-                    break;
-                case "3-shot":
-                    priority = 3;
-                    break;
-                case "4-shot":
-                    priority = 4;
-                    break;
-                default:
-                    break;
-            }
-        }
         // add even misses, as they waste homing missiles.
-        TagInfo info = new TagInfo(ae.getId(), target.getTargetType(), target, priority, true);
+        TagInfo info = new TagInfo(ae.getId(), target.getTargetType(), target, true);
         game.addTagInfo(info);
         return false;
     }

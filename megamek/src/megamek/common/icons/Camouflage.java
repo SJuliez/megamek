@@ -26,7 +26,9 @@ import org.w3c.dom.Node;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.PrintWriter;
+import java.util.Objects;
 
 /**
  * Camouflage is an implementation of AbstractIcon that contains and displays a Camouflage, which
@@ -35,21 +37,57 @@ import java.io.PrintWriter;
  * @see AbstractIcon
  */
 public class Camouflage extends AbstractIcon {
-    //region Variable Declarations
     private static final long serialVersionUID = 1093277025745250375L;
 
     public static final String NO_CAMOUFLAGE = "-- No Camo --";
     public static final String COLOUR_CAMOUFLAGE = "-- Colour Camo --";
     public static final String XML_TAG = "camouflage";
-    //endregion Variable Declarations
+
+    // Rotation and scaling are stored as integers to avoid the usual rounding problems with doubles (e.g.
+    // when comparing camos with equals())
+    /** The angle in degrees by which to rotate this camo when applying it to units. */
+    protected int rotationAngle = 0;
+    /** The scale times 10 (10 = no scaling) to apply to this camo when applying it to units. */
+    protected int scale = 10;
 
     //region Constructors
     public Camouflage() {
         super(NO_CAMOUFLAGE);
     }
 
+    /**
+     * Constructs a new camo of the "category" (directory, ending with "/") and filename. Can only be used
+     * for camos of the directories that are parsed automatically, i.e. the MM-internal camo dir, the user dir
+     * and the story arcs directory.
+     *
+     * @param category the directory, e.g. "Clans/Wolf/Alpha Galaxy/"
+     * @param filename the filename, e.g. "Alpha Galaxy.jpg"
+     */
     public Camouflage(final @Nullable String category, final @Nullable String filename) {
         super(category, filename);
+    }
+
+    /**
+     * Constructs a new camo with the given file. Even though a file is accepted, this can only be used
+     * for camos of the directories that are parsed automatically, i.e. the MM-internal camo dir, the user dir
+     * and the story arcs directory! This method tries to parse the filename to find the camo. This requires
+     * replacing Windows backslashes with normal slashes in order to find the file in the way camos are
+     * stored (see {@link megamek.common.util.fileUtils.AbstractDirectory})
+     *
+     * @param file The File, such as a file of "Clans/Wolf/Alpha Galaxy/Alpha Galaxy.jpg"
+     */
+    public Camouflage(File file) {
+        this(getDirectory(file), file.getName());
+    }
+
+    /**
+     * Returns a new camo of the given PlayerColour.
+     *
+     * @param color A PlayerColour
+     * @return A camo of the given PlayerColour color
+     */
+    public static Camouflage of(PlayerColour color) {
+        return new Camouflage(COLOUR_CAMOUFLAGE, color.name());
     }
     //endregion Constructors
 
@@ -118,6 +156,70 @@ public class Camouflage extends AbstractIcon {
 
     @Override
     public Camouflage clone() {
-        return new Camouflage(getCategory(), getFilename());
+        Camouflage newCamo = new Camouflage(getCategory(), getFilename());
+        newCamo.setRotationAngle(rotationAngle);
+        newCamo.setScale(scale);
+        return newCamo;
+    }
+
+    public void setRotationAngle(int rotationAngle) {
+        this.rotationAngle = rotationAngle;
+    }
+
+    public int getRotationAngle() {
+        return rotationAngle;
+    }
+
+    /**
+     * Set the camo scaling to the given scale value. Use for serialization etc.
+     *
+     * @param scale The scale factor times 10
+     */
+    public void setScale(int scale) {
+        this.scale = scale;
+    }
+
+    /** Resets the camo scaling to the neutral value (no scaling).  */
+    public void resetScale() {
+        scale = 10;
+    }
+
+    /**
+     * @return The camo scaling; this value is 10 times the scaling that is used, so a return value of 10
+     * means no scaling is applied. Use for serialization etc. Use {@link #getScaleFactor()} to get the
+     * value by which to actually scale the camo.
+     */
+    public int getScale() {
+        return scale;
+    }
+
+    /** @return The scaling to apply to the camo. A value of 1 means no scaling. */
+    public double getScaleFactor() {
+        return scale / 10d;
+    }
+
+    /** @return The camo rotation in radians. */
+    public double getRotationRadians() {
+        return rotationAngle * Math.PI / 180;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (super.equals(other) && other instanceof Camouflage) {
+            Camouflage otherCamo = (Camouflage) other;
+            return (otherCamo.rotationAngle == rotationAngle) && (otherCamo.scale == scale);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getFilename(), getCategory(), rotationAngle, scale);
+    }
+
+    public static String getDirectory(File file) {
+        String result = file.getParent().replace("\\", "/");
+        return result + (!result.endsWith("/") ? "/" : "");
     }
 }

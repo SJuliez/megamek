@@ -52,20 +52,12 @@ public abstract class VehicleFlamerWeapon extends AmmoWeapon {
             WeaponAttackAction waa, Game game, GameManager manager) {
         AmmoType atype = (AmmoType) game.getEntity(waa.getEntityId())
                 .getEquipment(waa.getWeaponId()).getLinked().getType();
-        
-        if (atype.getMunitionType() == AmmoType.M_COOLANT) {
+
+        if (atype.getMunitionType().contains(AmmoType.Munitions.M_COOLANT)) {
             return new VehicleFlamerCoolHandler(toHit, waa, game, manager);
         } else {
             return new VehicleFlamerHandler(toHit, waa, game, manager);
         }
     }
 
-    @Override
-    public int getBattleForceHeatDamage(int range) {
-        //Clan ER Flamer does damage at medium
-        if (getMediumRange() > range) {
-            return getDamage();
-        }
-        return 0;
-    }
 }

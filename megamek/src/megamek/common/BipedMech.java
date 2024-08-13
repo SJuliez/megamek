@@ -19,7 +19,9 @@ package megamek.common;
 import java.util.ArrayList;
 import java.util.List;
 
+import megamek.common.equipment.MiscMounted;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 
 public class BipedMech extends Mech {
     private static final long serialVersionUID = 4166375446709772785L;
@@ -84,15 +86,79 @@ public class BipedMech extends Mech {
         return canFlip;
     }
     
+    /**
+     * Returns true if the entity can pick up ground objects
+     */
+    public boolean canPickupGroundObject() {
+    	return hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_LARM) && (getCarriedObject(Mech.LOC_LARM) == null) ||
+    			hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_RARM) && (getCarriedObject(Mech.LOC_RARM) == null);
+    }
+    
+    /**
+     * The maximum tonnage of ground objects that can be picked up by this unit
+     */
+    public double maxGroundObjectTonnage() {
+    	double percentage = 0.0;
+    	
+    	if (hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_LARM) && (getCarriedObject(Mech.LOC_LARM) == null) &&
+    			!isLocationBad(Mech.LOC_LARM)) {
+    		percentage += 0.05;
+    	}
+    	if (hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_RARM) && (getCarriedObject(Mech.LOC_RARM) == null) &&
+    			!isLocationBad(Mech.LOC_RARM)) {
+    		percentage += 0.05;
+    	}
+    	
+    	double heavyLifterMultiplier = hasAbility(OptionsConstants.PILOT_HVY_LIFTER) ? 1.5 : 1.0;
+    	
+    	return getWeight() * percentage * heavyLifterMultiplier;
+    }
+    
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
-        int wmp = getOriginalWalkMP();
+    public List<Integer> getDefaultPickupLocations() {
+    	List<Integer> result = new ArrayList<>();
+    	
+    	if (hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_LARM) && (getCarriedObject(Mech.LOC_LARM) == null) &&
+    			!isLocationBad(Mech.LOC_LARM)) {
+    		result.add(Mech.LOC_LARM);
+    	}
+    	if (hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_RARM) && (getCarriedObject(Mech.LOC_RARM) == null) &&
+    			!isLocationBad(Mech.LOC_RARM)) {
+    		result.add(Mech.LOC_RARM);
+    	}
+    	
+    	return result;
+    }
+    
+    @Override
+    public List<Integer> getValidHalfWeightPickupLocations(ICarryable cargo) {
+    	List<Integer> result = new ArrayList<>();
+    	
+    	// if we can pick the object up according to "one handed pick up rules" in TacOps
+    	if (cargo.getTonnage() <= (getWeight() / 20)) {
+    		if (hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_LARM) && (getCarriedObject(Mech.LOC_LARM) == null) &&
+        			!isLocationBad(Mech.LOC_LARM)) {
+    			result.add(Mech.LOC_LARM);
+    		}
+    		
+    		if (hasWorkingSystem(Mech.ACTUATOR_HAND, Mech.LOC_RARM) && (getCarriedObject(Mech.LOC_RARM) == null) &&
+        			!isLocationBad(Mech.LOC_RARM)) {
+    			result.add(Mech.LOC_RARM);
+    		}
+    	}
+    	
+    	return result;
+    }
+
+    @Override
+    public int getWalkMP(MPCalculationSetting mpCalculationSetting) {
+        int mp = getOriginalWalkMP();
         int legsDestroyed = 0;
         int hipHits = 0;
         int actuatorHits = 0;
 
         //A Mech using tracks has its movement reduced by 50% per leg or track destroyed;
-        if (getMovementMode() == EntityMovementMode.TRACKED) {
+        if (getMovementMode().isTracked()) {
             for (Mounted m : getMisc()) {
                 if (m.getType().hasFlag(MiscType.F_TRACKS)) {
                     if (m.isHit() || isLocationBad(m.getLocation())) {
@@ -100,7 +166,7 @@ public class BipedMech extends Mech {
                     }
                 }
             }
-            wmp = (wmp * (2 - legsDestroyed)) / 2; 
+            mp = (mp * (2 - legsDestroyed)) / 2;
         } else {
             for (int i = 0; i < locations(); i++) {
                 if (locationIsLeg(i)) {
@@ -120,90 +186,93 @@ public class BipedMech extends Mech {
 
             // leg damage effects
             if (legsDestroyed > 0) {
-                wmp = (legsDestroyed == 1) ? 1 : 0;
+                mp = (legsDestroyed == 1) ? 1 : 0;
             } else {
                 if (hipHits > 0) {
                     if ((game != null) && game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_LEG_DAMAGE)) {
-                        wmp = (hipHits >= 1) ? wmp - (2 * hipHits) : 0;
+                        mp = mp - 2 * hipHits;
                     } else {
-                        wmp = (hipHits == 1) ? (int) Math.ceil(wmp / 2.0) : 0;
+                        mp = (hipHits == 1) ? (int) Math.ceil(mp / 2.0) : 0;
                     }
                 }
-                wmp -= actuatorHits;
+                mp -= actuatorHits;
             }
         }
 
         if (hasShield()) {
-            wmp -= getNumberOfShields(MiscType.S_SHIELD_LARGE);
-            wmp -= getNumberOfShields(MiscType.S_SHIELD_MEDIUM);
+            mp -= getNumberOfShields(MiscType.S_SHIELD_LARGE);
+            mp -= getNumberOfShields(MiscType.S_SHIELD_MEDIUM);
         }
 
-        if (!ignoremodulararmor && hasModularArmor()) {
-            wmp--;
+        if (!mpCalculationSetting.ignoreModularArmor && hasModularArmor()) {
+            mp--;
         }
 
-        if (!ignoreheat) {
+        if (!mpCalculationSetting.ignoreHeat) {
             // factor in heat
             if ((game != null) && game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_HEAT)) {
                 if (heat < 30) {
-                    wmp -= (heat / 5);
+                    mp -= (heat / 5);
                 } else if (heat >= 49) {
-                    wmp -= 9;
+                    mp -= 9;
                 } else if (heat >= 43) {
-                    wmp -= 8;
+                    mp -= 8;
                 } else if (heat >= 37) {
-                    wmp -= 7;
+                    mp -= 7;
                 } else if (heat >= 31) {
-                    wmp -= 6;
+                    mp -= 6;
                 } else {
-                    wmp -= 5;
+                    mp -= 5;
                 }
             } else {
-                wmp -= (heat / 5);
+                mp -= (heat / 5);
             }
-            // TSM negates some heat, but provides no benefit when using tracks.
-            if ((heat >= 9) && hasTSM(false) && legsDestroyed == 0 && movementMode != EntityMovementMode.TRACKED) {
-                wmp += 2;
-            }
-        }
-        wmp = Math.max(wmp - getCargoMpReduction(this), 0);
-        if (null != game) {
-            int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
-            if (weatherMod != 0) {
-                wmp = Math.max(wmp + weatherMod, 0);
-            }
-        }
-        // gravity
-        if (gravity) {
-            wmp = applyGravityEffectsOnMP(wmp);
         }
 
-        // For sanity sake...
-        wmp = Math.max(0, wmp);
+        // TSM negates some heat, but provides no benefit when using tracks.
+        if (((heat >= 9) || mpCalculationSetting.forceTSM) && hasTSM(false)
+                && (legsDestroyed == 0) && !movementMode.isTracked()) {
+            if (mpCalculationSetting.forceTSM && mpCalculationSetting.ignoreHeat) {
+                // When forcing TSM but ignoring heat we must assume heat to be 9 to activate TSM, this adds -1 MP!
+                mp += 1;
+            } else {
+                mp += 2;
+            }
+        }
 
-        return wmp;
+        if (!mpCalculationSetting.ignoreCargo) {
+            mp = Math.max(mp - getCargoMpReduction(this), 0);
+        }
+
+        if (!mpCalculationSetting.ignoreWeather && (null != game)) {
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
+            mp = Math.max(mp + weatherMod, 0);
+
+            if (getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_WIND)
+                    && conditions.getWeather().isClear()
+                    && conditions.getWind().isTornadoF1ToF3()) {
+                mp += 1;
+            }
+        }
+
+        if (!mpCalculationSetting.ignoreGravity) {
+            mp = applyGravityEffectsOnMP(mp);
+        }
+
+        return Math.max(0, mp);
     }
 
     /**
      * Returns this mech's running/flank mp modified for leg loss and stuff.
      */
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMP(MPCalculationSetting mpCalculationSetting) {
         if (countBadLegs() == 0) {
-            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            return super.getRunMP(mpCalculationSetting);
+        } else {
+            return getWalkMP(mpCalculationSetting);
         }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor);
-    }
-
-    /**
-     * Returns run MP without considering MASC modified for leg loss and stuff.
-     */
-    @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
-        if (countBadLegs() == 0) {
-            return super.getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
-        }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor);
     }
 
     /**
@@ -493,7 +562,8 @@ public class BipedMech extends Mech {
 
         for (Mounted m : getMisc()) {
             EquipmentType type = m.getType();
-            if ((type instanceof MiscType) && type.hasFlag(MiscType.F_CLUB) && (type.hasSubType(size))) {
+            if ((type instanceof MiscType) && type.hasFlag(MiscType.F_CLUB)
+                    && (type.hasSubType(size))) {
                 // ok so we have a shield of certain size. no which arm is it.
                 if (m.getLocation() == Mech.LOC_RARM) {
                     raShield = 1;
@@ -570,10 +640,9 @@ public class BipedMech extends Mech {
                 continue;
             }
 
-            Mounted m = cs.getMount();
-            EquipmentType type = m.getType();
-            if ((type instanceof MiscType) && ((MiscType) type).isShield() && m.curMode().equals(MiscType.S_ACTIVE_SHIELD)) {
-                return m.getCurrentDamageCapacity(this, m.getLocation()) > 0;
+            Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted) && ((MiscMounted) m).getType().isShield() && m.curMode().equals(MiscType.S_ACTIVE_SHIELD)) {
+                return ((MiscMounted) m).getCurrentDamageCapacity(this, m.getLocation()) > 0;
             }
         }
         return false;
@@ -640,10 +709,9 @@ public class BipedMech extends Mech {
                 continue;
             }
 
-            Mounted m = cs.getMount();
-            EquipmentType type = m.getType();
-            if ((type instanceof MiscType) && ((MiscType) type).isShield() && m.curMode().equals(MiscType.S_PASSIVE_SHIELD)) {
-                return m.getCurrentDamageCapacity(this, m.getLocation()) > 0;
+            Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted) && ((MiscMounted) m).getType().isShield() && m.curMode().equals(MiscType.S_PASSIVE_SHIELD)) {
+                return ((MiscMounted) m).getCurrentDamageCapacity(this, m.getLocation()) > 0;
             }
         }
         return false;
@@ -674,9 +742,8 @@ public class BipedMech extends Mech {
                 continue;
             }
 
-            Mounted m = cs.getMount();
-            EquipmentType type = m.getType();
-            if ((type instanceof MiscType) && ((MiscType) type).isShield() && (m.curMode().equals(MiscType.S_NO_SHIELD) || isShutDown() || // if
+            Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted) && ((MiscMounted) m).getType().isShield() && (m.curMode().equals(MiscType.S_NO_SHIELD) || isShutDown() || // if
                                                                                // he
                                                                                // has
                                                                                // a
@@ -687,7 +754,7 @@ public class BipedMech extends Mech {
                                                                                // defense mode
                                                                                getCrew().isKoThisRound() || getCrew()
                     .isUnconscious())) {
-                return m.getCurrentDamageCapacity(this, m.getLocation()) > 0;
+                return ((MiscMounted) m).getCurrentDamageCapacity(this, m.getLocation()) > 0;
             }
         }
         return false;
@@ -833,9 +900,9 @@ public class BipedMech extends Mech {
     public long getEntityType() {
         return Entity.ETYPE_MECH | Entity.ETYPE_BIPED_MECH;
     }
-    
+
     /**
-     * 
+     *
      * @return true if this unit is capable of Zweihandering (melee attack with both hands)
      */
     public boolean canZweihander() {
@@ -854,15 +921,15 @@ public class BipedMech extends Mech {
     @Override
     public List<Integer> getValidBraceLocations() {
         List<Integer> validLocations = new ArrayList<>();
-        
+
         if (!isLocationBad(Mech.LOC_RARM)) {
             validLocations.add(Mech.LOC_RARM);
         }
-        
+
         if (!isLocationBad(Mech.LOC_LARM)) {
             validLocations.add(Mech.LOC_LARM);
         }
-        
+
         return validLocations;
     }
 
@@ -875,7 +942,7 @@ public class BipedMech extends Mech {
                 || !isLocationBad(Mech.LOC_LARM))
                 && !isProne();
     }
-    
+
     @Override
     public int getBraceMPCost() {
         return 1;

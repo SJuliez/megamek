@@ -15,6 +15,7 @@ package megamek.common.actions;
 
 import java.util.Enumeration;
 
+import megamek.client.ui.Messages;
 import megamek.common.*;
 import megamek.common.MovePath.MoveStepType;
 import megamek.common.options.OptionsConstants;
@@ -193,7 +194,7 @@ public class DfaAttackAction extends DisplacementAttackAction {
         Entity te = null;
         if (target.getTargetType() == Targetable.TYPE_ENTITY) {
             te = (Entity) target;
-            targetId = target.getTargetId();
+            targetId = target.getId();
         } else {
             return new ToHitData(TargetRoll.IMPOSSIBLE, "Invalid Target");
         }
@@ -419,5 +420,11 @@ public class DfaAttackAction extends DisplacementAttackAction {
         }
 
         return false;
+    }
+
+    @Override
+    public String toSummaryString(final Game game) {
+        final String roll = this.toHit(game).getValueAsString();
+        return Messages.getString("BoardView1.DfaAttackAction", roll);
     }
 }

@@ -13,15 +13,17 @@
 */
 package megamek.client.ui.swing.boardview;
 
+import megamek.MMConstants;
+import megamek.client.ui.Messages;
+import megamek.client.ui.swing.GUIPreferences;
+import megamek.client.ui.swing.tileset.HexTileset;
+import megamek.client.ui.swing.util.UIUtil;
+import megamek.common.*;
+import megamek.common.MovePath.MoveStepType;
+
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-
-import megamek.client.ui.Messages;
-import megamek.client.ui.swing.GUIPreferences;
-import megamek.codeUtilities.StringUtility;
-import megamek.common.*;
-import megamek.common.MovePath.MoveStepType;
 
 /**
  * Sprite for a step in a movement path. Only one sprite should exist for
@@ -71,16 +73,16 @@ class StepSprite extends Sprite {
     @Override
     public void prepare() {
         // create image for buffer
-        Image tempImage = new BufferedImage(BoardView.HEX_W, BoardView.HEX_H,
+        Image tempImage = new BufferedImage(HexTileset.HEX_W, HexTileset.HEX_H,
                 BufferedImage.TYPE_INT_ARGB);
         Graphics graph = tempImage.getGraphics();
         Graphics2D g2D = (Graphics2D) graph;
 
-        GUIPreferences.AntiAliasifSet(graph);
+        UIUtil.setHighQualityRendering(graph);
 
         // fill with key color
         graph.setColor(new Color(0, 0, 0, 0));
-        graph.fillRect(0, 0, BoardView.HEX_W, BoardView.HEX_H);
+        graph.fillRect(0, 0, HexTileset.HEX_W, HexTileset.HEX_H);
 
         // setup some variables
         Shape moveArrow = bv.movementPolys[step.getFacing()];
@@ -140,7 +142,6 @@ class StepSprite extends Sprite {
                 // forward movement arrow
                 drawArrowShape(g2D, moveArrow, col);
                 drawMovementCost(step, isLastStep, new Point(0, 0), graph, col, true);
-                drawRemainingVelocity(step, graph, true);
                 break;
             case GO_PRONE:
             case HULL_DOWN:
@@ -152,7 +153,6 @@ class StepSprite extends Sprite {
                 currentArrow = upDownOffset.createTransformedShape(bv.downArrow);
                 drawArrowShape(g2D, currentArrow, col);
                 drawMovementCost(step, isLastStep, new Point(1, 15), graph, col, false);
-                drawRemainingVelocity(step, graph, true);
                 break;
             case GET_UP:
             case UP:
@@ -161,7 +161,6 @@ class StepSprite extends Sprite {
                 currentArrow = upDownOffset.createTransformedShape(bv.upArrow);
                 drawArrowShape(g2D, currentArrow, col);
                 drawMovementCost(step, isLastStep, new Point(0, 15), graph, col, false);
-                drawRemainingVelocity(step, graph, true);
                 break;
             case CLIMB_MODE_ON:
                 String climb;
@@ -206,6 +205,14 @@ class StepSprite extends Sprite {
                 String load = Messages.getString("BoardView1.Load");
                 drawAnnouncement(g2D, load, step, col);
                 break;
+            case PICKUP_CARGO:
+            	String pickup = Messages.getString("MovementDisplay.movePickupCargo");
+            	drawAnnouncement(g2D, pickup, step, col);
+            	break;
+            case DROP_CARGO:
+            	String dropCargo = Messages.getString("MovementDisplay.moveDropCargo");
+            	drawAnnouncement(g2D, dropCargo, step, col);
+            	break;
             case TOW:
                 String tow = Messages.getString("BoardView1.Tow");
                 drawAnnouncement(g2D, tow, step, col);
@@ -256,7 +263,7 @@ class StepSprite extends Sprite {
                 // show new movement mode
                 String mode = Messages.getString("BoardView1.ConversionMode."
                         + step.getMovementMode());
-                graph.setFont(new Font("SansSerif", Font.PLAIN, 12));
+                graph.setFont(new Font(MMConstants.FONT_SANS_SERIF, Font.PLAIN, 12));
                 int modeX = 42 - (graph.getFontMetrics(graph.getFont()).stringWidth(mode) / 2);
                 graph.setColor(Color.darkGray);
                 graph.drawString(mode, modeX, modePos - 1);
@@ -283,8 +290,8 @@ class StepSprite extends Sprite {
             drawTMMAndRolls(step, jumped, bv.game, new Point(0, 0), graph, col, true);
         }
 
-        baseScaleImage = bv.createImage(tempImage.getSource());
-        image = bv.getScaledImage(bv.createImage(tempImage.getSource()), false);
+        baseScaleImage = bv.getPanel().createImage(tempImage.getSource());
+        image = bv.getScaledImage(bv.getPanel().createImage(tempImage.getSource()), false);
 
         graph.dispose();
         tempImage.flush();
@@ -305,7 +312,7 @@ class StepSprite extends Sprite {
         if (step.isPastDanger()) {
             text = "(" + text + ")";
         }
-        graph.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        graph.setFont(new Font(MMConstants.FONT_SANS_SERIF, Font.PLAIN, 12));
         int posX = 42 - (graph.getFontMetrics(graph.getFont()).stringWidth(text) / 2);
         int posY = 38 + graph.getFontMetrics(graph.getFont()).getHeight();
         graph.setColor(Color.darkGray);
@@ -323,7 +330,7 @@ class StepSprite extends Sprite {
     private void drawConditions(MoveStep step, Graphics graph, Color col) {
         if (step.isEvading()) {
             String evade = Messages.getString("BoardView1.Evade");
-            graph.setFont(new Font("SansSerif", Font.PLAIN, 12));
+            graph.setFont(new Font(MMConstants.FONT_SANS_SERIF, Font.PLAIN, 12));
             int evadeX = 42 - (graph.getFontMetrics(graph.getFont()).stringWidth(evade) / 2);
             graph.setColor(Color.darkGray);
             graph.drawString(evade, evadeX, 64);
@@ -334,7 +341,7 @@ class StepSprite extends Sprite {
         if (step.isRolled()) {
             // Announce roll
             String roll = Messages.getString("BoardView1.Roll");
-            graph.setFont(new Font("SansSerif", Font.PLAIN, 12));
+            graph.setFont(new Font(MMConstants.FONT_SANS_SERIF, Font.PLAIN, 12));
             int rollX = 42 - (graph.getFontMetrics(graph.getFont()).stringWidth(roll) / 2);
             graph.setColor(Color.darkGray);
             graph.drawString(roll, rollX, 18);
@@ -357,13 +364,12 @@ class StepSprite extends Sprite {
         int[] v = step.getVectors();
         for (int i = 0; i < 6; i++) {
             String active = Integer.toString(v[i]);
-            graph.setFont(new Font("SansSerif", Font.PLAIN, 12));
+            graph.setFont(new Font(MMConstants.FONT_SANS_SERIF, Font.PLAIN, 12));
             graph.setColor(Color.darkGray);
             graph.drawString(active, activeXpos[i], activeYpos[i]);
             graph.setColor(Color.red);
             graph.drawString(active, activeXpos[i] - 1, activeYpos[i] - 1);
         }
-
     }
 
     @Override
@@ -377,73 +383,10 @@ class StepSprite extends Sprite {
     }
 
     private Font getMovementFont() {
-        String fontName = GUIPreferences.getInstance().getString(
-                GUIPreferences.ADVANCED_MOVE_FONT_TYPE);
-        int fontStyle = GUIPreferences.getInstance().getInt(
-                GUIPreferences.ADVANCED_MOVE_FONT_STYLE);
-        int fontSize = GUIPreferences.getInstance().getInt(
-                GUIPreferences.ADVANCED_MOVE_FONT_SIZE);
-
+        String fontName = GUIP.getMoveFontType();
+        int fontStyle = GUIP.getMoveFontStyle();
+        int fontSize = GUIP.getMoveFontSize();
         return new Font(fontName, fontStyle, fontSize);
-    }
-
-    private void drawRemainingVelocity(MoveStep step, Graphics graph, boolean shiftFlag) {
-        StringBuilder velStringBuf = new StringBuilder();
-
-        if (bv.game.useVectorMove()) {
-            return;
-        }
-
-        if (!step.getEntity().isAirborne()
-                || !step.getEntity().isAero()) {
-            return;
-        }
-
-        if (((IAero) step.getEntity()).isSpheroid()) {
-            return;
-        }
-
-        int distTraveled = step.getDistance();
-        int velocity = step.getVelocity();
-        if (bv.game.getBoard().onGround()) {
-            velocity *= 16;
-        }
-
-        velStringBuf.append("(").append(distTraveled).append("/")
-                .append(velocity).append(")");
-
-        Color col = (step.getVelocityLeft() > 0) ? Color.RED : Color.GREEN;
-
-        // Convert the buffer to a String and draw it.
-        String velString = velStringBuf.toString();
-        graph.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        int costX = 42;
-        if (shiftFlag) {
-            costX -= (graph.getFontMetrics(graph.getFont()).stringWidth(velString) / 2);
-        }
-        graph.setColor(Color.darkGray);
-        graph.drawString(velString, costX, 28);
-        graph.setColor(col);
-        graph.drawString(velString, costX - 1, 27);
-
-        // if we are in atmosphere, then report the free turn status as well
-        if (!bv.game.getBoard().inSpace()) {
-            if (step.dueFreeTurn()) {
-                col = Color.GREEN;
-            } else if (step.canAeroTurn(bv.game)) {
-                col = Color.YELLOW;
-            } else {
-                col = Color.RED;
-            }
-
-            String turnString = "<" + step.getNStraight() + ">";
-            graph.setFont(new Font("SansSerif", Font.PLAIN, 10));
-            costX = 50;
-            graph.setColor(Color.darkGray);
-            graph.drawString(turnString, costX, 15);
-            graph.setColor(col);
-            graph.drawString(turnString, costX - 1, 14);
-        }
     }
 
     private void drawMovementCost(MoveStep step, boolean isLastStep,

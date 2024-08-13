@@ -20,7 +20,7 @@ package megamek.client.ui.swing.unitDisplay;
 
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.GUIPreferences;
-import megamek.client.ui.swing.boardview.BoardView;
+import megamek.client.ui.swing.tooltip.HexTooltip;
 import megamek.client.ui.swing.tooltip.PilotToolTip;
 import megamek.client.ui.swing.tooltip.UnitToolTip;
 import megamek.client.ui.swing.widget.*;
@@ -30,16 +30,16 @@ import megamek.common.util.fileUtils.MegaMekFile;
 import javax.swing.*;
 import java.awt.*;
 
-import static megamek.client.ui.swing.tooltip.TipUtil.*;
-
 /**
  * Displays a summary info for a unit, using the same html formatting as use by the board view map tooltips.
  * It is intended to be a tab in the UnitDisplay panel.
  */
 public class SummaryPanel extends PicMap {
 
-    private UnitDisplay unitDisplay;
-    private JLabel unitInfo;
+    private final UnitDisplay unitDisplay;
+    private final JLabel unitInfo;
+
+    private static final GUIPreferences GUIP = GUIPreferences.getInstance();
 
     /**
      * @param unitDisplay the UnitDisplay UI to attach to
@@ -123,37 +123,55 @@ public class SummaryPanel extends PicMap {
      * @param entity The Entity to display info for
      */
     public void displayMech(Entity entity) {
-
         Player localPlayer = unitDisplay.getClientGUI().getClient().getLocalPlayer();
+        String txt = "";
 
         if (entity == null) {
-            unitInfo.setText(HTML_BEGIN + padLeft("No Unit") +HTML_END);
-            return;
-        }
-
-        if (EntityVisibilityUtils.onlyDetectedBySensors(localPlayer, entity)) {
-            unitInfo.setText( HTML_BEGIN + padLeft( Messages.getString("BoardView1.sensorReturn")) +HTML_END);
+            txt = padLeft("No Unit");
+        } else if (EntityVisibilityUtils.onlyDetectedBySensors(localPlayer, entity)) {
+            txt = padLeft(Messages.getString("BoardView1.sensorReturn"));
         } else {
             // This is html tables inside tables to maintain transparency to the bg image but
             // also allow cells do have bg colors
-            StringBuffer hexTxt = new StringBuffer("");
+            StringBuilder hexTxt = new StringBuilder();
             hexTxt.append(PilotToolTip.getPilotTipDetailed(entity, true));
             hexTxt.append(UnitToolTip.getEntityTipUnitDisplay(entity, localPlayer));
-            BoardView bv = unitDisplay.getClientGUI().getBoardView();
+            String col;
+            String row;
             Hex mhex = entity.getGame().getBoard().getHex(entity.getPosition());
-            if (bv != null && mhex != null) {
-                bv.appendTerrainTooltip(hexTxt, mhex);
-                bv.appendBuildingsTooltip(hexTxt, mhex);
+
+            if (mhex != null) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(HexTooltip.getTerrainTip(mhex, GUIP, entity.getGame()));
+                col = "<TD>" + sb + "</TD>";
+                row = "<TR>" + col + "</TR>";
+                hexTxt.append("<TABLE BORDER=0 BGCOLOR=" + GUIPreferences.hexColor(GUIP.getUnitToolTipTerrainBGColor())
+                        + " width=100%>" + row + "</TABLE>");
+                sb.append(HexTooltip.getHexTip(mhex, unitDisplay.getClientGUI().getClient(), GUIP));
             }
-            unitInfo.setText(HTML_BEGIN + padLeft(hexTxt.toString()) + HTML_END);
+
+            String t = PilotToolTip.getCrewAdvs(entity, true).toString();
+            col = "<TD>" + t + "</TD>";
+            row = "<TR>" + col + "</TR>";
+            hexTxt.append("<TABLE width=100%>" + row + "</TABLE>");
+            txt = padLeft(hexTxt.toString());
         }
+
+        unitInfo.setText(UnitToolTip.wrapWithHTML(txt));
         unitInfo.setOpaque(false);
     }
 
     private String padLeft(String html) {
         int dist = (int) (GUIPreferences.getInstance().getGUIScale() * 5);
-        return "<TABLE CELLSPACING=" + dist +" CELLPADDING=" + dist + " WIDTH=100%><TBODY><TR>"
-                + "<TD>"+html+"</TD></TR></TBODY></TABLE>";
+        String col = "";
+        String row = "";
+        String tbody = "";
+        String table = "";
+        col = "<TD>" + html + "</TD>";
+        row = "<TR>" + col + "</TR>";
+        tbody = "<TBODY>" + row + "</TBODY>";
+        table = "<TABLE CELLSPACING=" + dist + " CELLPADDING=" + dist + " WIDTH=100%>" + tbody + "</TABLE>";
+        return table;
     }
 
     @Override

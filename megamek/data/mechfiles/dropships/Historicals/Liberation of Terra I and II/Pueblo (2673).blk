@@ -36,6 +36,10 @@ Pueblo
 IS Level 3
 </type>
 
+<role>
+None
+</role>
+
 <motion_type>
 Aerodyne
 </motion_type>
@@ -170,7 +174,7 @@ The crew of such a ship, along with the marine detachment, were all trained to e
 </deployment>
 
 <history>
-House Cameron knew full well that the Star League was the central power in the Inner Sphere and that each of the member states had their own personal agendas. So in order to ensure that the peace lasted, surveillance craft were needed. It would be nearly impossible to have a WarShip stationed within the territorial borders of a state without sparking an interstellar scandal; The Star League would need a specialty craft that could hide in plain sight, while supplying needed information.he SLDF could deploy the Bug-Eye to meet the role, but its astronomical price tag, still being undergunned, and containing highly classified technology made it not the best choice either. After the Amaris Coup, not all of the Pueblo Class DropShips went with Kerensky on his Exodus. Those that stayed behind would eventually be destroyed during the Succession Wars.
+House Cameron knew full well that the Star League was the central power in the Inner Sphere and that each of the member states had their own personal agendas. So in order to ensure that the peace lasted, surveillance craft were needed. It would be nearly impossible to have a WarShip stationed within the territorial borders of a state without sparking an interstellar scandal; The Star League would need a specialty craft that could hide in plain sight, while supplying needed information. The SLDF could deploy the Bug-Eye to meet the role, but its astronomical price tag, still being undergunned, and containing highly classified technology made it not the best choice either. After the Amaris Coup, not all of the Pueblo Class DropShips went with Kerensky on his Exodus. Those that stayed behind would eventually be destroyed during the Succession Wars.
 </history>
 
 <manufacturer>
@@ -190,7 +194,7 @@ TARGETING:Unknown
 </systemManufacturers>
 
 <notes>
-Overweight per the TRO, dropped cargo to make it legal. Needs 6 officers not 2 and 16 crew not 6. .
+Overweight per the TRO:, dropped cargo to make it legal. Needs 6 officers not 2 and 16 crew not 6. .
 </notes>
 
 <use>
@@ -210,7 +214,7 @@ Surveillance
 </height>
 
 <source>
-H:Liberation of Terra II - Star League
+Historical: Liberation of Terra II
 </source>
 
 <tonnage>
@@ -256,4 +260,10 @@ H:Liberation of Terra II - Star League
 <escape_pod>
 4
 </escape_pod>
+
+
+<quirks>
+atmo_flyer
+imp_com
+</quirks>
 

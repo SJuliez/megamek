@@ -16,6 +16,10 @@ package megamek.common.verifier;
 
 import megamek.common.*;
 import megamek.common.annotations.Nullable;
+import megamek.common.equipment.ArmorType;
+import megamek.common.equipment.WeaponMounted;
+import megamek.common.options.OptionsConstants;
+import megamek.common.options.Quirks;
 import megamek.common.util.StringUtil;
 import megamek.common.weapons.artillery.ArtilleryWeapon;
 import megamek.common.weapons.autocannons.ACWeapon;
@@ -41,29 +45,29 @@ public class TestMech extends TestEntity {
         JJ_PROTOTYPE_IMPROVED (EquipmentTypeLookup.PROTOTYPE_IMPROVED_JJ, false, Mech.JUMP_PROTOTYPE_IMPROVED),
         JJ_UMU (EquipmentTypeLookup.MECH_UMU, false, Mech.JUMP_NONE),
         JJ_BOOSTER (EquipmentTypeLookup.MECH_JUMP_BOOSTER, true, Mech.JUMP_BOOSTER);
-        
+
         private String internalName;
         private boolean industrial;
         private int jumpType;
-        
+
         MechJumpJets(String internalName, boolean industrial, int jumpType) {
             this.internalName = internalName;
             this.industrial = industrial;
             this.jumpType = jumpType;
         }
-        
+
         public String getName() {
             return internalName;
         }
-        
+
         public boolean canIndustrialUse() {
             return industrial;
         }
-        
+
         public int getJumpType() {
             return jumpType;
         }
-        
+
         public static List<EquipmentType> allJJs(boolean industrialOnly) {
             List<EquipmentType> retVal = new ArrayList<>();
             for (MechJumpJets jj : values()) {
@@ -75,55 +79,40 @@ public class TestMech extends TestEntity {
         }
 
     }
-    
+
     /**
      * Filters all mech armor according to given tech constraints
      *
-     * @param etype
-     * @param industrial
-     * @param techManager
-     * @return
+     * @param etype        Entity type bitmap
+     * @param industrial   Whether to include industrialmech armors
+     * @param techManager  The tech manager that determines legality
+     * @return             A list of legal armors for the mech
      */
-    public static List<EquipmentType> legalArmorsFor(long etype, boolean industrial, ITechManager techManager) {
-        List<EquipmentType> legalArmors = new ArrayList<>();
+    public static List<ArmorType> legalArmorsFor(long etype, boolean industrial, ITechManager techManager) {
+        List<ArmorType> legalArmors = new ArrayList<>();
         boolean industrialOnly = industrial
                 && (techManager.getTechLevel().ordinal() < SimpleTechLevel.EXPERIMENTAL.ordinal());
         boolean isLam = (etype & Entity.ETYPE_LAND_AIR_MECH) != 0;
-        for (int armorType = 0; armorType < EquipmentType.armorNames.length; armorType++) {
-            if ((armorType == EquipmentType.T_ARMOR_PATCHWORK)
-                    || (isLam && (armorType == EquipmentType.T_ARMOR_HARDENED))) {
+        for (ArmorType armor : ArmorType.allArmorTypes()) {
+            if ((armor.getArmorType() == EquipmentType.T_ARMOR_PATCHWORK)
+                    || (isLam && (armor.getArmorType() == EquipmentType.T_ARMOR_HARDENED))) {
                 continue;
             }
-            String name = EquipmentType.getArmorTypeName(armorType, techManager.useClanTechBase());
-            EquipmentType eq = EquipmentType.get(name);
-            if ((null != eq)
-                    && eq.hasFlag(MiscType.F_MECH_EQUIPMENT)
-                    && ((armorType != EquipmentType.T_ARMOR_COMMERCIAL) || industrial)
-                    && techManager.isLegal(eq)
-                    && (!isLam || (eq.getCriticals(null) == 0))
-                    && (!industrialOnly || ((MiscType) eq).isIndustrial())) {
-                legalArmors.add(eq);
-            }
-            if (techManager.useMixedTech()) {
-                name = EquipmentType.getArmorTypeName(armorType, !techManager.useClanTechBase());
-                EquipmentType eq2 = EquipmentType.get(name);
-                if ((null != eq2) && (eq != eq2)
-                        && eq2.hasFlag(MiscType.F_MECH_EQUIPMENT)
-                        && ((armorType != EquipmentType.T_ARMOR_COMMERCIAL) || industrial)
-                        && techManager.isLegal(eq2)
-                        && (!isLam || (eq2.getCriticals(null) == 0))
-                        && (!industrialOnly || ((null != eq) && ((MiscType) eq).isIndustrial()))) {
-                    legalArmors.add(eq2);
-                }
+            if (armor.hasFlag(MiscType.F_MECH_EQUIPMENT)
+                    && ((armor.getArmorType() != EquipmentType.T_ARMOR_COMMERCIAL) || industrial)
+                    && techManager.isLegal(armor)
+                    && (!isLam || (armor.getCriticals(null) == 0))
+                    && (!industrialOnly || armor.isIndustrial())) {
+                legalArmors.add(armor);
             }
         }
         return legalArmors;
     }
-    
-    private Mech mech = null;
+
+    private Mech mech;
 
     public TestMech(Mech mech, TestEntityOption option, String fileString) {
-        super(option, mech.getEngine(), getArmor(mech), getStructure(mech));
+        super(option, mech.getEngine(), getStructure(mech));
         this.mech = mech;
         this.fileString = fileString;
     }
@@ -133,31 +122,6 @@ public class TestMech extends TestEntity {
         return new Structure(type, mech.isSuperHeavy(), mech.getMovementMode());
     }
 
-    private static Armor[] getArmor(Mech mech) {
-        Armor[] armor;
-        if (!mech.hasPatchworkArmor()) {
-            armor = new Armor[1];
-            int type = mech.getArmorType(1);
-            int flag = 0;
-            if (mech.isClanArmor(1)) {
-                flag |= Armor.CLAN_ARMOR;
-            }
-            armor[0] = new Armor(type, flag);
-            return armor;
-        } else {
-            armor = new Armor[mech.locations()];
-            for (int i = 0; i < mech.locations(); i++) {
-                int type = mech.getArmorType(i);
-                int flag = 0;
-                if (mech.isClanArmor(i)) {
-                    flag |= Armor.CLAN_ARMOR;
-                }
-                armor[i] = new Armor(type, flag);
-            }
-        }
-        return armor;
-    }
-    
     public static Integer maxJumpMP(Mech mech) {
         if (mech.isSuperHeavy()) {
             return 0;
@@ -198,12 +162,12 @@ public class TestMech extends TestEntity {
     public boolean isSmallCraft() {
         return false;
     }
-    
+
     @Override
     public boolean isAdvancedAerospace() {
         return false;
     }
-    
+
     @Override
     public boolean isProtomech() {
         return false;
@@ -243,44 +207,36 @@ public class TestMech extends TestEntity {
         }
         return 0;
     }
-    
-    public double getWeightCockpit() {
-        double weight = 3.0;
-        if (mech.getCockpitType() == Mech.COCKPIT_SMALL) {
-            weight = 2.0;
-        } else if (mech.getCockpitType() == Mech.COCKPIT_TORSO_MOUNTED) {
-            weight = 4.0;
-        } else if (mech.getCockpitType() == Mech.COCKPIT_COMMAND_CONSOLE) {
-            // Technically, it's two separate 3-ton pieces of equipment.
-            // We're ignoring that and returning the total, because it's easier.
-            weight = 6.0;
-        } else if (mech.getCockpitType() == Mech.COCKPIT_DUAL) {
-            // Solaris VII - The Game World (German) This is not actually
-            // canonical as it
-            // has never been repeated in any English language source including
-            // Tech Manual
-            weight = 4.0;
-        } else if (mech.getCockpitType() == Mech.COCKPIT_PRIMITIVE) {
-            weight = 5.0;
-        } else if (mech.getCockpitType() == Mech.COCKPIT_PRIMITIVE_INDUSTRIAL) {
-            weight = 5.0;
-        } else if ((mech.getCockpitType() == Mech.COCKPIT_SUPERHEAVY) || (mech.getCockpitType() == Mech.COCKPIT_TRIPOD)) {
-            weight = 4.0;
-        } else if (mech.getCockpitType() == Mech.COCKPIT_SUPERHEAVY_TRIPOD) {
-            weight = 5.0;
-        } else if (mech.getCockpitType() == Mech.COCKPIT_INTERFACE) {
-            weight = 4.0;
-        } else if (mech.getCockpitType() == Mech.COCKPIT_QUADVEE) {
-            weight = 4.0;
-        } else if (mech.getCockpitType() == Mech.COCKPIT_SUPERHEAVY_COMMAND_CONSOLE) {
-            // Like as normal command console, it is technically two seperate 4-ton and 3-ton pieces of equipment.
-            weight = 7.0;
-        } else if (mech.getCockpitType() == Mech.COCKPIT_SMALL_COMMAND_CONSOLE) {
-            // Like as normal command console, it is technically two seperate 2-ton and 3-ton pieces of equipment. 
-            weight = 5.0;
-        }
 
-        return weight;
+    public double getWeightCockpit() {
+        switch (mech.getCockpitType()) {
+            case Mech.COCKPIT_SMALL:
+                return 2.0;
+            case Mech.COCKPIT_TORSO_MOUNTED:
+            case Mech.COCKPIT_DUAL:
+            case Mech.COCKPIT_SUPERHEAVY:
+            case Mech.COCKPIT_SUPERHEAVY_INDUSTRIAL:
+            case Mech.COCKPIT_TRIPOD:
+            case Mech.COCKPIT_TRIPOD_INDUSTRIAL:
+            case Mech.COCKPIT_INTERFACE:
+            case Mech.COCKPIT_QUADVEE:
+                return 4.0;
+            case Mech.COCKPIT_PRIMITIVE:
+            case Mech.COCKPIT_PRIMITIVE_INDUSTRIAL:
+            case Mech.COCKPIT_SUPERHEAVY_TRIPOD:
+            case Mech.COCKPIT_SUPERHEAVY_TRIPOD_INDUSTRIAL:
+            case Mech.COCKPIT_SMALL_COMMAND_CONSOLE:
+                return 5.0;
+            case Mech.COCKPIT_COMMAND_CONSOLE:
+                return 6.0;
+            case Mech.COCKPIT_SUPERHEAVY_COMMAND_CONSOLE:
+                return 7.0;
+            case Mech.COCKPIT_STANDARD:
+            case Mech.COCKPIT_INDUSTRIAL:
+            case Mech.COCKPIT_VRRP:
+            default:
+                return 3.0;
+        }
     }
 
     public double getWeightGyro() {
@@ -361,7 +317,7 @@ public class TestMech extends TestEntity {
         }
         return location == Mech.LOC_HEAD;
     }
-    
+
     public boolean isEngineLocation(int location) {
         return mech.hasSystem(Mech.SYSTEM_ENGINE, location);
     }
@@ -483,7 +439,7 @@ public class TestMech extends TestEntity {
             Vector<Serializable> allocation, StringBuffer buff) {
         int location = mounted.getLocation();
         EquipmentType et = mounted.getType();
-        int criticals = 0;
+        int criticals;
         if (et instanceof MiscType) {
             criticals = calcMiscCrits((MiscType) et, mounted.getSize());
         } else {
@@ -506,7 +462,7 @@ public class TestMech extends TestEntity {
         }
 
         if ((et instanceof WeaponType) && mounted.isSplit()) {
-            int secCound = 0;
+            int secCound;
             for (int locations = 0; locations < entity.locations(); locations++) {
                 if (locations == location) {
                     continue;
@@ -569,12 +525,12 @@ public class TestMech extends TestEntity {
                     && ((m.getType() instanceof GaussWeapon)
                             || (m.getType() instanceof ACWeapon)
                             || (m.getType() instanceof UACWeapon)
-                            || (m.getType() instanceof LBXACWeapon) 
+                            || (m.getType() instanceof LBXACWeapon)
                             || (m.getType() instanceof PPCWeapon))) {
                 String weapon = "";
                 if (m.getType() instanceof GaussWeapon) {
-                    weapon = "gauss rifles"; 
-                } else if ((m.getType() instanceof ACWeapon) 
+                    weapon = "gauss rifles";
+                } else if ((m.getType() instanceof ACWeapon)
                         || (m.getType() instanceof UACWeapon)
                         || (m.getType() instanceof LBXACWeapon)) {
                     weapon = "autocannons";
@@ -706,29 +662,24 @@ public class TestMech extends TestEntity {
     public boolean correctMovement(StringBuffer buff) {
         // Mechanical Jump Boosts can be greater then Running as long as
         // the unit can handle the weight.
-        if ((mech.getJumpMP(false) > mech.getOriginalRunMP())
+        if ((mech.getJumpMP(MPCalculationSetting.NO_GRAVITY) > mech.getOriginalRunMP())
                 && !mech.hasJumpBoosters()
                 && !mech.hasWorkingMisc(MiscType.F_PARTIAL_WING)) {
             buff.append("Jump MP exceeds run MP\n");
             return false;
         }
-        if ((mech.getJumpMP(false) > mech.getOriginalWalkMP())
+        if ((mech.getJumpMP(MPCalculationSetting.NO_GRAVITY) > mech.getOriginalWalkMP())
                 && (((mech.getJumpType() != Mech.JUMP_IMPROVED) && (mech.getJumpType() != Mech.JUMP_PROTOTYPE_IMPROVED))
                         && !mech.hasWorkingMisc(MiscType.F_PARTIAL_WING) && !mech
                             .hasJumpBoosters())) {
             buff.append("Jump MP exceeds walk MP without IJJs\n");
             return false;
         }
-        if ((mech instanceof LandAirMech) && mech.getJumpMP(false) < 3) {
+        if ((mech instanceof LandAirMech) && mech.getJumpMP(MPCalculationSetting.NO_GRAVITY) < 3) {
             buff.append("LAMs must have at least 3 jumping MP.\n");
             return false;
         }
         return true;
-    }
-
-    @Override
-    public boolean correctEntity(StringBuffer buff) {
-        return correctEntity(buff, getEntity().getTechLevel());
     }
 
     @Override
@@ -778,6 +729,9 @@ public class TestMech extends TestEntity {
             correct = correct && checkMiscSpreadAllocation(mech, misc, buff);
         }
         correct = correct && correctMovement(buff);
+        if (getEntity().hasQuirk(OptionsConstants.QUIRK_NEG_ILLEGAL_DESIGN)) {
+            correct = true;
+        }
         return correct;
     }
 
@@ -845,7 +799,7 @@ public class TestMech extends TestEntity {
     @Override
     public boolean hasIllegalEquipmentCombinations(StringBuffer buff) {
         boolean illegal = super.hasIllegalEquipmentCombinations(buff);
-        
+
         boolean hasStealth = mech.hasStealth();
         boolean hasC3 = mech.hasC3();
         boolean hasHarjelII = false;
@@ -855,6 +809,8 @@ public class TestMech extends TestEntity {
         boolean hasTC = false;
         boolean hasMASC = false;
         boolean hasAES = false;
+        boolean hasMechJumpBooster = false;
+        boolean hasPartialWing = false;
         EquipmentType advancedMyomer = null;
 
         //First we find all the equipment that is required or incompatible with other equipment,
@@ -873,6 +829,8 @@ public class TestMech extends TestEntity {
                     || m.getType().hasFlag(MiscType.F_SCM)) {
                 advancedMyomer = m.getType();
             }
+            hasMechJumpBooster |= m.is(EquipmentTypeLookup.MECH_JUMP_BOOSTER);
+            hasPartialWing |= m.getType().hasFlag(MiscType.F_PARTIAL_WING);
         }
 
         for (Mounted m : getEntity().getMisc()) {
@@ -892,7 +850,7 @@ public class TestMech extends TestEntity {
                     illegal = true;
                 }
             }
-            
+
             if ((misc.hasFlag(MiscType.F_TSM)
                     || misc.hasFlag(MiscType.F_INDUSTRIAL_TSM)
                     || misc.hasFlag(MiscType.F_SCM))
@@ -900,7 +858,7 @@ public class TestMech extends TestEntity {
                 buff.append("Cannot mount more than one type of myomer.\n");
                 illegal = true;
             }
-            
+
             if (misc.hasFlag(MiscType.F_REMOTE_DRONE_COMMAND_CONSOLE)) {
                 if (mech.getCockpitType() == Mech.COCKPIT_COMMAND_CONSOLE) {
                     buff.append("cockpit command console can't be combined with remote drone command console\n");
@@ -936,12 +894,27 @@ public class TestMech extends TestEntity {
                         illegal = true;
                         buff.append("Mech can only mount ").append(misc.getName())
                                 .append(" in arm with no lower arm actuator.\n");
-                } else if (requiresHandActuator(misc) && !mech.hasSystem(Mech.ACTUATOR_HAND, m.getLocation())) {
+                } else if (requiresHandActuator(misc) && (m.getLocation() != Entity.LOC_NONE) && !mech.hasSystem(Mech.ACTUATOR_HAND, m.getLocation())) {
                     illegal = true;
                     buff.append("Mech requires a hand actuator in the arm that mounts ").append(misc.getName()).append("\n");
-                } else if (requiresLowerArm(misc) && !mech.hasSystem(Mech.ACTUATOR_LOWER_ARM, m.getLocation())) {
+                } else if (requiresLowerArm(misc) && (m.getLocation() != Entity.LOC_NONE) && !mech.hasSystem(Mech.ACTUATOR_LOWER_ARM, m.getLocation())) {
                     illegal = true;
                     buff.append("Mech requires a lower arm actuator in the arm that mounts ").append(misc.getName()).append("\n");
+                }
+                if (replacesHandActuator(misc) && (m.getLocation() != Entity.LOC_NONE)) {
+                    String errorMsg = "Can only mount a single equipment item in the "
+                            + mech.getLocationName(m.getLocation())
+                            + " that replaces the hand actuator\n";
+                    // This error message would appear once for each offending equipment; instead, add it only once
+                    if (!buff.toString().contains(errorMsg)) {
+                        int miscId = mech.getEquipmentNum(m);
+                        if (mech.getMisc().stream().filter(otherMisc -> mech.getEquipmentNum(otherMisc) != miscId)
+                                .filter(otherMisc -> otherMisc.getLocation() == m.getLocation())
+                                .anyMatch(otherMisc -> replacesHandActuator((MiscType) otherMisc.getType()))) {
+                            illegal = true;
+                            buff.append(errorMsg);
+                        }
+                    }
                 }
             }
             if (misc.hasFlag(MiscType.F_HEAD_TURRET)
@@ -954,7 +927,7 @@ public class TestMech extends TestEntity {
                 illegal = true;
                 buff.append("quad mechs can't mount shoulder turrets\n");
             }
-            
+
             if (misc.hasFlag(MiscType.F_SHOULDER_TURRET)) {
                 if (m.getLocation() != Mech.LOC_RT
                         && m.getLocation() != Mech.LOC_LT) {
@@ -985,7 +958,7 @@ public class TestMech extends TestEntity {
                     }
                 }
             }
-            
+
             if (m.getType().hasFlag(MiscType.F_TALON)) {
                 int slots = getMech().isSuperHeavy() ? 1 : 2;
                 for (int loc = 0; loc < mech.locations(); loc++) {
@@ -1030,16 +1003,15 @@ public class TestMech extends TestEntity {
                 buff.append("Superheavy may not mount ").append(m.getType().getName()).append("\n");
                 illegal = true;
             }
-            
+
             if (mech.isIndustrial()) {
                 if (misc.hasFlag(MiscType.F_TSM)
                         || misc.hasFlag(MiscType.F_SCM)
                         || (misc.hasFlag(MiscType.F_MASC) && !misc.hasSubType(MiscType.S_SUPERCHARGER))) {
                     buff.append("industrial mech can't mount ").append(misc.getName()).append("\n");
-                    illegal = true;                    
+                    illegal = true;
                 }
-                if ((mech.getCockpitType() == Mech.COCKPIT_INDUSTRIAL
-                        || mech.getCockpitType() == Mech.COCKPIT_PRIMITIVE_INDUSTRIAL)
+                if (!mech.hasAdvancedFireControl()
                     && (misc.hasFlag(MiscType.F_TARGCOMP)
                         || misc.hasFlag(MiscType.F_ARTEMIS)
                         || misc.hasFlag(MiscType.F_ARTEMIS_PROTO)
@@ -1047,7 +1019,7 @@ public class TestMech extends TestEntity {
                         || misc.hasFlag(MiscType.F_BAP))) {
                     buff.append("Industrial mech without advanced fire control can't mount ")
                             .append(misc.getName()).append("\n");
-                    illegal = true;                    
+                    illegal = true;
                 }
             } else {
                 if (misc.hasFlag(MiscType.F_INDUSTRIAL_TSM)
@@ -1057,7 +1029,7 @@ public class TestMech extends TestEntity {
                     illegal = true;
                 }
             }
-            
+
             if ((mech instanceof LandAirMech)
                     && (misc.hasFlag(MiscType.F_MODULAR_ARMOR)
                             || misc.hasFlag(MiscType.F_JUMP_BOOSTER)
@@ -1073,35 +1045,18 @@ public class TestMech extends TestEntity {
                 illegal = true;
             }
         }
-        
+
         if (mech.isSuperHeavy()) {
-            switch (mech.hasEngine() ? mech.getEngine().getEngineType() : Engine.NONE) {
-                case Engine.NORMAL_ENGINE:
-                case Engine.LARGE_ENGINE:
-                    break;
-                case Engine.XL_ENGINE:
-                case Engine.XXL_ENGINE:
-                case Engine.COMPACT_ENGINE:
-                case Engine.LIGHT_ENGINE:
-                    if (mech.isIndustrial()) {
-                        buff.append("Superheavy industrialMechs can only use standard or large fusion engine\n");
-                        illegal = true;
-                    }
-                    break;
-                default:
-                    buff.append("Superheavy Mechs must use some type of fusion engine\n");
-                    illegal = true;
-            }
             if (mech.getGyroType() != Mech.GYRO_SUPERHEAVY) {
                 buff.append("Superheavy Mechs must use a superheavy gyro.\n");
                 illegal = true;
             }
-            
+
             if (mech.getArmoredComponentBV() > 0) {
                 buff.append("Superheavy Mechs cannot have armored components\n");
                 illegal = true;
             }
-            
+
             if (mech instanceof QuadVee) {
                 buff.append("QuadVees cannot be constructed as superheavies.\n");
             }
@@ -1109,7 +1064,7 @@ public class TestMech extends TestEntity {
             buff.append("Only superheavy Mechs can use a superheavy gyro.\n");
             illegal = true;
         }
-        
+
         if (mech.isIndustrial()) {
             if ((mech.getCockpitType() == Mech.COCKPIT_INDUSTRIAL
                     || mech.getCockpitType() == Mech.COCKPIT_PRIMITIVE_INDUSTRIAL) && hasC3) {
@@ -1127,8 +1082,28 @@ public class TestMech extends TestEntity {
                 buff.append("industrial mechs can only mount standard gyros\n");
                 illegal = true;
             }
+            if (hasDoubleHeatSinks()) {
+                buff.append("Industrial Meks cannot mount double heat sinks\n");
+                illegal = true;
+            }
+            switch (mech.hasEngine() ? engine.getEngineType() : Engine.NONE) {
+                case Engine.NORMAL_ENGINE:
+                    break;
+                case Engine.COMBUSTION_ENGINE:
+                case Engine.FUEL_CELL:
+                case Engine.FISSION:
+                    if (mech.isSuperHeavy()) {
+                        buff.append("Superheavy Industrial Meks can only use standard or large fusion engines\n");
+                        illegal = true;
+                    }
+                    break;
+                default:
+                    buff.append("Industrial Meks can only use standard and large fusion engines, ICEs, fuel cells or fission\n");
+                    illegal = true;
+                    break;
+            }
         }
-        
+
         if (mech.isPrimitive()) {
             if (mech.isOmni()) {
                 buff.append("primitive mechs can't be omnis\n");
@@ -1164,7 +1139,7 @@ public class TestMech extends TestEntity {
                 }
             }
         }
-        
+
         if (mech instanceof LandAirMech) {
             if (mech.isOmni()) {
                 buff.append("LAMs may not be constructed as omnis\n");
@@ -1180,7 +1155,7 @@ public class TestMech extends TestEntity {
                 buff.append("LAMs may not use ").append(structure.getName()).append("\n");
                 illegal = true;
             }
-            
+
             Set<Integer> ats = new HashSet<>();
             for (int i = 0; i < mech.locations(); i++) {
                 ats.add(mech.getArmorType(i));
@@ -1225,7 +1200,7 @@ public class TestMech extends TestEntity {
                 buff.append("LAMs may only use standard or compact fusion engines.\n");
                 illegal = true;
             }
-            
+
             Map<EquipmentType,Set<Integer>> spread = new HashMap<>();
             for (Mounted m : mech.getEquipment()) {
                 if (m.isSplit()) {
@@ -1265,7 +1240,7 @@ public class TestMech extends TestEntity {
                 illegal = true;
             }
         }
-        
+
         //Make sure all base chassis heat sinks are allocated
         if (mech.isOmni()) {
             int total = 0;
@@ -1290,12 +1265,12 @@ public class TestMech extends TestEntity {
                 buff.append("Only " + allocated + " of the required " + required + " heat sinks are allocated to critical slots.");
             }
         }
-        
+
         if (hasMASC && advancedMyomer != null) {
             buff.append("MASC is incompatible with " + advancedMyomer.getName() + "\n");
             illegal = true;
         }
-        
+
         if (hasAES) {
             if (hasMASC) {
                 buff.append("AES is incompatible with MASC.\n");
@@ -1346,7 +1321,7 @@ public class TestMech extends TestEntity {
                 }
             }
         }
-        
+
         if (hasNullSig) {
             if (hasStealth) {
                 buff.append("Unit mounts both null-signature-system and stealth armor\n");
@@ -1421,10 +1396,10 @@ public class TestMech extends TestEntity {
                 }
             }
         }
-        
-        for (Mounted m : mech.getWeaponList()) {
-            if ((((WeaponType) m.getType()).getAmmoType() == AmmoType.T_GAUSS_HEAVY)
-                    || (((WeaponType) m.getType()).getAmmoType() == AmmoType.T_IGAUSS_HEAVY)) {
+
+        for (WeaponMounted m : mech.getWeaponList()) {
+            if ((m.getType().getAmmoType() == AmmoType.T_GAUSS_HEAVY)
+                    || (m.getType().getAmmoType() == AmmoType.T_IGAUSS_HEAVY)) {
                 boolean torso = mech.locationIsTorso(m.getLocation());
                 if (m.getSecondLocation() != Entity.LOC_NONE) {
                     torso = torso && mech.locationIsTorso(m.getSecondLocation());
@@ -1433,26 +1408,42 @@ public class TestMech extends TestEntity {
                     buff.append("Heavy Gauss can only be mounted in a torso location.\n");
                     illegal = true;
                 }
+
+                if (m.isMechTurretMounted()) {
+                    buff.append("Heavy Gauss cannot be mounted in a turret.\n");
+                    illegal = true;
+                }
             }
-            if ((m.getType().hasFlag(WeaponType.F_TASER)
-                    || m.getType().hasFlag(WeaponType.F_HYPER))
+            if ((m.getType().hasFlag(WeaponType.F_TASER))
                     && !(mech.hasEngine() && mech.getEngine().isFusion())) {
                 buff.append(m.getType().getName()).append(" needs fusion engine\n");
                 illegal = true;
             }
         }
 
-        if (mech.hasWorkingWeapon(WeaponType.F_HYPER) && !(mech.hasEngine() && mech.getEngine().isFusion())) {
-            buff.append("RISC Hyper Laser needs fusion engine\n");
-            illegal = true;
-        }
-        
         if (mech.hasFullHeadEject()) {
             if ((mech.getCockpitType() == Mech.COCKPIT_TORSO_MOUNTED)
                     || (mech.getCockpitType() == Mech.COCKPIT_COMMAND_CONSOLE)) {
                 buff.append("full head ejection system incompatible with cockpit type\n");
                 illegal = true;
             }
+        }
+
+        // Test if the crit slots for internal structure match the required crits; Note that this intentionally
+        // counts crit slots, not mounted equipment as the latter only works with a fully loaded unit in MML and
+        // will make units appear invalid during loading (MML calls UnitUtil.expandUnitMounts() after loading)
+        String structureName = EquipmentType.getStructureTypeName(mech.getStructureType(),
+                TechConstants.isClan(mech.getStructureTechLevel()));
+        EquipmentType structure = EquipmentType.get(structureName);
+        int requiredStructureCrits = structure.getCriticals(mech);
+        if (mech.getNumberOfCriticals(structure) != requiredStructureCrits) {
+            buff.append("The internal structure of this mek is not using the correct number of crit slots\n");
+            illegal = true;
+        }
+
+        if (hasPartialWing && hasMechJumpBooster) {
+            buff.append("Partial wings cannot be combined with any type of jump boosters\n");
+            illegal = true;
         }
 
         return illegal;

@@ -18,13 +18,16 @@
  */
 package megamek.client.ui.swing;
 
+import megamek.client.AbstractClient;
 import megamek.client.Client;
 import megamek.client.ui.baseComponents.AbstractButtonDialog;
 import megamek.client.ui.baseComponents.MMButton;
 import megamek.client.ui.baseComponents.MMComboBox;
 import megamek.client.ui.enums.DialogResult;
 import megamek.client.ui.panels.SkillGenerationOptionsPanel;
+import megamek.client.ui.swing.util.UIUtil;
 import megamek.common.Entity;
+import megamek.common.Player;
 
 import javax.swing.*;
 import java.awt.*;
@@ -108,7 +111,7 @@ public class SkillGenerationDialog extends AbstractButtonDialog {
 
         final DefaultComboBoxModel<String> clientsModel = new DefaultComboBoxModel<>();
         clientsModel.addElement(getClientGUI().getClient().getName());
-        clientsModel.addAll(getClientGUI().getBots().values().stream().map(Client::getName)
+        clientsModel.addAll(getClientGUI().getLocalBots().values().stream().map(AbstractClient::getName)
                 .collect(Collectors.toList()));
         final MMComboBox<String> comboClients = new MMComboBox<>("comboClients", clientsModel);
         comboClients.setToolTipText(resources.getString("comboClients.toolTipText"));
@@ -116,19 +119,30 @@ public class SkillGenerationDialog extends AbstractButtonDialog {
         comboClients.setEnabled(comboClients.getItemCount() > 1);
         comboClients.addActionListener(evt -> getSkillGenerationOptionsPanel().changeClient(
                 (comboClients.getSelectedIndex() > 0)
-                        ? getClientGUI().getBots().get(comboClients.getSelectedItem())
+                        ? (Client) getClientGUI().getLocalBots().get(comboClients.getSelectedItem())
                         : getClientGUI().getClient()));
         panel.add(comboClients);
-
         return panel;
     }
     //endregion Initialization
+
+    @Override
+    protected void finalizeInitialization() throws Exception {
+        super.finalizeInitialization();
+        adaptToGUIScale();
+    }
 
     //region Button Actions
     @Override
     protected void okAction() {
         super.okAction();
         getSkillGenerationOptionsPanel().updateClient();
+        String msg = clientGUI.getClient().getLocalPlayer() + " changed settings for Skill Generation";
+        clientGUI.getClient().sendServerChat(Player.PLAYER_NONE, msg);
     }
     //endregion Button Actions
+
+    private void adaptToGUIScale() {
+        UIUtil.adjustDialog(this, UIUtil.FONT_SCALE1);
+    }
 }

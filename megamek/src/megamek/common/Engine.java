@@ -15,6 +15,8 @@
 package megamek.common;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class represents an engine, such as those driving 'Meks.
@@ -295,17 +297,26 @@ public class Engine implements Serializable, ITechnology {
         }
     }
 
-    /**
-     * returns true if and only if this engine is a fusion engine
-     *
-     * @return true if it is not an internal combustion engine.
-     */
+    /** @return True if this engine is a fusion engine. */
     public boolean isFusion() {
         return (engineType != COMBUSTION_ENGINE) && (engineType != FISSION) && (engineType != FUEL_CELL)
                 && (engineType != NONE) && (engineType != BATTERY) && (engineType != SOLAR)
                 && (engineType != STEAM) && (engineType != MAGLEV) && (engineType != EXTERNAL);
     }
- 
+
+    /** @return True if this engine is a fission engine. */
+    public boolean isFission() {
+        return engineType == FISSION;
+    }
+
+    public boolean isSolar() {
+        return engineType == SOLAR;
+    }
+    
+    public boolean isICE() {
+        return engineType == COMBUSTION_ENGINE;
+    }
+
 
     /**
      * Returns the weight of the engine in tons, rounded to the next highest half
@@ -337,11 +348,11 @@ public class Engine implements Serializable, ITechnology {
             double weight = entity.getBaseEngineValue() * movementFactor
                     * engineWeightMult * entity.getWeight();
             // Fusion engines have a minimum weight of 0.25t at D+ and 0.5t at C. Fission engines have
-            // a minimum of 0.5t at all tech ratings.
+            // a minimum of 5t at all tech ratings.
             if ((engineType == NORMAL_ENGINE) && (entity.getEngineTechRating() >= RATING_D)) {
                 weight = Math.max(weight, 0.25);
             } else if ((engineType == NORMAL_ENGINE) || (engineType == FISSION)) {
-                weight = Math.max(weight, 0.5);
+                weight = Math.max(weight, 5);
             }
 
             // Hovercraft have a minimum engine weight of 20% of the vehicle.
@@ -444,10 +455,42 @@ public class Engine implements Serializable, ITechnology {
      */
     public String getShortEngineName() {
         if (engineType < TYPE_KEYS.length) {
-            return String.format("%d%s", engineRating, Messages.getString("Engine." + TYPE_KEYS[engineType]));
+            if (hasFlag(SUPPORT_VEE_ENGINE)) {
+                return Messages.getString("Engine." + TYPE_KEYS[engineType]).trim();
+            } else {
+                return String.format("%d%s", engineRating, Messages.getString("Engine." + TYPE_KEYS[engineType]));
+            }
         } else {
             return Messages.getString("Engine.invalid");
         }
+    }
+
+    public static String getEngineTypeName(int engineType) {
+        if ((engineType < 0) || (engineType >= TYPE_KEYS.length)) {
+            return Messages.getString("Engine.invalid");
+        }
+        return Messages.getString("Engine." + TYPE_KEYS[engineType]);
+    }
+
+    public static Map<Integer, String> getAllEngineCodeName() {
+        Map<Integer, String> result = new HashMap();
+
+        result.put(COMBUSTION_ENGINE, getEngineTypeName(COMBUSTION_ENGINE));
+        result.put(NORMAL_ENGINE, getEngineTypeName(NORMAL_ENGINE));
+        result.put(XL_ENGINE, getEngineTypeName(XL_ENGINE));
+        result.put(XXL_ENGINE, getEngineTypeName(XXL_ENGINE));
+        result.put(FUEL_CELL, getEngineTypeName(FUEL_CELL));
+        result.put(LIGHT_ENGINE, getEngineTypeName(LIGHT_ENGINE));
+        result.put(COMPACT_ENGINE, getEngineTypeName(COMPACT_ENGINE));
+        result.put(FISSION, getEngineTypeName(FISSION));
+        result.put(NONE, getEngineTypeName(NONE));
+        result.put(MAGLEV, getEngineTypeName(MAGLEV));
+        result.put(STEAM, getEngineTypeName(STEAM));
+        result.put(BATTERY, getEngineTypeName(BATTERY));
+        result.put(SOLAR, getEngineTypeName(SOLAR));
+        result.put(EXTERNAL, getEngineTypeName(EXTERNAL));
+
+        return result;
     }
 
     /**
@@ -590,24 +633,22 @@ public class Engine implements Serializable, ITechnology {
      * @return the heat generated while the mech is standing still.
      */
     public int getStandingHeat() {
-        if (engineType == XXL_ENGINE) {
-            return 2;
-        }
-        return 0;
+        return (engineType == XXL_ENGINE) ? 2 : 0;
     }
 
     /**
      * @return the heat generated while the mech is walking.
      */
     public int getWalkHeat(Entity e) {
+        boolean hasSCM = (e instanceof Mech) && e.hasWorkingSCM();
         switch (engineType) {
             case COMBUSTION_ENGINE:
             case FUEL_CELL:
                 return 0;
             case XXL_ENGINE:
-                return 4;
+                return hasSCM ? 3 : 4;
             default:
-                return 1;
+                return hasSCM ? 0 : 1;
         }
     }
 
@@ -615,29 +656,31 @@ public class Engine implements Serializable, ITechnology {
      * @return the heat generated while the mech is running.
      */
     public int getRunHeat(Entity e) {
+        boolean hasSCM = (e instanceof Mech) && e.hasWorkingSCM();
         switch (engineType) {
             case COMBUSTION_ENGINE:
             case FUEL_CELL:
                 return 0;
             case XXL_ENGINE:
-                return 6;
+                return hasSCM ? 4 : 6;
             default:
-                return 2;
+                return hasSCM ? 0 : 2;
         }
     }
 
     /**
      * @return the heat generated while the mech is sprinting.
      */
-    public int getSprintHeat() {
+    public int getSprintHeat(Entity e) {
+        boolean hasSCM = (e instanceof Mech) && e.hasWorkingSCM();
         switch (engineType) {
             case COMBUSTION_ENGINE:
             case FUEL_CELL:
                 return 0;
             case XXL_ENGINE:
-                return 9;
+                return hasSCM ? 6 : 9;
             default:
-                return 3;
+                return hasSCM ? 0 : 3;
         }
     }
 
@@ -800,20 +843,20 @@ public class Engine implements Serializable, ITechnology {
             .setPrototypeFactions(F_CIH).setProductionFactions(F_CHH)
             .setTechRating(RATING_F).setAvailability(RATING_D, RATING_F, RATING_E, RATING_E)
             .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
-    
+    //Greekfire requested Errata March 2022 for RS Jihad book. 
     private static final TechAdvancement IS_XXL_TA = new TechAdvancement(TECH_BASE_IS)
             .setISAdvancement(3055, 3125, DATE_NONE, DATE_NONE, DATE_NONE)
             .setISApproximate(false, true, false, false, false)
             .setPrototypeFactions(F_FS, F_LC).setProductionFactions(F_LC)
             .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
+            .setStaticTechLevel(SimpleTechLevel.ADVANCED);
     
     private static final TechAdvancement CLAN_XXL_TA = new TechAdvancement(TECH_BASE_CLAN)
             .setClanAdvancement(3030, 3125, DATE_NONE, DATE_NONE, DATE_NONE)
             .setClanApproximate(false, true)
             .setPrototypeFactions(F_CSF).setProductionFactions(F_CSF)
             .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
+            .setStaticTechLevel(SimpleTechLevel.ADVANCED);
     
     private static final TechAdvancement LARGE_IS_XXL_TA = new TechAdvancement(TECH_BASE_IS)
             .setISAdvancement(2630, 3130, DATE_NONE, DATE_NONE, DATE_NONE)

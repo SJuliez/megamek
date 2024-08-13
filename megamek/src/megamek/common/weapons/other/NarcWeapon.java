@@ -19,10 +19,9 @@
  */
 package megamek.common.weapons.other;
 
-import megamek.common.AmmoType;
-import megamek.common.Game;
-import megamek.common.ToHitData;
+import megamek.common.*;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.alphaStrike.AlphaStrikeElement;
 import megamek.common.weapons.AttackHandler;
 import megamek.common.weapons.NarcExplosiveHandler;
 import megamek.common.weapons.NarcHandler;
@@ -50,7 +49,7 @@ public abstract class NarcWeapon extends MissileWeapon {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * megamek.common.weapons.Weapon#getCorrectHandler(megamek.common.ToHitData,
      * megamek.common.actions.WeaponAttackAction, megamek.common.Game,
@@ -61,10 +60,15 @@ public abstract class NarcWeapon extends MissileWeapon {
             WeaponAttackAction waa, Game game, GameManager manager) {
         AmmoType atype = (AmmoType) game.getEntity(waa.getEntityId())
                 .getEquipment(waa.getWeaponId()).getLinked().getType();
-        if ((atype.getMunitionType() == AmmoType.M_NARC_EX)
-                || (atype.getMunitionType() == AmmoType.M_EXPLOSIVE)) {
+        if ((atype.getMunitionType().contains(AmmoType.Munitions.M_NARC_EX))
+                || (atype.getMunitionType().contains(AmmoType.Munitions.M_EXPLOSIVE))) {
             return new NarcExplosiveHandler(toHit, waa, game, manager);
         }
         return new NarcHandler(toHit, waa, game, manager);
+    }
+
+    @Override
+    public double getBattleForceDamage(int range, Mounted fcs) {
+        return 0;
     }
 }

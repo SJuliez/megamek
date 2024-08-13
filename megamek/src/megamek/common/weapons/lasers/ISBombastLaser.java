@@ -13,10 +13,12 @@
  */
 package megamek.common.weapons.lasers;
 
+import megamek.common.*;
 import megamek.common.Game;
 import megamek.common.SimpleTechLevel;
 import megamek.common.ToHitData;
 import megamek.common.actions.WeaponAttackAction;
+import megamek.common.alphaStrike.AlphaStrikeElement;
 import megamek.common.weapons.AttackHandler;
 import megamek.common.weapons.BombastLaserWeaponHandler;
 import megamek.server.GameManager;
@@ -54,7 +56,7 @@ public class ISBombastLaser extends LaserWeapon {
         shortAV = 12;
         medAV = 12;
         maxRange = RANGE_MED;
-        flags = flags.or(F_BOMBAST_LASER);
+        flags = flags.or(F_BOMBAST_LASER).andNot(F_PROTO_WEAPON);
         rulesRefs = "319, TO";
         // Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_D)
@@ -76,5 +78,10 @@ public class ISBombastLaser extends LaserWeapon {
     protected AttackHandler getCorrectHandler(ToHitData toHit, WeaponAttackAction waa, Game game,
                                               GameManager manager) {
         return new BombastLaserWeaponHandler(toHit, waa, game, manager);
+    }
+
+    @Override
+    public double getBattleForceDamage(int range, Mounted fcs) {
+        return (range <= AlphaStrikeElement.MEDIUM_RANGE) ? 1.02 : 0;
     }
 }

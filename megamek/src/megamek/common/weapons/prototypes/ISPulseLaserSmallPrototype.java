@@ -51,7 +51,7 @@ public class ISPulseLaserSmallPrototype extends PulseLaserWeapon {
         this.waterExtremeRange = 4;
         this.tonnage = 1.0;
         this.criticals = 1;
-        this.bv = 12;
+        this.bv = 11;
         this.cost = 80000;
         this.shortAV = 3;
         this.maxRange = RANGE_SHORT;
@@ -82,5 +82,10 @@ public class ISPulseLaserSmallPrototype extends PulseLaserWeapon {
     protected AttackHandler getCorrectHandler(ToHitData toHit, WeaponAttackAction waa, Game game,
                                               GameManager manager) {
         return new SmallPulseLaserPrototypeHandler(toHit, waa, game, manager);
+    }
+
+    @Override
+    public int getAlphaStrikeHeat() {
+        return 4;
     }
 }

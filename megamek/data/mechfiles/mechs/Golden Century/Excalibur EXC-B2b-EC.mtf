@@ -1,13 +1,17 @@
-Version:1.1
-Excalibur
-EXC-B2b-EC
+chassis:Excalibur
+model:EXC-B2b-EC
 mul id:7683
 
 Config:Biped
 techbase:Mixed (Clan Chassis)
 era:2825
-source:Succession Wars
+source:TRO: Golden Century
 rules level:4
+role:Missile Boat
+
+quirk:vestigial_hands_la
+quirk:vestigial_hands_ra
+
 
 mass:70
 engine:350 XL Engine(IS)
@@ -150,5 +154,5 @@ IS Endo Steel
 -Empty-
 -Empty-
 
-history:After KLODIKE, Wolf techs radically altered the regular Excaliburs in their possession.  They replaced the gauss rifle and LRM launcher with new improved versions, which freed up enough room to include a prototype ER medium laser in the left arm and four tons of additional armor. The biggest change to the old design was the replacement of the single heat sinks with surplus doubles and moving the anti-missile ammunition to a CASE-protected torso location. Throughout the early clan years, Wolf Excaliburs were some of the coolest-running ’Mechs in clan space. 
+history:After KLONDIKE, Wolf techs radically altered the regular Excaliburs in their possession. They replaced the gauss rifle and LRM launcher with new improved versions, which freed up enough room to include a prototype ER medium laser in the left arm and four tons of additional armor. The biggest change to the old design was the replacement of the single heat sinks with surplus doubles and moving the anti-missile ammunition to a CASE-protected torso location. Throughout the early clan years, Wolf Excaliburs were some of the coolest-running ’Mechs in clan space.
 

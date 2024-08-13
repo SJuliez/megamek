@@ -16,8 +16,8 @@ BattleArmor
 Gnome Battle Armor
 </Name>
 
-<Model>
-(Standard)(Sqd3)
+<model>
+(Sqd3)
 </Model>
 
 <mul id:>
@@ -35,6 +35,10 @@ Gnome Battle Armor
 <type>
 Clan Level 2
 </type>
+
+<role>
+Juggernaut
+</role>
 
 <motion_type>
 Jump
@@ -63,7 +67,7 @@ BAHeavyBattleClaw:LA
 </Point Equipment>
 
 <source>
-TRO 3058U - Clan Invasion
+TRO: 3058 Upgrade
 </source>
 
 <chassis>

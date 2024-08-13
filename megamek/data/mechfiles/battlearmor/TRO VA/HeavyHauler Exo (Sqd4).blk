@@ -16,8 +16,8 @@ BattleArmor
 HeavyHauler Exoskeleton
 </Name>
 
-<Model>
-(Standard)(Sqd4)
+<model>
+(Sqd4)
 </Model>
 
 <mul id:>
@@ -31,6 +31,10 @@ HeavyHauler Exoskeleton
 <type>
 IS Level 2
 </type>
+
+<role>
+None
+</role>
 
 <motion_type>
 Leg
@@ -49,14 +53,14 @@ Leg
 </armor_tech>
 
 <Squad Equipment>
-BACargoLifter:RA
-BACargoLifter:LA
+BACargoLifter:RA:SIZE:2.5
+BACargoLifter:LA:SIZE:2.5
 BACuttingTorch:Body
 BASearchlight:Body
 </Squad Equipment>
 
 <source>
-TRO Vehicle Annex (r) - Clan Invasion
+TRO: Vehicle Annex Revised
 </source>
 
 <chassis>
@@ -92,7 +96,7 @@ The exoskeleton is equipped with two Cargo Lifter manipulators, when used togeth
 </capabilities>
 
 <deployment>
-side from its lifters, the suit has been given a searchlight and cutting torch mounted on the body.
+Aside from its lifters, the suit has been given a searchlight and cutting torch mounted on the body.
 </deployment>
 
 <history>

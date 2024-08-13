@@ -15,11 +15,9 @@
 package megamek.client.commands;
 
 import megamek.client.Client;
+import megamek.client.ui.swing.ClientGUI;
 import megamek.client.ui.swing.MovementDisplay;
-import megamek.common.Coords;
-import megamek.common.Entity;
-import megamek.common.EntityMovementMode;
-import megamek.common.MovePath;
+import megamek.common.*;
 import megamek.common.MovePath.MoveStepType;
 import megamek.common.options.OptionsConstants;
 
@@ -42,8 +40,8 @@ public class MoveCommand extends ClientCommand {
     private int cen = Entity.NONE;
     int gear;
 
-    public MoveCommand(Client client) {
-        super(client, "move",
+    public MoveCommand(ClientGUI clientGUI) {
+        super(clientGUI, "move",
                 "Move your units. Use #move HELP for more information.");
     }
 
@@ -78,7 +76,7 @@ public class MoveCommand extends ClientCommand {
                     }
                     cmd = new MovePath(getClient().getGame(), ce());
 
-                    client.setCurrentHex(ce().getPosition());
+                    getClientGUI().setCurrentHex(ce().getPosition());
                     return "Entity " + ce().toString()
                             + " selected for movement.";
                 } catch (Exception e) {
@@ -164,7 +162,7 @@ public class MoveCommand extends ClientCommand {
     private void currentMove(Coords dest) {
         if (dest != null) {
             if (gear == GEAR_TURN) {
-                cmd.rotatePathfinder(cmd.getFinalCoords().direction(dest), false);
+                cmd.rotatePathfinder(cmd.getFinalCoords().direction(dest), false, ManeuverType.MAN_NONE);
             } else if (gear == GEAR_LAND || gear == GEAR_JUMP) {
                 cmd.findPathTo(dest, MoveStepType.FORWARDS);
             } else if (gear == GEAR_BACKUP) {

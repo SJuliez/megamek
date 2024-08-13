@@ -15,32 +15,27 @@
 */
 package megamek.common.util;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.HeadlessException;
-import java.awt.Image;
-import java.awt.RenderingHints;
-import java.awt.Toolkit;
-import java.awt.Transparency;
-import java.awt.image.BufferedImage;
-import java.awt.image.FilteredImageSource;
-import java.awt.image.ImageFilter;
-import java.awt.image.ImageObserver;
-import java.awt.image.ImageProducer;
+import java.awt.*;
+import java.awt.image.*;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 
+import megamek.MMConstants;
 import megamek.client.ui.swing.util.ImageAtlasMap;
 import megamek.client.ui.swing.util.ImprovedAveragingScaleFilter;
+import megamek.client.ui.swing.util.UIUtil;
 import megamek.common.Coords;
+import megamek.common.Report;
 import megamek.common.annotations.Nullable;
 import org.apache.logging.log4j.LogManager;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
 
 /**
  * Generic utility methods for image data
@@ -123,19 +118,56 @@ public final class ImageUtil {
     }
 
     /**
+     * Converts the given image to a BufferedImage. If it already is a BufferedImage, the image is only
+     * returned with a type cast without doing any further conversion.
+     *
+     * @param image An Image of any type
+     * @return The image as a BufferedImage
+     */
+    public static BufferedImage convertToBufferedImage(Image image) {
+        if (image instanceof BufferedImage) {
+            return (BufferedImage) image;
+        } else {
+            return getScaledImage(image, image.getWidth(null), image.getHeight(null));
+        }
+    }
+
+    /**
+     * Returns a scaled version of the given image. Scaling is adjusted so that the image fits in the
+     * given maximum width and maximum height, keeping the aspect ratio of the image. Either the height
+     * or the width of the resulting image will be equal to the given max width or height, while the other value
+     * will be smaller than the given maximum. Uses the supplied scaling method.
+     *
+     * @param image The image to scale
+     * @param maxWidth The maximum width of the resulting image
+     * @param maxHeight The maximum height of the resulting image
+     * @param scaleType The scale type, {@link #IMAGE_SCALE_BICUBIC} or {@link #IMAGE_SCALE_AVG_FILTER}
+     * @return A scaled image fitting in a rectangle of the size (maxWidth, maxHeight)
+     */
+    public static BufferedImage fitImage(Image image, int maxWidth, int maxHeight, int scaleType) {
+        int width = maxWidth;
+        int height = maxHeight;
+        if ((float) image.getWidth(null) / maxWidth >
+                (float) image.getHeight(null) / maxHeight) {
+            height = image.getHeight(null) * maxWidth / image.getWidth(null);
+        } else {
+            width = image.getWidth(null) * maxHeight / image.getHeight(null);
+        }
+        return getScaledImage(image, width, height, scaleType);
+    }
+
+    /**
      * Get a scaled version of the input image, using the supplied type to
      * select which scaling method to use.
      *
      * @param img
      * @return
      */
-    public static BufferedImage getScaledImage(Image img, int newWidth,
-            int newHeight, int scaleType) {
+    public static BufferedImage getScaledImage(Image img, int newWidth, int newHeight, int scaleType) {
         if (scaleType == IMAGE_SCALE_BICUBIC) {
             BufferedImage scaled = createAcceleratedImage(newWidth, newHeight);
             Graphics2D g2 = (Graphics2D) scaled.getGraphics();
-            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            UIUtil.setHighQualityRendering(g2);
             g2.drawImage(img, 0, 0, newWidth, newHeight, null);
             return scaled;
         } else {
@@ -165,6 +197,15 @@ public final class ImageUtil {
         }
     }
 
+    /**
+     * Loads and returns the image of the given fileName. This method does not make sure the image
+     * is fully loaded, this must be done by the caller when necessary (the simplest way is to
+     * create a new ImageIcon with the image). If the image cannot be loaded for any reason,
+     * the method returns a placeholder image but not null.
+     *
+     * @param fileName The image filename
+     * @return The image if possible, a placeholder image otherwise
+     */
     public static Image loadImageFromFile(String fileName) {
         if (null == fileName) {
             return failStandardImage();
@@ -416,5 +457,79 @@ public final class ImageUtil {
         public boolean isAnimated() {
             return animated;
         }
+    }
+
+    /**
+     * takes an image and converts it to text in the Base64 encoding. When the given image is null, an
+     * empty String is returned.
+     */
+    public static String base64TextEncodeImage(@Nullable Image image) {
+        if (image == null) {
+            return "";
+        }
+        BufferedImage bufferedImage = convertToBufferedImage(image);
+        String base64Text;
+
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(bufferedImage, "png", baos);
+            baos.flush();
+            base64Text = Base64.getEncoder().encodeToString(baos.toByteArray());
+            baos.close();
+        } catch (final IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+
+        return base64Text;
+    }
+
+    /**
+     * creates a ? image, used when units are hidden in double blind
+     */
+    public static void createDoubleBlindHiddenImage(Map<Integer, String> imgCache) {
+        BufferedImage image = new BufferedImage(56, 48, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = image.createGraphics();
+        UIUtil.setHighQualityRendering(graphics);
+        graphics.setComposite(AlphaComposite.Clear);
+        graphics.fillRect(0, 0, 56, 48);
+        graphics.setComposite(AlphaComposite.Src);
+        graphics.setColor(UIManager.getColor("Label.foreground"));
+        graphics.setFont(new Font(MMConstants.FONT_DIALOG, Font.BOLD, 26));
+        graphics.drawString("?", 20, 40);
+
+        String base64Text = base64TextEncodeImage(image);
+        String img = "<img src='data:image/png;base64," + base64Text + "'>";
+        imgCache.put(Report.HIDDEN_ENTITY_NUM, img);
+    }
+
+    /**
+     * Returns a square normalized Kernel for a Gaussian Blur. The Kernel is has width x width elements.
+     * Sigma gives its Gauss sharpness. A high sigma of e.g. 1000 returns a flat Kernel of equal elements
+     * (= 1 / width ^ 2); sigma should not be smaller than about 0.2 (will lead to an exception).
+     * Normal sigma values are in the area of 1 to 5.
+     *
+     * @param width The length and height of the Kernel
+     * @param sigma The extent of the Gaussian
+     * @return A Kernel
+     * @see ConvolveOp
+     */
+    public static Kernel getGaussKernel(int width, float sigma) {
+        float[] data = new float[width * width];
+        float mean = width / 2f;
+        float sum = 0;
+        for (int x = 0; x < width; ++x) {
+            for (int y = 0; y < width; ++y) {
+                float value = (float) (Math.exp(-0.5 * (Math.pow((x - mean) / sigma, 2.0) + Math.pow((y - mean) / sigma, 2.0)))
+                        / (2 * Math.PI * sigma * sigma));
+                data[y * width + x] = value;
+                sum += value;
+            }
+        }
+
+        // Normalize the kernel
+        for (int i = 0; i < width * width; i++) {
+            data[i] /= sum;
+        }
+        return new Kernel(width, width, data);
     }
 }

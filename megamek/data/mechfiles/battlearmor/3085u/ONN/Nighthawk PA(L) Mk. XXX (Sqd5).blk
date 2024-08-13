@@ -21,7 +21,7 @@ Mk. XXX(Sqd5)
 </Model>
 
 <mul id:>
-4720
+8653
 </mul id:>
 
 <year>
@@ -31,6 +31,10 @@ Mk. XXX(Sqd5)
 <type>
 IS Level 2
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Jump
@@ -63,7 +67,7 @@ IS BA Stealth:LA
 </Squad Equipment>
 
 <source>
-TRO 3075/RS 3085 Unabridged ONN - Star League
+TRO: 3075
 </source>
 
 <chassis>

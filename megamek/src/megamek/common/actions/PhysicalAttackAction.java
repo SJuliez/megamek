@@ -65,6 +65,11 @@ public class PhysicalAttackAction extends AbstractAttackAction {
         if (ae.isEvading()) {
             return "Attacker is evading.";
         }
+        
+        // can't make physical attacks if loading/unloading cargo
+        if (ae.endOfTurnCargoInteraction()) {
+        	return Messages.getString("WeaponAttackAction.CantFireWhileLoadingUnloadingCargo");
+        }
 
         if (target.getTargetType() == Targetable.TYPE_ENTITY) {
             // Checks specific to entity targets
@@ -127,7 +132,7 @@ public class PhysicalAttackAction extends AbstractAttackAction {
     protected static void setCommonModifiers(ToHitData toHit, Game game, Entity ae, Targetable target) {
         boolean inSameBuilding = Compute.isInSameBuilding(game, ae, target);
         int attackerId = ae.getId();
-        int targetId = target.getTargetId();
+        int targetId = target.getId();
         // Battle Armor targets are hard for Meks and Tanks to hit.
         if (target instanceof BattleArmor) {
             toHit.addModifier(1, "battle armor target");

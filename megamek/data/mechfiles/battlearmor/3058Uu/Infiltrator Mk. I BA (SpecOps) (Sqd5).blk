@@ -29,8 +29,12 @@ Infiltrator Mk. I Battle Armor
 </year>
 
 <type>
-IS Level 4
+IS Level 3
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Leg
@@ -73,7 +77,7 @@ IS BA Stealth (Prototype):Body
 </Trooper 4 Equipment>
 
 <source>
-TRO 3058U - Civil War
+TRO: 3058 Upgrade
 </source>
 
 <chassis>

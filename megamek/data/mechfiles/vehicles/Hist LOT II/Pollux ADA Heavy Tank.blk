@@ -16,9 +16,9 @@ Tank
 Pollux ADA Heavy Tank
 </Name>
 
-<Model>
-(Standard)
-</Model>
+<model>
+
+</model>
 
 <mul id:>
 6779
@@ -35,6 +35,10 @@ Pollux ADA Heavy Tank
 <type>
 IS Level 3
 </type>
+
+<role>
+Missile Boat
+</role>
 
 <motion_type>
 Tracked
@@ -116,10 +120,17 @@ Pollux
 </primaryFactory>
 
 <source>
-Hist LOT II
+Historical: Liberation of Terra II
 </source>
 
 <tonnage>
 75.0
 </tonnage>
+
+
+<quirks>
+anti_air
+imp_sensors
+trailer_hitch
+</quirks>
 

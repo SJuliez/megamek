@@ -21,7 +21,7 @@ Coral Intent(Sqd5)
 </Model>
 
 <mul id:>
-8899
+8535
 </mul id:>
 
 <year>
@@ -31,6 +31,10 @@ Coral Intent(Sqd5)
 <type>
 IS Level 4
 </type>
+
+<role>
+Ambusher
+</role>
 
 <motion_type>
 Jump
@@ -69,7 +73,7 @@ IS BA Mimetic:RA
 </Squad Equipment>
 
 <source>
-XTRO Davion - Jihad
+XTR: Davion
 </source>
 
 <chassis>

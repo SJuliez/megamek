@@ -15,6 +15,7 @@ package megamek.common.weapons.lasers;
 
 import megamek.common.options.GameOptions;
 import megamek.common.options.OptionsConstants;
+import megamek.server.Server;
 
 /**
  * @author Andrew Hunter
@@ -28,7 +29,7 @@ public class ISERLaserLarge extends LaserWeapon {
         name = "ER Large Laser";
         setInternalName("ISERLargeLaser");
         addLookupName("IS ER Large Laser");
-        sortingName = "ER Laser D";
+        sortingName = "Laser ER D";
         heat = 12;
         damage = 8;
         shortRange = 7;
@@ -58,19 +59,5 @@ public class ISERLaserLarge extends LaserWeapon {
                 .setPrototypeFactions(F_TH)
                 .setProductionFactions(F_TH)
                 .setReintroductionFactions(F_DC);
-    }
-
-    @Override
-    public int getLongRange() {
-        GameOptions options = getGameOptions();
-        if (options == null) {
-            return super.getLongRange();
-        } else if (options.getOption(OptionsConstants.ADVCOMBAT_INCREASED_ISERLL_RANGE) == null) {
-            return super.getLongRange();
-        }
-        if (options.getOption(OptionsConstants.ADVCOMBAT_INCREASED_ISERLL_RANGE).booleanValue()) {
-            return 21;
-        }
-        return super.getLongRange();
     }
 }
