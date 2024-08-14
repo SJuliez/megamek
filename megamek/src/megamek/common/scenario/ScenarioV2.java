@@ -36,6 +36,7 @@ import megamek.common.planetaryconditions.PlanetaryConditions;
 import megamek.common.strategicBattleSystems.SBFGame;
 import megamek.server.IGameManager;
 import megamek.server.scriptedevent.GameEndTriggeredEvent;
+import megamek.server.scriptedevent.UnitRenewalEvent;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
@@ -134,6 +135,12 @@ public class ScenarioV2 implements Scenario {
             }
             twGame.setVictoryContext(new HashMap<>());
             twGame.createVictoryConditions();
+
+            // TEST ONLY
+            for (Entity entity : twGame.getEntitiesVector()) {
+                twGame.addScriptedEvent(new UnitRenewalEvent(entity.getId()));
+            }
+
         } else if (game instanceof SBFGame) {
             validateSBFGame((SBFGame) game);
         }

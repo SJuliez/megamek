@@ -53,9 +53,11 @@ public class UnitRenewalEvent implements TriggeredActiveEvent {
                 Entity unit = twGame.getEntityFromAllSources(unitId);
                 Entity replacement = MechSummaryCache.getInstance().getMech(unit.getShortNameRaw()).loadEntity();
                 if (replacement != null) {
+                    replacement.setId(unitId);
+                    twGame.addEntity(replacement, false);
                     replacement.setOwnerId(unit.getOwnerId());
                     replacement.setDeployRound(twGame.getCurrentRound() + 1);
-                    twGame.addEntity(replacement);
+                    replacement.setStartingPos(unit.getStartingPos());
                     gameManager.send(twGameManager.createAddEntityPacket(replacement.getId()));
                     twGame.addScriptedEvent(new UnitRenewalEvent(replacement.getId()));
                 }
@@ -69,6 +71,6 @@ public class UnitRenewalEvent implements TriggeredActiveEvent {
 
     @Override
     public Trigger trigger() {
-        return null;
+        return trigger;
     }
 }

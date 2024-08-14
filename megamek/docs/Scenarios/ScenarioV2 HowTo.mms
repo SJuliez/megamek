@@ -377,7 +377,7 @@ respawns:
       # set deployround to Integer.MAX. when the trigger is met, set deployround to the next round
 
   - type: renew
-    # trigger unitkilled, once. when processed, add replacement unit and add new scriptedevent unitkilled
+    # This will make all units continually respawn when killed, but not when fled
 
   - type: replace
     # upgrade each dead unit according to table?

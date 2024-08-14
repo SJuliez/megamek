@@ -29851,7 +29851,7 @@ public class GameManager extends AbstractGameManager {
                 getGame().getOutOfGameEntitiesVector(), getGame().getForces());
     }
 
-    private Packet createAddEntityPacket(int entityId) {
+    public Packet createAddEntityPacket(int entityId) {
         ArrayList<Integer> entityIds = new ArrayList<>(1);
         entityIds.add(entityId);
         return createAddEntityPacket(entityIds, new ArrayList<>());
