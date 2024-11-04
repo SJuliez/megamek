@@ -19,6 +19,8 @@
 
 package megamek.common;
 
+import megamek.common.util.DiscordFormat;
+
 /**
  * Enum of valid formatting styles, to use with MekView objects
  * HTML: contains HTML markup
@@ -26,5 +28,24 @@ package megamek.common;
  * None: plain text
  */
 public enum ViewFormatting {
-    HTML, NONE, DISCORD
+    HTML, NONE, DISCORD;
+
+    public String lineBreak() {
+        return this == HTML ? "<BR>" : "\n";
+    }
+
+    public String indent(int spacesCount) {
+        return (this == HTML ? "&nbsp;" : " ").repeat(spacesCount);
+    }
+
+    public String colorRed(String text) {
+        if (this == HTML) {
+            return "<font color='red'>" + text + "</font>";
+        } else if (this == DISCORD) {
+            return DiscordFormat.RED + text + DiscordFormat.RESET;
+        } else {
+            return text;
+        }
+    }
+
 }

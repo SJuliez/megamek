@@ -8296,14 +8296,32 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * Add a transportation component to this Entity. Please note, this method
      * should only be called during this entity's construction.
      *
-     * @param component - One of this new entity's <code>Transporter</code>s.
+     * @param transporter - One of this new entity's <code>Transporter</code>s.
      * @param isOmniPod - Whether this is part of an omni unit's pod space.
      */
-    public void addTransporter(Transporter component, boolean isOmniPod) {
-        component.setGame(game);
-        transports.add(component);
+    public void addTransporter(Transporter transporter, boolean isOmniPod) {
+        transporter.setGame(game);
+        if (transporter instanceof TroopSpace troopSpace) {
+            CombinedTroopTransporter scc = getCombinedTroopSpace();
+            scc.addTransporter(troopSpace);
+        } else {
+            transports.add(transporter);
+        }
         if (isOmniPod) {
-            omniPodTransports.add(component);
+            omniPodTransports.add(transporter);
+        }
+    }
+
+    private CombinedTroopTransporter getCombinedTroopSpace() {
+        Optional<CombinedTroopTransporter> scc = transports.stream()
+            .filter(t -> t instanceof CombinedTroopTransporter).map(t -> (CombinedTroopTransporter) t)
+            .findFirst();
+        if (scc.isPresent()) {
+            return scc.get();
+        } else {
+            CombinedTroopTransporter ctt = new CombinedTroopTransporter();
+            transports.add(ctt);
+            return ctt;
         }
     }
 
@@ -8949,51 +8967,38 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * @return A <code>String</code> meant for a human.
      */
     public String getUnusedString(ViewFormatting formatting) {
-        StringBuilder result = new StringBuilder();
-
-        // Walk through this entity's transport components;
-        // add all of their string to ours.
-        Enumeration<Transporter> iter = transports.elements();
-        while (iter.hasMoreElements()) {
-            Transporter next = iter.nextElement();
-            if ((next instanceof Bay) && ((Bay) next).isQuarters()) {
+        List<String> transportersTextLines = new ArrayList<>();
+        for (Transporter next : transports) {
+            if (((next instanceof Bay bay) && bay.isQuarters())
+                || ((next instanceof DockingCollar dockingCollar) && dockingCollar.isDamaged())) {
                 continue;
             }
-            if ((next instanceof DockingCollar) && ((DockingCollar) next).isDamaged()) {
-                continue;
-            }
-            if (formatting == ViewFormatting.HTML && (next instanceof Bay) && (((Bay) next).getBayDamage() > 0)) {
-                result.append("<font color='red'>")
-                        .append(next.getUnusedString())
-                        .append("</font>");
-            } else if (formatting == ViewFormatting.DISCORD && (next instanceof Bay)
-                    && (((Bay) next).getBayDamage() > 0)) {
-                result.append(DiscordFormat.RED)
-                        .append(next.getUnusedString())
-                        .append(DiscordFormat.RESET);
+            StringBuilder textLine = new StringBuilder();
+            if ((next instanceof Bay bay) && bay.getBayDamage() > 0) {
+                textLine.append(formatting.colorRed(next.getUnusedString()));
+            } else if (next instanceof CombinedTroopTransporter combinedTroopTransporter) {
+                if (combinedTroopTransporter.getIncludedTransports().size() == 1) {
+                    textLine.append(next.getUnusedString())
+                        .append(omniPodTransports.contains(next) ? " (Pod)" : " (Fixed)");
+                } else {
+                    textLine.append(combinedTroopTransporter.getUnusedString());
+                    for (Transporter troopSpace : combinedTroopTransporter.getIncludedTransports()) {
+                        textLine.append(formatting.lineBreak()).append(formatting.indent(4))
+                            .append("- Troops, max. capacity ").append(troopSpace.getUnused()).append(" tons");
+                        if (isOmni()) {
+                            textLine.append(omniPodTransports.contains(troopSpace) ? " (Pod)" : " (Fixed)");
+                        }
+                    }
+                }
             } else {
-                result.append(next.getUnusedString());
+                textLine.append(next.getUnusedString());
             }
-            if (isOmni() && ((next instanceof TroopSpace)
-                    || (next instanceof Bay))) {
-                if (omniPodTransports.contains(next)) {
-                    result.append(" (Pod)");
-                } else {
-                    result.append(" (Fixed)");
-                }
+            if (isOmni() && (next instanceof Bay)) {
+                textLine.append(omniPodTransports.contains(next) ? " (Pod)" : " (Fixed)");
             }
-            // Add a newline character between strings.
-            if (iter.hasMoreElements()) {
-                if (formatting == ViewFormatting.HTML) {
-                    result.append("<br>");
-                } else {
-                    result.append("\n");
-                }
-            }
+            transportersTextLines.add(textLine.toString());
         }
-
-        // Return the String.
-        return result.toString();
+        return String.join(formatting.lineBreak(), transportersTextLines);
     }
 
     @Override
