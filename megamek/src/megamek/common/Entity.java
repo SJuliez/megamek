@@ -67,7 +67,6 @@ import megamek.common.planetaryconditions.Atmosphere;
 import megamek.common.planetaryconditions.PlanetaryConditions;
 import megamek.common.planetaryconditions.Wind;
 import megamek.common.preference.PreferenceManager;
-import megamek.common.util.DiscordFormat;
 import megamek.common.weapons.AlamoMissileWeapon;
 import megamek.common.weapons.AltitudeBombAttack;
 import megamek.common.weapons.CapitalMissileBearingsOnlyHandler;
@@ -83,8 +82,6 @@ import megamek.common.weapons.capitalweapons.CapitalMissileWeapon;
 import megamek.common.weapons.infantry.InfantryWeapon;
 import megamek.logging.MMLogger;
 import megamek.utilities.xml.MMXMLUtility;
-
-import static megamek.common.EquipmentTypeLookup.TSM;
 
 /**
  * Entity is a master class for basically anything on the board except terrain.
@@ -8302,7 +8299,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     public void addTransporter(Transporter transporter, boolean isOmniPod) {
         transporter.setGame(game);
         if (transporter instanceof TroopSpace troopSpace) {
-            CombinedTroopTransporter scc = getCombinedTroopSpace();
+            CombinedTroopSpace scc = getCombinedTroopSpace();
             scc.addTransporter(troopSpace);
         } else {
             transports.add(transporter);
@@ -8312,14 +8309,14 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         }
     }
 
-    private CombinedTroopTransporter getCombinedTroopSpace() {
-        Optional<CombinedTroopTransporter> scc = transports.stream()
-            .filter(t -> t instanceof CombinedTroopTransporter).map(t -> (CombinedTroopTransporter) t)
+    private CombinedTroopSpace getCombinedTroopSpace() {
+        Optional<CombinedTroopSpace> scc = transports.stream()
+            .filter(t -> t instanceof CombinedTroopSpace).map(t -> (CombinedTroopSpace) t)
             .findFirst();
         if (scc.isPresent()) {
             return scc.get();
         } else {
-            CombinedTroopTransporter ctt = new CombinedTroopTransporter();
+            CombinedTroopSpace ctt = new CombinedTroopSpace();
             transports.add(ctt);
             return ctt;
         }
@@ -8976,13 +8973,13 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             StringBuilder textLine = new StringBuilder();
             if ((next instanceof Bay bay) && bay.getBayDamage() > 0) {
                 textLine.append(formatting.colorRed(next.getUnusedString()));
-            } else if (next instanceof CombinedTroopTransporter combinedTroopTransporter) {
-                if (combinedTroopTransporter.getIncludedTransports().size() == 1) {
+            } else if (next instanceof CombinedTroopSpace combinedTroopSpace) {
+                if (combinedTroopSpace.getIncludedTransports().size() == 1) {
                     textLine.append(next.getUnusedString())
                         .append(omniPodTransports.contains(next) ? " (Pod)" : " (Fixed)");
                 } else {
-                    textLine.append(combinedTroopTransporter.getUnusedString());
-                    for (Transporter troopSpace : combinedTroopTransporter.getIncludedTransports()) {
+                    textLine.append(combinedTroopSpace.getUnusedString());
+                    for (Transporter troopSpace : combinedTroopSpace.getIncludedTransports()) {
                         textLine.append(formatting.lineBreak()).append(formatting.indent(4))
                             .append("- Troops, max. capacity ").append(troopSpace.getUnused()).append(" tons");
                         if (isOmni()) {

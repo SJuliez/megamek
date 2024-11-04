@@ -28,7 +28,7 @@ import java.util.List;
  * individual troop space's capacity. Only this combined transporter is added to the unit's list of transporters while the individual troop
  * spaces are stored in this class.
  */
-public class CombinedTroopTransporter extends TroopSpace {
+public class CombinedTroopSpace extends TroopSpace {
 
     private final List<TroopSpace> includedTransports = new ArrayList<>();
 
@@ -37,7 +37,7 @@ public class CombinedTroopTransporter extends TroopSpace {
      *
      * @see #addTransporter(TroopSpace)
      */
-    public CombinedTroopTransporter() {
+    public CombinedTroopSpace() {
         super(0);
     }
 
@@ -46,7 +46,7 @@ public class CombinedTroopTransporter extends TroopSpace {
      *
      * @see #addTransporter(TroopSpace)
      */
-    public CombinedTroopTransporter(TroopSpace troopSpace) {
+    public CombinedTroopSpace(TroopSpace troopSpace) {
         super(troopSpace.totalSpace);
         addTransporter(troopSpace);
     }
