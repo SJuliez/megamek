@@ -8296,11 +8296,10 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * @param transporter - One of this new entity's <code>Transporter</code>s.
      * @param isOmniPod - Whether this is part of an omni unit's pod space.
      */
-    public void addTransporter(Transporter transporter, boolean isOmniPod) {
+    public final void addTransporter(Transporter transporter, boolean isOmniPod) {
         transporter.setGame(game);
         if (transporter instanceof TroopSpace troopSpace) {
-            CombinedTroopSpace scc = getCombinedTroopSpace();
-            scc.addTransporter(troopSpace);
+            getCombinedTroopSpace().addTransporter(troopSpace);
         } else {
             transports.add(transporter);
         }
@@ -8309,16 +8308,22 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         }
     }
 
+    /**
+     * Returns the CombinedTroopSpace of this unit if it already has one. If it doesn't, this method creates one, adds it to the unit
+     * and returns it.
+     *
+     * @return The CombinedTroopSpace of this unit, either as already present or newly created and added
+     */
     private CombinedTroopSpace getCombinedTroopSpace() {
-        Optional<CombinedTroopSpace> scc = transports.stream()
+        Optional<CombinedTroopSpace> combinedTroopSpace = transports.stream()
             .filter(t -> t instanceof CombinedTroopSpace).map(t -> (CombinedTroopSpace) t)
             .findFirst();
-        if (scc.isPresent()) {
-            return scc.get();
+        if (combinedTroopSpace.isPresent()) {
+            return combinedTroopSpace.get();
         } else {
-            CombinedTroopSpace ctt = new CombinedTroopSpace();
-            transports.add(ctt);
-            return ctt;
+            CombinedTroopSpace newCombinedTroopSpace = new CombinedTroopSpace();
+            transports.add(newCombinedTroopSpace);
+            return newCombinedTroopSpace;
         }
     }
 
