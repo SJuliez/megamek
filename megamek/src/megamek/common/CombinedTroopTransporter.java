@@ -21,7 +21,6 @@ package megamek.common;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Vector;
 
 /**
  * This class is used to combine multiple TroopSpaces, for example pod-mounted and fixed, into a troop space with the combined capacity of
@@ -32,7 +31,6 @@ import java.util.Vector;
 public class CombinedTroopTransporter extends TroopSpace {
 
     private final List<TroopSpace> includedTransports = new ArrayList<>();
-    private TroopSpace representedTransport;
 
     /**
      * Creates a combined troop space of capacity 0 and no actual troop spaces.
@@ -41,7 +39,6 @@ public class CombinedTroopTransporter extends TroopSpace {
      */
     public CombinedTroopTransporter() {
         super(0);
-        representedTransport = new TroopSpace(0);
     }
 
     /**
@@ -67,50 +64,19 @@ public class CombinedTroopTransporter extends TroopSpace {
             throw new IllegalStateException("Cannot add troop space to a combined troop space that is already loaded");
         }
         includedTransports.add(includedTransport);
-        double newTotalSpace = includedTransports.stream().mapToDouble(Transporter::getUnused).sum();
-        representedTransport = new TroopSpace(newTotalSpace);
-    }
-
-    @Override
-    public boolean canLoad(Entity unit) {
-        return representedTransport.canLoad(unit);
-    }
-
-    @Override
-    public void load(Entity unit) throws IllegalArgumentException {
-        representedTransport.load(unit);
-    }
-
-    @Override
-    public Vector<Entity> getLoadedUnits() {
-        return representedTransport.getLoadedUnits();
-    }
-
-    @Override
-    public boolean unload(Entity unit) {
-        return representedTransport.unload(unit);
-    }
-
-    @Override
-    public double getUnused() {
-        return representedTransport.getUnused();
-    }
-
-    @Override
-    public String getUnusedString() {
-        return representedTransport.getUnusedString();
+        totalSpace = includedTransports.stream().mapToDouble(Transporter::getUnused).sum();
+        currentSpace = totalSpace;
     }
 
     @Override
     public void resetTransporter() {
-        representedTransport.resetTransporter();
+        super.resetTransporter();
         includedTransports.clear();
     }
 
     @Override
     public void setGame(Game game) {
         super.setGame(game);
-        representedTransport.setGame(game);
         includedTransports.forEach(transporter -> transporter.setGame(game));
     }
 
