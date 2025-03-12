@@ -15,11 +15,14 @@ import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.common.cost.SmallCraftCostCalculator;
 import megamek.common.equipment.AmmoMounted;
 import megamek.common.equipment.ArmorType;
+import megamek.common.equipment.MiscMounted;
 import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.OptionsConstants;
+import megamek.logging.MMLogger;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Jay Lawson
@@ -28,6 +31,8 @@ import java.util.Map;
 public class SmallCraft extends Aero {
 
     private static final long serialVersionUID = 6708788176436555036L;
+
+    private static final MMLogger LOGGER = MMLogger.create(SmallCraft.class);
 
     public static final int LOC_HULL = 4;
 
@@ -828,14 +833,9 @@ public class SmallCraft extends Aero {
         int range = -1;
         // if the unit has an ECM unit, then the range might be extended by one
         if (!isShutDown()) {
-            for (Mounted<?> m : getMisc()) {
-                EquipmentType type = m.getType();
-                if ((type instanceof MiscType) && type.hasFlag(MiscType.F_ECM) && !m.isInoperable()) {
-                    if (type.hasFlag(MiscType.F_SINGLE_HEX_ECM)) {
-                        range += 1;
-                    } else {
-                        range += 2;
-                    }
+            for (MiscMounted m : getMisc()) {
+                if (m.getType().hasFlag(MiscType.F_ECM) && !m.isInoperable()) {
+                    range = m.is(EquipmentTypeLookup.SC_BUILTIN_ECM) ? 0 : 1;
                     break;
                 }
             }
@@ -925,5 +925,22 @@ public class SmallCraft extends Aero {
     @Override
     public boolean hasPatchworkArmor() {
         return false;
+    }
+
+    @Override
+    public void setGameOptions() {
+        if (game != null) {
+            // Military SmallCraft (not DropShips!) without an actual ECM equipment are given a gameplay only ECM equipment so
+            // they can change their built-in ECM mode if SO:AA p.98 "Electronic Warfare" is active
+            if (isSmallCraft() && isMilitary() && !hasMisc(MiscTypeFlag.F_ECM)
+                  && game.getOptions().booleanOption(OptionsConstants.ADVAERORULES_STRATOPS_ECM)) {
+                try {
+                    addEquipment(EquipmentType.get(EquipmentTypeLookup.SC_BUILTIN_ECM), Aero.LOC_NOSE, false);
+                } catch (LocationFullException ignored) {
+                    LOGGER.error("Could not add built-in ECM to SmallCraft");
+                }
+            }
+        }
+        super.setGameOptions();
     }
 }

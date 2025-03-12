@@ -4572,17 +4572,35 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     }
 
     /**
-     * Removes the first misc eq. whose name equals the specified string. Used
-     * for removing broken tree clubs.
+     * Removes the first found misc equipment of the given internalName from the unit. Note that this clears out critical slots,
+     * but does not test or remove linkages.
+     *
+     * @param internalName The internal name of the Equipment; best use EquipmentTypeLookup names
+     * @see EquipmentTypeLookup
      */
-    public void removeMisc(String toRemove) {
+    public void removeFirstMisc(String internalName) {
         for (MiscMounted mounted : getMisc()) {
-            if (mounted.getName().equals(toRemove)) {
+            if (mounted.is(internalName)) {
+                EntityUtil.removeCriticals(this, mounted);
                 miscList.remove(mounted);
                 equipmentList.remove(mounted);
-                break;
+                return;
             }
         }
+    }
+
+    /**
+     * Removes all misc equipment of the given internalName from the unit. Note that this does not clear out critical slots,
+     * it only removes the item from the equipment and misc lists.
+     *
+     * @param internalName The internal name of the Equipment; best use EquipmentTypeLookup names
+     * @see EquipmentTypeLookup
+     */
+    public void removeAllMisc(String internalName) {
+        List<MiscMounted> toRemove = miscList.stream().filter(m -> m.is(internalName)).toList();
+        toRemove.forEach(m -> EntityUtil.removeCriticals(this, m));
+        miscList.removeAll(toRemove);
+        equipmentList.removeAll(toRemove);
     }
 
     /**
@@ -12018,29 +12036,19 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         // Do nothing here, set in base classes
     }
 
+    /**
+     * This method is called to bring the Entity in line with the current game's options, e.g. by adding certain modes. It is therefore
+     * a good place to make changes that should only ever happen within an MM game but not during construction, refit or in the
+     * unit browser. This is also true when those changes do not really depend on the game's options at all.
+     * Another example is adding equipment that represents built-in features such as a SmallCraft's built-in ECM.
+     * <P>This method can safely be called when game is null.
+     */
     public void setGameOptions() {
         if (game == null) {
             return;
         }
 
         final var gameOpts = game.getOptions();
-
-        // if the small craft does not already have ECM, then give them a single
-        // hex ECM so they can change the mode
-        // FIXME : This is a really hacky way to do it that results in small craft
-        // having ECM when
-        // FIXME : the rule is not in effect and in non-space maps
-        if ((this instanceof SmallCraft) && !(this instanceof Dropship)
-                && !hasActiveECM() && isMilitary()) {
-            try {
-                String prefix = isClan() ? "CL" : "IS";
-                addEquipment(
-                        EquipmentType.get(prefix + BattleArmor.SINGLE_HEX_ECM),
-                        Aero.LOC_NOSE, false);
-            } catch (LocationFullException ignored) {
-
-            }
-        }
 
         for (WeaponMounted mounted : getWeaponList()) {
             mounted.adaptToGameOptions(game.getOptions());

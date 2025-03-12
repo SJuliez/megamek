@@ -193,4 +193,8 @@ public class EquipmentTypeLookup {
     @EquipmentName public static final String IS_BA_TUBE_ARTY = "ISBATubeArtillery";
     @EquipmentName public static final String THUMPER_ARTY = "ISThumper";
     @EquipmentName public static final String SNIPER_ARTY = "ISSniper";
+
+    @EquipmentName public static final String SC_BUILTIN_ECM = "SC BuiltIn ECM";
+
+    private EquipmentTypeLookup() { }
 }

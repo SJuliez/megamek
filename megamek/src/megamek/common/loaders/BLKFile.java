@@ -18,6 +18,7 @@ import megamek.common.*;
 import megamek.common.InfantryBay.PlatoonType;
 import megamek.common.equipment.AmmoMounted;
 import megamek.common.equipment.ArmorType;
+import megamek.common.equipment.MiscMounted;
 import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.IBasicOption;
 import megamek.common.options.IOption;
@@ -857,9 +858,10 @@ public class BLKFile {
             eq.add(new Vector<>());
         }
         for (Mounted<?> m : t.getEquipment()) {
-            // Ignore Mounted's that represent a WeaponGroup
+            // Ignore Mounteds that represent a WeaponGroup
             // BA anti-personnel weapons are written just after the mount
-            if (m.isWeaponGroup() || m.isAPMMounted() || (m.getType() instanceof InfantryAttack)) {
+            if (m.isWeaponGroup() || m.isAPMMounted() || (m.getType() instanceof InfantryAttack)
+                  || ((m instanceof MiscMounted) && m.getType().hasFlag(MiscTypeFlag.F_GAMEPLAY_ONLY))) {
                 continue;
             }
 

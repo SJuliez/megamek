@@ -1,25 +1,47 @@
 /*
- * Copyright (c) 2025 - The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2025 The MegaMek Team. All Rights Reserved.
  *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License as published by the Free
- *  Software Foundation; either version 2 of the License, or (at your option)
- *  any later version.
+ * This file is part of MegaMek.
  *
- *  This program is distributed in the hope that it will be useful, but
- *  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- *  for more details.
+ * MegaMek is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License (GPL),
+ * version 3 or (at your option) any later version,
+ * as published by the Free Software Foundation.
+ *
+ * MegaMek is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * A copy of the GPL should have been included with this project;
+ * if not, see <https://www.gnu.org/licenses/>.
+ *
+ * NOTICE: The MegaMek organization is a non-profit group of volunteers
+ * creating free software for the BattleTech community.
+ *
+ * MechWarrior, BattleMech, `Mech and AeroTech are registered trademarks
+ * of The Topps Company, Inc. All Rights Reserved.
+ *
+ * Catalyst Game Labs and the Catalyst Game Labs logo are trademarks of
+ * InMediaRes Productions, LLC.
  */
 package megamek.common;
 
 /**
- * Set of flags that can be used to determine special equipment properties
- * and behaviors.
+ * Set of flags that can be used to determine special equipment properties and behaviors.
  * Every type of equipment has its own flag.
+ *
  * @author Luana Coppio
  */
 public enum MiscTypeFlag implements EquipmentFlag {
+
+    /**
+     * Indicates that this equipment is only added to facilitate MM gameplay and represents e.g. some built-in system like a SmallCraft's
+     * ECM. It should not be present in MML, MHQ or other places outside of a game and should not be saved to any files.
+     * Such equipment is best added in Entity.setGameOptions().
+     */
+    F_GAMEPLAY_ONLY,
+
     // Heat sink family
     F_HEAT_SINK,
     F_DOUBLE_HEAT_SINK,

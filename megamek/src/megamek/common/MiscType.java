@@ -16,10 +16,10 @@ package megamek.common;
 
 import java.text.NumberFormat;
 
-import megamek.client.ui.preferences.SuitePreferences;
 import megamek.common.equipment.MiscMounted;
 import megamek.common.equipment.WeaponMounted;
 import megamek.common.miscGear.AntiMekGear;
+import megamek.common.miscGear.SmallCraftBuiltInECM;
 import megamek.common.weapons.ppc.CLERPPC;
 import megamek.common.weapons.ppc.ISERPPC;
 import megamek.common.weapons.ppc.ISHeavyPPC;
@@ -1805,6 +1805,7 @@ public class MiscType extends EquipmentType {
         EquipmentType.addType(MiscType.createSDSJammerSystem());
 
         // Large Craft Systems
+        EquipmentType.addType(new SmallCraftBuiltInECM());
         EquipmentType.addType(MiscType.createPCMT());
         EquipmentType.addType(MiscType.createLithiumFusionBattery());
         EquipmentType.addType(MiscType.createLightSail());

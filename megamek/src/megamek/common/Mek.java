@@ -4437,7 +4437,8 @@ public abstract class Mek extends Entity {
             if ((mounted.getCriticals() == 0)
                     && !mounted.getType().hasFlag(MiscType.F_CASE)
                     && !EquipmentType.isArmorType(mounted.getType())
-                    && !EquipmentType.isStructureType(mounted.getType())) {
+                    && !EquipmentType.isStructureType(mounted.getType())
+                    && !mounted.getType().hasFlag(MiscTypeFlag.F_GAMEPLAY_ONLY)) {
                 sb.append(MtfFile.NO_CRIT).append(mounted.getType().getInternalName())
                         .append(":").append(getLocationAbbr(mounted.getLocation()))
                         .append(newLine);
@@ -4600,6 +4601,9 @@ public abstract class Mek extends Entity {
             }
         } else if (type == CriticalSlot.TYPE_EQUIPMENT) {
             final Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted) && m.getType().hasFlag(MiscTypeFlag.F_GAMEPLAY_ONLY)) {
+                return MtfFile.EMPTY;
+            }
             toReturn.append(m.getType().getInternalName());
             // Superheavy Meks can have a second ammo bin or heat sink in the same slot
             if (cs.getMount2() != null) {

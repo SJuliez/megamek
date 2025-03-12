@@ -13029,7 +13029,7 @@ public class TWGameManager extends AbstractGameManager {
                     r.subject = ae.getId();
                     r.add(caa.getClub().getName());
                     addReport(r);
-                    ae.removeMisc(caa.getClub().getName());
+                    ae.removeFirstMisc(caa.getClub().getName());
                 } else {
                     applyZweihanderSelfDamage(ae, false, caa.getClub().getLocation());
                 }
@@ -13235,7 +13235,7 @@ public class TWGameManager extends AbstractGameManager {
             r.subject = ae.getId();
             r.add(caa.getClub().getName());
             addReport(r);
-            ae.removeMisc(caa.getClub().getName());
+            ae.removeFirstMisc(caa.getClub().getName());
         }
 
         addNewLines();
