@@ -38,6 +38,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.Serial;
 import java.util.ArrayList;
@@ -65,6 +67,9 @@ import megamek.client.ratgenerator.ModelRecord;
 import megamek.client.ratgenerator.RATDataCSVExporter;
 import megamek.client.ratgenerator.RATGenerator;
 import megamek.client.ui.clientGUI.GUIPreferences;
+import megamek.client.ui.preferences.JWindowPreference;
+import megamek.client.ui.preferences.PreferencesNode;
+import megamek.client.ui.preferences.SuitePreferences;
 import megamek.client.ui.util.UIUtil;
 import megamek.client.ui.util.UIUtil.FixedXPanel;
 import megamek.client.ui.util.UIUtil.FixedYPanel;
@@ -143,6 +148,20 @@ public class RATGeneratorEditor extends JFrame {
 
     private File lastDir = Configuration.forceGeneratorDir();
 
+    private static final SuitePreferences ratGenEditorPreferences = new SuitePreferences();
+
+    /**
+     * These need to be migrated to the Suite Constants / Suite Options Setup
+     */
+    private void setUserPreferences() {
+        try {
+            PreferencesNode preferences = ratGenEditorPreferences.forClass(RATGeneratorEditor.class);
+            preferences.manage(new JWindowPreference(this));
+        } catch (Exception ex) {
+            logger.error("Failed to set user preferences", ex);
+        }
+    }
+
     public RATGeneratorEditor() {
         rg = RATGenerator.getInstance();
         while (!rg.isInitialized()) {
@@ -181,7 +200,8 @@ public class RATGeneratorEditor extends JFrame {
     private void initUI() {
         setTitle("Unit Selector Editor");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(new Dimension(1200, 700));
+        setSize(new Dimension(1200, 700)); // for when there is no preference entry yet
+        ratGenEditorPreferences.loadFromFile("mmconf/ratGenEditor.preferences");
 
         masterUnitListModel = new MasterUnitListTableModel(rg.getModelList());
 
@@ -207,6 +227,13 @@ public class RATGeneratorEditor extends JFrame {
         add(panMain, BorderLayout.CENTER);
         add(buildOptionPanel(), BorderLayout.PAGE_START);
         add(panButtons, BorderLayout.PAGE_END);
+        setUserPreferences();
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                ratGenEditorPreferences.saveToFile("mmconf/ratGenEditor.preferences");
+            }
+        });
     }
 
     private void loadAltDir() {
