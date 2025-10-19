@@ -126,8 +126,9 @@ public final class Factions2 {
     }
 
     /**
-     * This constructor is intended for unit testing only and will load factions *only* from the provided path. The path
-     * is used as it is.
+     * This constructor loads the faction data from the given path and all subdirectories. This can be used for unit
+     * testing and other purposes. Using this constructor with "data/universe" loads the standard faction data (from
+     * the subdirectories factions and commands).
      *
      * @param factionsDataPath The path to load factions data from
      */
@@ -200,7 +201,7 @@ public final class Factions2 {
                 loadFaction(fis, mapper);
             } catch (Exception ex) {
                 // Ignore this file then
-                LOGGER.error(ex, "Exception trying to parse {} - ignoring.", factionFile);
+                LOGGER.error("Exception trying to parse {} - ignoring.", factionFile);
             }
         }
 

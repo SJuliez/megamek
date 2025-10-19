@@ -64,6 +64,7 @@ import megamek.client.ratgenerator.FactionRecord.TechCategory;
 import megamek.client.ratgenerator.ModelRecord;
 import megamek.client.ratgenerator.RATDataCSVExporter;
 import megamek.client.ratgenerator.RATGenerator;
+import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.util.UIUtil;
 import megamek.client.ui.util.UIUtil.FixedXPanel;
 import megamek.client.ui.util.UIUtil.FixedYPanel;
@@ -165,6 +166,15 @@ public class RATGeneratorEditor extends JFrame {
             rg.reloadFromDir(lastDir);
             ERAS = rg.getEraSet().toArray(new Integer[0]);
             rg.initRemainingUnits();
+        }
+    }
+
+    private static void setLookAndFeel() {
+        try {
+            UIManager.setLookAndFeel(GUIPreferences.getInstance().getUITheme());
+            UIUtil.updateAfterUiChange();
+        } catch (Exception ex) {
+            System.out.println("setLookAndFeel() Exception" + ex);
         }
     }
 
@@ -1570,13 +1580,17 @@ public class RATGeneratorEditor extends JFrame {
      * @param args The RATGenerator data will be loaded from the directory named as the first element of the arguments.
      *             If the {@code args} element is empty, or the first element is not a valid directory, loads from the
      *             default location.
+     *
+     * In an IDE setup, use the mm-data/data directory as a command line argument to point the
+     *             editor to the data repo.
      */
     public static void main(String... args) {
+        setLookAndFeel();
         SwingUtilities.invokeLater(() -> {
             RATGeneratorEditor ui;
             if (args.length > 0) {
                 File dir = new File(args[0]);
-                if (dir.exists() && dir.isDirectory()) {
+                if (dir.isDirectory()) {
                     ui = new RATGeneratorEditor(dir);
                 } else {
                     logger.info("{} is not a valid directory name", args[0]);

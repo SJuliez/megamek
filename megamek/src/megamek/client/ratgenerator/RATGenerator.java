@@ -131,7 +131,7 @@ public class RATGenerator {
             ratGenerator.initializing = true;
             interrupted = false;
             dispose = false;
-            ratGenerator.loader = new Thread(() -> ratGenerator.initialize(Configuration.forceGeneratorDir()),
+            ratGenerator.loader = new Thread(() -> ratGenerator.initialize(Configuration.dataDir()),
                   "RAT Generator unit populator");
             ratGenerator.loader.setPriority(Thread.NORM_PRIORITY - 1);
             ratGenerator.loader.start();
@@ -144,11 +144,12 @@ public class RATGenerator {
     }
 
     /**
-     * Clears all data and loads from the given directory
+     * Clears all data and loads from the given directory. It must contain universe/factions/, universe/commands/
+     * and forcegenerator/ folders with the data to load (equivalent to the standard data directory).
      *
-     * @param dir The directory to load from
+     * @param dataDir The directory to load from
      */
-    public void reloadFromDir(File dir) {
+    public void reloadFromDir(File dataDir) {
         models.clear();
         chassis.clear();
         factions.clear();
@@ -157,7 +158,7 @@ public class RATGenerator {
         eraSet.clear();
         initialized = false;
         initializing = false;
-        initialize(dir);
+        initialize(dataDir);
     }
 
     public AvailabilityRating findChassisAvailabilityRecord(int era, String unit, String faction, int year) {
@@ -1362,7 +1363,12 @@ public class RATGenerator {
         }
     }
 
-    private synchronized void initialize(File dir) {
+    private synchronized void initialize(File dataDir) {
+        if ((dataDir == null) || !dataDir.isDirectory()) {
+            LOGGER.error("{} is not a directory, cannot load RAT data", dataDir);
+            dataDir = Configuration.dataDir();
+        }
+
         // Give the MSC some time to initialize
         MekSummaryCache msc = MekSummaryCache.getInstance();
         long waitLimit = java.lang.System.currentTimeMillis() + 3000; /* 3 seconds */
@@ -1374,24 +1380,21 @@ public class RATGenerator {
             }
         }
 
-        if (!(dir.exists() && dir.isDirectory())) {
-            LOGGER.error("{} is not a directory", dir);
-        } else {
-            loadFactions(dir);
-            File[] files = dir.listFiles();
+        loadFactions(dataDir);
 
-            if (files != null) {
-                for (File file : files) {
-                    if (file.getName().matches("\\d+\\.xml")) {
-                        eraSet.add(Integer.parseInt(file.getName().replace(".xml", "")));
-                    }
+        File forceGeneratorDir = new File(dataDir, "forcegenerator");
+        File[] files = forceGeneratorDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.getName().matches("\\d+\\.xml")) {
+                    eraSet.add(Integer.parseInt(file.getName().replace(".xml", "")));
                 }
             }
         }
 
         if (!interrupted) {
             ratGenerator.initialized = true;
-            ratGenerator.getEraSet().forEach(e -> ratGenerator.loadEra(e, dir));
+            ratGenerator.getEraSet().forEach(e -> ratGenerator.loadEra(e, forceGeneratorDir));
             ratGenerator.notifyListenersOfInitialization();
         }
 
@@ -1422,10 +1425,15 @@ public class RATGenerator {
         }
     }
 
-    private void loadFactions(File dir) {
+    private void loadFactions(File dataDir) {
         // As a temporary measure, the RAT Generator factions are populated from the new unified factions
         // list instead of using that directly.
-        var yamlFactions = Factions2.getInstance();
+        // Because the RatGenerator can be loaded with data from an arbitrary (data or test) dir,
+        var yamlFactions = new Factions2(new File(dataDir, "universe/factions").toString());
+        yamlFactions.getFactions().stream()
+              .map(FactionRecord::new)
+              .forEach(f -> factions.put(f.getKey(), f));
+        yamlFactions = new Factions2(new File(dataDir, "universe/commands").toString());
         yamlFactions.getFactions().stream()
               .map(FactionRecord::new)
               .forEach(f -> factions.put(f.getKey(), f));
