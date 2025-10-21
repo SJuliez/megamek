@@ -1689,8 +1689,7 @@ public class RATGenerator {
     public void exportRATGen(File dir) {
         PrintWriter pw;
 
-        FactionRecord[] factionRecs = factions.values().toArray(new FactionRecord[0]);
-        for (FactionRecord fRec : factionRecs) {
+        for (FactionRecord fRec : factions.values()) {
             try {
                 fRec.saveIfChanged();
             } catch (Exception ex) {
@@ -1715,7 +1714,7 @@ public class RATGenerator {
                 pw.println("<!-- Era " + era + "-->");
                 pw.println("<ratgen>");
                 pw.println("<factions>");
-                for (FactionRecord fRec : factionRecs) {
+                for (FactionRecord fRec : factions.values()) {
                     if (fRec.isInEra(era)) {
                         fRec.writeToXml(pw, era);
                     }

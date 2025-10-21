@@ -218,7 +218,6 @@ public class FactionRecord {
      *
      * @return The list of available equipment ratings for the faction.
      */
-
     public ArrayList<String> getRatingLevelSystem() {
         if (ratingLevels.size() < 2) {
             for (String parent : parentFactions) {
