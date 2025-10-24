@@ -43,6 +43,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -94,6 +95,26 @@ public class RATGenerator {
     private boolean initializing;
 
     private final ArrayList<ActionListener> listeners;
+
+    private final String LICENSE_HEADER = """
+          <!--
+          # MegaMek Data (C) %d by The MegaMek Team is licensed under CC BY-NC-SA 4.0.
+          # To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-sa/4.0/
+          #
+          # NOTICE: The MegaMek organization is a non-profit group of volunteers
+          # creating free software for the BattleTech community.
+          #
+          # MechWarrior, BattleMech, `Mech and AeroTech are registered trademarks
+          # of The Topps Company, Inc. All Rights Reserved.
+          #
+          # Catalyst Game Labs and the Catalyst Game Labs logo are trademarks of
+          # InMediaRes Productions, LLC.
+          #
+          # MechWarrior Copyright Microsoft Corporation. MegaMek Data was created under
+          # Microsoft's "Game Content Usage Rules"
+          # <https://www.xbox.com/en-US/developers/rules> and it is not endorsed by or
+          # affiliated with Microsoft.
+          -->""".formatted(LocalDate.now().getYear());
 
     /**
      * Minimum difference between actual percentage and desired percentage of Omni-units that will trigger re-balancing
@@ -1711,15 +1732,16 @@ public class RATGenerator {
                 File file = new File(dir + "/" + era + ".xml");
                 pw = new PrintWriter(file, StandardCharsets.UTF_8);
                 pw.println("<?xml version='1.0' encoding='UTF-8'?>");
+                pw.println(LICENSE_HEADER);
                 pw.println("<!-- Era " + era + "-->");
                 pw.println("<ratgen>");
-                pw.println("<factions>");
+                pw.println("\t<factions>");
                 for (FactionRecord fRec : factions.values()) {
                     if (fRec.isInEra(era)) {
                         fRec.writeToXml(pw, era);
                     }
                 }
-                pw.println("</factions>");
+                pw.println("\t</factions>");
                 pw.println("<units>");
                 for (ChassisRecord cr : chassisRecs) {
                     if (cr.getIntroYear() < nextEra && chassisIndex.get(era).containsKey(cr.getKey())) {
