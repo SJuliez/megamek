@@ -96,6 +96,7 @@ public class RATGenerator {
 
     private final ArrayList<ActionListener> listeners;
 
+    private final String TAB = "    ";
     private final String LICENSE_HEADER = """
           <!--
           # MegaMek Data (C) %d by The MegaMek Team is licensed under CC BY-NC-SA 4.0.
@@ -1708,8 +1709,6 @@ public class RATGenerator {
     }
 
     public void exportRATGen(File dir) {
-        PrintWriter pw;
-
         for (FactionRecord fRec : factions.values()) {
             try {
                 fRec.saveIfChanged();
@@ -1730,19 +1729,21 @@ public class RATGenerator {
             int nextEra = (i < ERAS.size() - 1) ? ERAS.get(i + 1) : Integer.MAX_VALUE;
             try {
                 File file = new File(dir + "/" + era + ".xml");
-                pw = new PrintWriter(file, StandardCharsets.UTF_8);
+                PrintWriter pw = new PrintWriter(file, StandardCharsets.UTF_8);
                 pw.println("<?xml version='1.0' encoding='UTF-8'?>");
                 pw.println(LICENSE_HEADER);
                 pw.println("<!-- Era " + era + "-->");
                 pw.println("<ratgen>");
-                pw.println("\t<factions>");
-                for (FactionRecord fRec : factions.values()) {
-                    if (fRec.isInEra(era)) {
-                        fRec.writeToXml(pw, era);
-                    }
-                }
-                pw.println("\t</factions>");
-                pw.println("<units>");
+
+                pw.println(TAB + "<factions>");
+                factions.values()
+                      .stream()
+                      .sorted(Comparator.comparing(FactionRecord::getKey))
+                      .filter(fRec -> fRec.isInEra(era))
+                      .forEach(fRec -> fRec.writeToXml(pw, era));
+                pw.println(TAB + "</factions>");
+
+                pw.println(TAB + "<units>");
                 for (ChassisRecord cr : chassisRecs) {
                     if (cr.getIntroYear() < nextEra && chassisIndex.get(era).containsKey(cr.getKey())) {
                         avFields.clear();
@@ -1759,10 +1760,10 @@ public class RATGenerator {
                                       ? "' omni='Clan"
                                       : "' omni='IS";
                             }
-                            pw.println("\t<chassis name='" + cr.getChassis().replaceAll("'", "&apos;")
+                            pw.println(TAB.repeat(2) + "<chassis name='" + cr.getChassis().replaceAll("'", "&apos;")
                                   + "' unitType='" + UnitType.getTypeName(cr.getUnitType())
                                   + omni + "'>");
-                            pw.print("\t\t<availability>");
+                            pw.print(TAB.repeat(3) + "<availability>");
                             for (Iterator<String> iter = avFields.iterator(); iter.hasNext(); ) {
                                 pw.print(iter.next());
                                 if (iter.hasNext()) {
@@ -1786,7 +1787,8 @@ public class RATGenerator {
                                     }
 
                                     if (!avFields.isEmpty()) {
-                                        pw.print("\t\t<model name='" + mr.getModel().replaceAll("'", "&apos;"));
+                                        pw.print(TAB.repeat(3) + "<model name='" + mr.getModel().replaceAll("'",
+                                              "&apos;"));
                                         if (mr.getUnitType() == UnitType.BATTLE_ARMOR) {
                                             pw.print("' mechanized='" + mr.canDoMechanizedBA());
                                         }
@@ -1795,19 +1797,19 @@ public class RATGenerator {
                                             String str = mr.getRoles().stream().map(Object::toString)
                                                   .collect(Collectors.joining(","));
                                             if (!str.isBlank()) {
-                                                pw.println("\t\t\t<roles>" + str + "</roles>");
+                                                pw.println(TAB.repeat(4) + "<roles>" + str + "</roles>");
                                             }
                                         }
 
                                         if (!mr.getDeployedWith().isEmpty() || !mr.getRequiredUnits().isEmpty()) {
-                                            pw.print("\t\t\t<deployedWith>");
+                                            pw.print(TAB.repeat(4) + "<deployedWith>");
                                             StringJoiner sj = new StringJoiner(",");
                                             mr.getDeployedWith().forEach(sj::add);
                                             mr.getRequiredUnits().forEach(s -> sj.add("req:" + s));
                                             pw.print(sj);
                                             pw.println("</deployedWith>");
                                         }
-                                        pw.print("\t\t\t<availability>");
+                                        pw.print(TAB.repeat(4) + "<availability>");
                                         for (Iterator<String> iter = avFields.iterator(); iter.hasNext(); ) {
                                             pw.print(iter.next());
                                             if (iter.hasNext()) {
@@ -1815,15 +1817,15 @@ public class RATGenerator {
                                             }
                                         }
                                         pw.println("</availability>");
-                                        pw.println("\t\t</model>");
+                                        pw.println(TAB.repeat(3) + "</model>");
                                     }
                                 }
                             }
-                            pw.println("\t</chassis>");
+                            pw.println(TAB.repeat(2) + "</chassis>");
                         }
                     }
                 }
-                pw.println("</units>");
+                pw.println(TAB + "</units>");
                 pw.println("</ratgen>");
                 pw.close();
             } catch (Exception ex) {
