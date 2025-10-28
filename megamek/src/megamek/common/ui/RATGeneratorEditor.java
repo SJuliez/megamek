@@ -1601,32 +1601,10 @@ public class RATGeneratorEditor extends JFrame {
         return Eras.getEra(year).code();
     }
 
-    /**
-     * Runs the RATGeneratorEditor UI
-     *
-     * @param args The RATGenerator data will be loaded from the directory named as the first element of the arguments.
-     *             If the {@code args} element is empty, or the first element is not a valid directory, loads from the
-     *             default location.
-     *
-     * In an IDE setup, use the mm-data/data directory as a command line argument to point the
-     *             editor to the data repo.
-     */
     public static void main(String... args) {
         setLookAndFeel();
         SwingUtilities.invokeLater(() -> {
-            RATGeneratorEditor ui;
-            if (args.length > 0) {
-                File dir = new File(args[0]);
-                if (dir.isDirectory()) {
-                    ui = new RATGeneratorEditor(dir);
-                } else {
-                    logger.info("{} is not a valid directory name", args[0]);
-                    ui = new RATGeneratorEditor();
-                }
-            } else {
-                ui = new RATGeneratorEditor();
-            }
-            ui.setVisible(true);
+            new RATGeneratorEditor().setVisible(true);
         });
     }
 }
