@@ -65,14 +65,14 @@ import megamek.common.units.*;
 import megamek.common.util.CollectionUtil;
 import megamek.common.util.CrewSkillSummaryUtil;
 
-class LobbyMekCellFormatter {
+public class LobbyMekCellFormatter {
 
     private static final GUIPreferences GUIP = GUIPreferences.getInstance();
 
     private LobbyMekCellFormatter() {
     }
 
-    static String unitTableEntry(InGameObject unit, ChatLounge lobby, boolean forceView, boolean compactView) {
+    public static String unitTableEntry(InGameObject unit, ChatLounge lobby, boolean forceView, boolean compactView) {
         if (unit instanceof Entity) {
             return compactView ? formatUnitCompact((Entity) unit, lobby, forceView)
                   : formatUnitFull((Entity) unit, lobby, forceView);
@@ -84,7 +84,7 @@ class LobbyMekCellFormatter {
         }
     }
 
-    static String pilotTableEntry(InGameObject unit, boolean compactView, boolean hide, boolean rpgSkills) {
+    public static String pilotTableEntry(InGameObject unit, boolean compactView, boolean hide, boolean rpgSkills) {
         if (unit instanceof Entity) {
             return compactView ? formatPilotCompact((Entity) unit, hide, rpgSkills)
                   : formatPilotFull((Entity) unit, hide);

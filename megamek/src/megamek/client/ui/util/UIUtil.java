@@ -49,7 +49,11 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 
+import com.formdev.flatlaf.FlatLaf;
 import megamek.MMConstants;
 import megamek.client.ui.Messages;
 import megamek.client.ui.buttons.MMToggleButton;
@@ -286,20 +290,19 @@ public final class UIUtil {
      * Returns a UIManager Color that can be used as an alternate row color in a table to offset each other row.
      */
     public static Color alternateTableBGColor() {
-        Color result = UIManager.getColor("Table.alternateRowColor");
+        Color result = UIManager.getColor("Table.background");
         if (result != null) {
-            return result;
+            return multiplyColor(result, isDarkUi() ? 0.9f : 1.1f);
         }
-        result = UIManager.getColor("controlHighlight");
-        if (result != null) {
-            return result;
-        }
-        result = UIManager.getColor("Table.background");
-        if (result != null) {
-            return result;
-        }
-        // The really last fallback position
+        // fallback
         return uiGray();
+    }
+
+    private static Color multiplyColor(Color input, float factor) {
+        int newRed = Math.min(255, (int) (input.getRed() * factor));
+        int newGreen = Math.min(255, (int) (input.getGreen() * factor));
+        int newBlue = Math.min(255, (int) (input.getBlue() * factor));
+        return new Color(newRed, newGreen, newBlue, input.getAlpha());
     }
 
     /**
@@ -1470,6 +1473,22 @@ public final class UIUtil {
      */
     public static String hexColor(Color color) {
         return String.format("#%06x", color.getRGB() & 0x00FFFFFF);
+    }
+
+    public static DefaultTableCellRenderer rightAlignedTableCellRenderer() {
+        DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+        rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
+        return rightRenderer;
+    }
+
+    public static DefaultTableCellRenderer centerAlignedTableCellRenderer() {
+        DefaultTableCellRenderer centeredRenderer = new DefaultTableCellRenderer();
+        centeredRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        return centeredRenderer;
+    }
+
+    public static boolean isDarkUi() {
+        return FlatLaf.isLafDark(); // can ask FlatLaf, as long as we use only that
     }
 
     private UIUtil() {

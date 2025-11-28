@@ -60,13 +60,15 @@ public class MekTableASUnitEntry {
     static String fullEntry(AlphaStrikeElement element, ChatLounge lobby, boolean forceView, boolean compactView) {
         StringBuilder result = new StringBuilder("<HTML><NOBR>");
 
-        Client client = lobby.getClientGUI().getClient();
-        Game game = client.getGame();
-        GameOptions options = game.getOptions();
-        Player localPlayer = client.getLocalPlayer();
-        Player owner = game.getPlayer(element.getOwnerId());
-        boolean hideEntity = owner.isEnemyOf(localPlayer)
-              && options.booleanOption(OptionsConstants.BASE_BLIND_DROP);
+        boolean hideEntity = false;
+        if (lobby != null) {
+            Client client = lobby.getClientGUI().getClient();
+            Game game = client.getGame();
+            GameOptions options = game.getOptions();
+            Player localPlayer = client.getLocalPlayer();
+            Player owner = game.getPlayer(element.getOwnerId());
+            hideEntity = owner.isEnemyOf(localPlayer) && options.booleanOption(OptionsConstants.BASE_BLIND_DROP);
+        }
 
         if (hideEntity) {
             result.append(DOT_SPACER);
@@ -147,10 +149,10 @@ public class MekTableASUnitEntry {
         }
 
         if (element.usesArcs() || compactView) {
-            result.append("\u25cf ").append(element.getCurrentStructure());
+            result.append("\u2b24 ").append(element.getCurrentStructure());
             result.append(" \u25cb ").append(element.getCurrentArmor());
         } else {
-            result.append(UIUtil.repeat("\u25cf", element.getCurrentStructure()));
+            result.append(UIUtil.repeat("\u2b24", element.getCurrentStructure()));
             result.append(UIUtil.repeat("\u25cb", element.getCurrentArmor()));
         }
 
