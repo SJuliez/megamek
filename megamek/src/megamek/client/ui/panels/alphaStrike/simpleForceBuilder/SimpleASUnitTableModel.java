@@ -30,13 +30,15 @@
  * <https://www.xbox.com/en-US/developers/rules> and it is not endorsed by or
  * affiliated with Microsoft.
  */
-package megamek.client.ui.panels.alphaStrike;
+package megamek.client.ui.panels.alphaStrike.simpleForceBuilder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Stack;
 import javax.swing.table.AbstractTableModel;
 
@@ -44,11 +46,11 @@ import megamek.client.ui.panels.phaseDisplay.lobby.LobbyMekCellFormatter;
 import megamek.common.alphaStrike.AlphaStrikeElement;
 import megamek.common.game.InGameObject;
 
-public class SimpleASUnitTableModel extends AbstractTableModel {
+class SimpleASUnitTableModel extends AbstractTableModel {
 
     public static final int COL_UNIT = 0;
-    public static final int COL_PV = 1;
-    public static final int COL_SKILL = 2;
+    public static final int COL_SKILL = 1;
+    public static final int COL_PV = 2;
     public static final int N_COL = 3;
 
     /** Previous list contents used for the undo function */
@@ -70,8 +72,8 @@ public class SimpleASUnitTableModel extends AbstractTableModel {
         }
         return switch (col) {
             case COL_UNIT -> unitCells.get(row);
-            case COL_PV -> "  %d  ".formatted(element.getPointValue()); // right-alignment spacing
-            case COL_SKILL -> "  %d  ".formatted(element.getSkill());
+            case COL_PV -> "%d  ".formatted(element.getPointValue()); // right-alignment spacing
+            case COL_SKILL -> "%d".formatted(element.getSkill());
             default -> "";
         };
     }
@@ -102,6 +104,10 @@ public class SimpleASUnitTableModel extends AbstractTableModel {
 
     public void removeUnit(Integer rowIndex) {
         removeUnits(List.of(rowIndex));
+    }
+
+    public void removeUnits(int[] rowIndexes) {
+        removeUnits(Arrays.stream(rowIndexes).boxed().toList());
     }
 
     public void removeUnits(Collection<Integer> rowIndices) {
@@ -137,8 +143,21 @@ public class SimpleASUnitTableModel extends AbstractTableModel {
     }
 
     /** Returns the entity of the given table row. */
-    public InGameObject getEntityAt(int row) {
+    public AlphaStrikeElement getUnitAt(int row) {
         return units.get(row);
+    }
+
+    public boolean isEmpty() {
+        return units.isEmpty();
+    }
+
+    /** Returns the entity of the given table row. */
+    public Optional<AlphaStrikeElement> unitAt(int row) {
+        if (row < 0 || row >= units.size()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(units.get(row));
+        }
     }
 
     @Override
@@ -179,9 +198,9 @@ public class SimpleASUnitTableModel extends AbstractTableModel {
 
     /**
      * @return True when there is at least one entry in the redo-List, i.e., the last changes were "undo" actions that
-     * can be reversed.
+     *       can be reversed.
      */
-    public boolean canRedo() {
+    public boolean canUseRedo() {
         return !redoUnitLists.isEmpty();
     }
 
@@ -198,7 +217,18 @@ public class SimpleASUnitTableModel extends AbstractTableModel {
         }
     }
 
+    /**
+     * Clears the unit data and rendered unit HTML cells. Only for internal use. Does not properly prepare undo.
+     */
     private void clearData() {
+        units.clear();
+        unitCells.clear();
+        fireTableDataChanged();
+    }
+
+    void removeAllUnits() {
+        prepareUndo();
+        redoUnitLists.clear(); // Doing anything other than undo removes the option to redo
         units.clear();
         unitCells.clear();
         fireTableDataChanged();
