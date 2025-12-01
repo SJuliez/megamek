@@ -21,23 +21,22 @@ import java.util.List;
 class LoadForceAction extends AbstractAction {
 
     private final SimpleASForceBuilder forceBuilder;
-    private final JFrame frame;
 
     LoadForceAction(SimpleASForceBuilder forceBuilder) {
         super("Load Force");
+        putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("ctrl L"));
         this.forceBuilder = forceBuilder;
-        frame = forceBuilder.frame;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         // Build the "load unit" dialog, if necessary.
         var dlgLoadList = new JFileChooser(".");
-        dlgLoadList.setLocation(frame.getLocation().x + 150, frame.getLocation().y + 100);
+        dlgLoadList.setLocation(forceBuilder.frame.getLocation().x + 150, forceBuilder.frame.getLocation().y + 100);
         dlgLoadList.setDialogTitle(Messages.getString("ClientGUI.openUnitListFileDialog.title"));
         dlgLoadList.setFileFilter(new FileNameExtensionFilter("MUL files", "mul", "mmu"));
 
-        int returnVal = dlgLoadList.showOpenDialog(frame);
+        int returnVal = dlgLoadList.showOpenDialog(forceBuilder.frame);
         if ((returnVal == JFileChooser.APPROVE_OPTION) && (dlgLoadList.getSelectedFile() != null)) {
             loadListFromFile(dlgLoadList.getSelectedFile());
         }
@@ -64,12 +63,13 @@ class LoadForceAction extends AbstractAction {
             }
             // Apparently, the units were successfully loaded, so open a new force builder window for them.
             var simpleASForceBuilder = new SimpleASForceBuilder();
+            // TODO the following two are order dependent as listeners are only going when visible bad bad
             simpleASForceBuilder.setVisible(true);
-            simpleASForceBuilder.model.addUnits(elements);
+            simpleASForceBuilder.currentModel().addUnits(elements);
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(forceBuilder.frame,
-                  "Error loading units from the selected file. Some units may have been added.");
+                  "Error loading units from the selected file. Error message: " + ex.getMessage());
         }
     }
 }

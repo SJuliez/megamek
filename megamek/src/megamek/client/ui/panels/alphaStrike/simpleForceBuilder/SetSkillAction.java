@@ -19,11 +19,11 @@ class SetSkillAction extends AbstractAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        for (int row : forceBuilder.unitTable.getSelectedRows()) {
-            AlphaStrikeElement element = forceBuilder.model.getUnitAt(row);
+        for (int row : forceBuilder.currentUnitTable().getSelectedRows()) {
+            AlphaStrikeElement element = forceBuilder.currentModel().getUnitAt(row);
             element.setSkill(skill);
             ASConverter.updateCalculatedValues(element);
-            forceBuilder.model.fireTableDataChanged();
+            forceBuilder.currentModel().fireTableDataChanged();
         }
     }
 }

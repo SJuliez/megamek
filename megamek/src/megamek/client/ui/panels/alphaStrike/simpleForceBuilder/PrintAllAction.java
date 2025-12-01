@@ -16,6 +16,6 @@ class PrintAllAction extends AbstractAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        new ASCardPrinter(forceBuilder.model.getUnits(), forceBuilder.frame).printCards();
+        new ASCardPrinter(forceBuilder.currentModel().getUnits(), forceBuilder.frame).printCards();
     }
 }

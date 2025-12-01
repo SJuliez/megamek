@@ -4,35 +4,27 @@ import megamek.client.ui.util.UIUtil;
 
 import javax.swing.JLabel;
 import javax.swing.JTable;
-import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.table.TableColumn;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.event.KeyEvent;
 
 class ASUnitTable extends JTable {
 
     static final int ROW_HEIGHT_FULL = 65;
 
-    private final SimpleASForceBuilder forceBuilder;
+    private final SimpleASForceBuilderTab forceBuilder;
 
-    ASUnitTable(SimpleASForceBuilder forceBuilder) {
+    ASUnitTable(SimpleASForceBuilderTab forceBuilder) {
         super(forceBuilder.model);
         this.forceBuilder = forceBuilder;
+        setIntercellSpacing(new Dimension(2, 1));
     }
 
     void initialize() {
-        setIntercellSpacing(new Dimension(2, 1));
         prepareColumns();
-
         setRowHeights();
         forceBuilder.model.addTableModelListener(e -> setRowHeights());
-
-        KeyStroke enter = KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0);
-        getInputMap(JTable.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(enter, "delete");
-        getActionMap().put("delete", forceBuilder.deleteAction);
-
         addMouseListener(new TableMouseListener(forceBuilder));
     }
 

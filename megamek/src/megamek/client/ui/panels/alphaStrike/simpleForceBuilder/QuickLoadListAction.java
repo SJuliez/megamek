@@ -14,6 +14,7 @@ class QuickLoadListAction extends AbstractAction {
 
     QuickLoadListAction(SimpleASForceBuilder forceBuilder) {
         super("Quickload");
+        putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F9"));
 //        putValue(SHORT_DESCRIPTION, "Quickload");
 //        putValue(MNEMONIC_KEY, mnemonic);
         this.forceBuilder = forceBuilder;
@@ -21,7 +22,7 @@ class QuickLoadListAction extends AbstractAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        forceBuilder.model.removeAllUnits();
+        forceBuilder.currentModel().removeAllUnits();
         try {
             List<AlphaStrikeElement> elements = new ArrayList<>();
             List<Object> units = new MMUReader().read(forceBuilder.getQuicksaveFile());
@@ -30,7 +31,7 @@ class QuickLoadListAction extends AbstractAction {
                     elements.add(element);
                 }
             }
-            forceBuilder.model.addUnits(elements);
+            forceBuilder.currentModel().addUnits(elements);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(forceBuilder.frame,
                   "Error loading units from the selected file. Some units may have been added." + ex.getMessage());

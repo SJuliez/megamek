@@ -4,6 +4,7 @@ import megamek.common.jacksonAdapters.MMUWriter;
 
 import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
+import javax.swing.KeyStroke;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 
@@ -13,13 +14,14 @@ class QuickSaveListAction extends AbstractAction {
 
     QuickSaveListAction(SimpleASForceBuilder forceBuilder) {
         super("Quicksave");
+        putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("F5"));
         this.forceBuilder = forceBuilder;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         try {
-            new MMUWriter().writeMMUFileFullStats(forceBuilder.getQuicksaveFile(), forceBuilder.model.getUnits());
+            new MMUWriter().writeMMUFileFullStats(forceBuilder.getQuicksaveFile(), forceBuilder.currentModel().getUnits());
             forceBuilder.updateActionStates(); // allow quickload if not allowed before
         } catch (IOException | IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(forceBuilder.frame,

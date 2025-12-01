@@ -1,21 +1,24 @@
 package megamek.client.ui.panels.alphaStrike.simpleForceBuilder;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.io.IOException;
 import javax.swing.AbstractAction;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import megamek.client.ui.Messages;
 import megamek.common.jacksonAdapters.MMUWriter;
 
-class SaveListAction extends AbstractAction {
+class SaveForceAction extends AbstractAction {
 
     private final SimpleASForceBuilder forceBuilder;
 
-    SaveListAction(SimpleASForceBuilder forceBuilder) {
-        super("Save Unit List");
+    SaveForceAction(SimpleASForceBuilder forceBuilder) {
+        super("Save Force");
+        putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("ctrl S"));
         this.forceBuilder = forceBuilder;
     }
 
@@ -28,12 +31,16 @@ class SaveListAction extends AbstractAction {
         dlgLoadList.setFileFilter(new FileNameExtensionFilter("MMU files", "mmu"));
 
         int returnVal = dlgLoadList.showOpenDialog(forceBuilder.frame);
-        if ((returnVal == JFileChooser.APPROVE_OPTION) && (dlgLoadList.getSelectedFile() != null)) {
+        File listFile = dlgLoadList.getSelectedFile();
+        if ((returnVal == JFileChooser.APPROVE_OPTION) && (listFile != null)) {
+            if (!listFile.toString().contains(".")) {
+                listFile = new File(listFile.getParentFile(), listFile.getName() + ".mmu");
+            }
             try {
-                new MMUWriter().writeMMUFileFullStats(forceBuilder.getQuicksaveFile(), forceBuilder.model.getUnits());
+                new MMUWriter().writeMMUFileFullStats(listFile, forceBuilder.currentModel().getUnits());
             } catch (IOException | IllegalArgumentException ex) {
                 JOptionPane.showMessageDialog(forceBuilder.frame,
-                      "The MMU file could not be written. " + ex.getMessage());
+                      "The MMU file could not be written. Error message: " + ex.getMessage());
             }
         }
     }

@@ -1,6 +1,7 @@
 package megamek.client.ui.panels.alphaStrike.simpleForceBuilder;
 
 import javax.swing.AbstractAction;
+import javax.swing.KeyStroke;
 import java.awt.event.ActionEvent;
 
 class UndoAction extends AbstractAction {
@@ -9,11 +10,12 @@ class UndoAction extends AbstractAction {
 
     UndoAction(SimpleASForceBuilder forceBuilder) {
         super("Undo");
+        putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("ctrl Z"));
         this.forceBuilder = forceBuilder;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        forceBuilder.model.undoLastChange();
+        forceBuilder.currentModel().undoLastChange();
     }
 }

@@ -2,42 +2,28 @@ package megamek.client.ui.panels.alphaStrike.simpleForceBuilder;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.KeyStroke;
 
 import static java.awt.event.KeyEvent.*;
 
 class ASFBMenuBar extends JMenuBar {
 
-    private final SimpleASForceBuilder forceBuilder;
-
     ASFBMenuBar(SimpleASForceBuilder forceBuilder) {
-        this.forceBuilder = forceBuilder;
-
-        JMenuItem item;
 
         // === File Menu
-        JMenu menu = new JMenu("File");
+        JMenu menu = new JMenu("Force");
         menu.setMnemonic(VK_F);
         add(menu);
 
-        item = new JMenuItem(forceBuilder.quickLoadListAction);
-        item.setAccelerator(KeyStroke.getKeyStroke("F9"));
-        menu.add(item);
+        menu.add(forceBuilder.newForceAction);
+        menu.add(forceBuilder.loadForceAction);
+        menu.add(forceBuilder.saveListAction);
+        menu.addSeparator();
+        menu.add(forceBuilder.quickLoadListAction);
+        menu.add(forceBuilder.quickSaveListAction);
+        menu.addSeparator();
+        menu.add(forceBuilder.addLanceAction);
 
-        item = new JMenuItem(forceBuilder.quickSaveListAction);
-        item.setAccelerator(KeyStroke.getKeyStroke("F5"));
-        menu.add(item);
-
-        item = new JMenuItem(forceBuilder.loadForceAction);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl L"));
-        menu.add(item);
-
-        item = new JMenuItem(forceBuilder.saveListAction);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl S"));
-        menu.add(item);
-
-        // === Add Menu
+        // === Units Menu
         menu = new JMenu("Units");
         menu.setMnemonic(VK_U);
         add(menu);
@@ -58,12 +44,11 @@ class ASFBMenuBar extends JMenuBar {
 
         JMenu skillMenu = new JMenu("Skill");
         for (int skill = 0; skill <= 8; skill++) {
-            JMenuItem skillItem = new JMenuItem(forceBuilder.skillActions.get(skill));
-            skillMenu.add(skillItem);
+            skillMenu.add(forceBuilder.skillActions.get(skill));
         }
         menu.add(skillMenu);
 
         menu.addSeparator();
-        menu.add(new JMenuItem(forceBuilder.deleteAction));
+        menu.add(forceBuilder.deleteAction);
     }
 }

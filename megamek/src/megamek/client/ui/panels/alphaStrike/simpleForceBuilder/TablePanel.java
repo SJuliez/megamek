@@ -8,9 +8,9 @@ public class TablePanel extends JLayeredPane {
 
     private final EmptyUnitTableOverlay overlay;
     private final Component tableComponent;
-    private final SimpleASForceBuilder forceBuilder;
+    private final SimpleASForceBuilderTab forceBuilder;
 
-    TablePanel(SimpleASForceBuilder forceBuilder, Component tableComponent) {
+    TablePanel(SimpleASForceBuilderTab forceBuilder, Component tableComponent) {
         this.forceBuilder = forceBuilder;
         this.tableComponent = tableComponent;
         overlay = new EmptyUnitTableOverlay(forceBuilder);

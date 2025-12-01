@@ -14,6 +14,6 @@ class ClearAction extends AbstractAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        forceBuilder.model.removeAllUnits();
+        forceBuilder.currentModel().removeAllUnits();
     }
 }

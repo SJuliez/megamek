@@ -1,28 +1,31 @@
 package megamek.client.ui.panels.alphaStrike.simpleForceBuilder;
 
+import megamek.client.ui.panels.alphaStrike.ConfigurableASCardPanel;
+
+import javax.swing.JDialog;
 import javax.swing.JPopupMenu;
 import javax.swing.event.MouseInputAdapter;
 import java.awt.event.MouseEvent;
 
 class TableMouseListener extends MouseInputAdapter {
 
-    private final SimpleASForceBuilder forceBuilder;
-    private final ASUnitTable unitTable;
+    private final SimpleASForceBuilderTab forceTab;
 
-    TableMouseListener(SimpleASForceBuilder forceBuilder) {
-        this.forceBuilder = forceBuilder;
-        unitTable = forceBuilder.unitTable;
+    TableMouseListener(SimpleASForceBuilderTab forceTab) {
+        this.forceTab = forceTab;
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() == 2) {
-            // TODO: Edit unit
-//            int row = unitTable.rowAtPoint(e.getPoint());
-//            InGameObject entity = mekModel.getEntityAt(row);
-//            if ((entity instanceof Entity) && isEditable((Entity) entity)) {
-//                lobbyActions.customizeMek((Entity) entity);
-//            }
+            int row = forceTab.unitTable.rowAtPoint(e.getPoint());
+            if (forceTab.model.unitAt(row).isPresent()) {
+                var view = new ConfigurableASCardPanel(forceTab.model.unitAt(row).get(), null);
+                JDialog window = new JDialog(forceTab.getBuilder().frame, "AS Card");
+                window.add(view);
+                window.pack();
+                window.setVisible(true);
+            }
         }
     }
 
@@ -46,17 +49,17 @@ class TableMouseListener extends MouseInputAdapter {
     private void checkSelectionAtMouse(MouseEvent e) {
         // If the right mouse button is pressed over an unselected entity,
         // clear the selection and select that entity instead
-        int row = unitTable.rowAtPoint(e.getPoint());
-        if (!unitTable.isRowSelected(row)) {
-            unitTable.changeSelection(row, row, false, false);
+        int row = forceTab.unitTable.rowAtPoint(e.getPoint());
+        if (!forceTab.unitTable.isRowSelected(row)) {
+            forceTab.unitTable.changeSelection(row, row, false, false);
         }
     }
 
     private void showPopup(MouseEvent e) {
-        if (unitTable.getSelectedRowCount() == 0) {
+        if (forceTab.unitTable.getSelectedRowCount() == 0) {
             return;
         }
-        JPopupMenu popup = new ContextMenu(forceBuilder);
+        JPopupMenu popup = new ContextMenu(forceTab.getBuilder());
         popup.show(e.getComponent(), e.getX(), e.getY());
     }
 }

@@ -62,7 +62,7 @@ class LoadListAction extends AbstractAction {
                     }
                 }
             }
-            forceBuilder.model.addUnits(elements);
+            forceBuilder.currentModel().addUnits(elements);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(forceBuilder.frame,
                   "Error loading units from the selected file. Error message: " + ex.getMessage());

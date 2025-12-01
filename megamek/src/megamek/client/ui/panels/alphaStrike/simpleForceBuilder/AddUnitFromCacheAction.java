@@ -11,6 +11,7 @@ import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -23,9 +24,9 @@ class AddUnitFromCacheAction extends AbstractAction {
     public AddUnitFromCacheAction(SimpleASForceBuilder forceBuilder) {
         super("Add Unit From Cache");
         this.forceBuilder = forceBuilder;
+        putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke("INSERT"));
         frame = forceBuilder.frame;
     }
-
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -58,7 +59,7 @@ class AddUnitFromCacheAction extends AbstractAction {
             @Override
             protected void select(boolean close) {
                 AlphaStrikeElement element = ASConverter.convert(getSelectedEntity());
-                forceBuilder.model.addUnit(element);
+                forceBuilder.currentModel().addUnit(element);
                 if (close) {
                     setVisible(false);
                 }

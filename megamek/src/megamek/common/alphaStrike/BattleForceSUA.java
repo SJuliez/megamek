@@ -280,6 +280,13 @@ public enum BattleForceSUA {
     private static Object parseSUAObject(String asText) {
         if (asText.isBlank()) {
             return null;
+        } else if (asText.contains("\"")) { // LAM(36"g/6a)
+            String clean = asText.replaceAll("[)(\"ga]", "");
+            String[] parts = clean.split("/");
+            int move1 = Integer.parseInt(parts[0]);
+            int move2 = Integer.parseInt(parts[1]);
+            return Map.of("g", move1, "a", move2);
+
         } else if (asText.contains("/")) {
             return ASDamageVector.parse(asText);
         } else if (asText.contains(".")) {
