@@ -2078,13 +2078,14 @@ public final class BoardView extends AbstractBoardView
                     // For s == 0 the x coordinate MUST be an even number to get correct occlusion; drawX may be
                     // any int though
                     Coords coords = new Coords(x + drawX / 2 * 2, y + drawY);
-                    if (board.getHex(coords) != null) {
+                    Hex hex = board.getHex(coords);
+                    if (hex != null) {
                         drawHex(coords, graphics2D, saveBoardImage);
                         drawOrthograph(coords, graphics2D);
                         drawHexSpritesForHex(coords, graphics2D, behindTerrainHexSprites);
                         drawDeployment(graphics2D, coords);
                         drawOrthograph(coords, graphics2D);
-                        drawHexText(coords, graphics2D);
+                        drawHexText(coords, hex, board, graphics2D);
                     }
                 }
             }
@@ -2133,15 +2134,6 @@ public final class BoardView extends AbstractBoardView
         }
 
         int level = hex.getLevel();
-        int depth = hex.depth(false);
-
-        Terrain basement = hex.getTerrain(Terrains.BLDG_BASEMENT_TYPE);
-        if (basement != null) {
-            depth = 0;
-        }
-
-        int height = Math.max(hex.terrainLevel(Terrains.BLDG_ELEV), hex.terrainLevel(Terrains.BRIDGE_ELEV));
-        height = Math.max(height, hex.terrainLevel(Terrains.INDUSTRIAL));
 
         // get the base tile image
         Image baseImage = tileManager.baseFor(hex);
@@ -2687,23 +2679,14 @@ public final class BoardView extends AbstractBoardView
      * Draws hex text overlays (coordinates, level, depth, height, foliage, invalid hex info) directly to the board
      * graphics. This is called after drawOrthograph so that text renders on top of bridge images.
      */
-    private void drawHexText(Coords coords, Graphics2D boardGraph) {
-        if (!game.getBoard(boardId).contains(coords)) {
-            return;
-        }
-
-        final Hex hex = game.getBoard(boardId).getHex(coords);
-        if (hex == null) {
-            return;
-        }
-
+    private void drawHexText(Coords coords, Hex hex, Board board, Graphics2D boardGraph) {
         final Point hexLocation = getHexLocation(coords);
         int hexX = hexLocation.x;
         int hexY = hexLocation.y;
 
         // Set the text color according to Preferences or Light Gray in space
         boardGraph.setColor(GUIP.getBoardTextColor());
-        if (game.getBoard(boardId).isSpace()) {
+        if (board.isSpace()) {
             boardGraph.setColor(GUIP.getBoardSpaceTextColor());
         }
 
