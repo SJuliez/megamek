@@ -253,6 +253,7 @@ public record TWPhasePreparationManager(TWGameManager gameManager) {
                 break;
             case VICTORY:
                 gameManager.resetPlayersDone();
+                gameManager.resolveAmmoDumps();
                 gameManager.clearReports();
                 gameManager.send(gameManager.createAllReportsPacket());
                 gameManager.prepareVictoryReport();
