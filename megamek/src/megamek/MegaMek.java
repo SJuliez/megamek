@@ -35,6 +35,7 @@
 
 package megamek;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputFilter;
@@ -55,6 +56,7 @@ import javax.swing.UIManager;
 import io.sentry.Sentry;
 import megamek.client.ui.clientGUI.ButtonOrderPreferences;
 import megamek.client.ui.clientGUI.MegaMekGUI;
+import megamek.client.ui.dialogs.MMAboutDialog;
 import megamek.client.ui.preferences.SuitePreferences;
 import megamek.client.ui.util.FontHandler;
 import megamek.common.annotations.Nullable;
@@ -401,10 +403,25 @@ public class MegaMek {
      * @param currentProject the currently described project
      */
     public static void initializeSuiteGraphicalSetups(final String currentProject) {
+        // on Mac, use the system setting to color the window top bar light or dark
+        // it's not possible to use dark/light based on the current FlatLaf
+        System.setProperty("apple.awt.application.appearance", "system");
+
+        // on Mac, override standard behavior of the added main menu, this is different for MML and MHQ
+        if (currentProject.equals(MMConstants.PROJECT_NAME)) {
+            // The "About" dialog must be handled separately on MML and MHQ
+            Desktop desktop = Desktop.getDesktop();
+            if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {
+                desktop.setAboutHandler(e -> {
+                    new MMAboutDialog(null).show();
+                });
+            }
+        }
+
         // Setup Fonts
         FontHandler.initialize();
 
-        // Setup Themes
+        // Setup ThemesÏ
         UIManager.installLookAndFeel("Flat Light", "com.formdev.flatlaf.FlatLightLaf");
         UIManager.installLookAndFeel("Flat IntelliJ", "com.formdev.flatlaf.FlatIntelliJLaf");
         UIManager.installLookAndFeel("Flat Dark", "com.formdev.flatlaf.FlatDarkLaf");
