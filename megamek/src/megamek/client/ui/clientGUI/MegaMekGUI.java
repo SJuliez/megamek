@@ -79,8 +79,8 @@ import megamek.client.bot.ui.swing.BotGUI;
 import megamek.client.ui.Messages;
 import megamek.client.ui.boardeditor.BoardEditorPanel;
 import megamek.client.ui.clientGUI.tooltip.PilotToolTip;
-import megamek.client.ui.dialogs.CommonAboutDialog;
 import megamek.client.ui.dialogs.LicensingDialog;
+import megamek.client.ui.dialogs.MMAboutDialog;
 import megamek.client.ui.dialogs.ScenarioDialog;
 import megamek.client.ui.dialogs.UnitLoadingDialog;
 import megamek.client.ui.dialogs.buttonDialogs.BotConfigDialog;
@@ -1255,6 +1255,12 @@ public class MegaMekGUI implements IPreferenceChangeListener {
             SwingUtilities.invokeLater(postAction);
         }
 
+        // on Mac, override auto-added "Quit MM" behavior to work like other exit variants (ask for save etc)
+        Desktop desktop = Desktop.getDesktop();
+        if (desktop.isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
+            desktop.setQuitHandler(null);
+        }
+
         // just to free some memory
         client = null;
         System.gc();
@@ -1306,7 +1312,9 @@ public class MegaMekGUI implements IPreferenceChangeListener {
                 showNetworkInformation();
                 break;
             case ClientGUI.HELP_ABOUT:
-                new CommonAboutDialog(frame).setVisible(true);
+//                new CommonAboutDialog(frame).setVisible(true);
+//                CommonAboutDialog2.show(frame);
+                new MMAboutDialog(frame).show();
                 break;
             case ClientGUI.HELP_CONTENTS:
                 new MMReadMeHelpDialog(frame).setVisible(true);

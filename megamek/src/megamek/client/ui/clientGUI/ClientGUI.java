@@ -97,9 +97,9 @@ import megamek.client.ui.dialogs.AccessibilityDialog;
 import megamek.client.ui.dialogs.BotCommands.BotCommandsDialog;
 import megamek.client.ui.dialogs.BotCommands.BotCommandsPanel;
 import megamek.client.ui.dialogs.ChoiceDialog;
-import megamek.client.ui.dialogs.CommonAboutDialog;
 import megamek.client.ui.dialogs.ConfirmDialog;
 import megamek.client.ui.dialogs.InformDialog;
+import megamek.client.ui.dialogs.MMAboutDialog;
 import megamek.client.ui.dialogs.PlayerListDialog;
 import megamek.client.ui.dialogs.RandomNameDialog;
 import megamek.client.ui.dialogs.UnitLoadingDialog;
@@ -805,7 +805,7 @@ public class ClientGUI extends AbstractClientGUI
      * Called when the user selects the "Help->About" menu item.
      */
     private void showAbout() {
-        new CommonAboutDialog(frame).setVisible(true);
+        new MMAboutDialog(frame).show();
     }
 
     private void refreshUnitCache() {

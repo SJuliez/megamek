@@ -49,6 +49,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
 
 import megamek.MMConstants;
 import megamek.client.ui.Messages;
@@ -57,6 +58,7 @@ import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.comboBoxes.MMComboBox;
 import megamek.client.ui.widget.RawImagePanel;
 import megamek.common.Player;
+import megamek.common.annotations.Nullable;
 import megamek.logging.MMLogger;
 
 public final class UIUtil {
@@ -89,7 +91,7 @@ public final class UIUtil {
         browse(MMConstants.MUL_URL_PREFIX + mulId, parent);
     }
 
-    public static void browse(String url, Component parent) {
+    public static void browse(String url, @Nullable Component parent) {
         try {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
                 Desktop.getDesktop().browse(new URL(url).toURI());
@@ -97,6 +99,16 @@ public final class UIUtil {
         } catch (Exception ex) {
             logger.error("", ex);
             JOptionPane.showMessageDialog(parent, ex.getMessage(), "ERROR", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public static void browse(String url) {
+        browse(url, null);
+    }
+
+    public static void handleHyperlink(HyperlinkEvent event) {
+        if (event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+            UIUtil.browse(event.getURL().toString());
         }
     }
 
