@@ -141,11 +141,10 @@ class TeamLoadOutGeneratorTest {
     }
 
     /**
-     * Regression test for MekHQ #6833: the static {@code generateParameters} overload that takes
-     * {@link GameOptions} must propagate {@link OptionsConstants#ALLOWED_YEAR} onto the returned
-     * {@link ReconfigurationParameters}. Without this, the munition selection logic always behaves
-     * as if it were 3151, allowing post-Clan-Invasion ammo (e.g. Tandem-Charge SRMs) to appear
-     * on units in early-era campaigns.
+     * Regression test for MekHQ #6833: the static {@code generateParameters} overload that takes {@link GameOptions}
+     * must propagate {@link OptionsConstants#ALLOWED_YEAR} onto the returned {@link ReconfigurationParameters}. Without
+     * this, the munition selection logic always behaves as if it were 3151, allowing post-Clan-Invasion ammo (e.g.
+     * Tandem-Charge SRMs) to appear on units in early-era campaigns.
      */
     @Test
     void generateParametersPropagatesAllowedYearFromGameOptions() {
@@ -299,7 +298,6 @@ class TeamLoadOutGeneratorTest {
         Mounted<?> bin1 = mockMek.addEquipment(mockLRM15AmmoType, Mek.LOC_LEFT_TORSO);
         Mounted<?> bin2 = mockMek.addEquipment(mockLRM15AmmoType, Mek.LOC_RIGHT_TORSO);
 
-        MunitionWeightCollection mwc = new MunitionWeightCollection();
         MunitionTree mt = new MunitionTree();
         mt.insertImperative("Catapult", "CPLT-C1", "any", "LRM-15", "Semi-Guided " + INCENDIARY_MOD);
 
@@ -650,14 +648,14 @@ class TeamLoadOutGeneratorTest {
         // For other rounds, "Standard" should be first.
         HashMap<String, List<String>> topN = mwc.getTopN(3);
 
-        assertTrue(topN.get("LRM").get(0).contains("Dead-Fire"));
+        assertTrue(topN.get("LRM").getFirst().contains("Dead-Fire"));
         assertTrue(topN.get("LRM").get(1).contains("Dead-Fire w/ Incendiary"));
         assertTrue(topN.get("LRM").get(2).contains("Standard"));
-        assertTrue(topN.get("SRM").get(0).contains("Dead-Fire"));
+        assertTrue(topN.get("SRM").getFirst().contains("Dead-Fire"));
         assertTrue(topN.get("SRM").get(1).contains("Standard"));
 
-        assertTrue(topN.get("AC").get(0).contains("Standard"));
-        assertTrue(topN.get("Arrow IV").get(0).contains("Standard"));
+        assertTrue(topN.get("AC").getFirst().contains("Standard"));
+        assertTrue(topN.get("Arrow IV").getFirst().contains("Standard"));
     }
 
     @Test
@@ -685,11 +683,11 @@ class TeamLoadOutGeneratorTest {
         mwc.increaseMunitions(tsmOnly);
         mwc.increaseMunitions(tsmOnly);
         assertEquals(7.0, mwc.getSrmWeights().get("Anti-TSM"));
-        assertEquals("Anti-TSM=7.0", mwc.getAboveCutoff(6.0).get("SRM").get(0));
+        assertEquals("Anti-TSM=7.0", mwc.getAboveCutoff(6.0).get("SRM").getFirst());
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
+    @ValueSource(booleans = { false, true })
     void testArtemisDefaultIsNegative(boolean clan) {
         // We don't want to assign Artemis ammo based on weighting, we only want to
         // consider if the launcher is suitable (within TeamLoadOutGenerator)
@@ -736,7 +734,7 @@ class TeamLoadOutGeneratorTest {
         double dfOverride = (double) TeamLoadOutGenerator.searchMap("Overrides.Munitions.Dead-Fire");
         double defaultWeight = (double) TeamLoadOutGenerator.searchMap("Defaults.Munitions.Weight");
         assertTrue(dfOverride > 0);
-        assertTrue(defaultWeight == 0.0);
+        assertEquals(0.0, defaultWeight);
     }
 
     @Test
@@ -937,12 +935,12 @@ class TeamLoadOutGeneratorTest {
 
     @Test
     void testMapSearchWithKnownGoodDoubleValue() throws Exception {
-        testMap = new LinkedHashMap<String, Object>(
+        testMap = new LinkedHashMap<>(
               Map.of(
                     "Defaults", Map.of(
                           "Munitions", Map.of(
-                            "Dead-Fire", Map.of(
-                                  "IS", 2.0)
+                                "Dead-Fire", Map.of(
+                                      "IS", 2.0)
                           )
                     )
               )
@@ -953,7 +951,7 @@ class TeamLoadOutGeneratorTest {
 
     @Test
     void testMapSearchWithKnownGoodListValue() throws Exception {
-        testMap = new LinkedHashMap<String, Object>(
+        testMap = new LinkedHashMap<>(
               Map.of(
                     "Prohibited", List.of(
                           "Tandem-Charge",
@@ -991,11 +989,11 @@ class TeamLoadOutGeneratorTest {
               allowNukes
         );
 
-        for (String weaponName: TeamLoadOutGenerator.TYPE_LIST) {
+        for (String weaponName : TeamLoadOutGenerator.TYPE_LIST) {
             HashMap<String, Integer> entries = (HashMap<String, Integer>) availMap.getOrDefault(weaponName, null);
             assertNotEquals(null, entries);
             assertFalse(entries.isEmpty());
-            assertTrue(entries.getOrDefault("Standard", 0) == Integer.MAX_VALUE);
+            assertEquals(Integer.MAX_VALUE, (int) entries.getOrDefault("Standard", 0));
         }
     }
 
@@ -1005,21 +1003,21 @@ class TeamLoadOutGeneratorTest {
         // Primary usage is for applying an existing loadout file to a set of other units; we don't wish to apply any
         // limits to any of the specified munitions as we assume the player already knows whether they are valid or not.
         HashMap<String, Object> availMap = TeamLoadOutGenerator.createUnlimitedAllMunitionsMap();
-        for (String weaponName: TeamLoadOutGenerator.TYPE_LIST) {
+        for (String weaponName : TeamLoadOutGenerator.TYPE_LIST) {
             HashMap<String, Integer> entries = (HashMap<String, Integer>) availMap.getOrDefault(weaponName, null);
             assertNotEquals(null, entries);
             assertFalse(entries.isEmpty());
-            for (Map.Entry<String, Integer> entry: entries.entrySet()) {
-                assertTrue(entry.getValue() == Integer.MAX_VALUE);
+            for (Map.Entry<String, Integer> entry : entries.entrySet()) {
+                assertEquals(Integer.MAX_VALUE, (int) entry.getValue());
             }
         }
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"IS", "CC", "CF", "CP", "CS", "DC", "EI", "FC", "FR", "FS", "FW", "LC",
-    "MC", "MH", "OA", "TA", "TC", "TH", "RD", "RS", "RA", "RW", "WB", "MERC", "PER",
-    "CLAN", "CBR", "CBS", "CCY", "CCC", "CFM", "CGB", "CGS", "CHH", "CIH", "CJF", "CMN", "CNC",
-    "CSF", "CSJ", "CSR", "CSV", "CSA", "CWM", "CWF", "CWX", "CWV"})
+    @ValueSource(strings = { "IS", "CC", "CF", "CP", "CS", "DC", "EI", "FC", "FR", "FS", "FW", "LC",
+                             "MC", "MH", "OA", "TA", "TC", "TH", "RD", "RS", "RA", "RW", "WB", "MERC", "PER",
+                             "CLAN", "CBR", "CBS", "CCY", "CCC", "CFM", "CGB", "CGS", "CHH", "CIH", "CJF", "CMN", "CNC",
+                             "CSF", "CSJ", "CSR", "CSV", "CSA", "CWM", "CWF", "CWX", "CWV" })
     void testValidMunitionsGeneratorNoStandardBeforeIntro(String faction) {
         // While some extant ammo types predate even manned spaceflight, the vast majority
         // (even Standard ammo) were created in the 23rd century or later.
@@ -1043,7 +1041,7 @@ class TeamLoadOutGeneratorTest {
               allowNukes
         );
 
-        for (String weaponName: TeamLoadOutGenerator.TYPE_LIST) {
+        for (String weaponName : TeamLoadOutGenerator.TYPE_LIST) {
             // "Smaller" Artillery existed pre-spaceflight so don't worry about them
             if (List.of("Sniper", "Thumper").contains(weaponName)) {
                 continue;
@@ -1060,12 +1058,12 @@ class TeamLoadOutGeneratorTest {
         ReconfigurationParameters rp = new ReconfigurationParameters();
         rp.nukesBannedForMe = true;
         MunitionWeightCollection mwc = new MunitionWeightCollection();
-        HashMap<String, Object> overrides = new HashMap<String, Object>(
+        HashMap<String, Object> overrides = new HashMap<>(
               Map.of(
-                  "LRM", Map.of(
-                        "Dead-Fire", Map.of(
-                              "IS", 5.0)
-                  )
+                    "LRM", Map.of(
+                          "Dead-Fire", Map.of(
+                                "IS", 5.0)
+                    )
               )
         );
         ArrayList<String> prohibited = new ArrayList<>(

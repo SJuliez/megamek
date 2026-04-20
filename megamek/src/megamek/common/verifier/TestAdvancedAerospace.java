@@ -152,6 +152,7 @@ public class TestAdvancedAerospace extends TestAero {
         }
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public static double armorPointsPerTon(Jumpship vessel, int at, boolean clan) {
         ArmorType arm = ArmorType.of(at, clan);
         return arm.getPointsPerTon(vessel);
@@ -615,6 +616,7 @@ public class TestAdvancedAerospace extends TestAero {
         return vessel;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public Jumpship getAdvancedAerospace() {
         return vessel;
     }

@@ -663,7 +663,7 @@ public class CompositeTechLevel implements ITechnology, Serializable {
         if (extinct.isEmpty()) {
             return DATE_NONE;
         } else {
-            return extinct.get(0).start;
+            return extinct.getFirst().start;
         }
     }
 
@@ -672,7 +672,7 @@ public class CompositeTechLevel implements ITechnology, Serializable {
         if (extinct.isEmpty()) {
             return DATE_NONE;
         } else {
-            return extinct.get(0).end == null ? DATE_NONE : extinct.get(0).end;
+            return extinct.getFirst().end == null ? DATE_NONE : extinct.getFirst().end;
         }
     }
 

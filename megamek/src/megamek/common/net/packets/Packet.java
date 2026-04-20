@@ -96,6 +96,14 @@ public record Packet(PacketCommand command, Object... data) implements Serializa
     public Packet {
     }
 
+    public Packet(PacketCommand command, List<Object> listData) {
+        this(command, new Object[listData.size()]);
+        
+        for (int i = 0; i < listData.size(); i++) {
+            this.data[i] = listData.get(i);
+        }
+    }
+
     /**
      * @return the command associated.
      */

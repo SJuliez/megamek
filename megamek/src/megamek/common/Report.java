@@ -347,7 +347,6 @@ public class Report implements ReportEntry {
 
     /**
      * Add an additional message id that will extend the base message
-     * @param id
      */
     public void extend(int id) {
         getExtensions().add(id);
@@ -355,6 +354,7 @@ public class Report implements ReportEntry {
 
     /**
      * Safety accessor for extensions
+     *
      * @return extensions Vector of integer values of report messages
      */
     public Vector<Integer> getExtensions() {
@@ -557,6 +557,7 @@ public class Report implements ReportEntry {
     /**
      * Manually Toggle if the report should show an image of the entity
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void setShowImage(boolean showImage) {
         this.showImage = showImage;
     }
@@ -659,7 +660,7 @@ public class Report implements ReportEntry {
         StringBuilder rawBuilder = new StringBuilder();
         rawBuilder.append(Optional.ofNullable(ReportMessages.getString(String.valueOf(messageId))).orElse(""));
 
-        for (int extension: getExtensions()) {
+        for (int extension : getExtensions()) {
             rawBuilder.append(Optional.ofNullable(ReportMessages.getString(String.valueOf(extension))).orElse(""));
         }
 
@@ -844,6 +845,7 @@ public class Report implements ReportEntry {
      *
      * @param name The class name.
      * @param text The text to wrap.
+     *
      * @return The HTML string.
      */
     public String span(String name, String text) {
@@ -854,6 +856,7 @@ public class Report implements ReportEntry {
      * Wraps text in a warning span.
      *
      * @param text The text to wrap.
+     *
      * @return The HTML string.
      */
     public String warning(String text) {
@@ -864,6 +867,7 @@ public class Report implements ReportEntry {
      * Converts a Color object to a hex string.
      *
      * @param color The Color object.
+     *
      * @return The hex string (e.g., "#RRGGBB").
      */
     private static String hexColor(Color color) {
@@ -875,6 +879,7 @@ public class Report implements ReportEntry {
      *
      * @param color The color to use.
      * @param str   The text to wrap.
+     *
      * @return The HTML string.
      */
     public String fgColor(Color color, String str) {
@@ -886,6 +891,7 @@ public class Report implements ReportEntry {
      *
      * @param hexColor The hex color string (e.g., "#RRGGBB").
      * @param str      The text to wrap.
+     *
      * @return The HTML string.
      */
     public String fgColor(String hexColor, String str) {
@@ -897,8 +903,10 @@ public class Report implements ReportEntry {
      *
      * @param color The color to use.
      * @param str   The text to wrap.
+     *
      * @return The HTML string.
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public String bgColor(Color color, String str) {
         return bgColor(hexColor(color), str);
     }
@@ -908,6 +916,7 @@ public class Report implements ReportEntry {
      *
      * @param hexColor The hex color string (e.g., "#RRGGBB").
      * @param str      The text to wrap.
+     *
      * @return The HTML string.
      */
     public String bgColor(String hexColor, String str) {
@@ -918,6 +927,7 @@ public class Report implements ReportEntry {
      * Wraps text in a bold tag.
      *
      * @param str The text to wrap.
+     *
      * @return The HTML string.
      */
     public static String bold(String str) {
@@ -929,6 +939,7 @@ public class Report implements ReportEntry {
      *
      * @param href The URL.
      * @param str  The link text.
+     *
      * @return The HTML string.
      */
     public String href(String href, String str) {

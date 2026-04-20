@@ -229,17 +229,36 @@ class MtfFileTest {
         String mtf = mek.getMtf();
 
         // Correct XL Gyro CT: Engine(0-2), Gyro(3-8), Engine(9-11)
-        String correctCT = "Fusion Engine\nFusion Engine\nFusion Engine\n"
-              + "Gyro\nGyro\nGyro\nGyro\nGyro\nGyro\n"
-              + "Fusion Engine\nFusion Engine\nFusion Engine";
+        String correctCT = """
+              Fusion Engine
+              Fusion Engine
+              Fusion Engine
+              Gyro
+              Gyro
+              Gyro
+              Gyro
+              Gyro
+              Gyro
+              Fusion Engine
+              Fusion Engine
+              Fusion Engine""";
         assertTrue(mtf.contains(correctCT),
               "Expected correct XL Gyro CT layout in generated MTF to set up the test");
 
         // Broken: Engine(0-2), Gyro(3-6), Engine(7-9), Gyro(10-11) - split gyro
-        String brokenCT = "Fusion Engine\nFusion Engine\nFusion Engine\n"
-              + "Gyro\nGyro\nGyro\nGyro\n"
-              + "Fusion Engine\nFusion Engine\nFusion Engine\n"
-              + "Gyro\nGyro";
+        String brokenCT = """
+              Fusion Engine
+              Fusion Engine
+              Fusion Engine
+              Gyro
+              Gyro
+              Gyro
+              Gyro
+              Fusion Engine
+              Fusion Engine
+              Fusion Engine
+              Gyro
+              Gyro""";
 
         mtf = mtf.replace(correctCT, brokenCT);
 
@@ -317,18 +336,36 @@ class MtfFileTest {
         String mtf = mek.getMtf();
 
         // Correct layout: Engine at front (slots 0-2), then equipment
-        String correctLT = "Fusion Engine\nFusion Engine\nFusion Engine\n"
-              + "ISGaussRifle\nISGaussRifle\nISGaussRifle\nISGaussRifle\n"
-              + "ISGaussRifle\nISGaussRifle\nISGaussRifle\n"
-              + "SRM 6\nSRM 6";
+        String correctLT = """
+              Fusion Engine
+              Fusion Engine
+              Fusion Engine
+              ISGaussRifle
+              ISGaussRifle
+              ISGaussRifle
+              ISGaussRifle
+              ISGaussRifle
+              ISGaussRifle
+              ISGaussRifle
+              SRM 6
+              SRM 6""";
         assertTrue(mtf.contains(correctLT),
               "Expected correct LT layout in generated MTF to set up the test");
 
         // Broken: equipment first, engine at end (as the user's original file had)
-        String brokenLT = "ISGaussRifle\nISGaussRifle\nISGaussRifle\nISGaussRifle\n"
-              + "ISGaussRifle\nISGaussRifle\nISGaussRifle\n"
-              + "SRM 6\nSRM 6\n"
-              + "Fusion Engine\nFusion Engine\nFusion Engine";
+        String brokenLT = """
+              ISGaussRifle
+              ISGaussRifle
+              ISGaussRifle
+              ISGaussRifle
+              ISGaussRifle
+              ISGaussRifle
+              ISGaussRifle
+              SRM 6
+              SRM 6
+              Fusion Engine
+              Fusion Engine
+              Fusion Engine""";
         mtf = mtf.replace(correctLT, brokenLT);
 
         MtfFile loader = toMtfFile(mtf);
@@ -473,7 +510,7 @@ class MtfFileTest {
      * Test that the Clan CASE opt-out line is written in deterministic (sorted) order.
      */
     @Test
-    void testClanCaseOptOutSortedOutput() throws Exception {
+    void testClanCaseOptOutSortedOutput() {
         Mek mek = new BipedMek();
         // Add in reverse order to exercise sorting
         mek.addClanCaseOptOut(Mek.LOC_RIGHT_LEG);   // index 6
@@ -510,7 +547,7 @@ class MtfFileTest {
     }
 
     @Test
-    void testFluffDateEmittedWhenSet() throws Exception {
+    void testFluffDateEmittedWhenSet() {
         Mek mek = new BipedMek();
         mek.setWeight(20.0);
         mek.setEngine(new Engine(100, Engine.NORMAL_ENGINE, 0));
@@ -522,7 +559,7 @@ class MtfFileTest {
     }
 
     @Test
-    void testFluffDateNotEmittedWhenEmpty() throws Exception {
+    void testFluffDateNotEmittedWhenEmpty() {
         Mek mek = new BipedMek();
         mek.setWeight(20.0);
         mek.setEngine(new Engine(100, Engine.NORMAL_ENGINE, 0));

@@ -162,10 +162,12 @@ public abstract class Entity extends TurnOrdered
     @Serial
     private static final long serialVersionUID = 1430806396279853295L;
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public int getImpLastTurn() {
         return impLastTurn;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void setImpLastTurn(int impLastTurn) {
         this.impLastTurn = impLastTurn;
     }
@@ -1887,6 +1889,7 @@ public abstract class Entity extends TurnOrdered
      * @author Illiani
      * @since 0.50.10
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public int getPassengerCapacityWithoutBayCrew() {
         int bayCrew = getBayPersonnel();
         return nPassenger - bayCrew;
@@ -2769,9 +2772,8 @@ public abstract class Entity extends TurnOrdered
                     // don't check this for units that are not actually below the bridge, including units on a height
                     // 0 bridge on dry ground (essentially, the bridge being a road)
                     // but: don't forget that a height 0 bridge can be over water where this is relevant
-                    if (assumedElevation < bridgeElev && assumedElevation + height() + 1 > bridgeElev) {
-                        return false;  // Can't fit under bridge, floor is invalid
-                    }
+                    return assumedElevation >= bridgeElev
+                          || assumedElevation + height() + 1 <= bridgeElev;  // Can't fit under bridge, floor is invalid
                 }
                 return true;
             }
@@ -3250,6 +3252,7 @@ public abstract class Entity extends TurnOrdered
      * Convenience method to drop all cargo.
      * TODO HHW - Psi
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void dropGroundObjects() {
         carriedObjects.clear();
     }
@@ -3268,6 +3271,7 @@ public abstract class Entity extends TurnOrdered
     /**
      * TODO HHW - Psi
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void setCarriedObjects(Map<Integer, ICarryable> value) {
         carriedObjects = value;
     }
@@ -3353,7 +3357,7 @@ public abstract class Entity extends TurnOrdered
                 // FIXME #7640: Update once we can properly specify any transporter an entity has, and properly load into
                 //  that transporter.
                 locationMap.put(transporter.getTransporterType() + " " + externalCargo.getCarryables()
-                            .get(0)
+                            .getFirst()
                             .toString(),
                       Integer.MAX_VALUE - getTransports().indexOf(transporter));
 
@@ -5218,8 +5222,8 @@ public abstract class Entity extends TurnOrdered
      * given location. When available, use EquipmentTypeLookup internal names (or add one when it is not yet used for a
      * MiscType). Note that any internal name, even of weapons, can be given but this method only searches misc
      * equipment and will not find weapons. Note that for BA, this checks the trooper locations (squad, trooper 1...)
-     * rather than the mount locations (arm, body). For BA, {@link BattleArmor#hasMiscInMountLocation} can be
-     * used instead.
+     * rather than the mount locations (arm, body). For BA, {@link BattleArmor#hasMiscInMountLocation} can be used
+     * instead.
      *
      * @param internalName The internal name of the misc, e.g. EquipmentTypeLookup.BA_MYOMER_BOOSTER
      * @param location     The location, e.g. Mek.LOC_LEFT_TORSO
@@ -6080,11 +6084,8 @@ public abstract class Entity extends TurnOrdered
               && (getTotalCommGearTons() >= 7)) {
             return true;
         }
-        if (type.hasFlag(MiscType.F_COMMAND_CONSOLE)
-              && equipment.curMode().equals("Ghost Targets")) {
-            return true;
-        }
-        return false;
+        return type.hasFlag(MiscType.F_COMMAND_CONSOLE)
+              && equipment.curMode().equals("Ghost Targets");
     }
 
     /**
@@ -6408,6 +6409,7 @@ public abstract class Entity extends TurnOrdered
      *
      * @return The TCP initiative bonus (0 if entity doesn't qualify)
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public int getTCPInitiativeBonus() {
         if (crew == null || !crew.isActive()) {
             return 0;
@@ -6768,10 +6770,7 @@ public abstract class Entity extends TurnOrdered
      */
     public VariableRangeTargetingMode getVariableRangeTargetingMode() {
         // Handle null from old save files that don't have this field
-        if (variableRangeTargetingMode == null) {
-            return VariableRangeTargetingMode.LONG;
-        }
-        return variableRangeTargetingMode;
+        return Objects.requireNonNullElse(variableRangeTargetingMode, VariableRangeTargetingMode.LONG);
     }
 
     /**
@@ -7656,12 +7655,12 @@ public abstract class Entity extends TurnOrdered
                               (weaponHandler instanceof CapitalMissileBearingsOnlyHandler) ?
                                     getGame().getTarget(
                                           weaponHandler.getWeaponAttackAction()
-                                                .getOriginalTargetType(),
+                                          .getOriginalTargetType(),
                                           weaponHandler.getWeaponAttackAction()
-                                                .getOriginalTargetId()) :
+                                          .getOriginalTargetId()) :
                                     getGame().getEntity(
                                           weaponHandler.getWeaponAttackAction()
-                                                .getEntityId())))
+                                          .getEntityId())))
                   .map(WeaponHandler::getWeaponAttackAction)
                   .collect(Collectors.toList());
 
@@ -8258,19 +8257,13 @@ public abstract class Entity extends TurnOrdered
     }
 
     private int maxAdditionalCarryableBAByWeightClass() {
-        switch (getWeightClass()) {
-            case EntityWeightClass.WEIGHT_LIGHT:
-                return 2;
-            case EntityWeightClass.WEIGHT_MEDIUM:
-                return 3;
-            case EntityWeightClass.WEIGHT_HEAVY:
-                return 4;
-            case EntityWeightClass.WEIGHT_ASSAULT:
-                return 6;
-            default:
-                return 0;
-
-        }
+        return switch (getWeightClass()) {
+            case EntityWeightClass.WEIGHT_LIGHT -> 2;
+            case EntityWeightClass.WEIGHT_MEDIUM -> 3;
+            case EntityWeightClass.WEIGHT_HEAVY -> 4;
+            case EntityWeightClass.WEIGHT_ASSAULT -> 6;
+            default -> 0;
+        };
     }
 
     /**
@@ -10150,6 +10143,7 @@ public abstract class Entity extends TurnOrdered
     /**
      * Increment the infantry combat turn counter.
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void incrementInfantryCombatTurnCount() {
         infantryCombatTurnCount++;
     }
@@ -10844,12 +10838,9 @@ public abstract class Entity extends TurnOrdered
             }
             // Standard ghost target mode: entities with ghost target equipment
             // are eligible during PRE_FIRING to assign targets
-            if (phase.isPreFiring() && hasGhostTargetEquipment()
+            return phase.isPreFiring() && hasGhostTargetEquipment()
                   && (game != null)
-                  && game.usesStandardGhostTargetMode()) {
-                return true;
-            }
-            return false;
+                  && game.usesStandardGhostTargetMode();
         }
 
         // Hidden units shouldn't be counted for turn order, unless deploying or firing (spotting)
@@ -12083,8 +12074,8 @@ public abstract class Entity extends TurnOrdered
      * Returns the current neural interface mode from game options. Returns Off for null, blank, or unrecognized values
      * to ensure safe defaults.
      *
-     * @return the neural interface mode string, or {@link OptionsConstants#NEURAL_INTERFACE_MODE_OFF} if no game context
-     *       or invalid value
+     * @return the neural interface mode string, or {@link OptionsConstants#NEURAL_INTERFACE_MODE_OFF} if no game
+     *       context or invalid value
      */
     protected String getNeuralInterfaceMode() {
         if (game == null) {
@@ -12211,10 +12202,7 @@ public abstract class Entity extends TurnOrdered
             return false;
         }
         // Units with MDI cannot shut down EI per IO
-        if (hasAbility(OptionsConstants.MD_VDNI) || hasAbility(OptionsConstants.MD_BVDNI)) {
-            return false;
-        }
-        return true;
+        return !hasAbility(OptionsConstants.MD_VDNI) && !hasAbility(OptionsConstants.MD_BVDNI);
     }
 
     /**
@@ -13131,7 +13119,7 @@ public abstract class Entity extends TurnOrdered
         if (passedThrough.isEmpty()) {
             return getPosition();
         }
-        Coords prevCrd = passedThrough.get(0);
+        Coords prevCrd = passedThrough.getFirst();
         for (Coords crd : passedThrough) {
             if (crd.equals(c)) {
                 break;
@@ -14203,7 +14191,7 @@ public abstract class Entity extends TurnOrdered
      */
     public int getObsoleteYear() {
         List<Integer> years = getObsoleteYears();
-        return years.isEmpty() ? 0 : years.get(0);
+        return years.isEmpty() ? 0 : years.getFirst();
     }
 
     /**
@@ -16163,6 +16151,7 @@ public abstract class Entity extends TurnOrdered
         }
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void activateRadicalHS() {
         for (MiscMounted miscEquipment : getMisc()) {
             if (miscEquipment.getType().hasFlag(MiscType.F_RADICAL_HEATSINK)) {
@@ -16906,9 +16895,9 @@ public abstract class Entity extends TurnOrdered
             // If we're towing something, check for a front or rear hitch
             Entity towed;
             if (!getAllTowedUnits().isEmpty()) {
-                towed = game.getEntity(getAllTowedUnits().get(0));
+                towed = game.getEntity(getAllTowedUnits().getFirst());
             } else {
-                towed = game.getEntity(getConnectedUnits().get(0));
+                towed = game.getEntity(getConnectedUnits().getFirst());
             }
 
             if (towed == null) {

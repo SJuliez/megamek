@@ -76,14 +76,14 @@ public class UnitFileMigrationTool {
                 }
 
                 if (lines.get(0).startsWith("Version:")) {
-                    lines.remove(0);
+                    lines.removeFirst();
                 } else {
                     continue;
                 }
 
                 if (!lines.get(0).contains(":")) {
-                    String chassis = lines.remove(0);
-                    lines.add(0, MtfFile.CHASSIS + chassis);
+                    String chassis = lines.removeFirst();
+                    lines.addFirst(MtfFile.CHASSIS + chassis);
                 } else {
                     continue;
                 }

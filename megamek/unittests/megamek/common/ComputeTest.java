@@ -56,8 +56,8 @@ import megamek.common.enums.BuildingType;
 import megamek.common.equipment.AmmoMounted;
 import megamek.common.equipment.AmmoType;
 import megamek.common.equipment.EquipmentType;
-import megamek.common.equipment.WeaponMounted;
 import megamek.common.equipment.IArmorState;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.equipment.WeaponType;
 import megamek.common.exceptions.LocationFullException;
 import megamek.common.game.Game;
@@ -66,17 +66,7 @@ import megamek.common.options.Option;
 import megamek.common.options.OptionsConstants;
 import megamek.common.options.PilotOptions;
 import megamek.common.rolls.TargetRoll;
-import megamek.common.units.AeroSpaceFighter;
-import megamek.common.units.BipedMek;
-import megamek.common.units.BuildingEntity;
-import megamek.common.units.Crew;
-import megamek.common.units.Entity;
-import megamek.common.units.CrewType;
-import megamek.common.units.Infantry;
-import megamek.common.units.Mek;
-import megamek.common.units.Targetable;
-import megamek.common.weapons.lasers.innerSphere.medium.ISLaserMedium;
-import megamek.common.units.TripodMek;
+import megamek.common.units.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,7 +74,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
 
 class ComputeTest {
 
@@ -572,7 +561,7 @@ class ComputeTest {
         // Add a weapon to center torso (valid location for prone firing)
         WeaponType mediumLaser = (WeaponType) EquipmentType.get("ISMediumLaser");
         tripod.addEquipment(mediumLaser, Mek.LOC_CENTER_TORSO);
-        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().get(0));
+        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().getFirst());
 
         ToHitData mods = Compute.getProneMods(game, tripod, weaponId);
 
@@ -596,7 +585,7 @@ class ComputeTest {
         // Add a weapon to center torso (valid location for prone firing)
         WeaponType mediumLaser = (WeaponType) EquipmentType.get("ISMediumLaser");
         tripod.addEquipment(mediumLaser, Mek.LOC_CENTER_TORSO);
-        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().get(0));
+        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().getFirst());
 
         ToHitData mods = Compute.getProneMods(game, tripod, weaponId);
 
@@ -624,7 +613,7 @@ class ComputeTest {
         // Add a weapon to center torso (valid location for prone firing)
         WeaponType mediumLaser = (WeaponType) EquipmentType.get("ISMediumLaser");
         tripod.addEquipment(mediumLaser, Mek.LOC_CENTER_TORSO);
-        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().get(0));
+        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().getFirst());
 
         ToHitData mods = Compute.getProneMods(game, tripod, weaponId);
 
@@ -651,7 +640,7 @@ class ComputeTest {
         // Add a weapon to center torso (valid location for prone firing)
         WeaponType mediumLaser = (WeaponType) EquipmentType.get("ISMediumLaser");
         tripod.addEquipment(mediumLaser, Mek.LOC_CENTER_TORSO);
-        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().get(0));
+        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().getFirst());
 
         ToHitData mods = Compute.getProneMods(game, tripod, weaponId);
 
@@ -670,7 +659,7 @@ class ComputeTest {
         // Add a weapon to center leg (invalid location for prone firing)
         WeaponType mediumLaser = (WeaponType) EquipmentType.get("ISMediumLaser");
         tripod.addEquipment(mediumLaser, Mek.LOC_CENTER_LEG);
-        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().get(0));
+        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().getFirst());
 
         ToHitData mods = Compute.getProneMods(game, tripod, weaponId);
 
@@ -691,7 +680,7 @@ class ComputeTest {
         // Add a weapon to left leg (invalid location for prone firing)
         WeaponType mediumLaser = (WeaponType) EquipmentType.get("ISMediumLaser");
         tripod.addEquipment(mediumLaser, Mek.LOC_LEFT_LEG);
-        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().get(0));
+        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().getFirst());
 
         ToHitData mods = Compute.getProneMods(game, tripod, weaponId);
 
@@ -712,7 +701,7 @@ class ComputeTest {
         // Add a weapon to right leg (invalid location for prone firing)
         WeaponType mediumLaser = (WeaponType) EquipmentType.get("ISMediumLaser");
         tripod.addEquipment(mediumLaser, Mek.LOC_RIGHT_LEG);
-        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().get(0));
+        int weaponId = tripod.getEquipmentNum(tripod.getWeaponList().getFirst());
 
         ToHitData mods = Compute.getProneMods(game, tripod, weaponId);
 
@@ -893,14 +882,14 @@ class ComputeTest {
         // Damage should just be divided by 10
         double originalDamage = 5.0;
         int weaponType = WeaponType.WEAPON_DIRECT_FIRE;
-        Vector<Report> reports = new Vector<Report>();
+        Vector<Report> reports = new Vector<>();
         int newDamage = directBlowInfantryDamage(
-             originalDamage,
-             0,
-             weaponType,
-             false,
-             false,
-             1,
+              originalDamage,
+              0,
+              weaponType,
+              false,
+              false,
+              1,
               reports,
               0
         );
@@ -913,7 +902,7 @@ class ComputeTest {
         // Damage should be divided by 10, then rounded, then doubled due to non-burst damage
         double originalDamage = 5.0;
         int weaponType = WeaponType.WEAPON_DIRECT_FIRE;
-        Vector<Report> reports = new Vector<Report>();
+        Vector<Report> reports = new Vector<>();
         int newDamage = directBlowInfantryDamage(
               originalDamage,
               0,
@@ -933,7 +922,7 @@ class ComputeTest {
         // 5 BA LMGs -> 1D6 / 2, halved by Mechanized Armor vs Burst
         double originalDamage = 5.0;
         int weaponType = WeaponType.WEAPON_BURST_HALF_D6;
-        Vector<Report> reports = new Vector<Report>();
+        Vector<Report> reports = new Vector<>();
         int newDamage = directBlowInfantryDamage(
               originalDamage,
               0,
@@ -954,7 +943,7 @@ class ComputeTest {
         // 1D6 -> 4D6 -> 4D6 / 2
         double originalDamage = 10.0;
         int weaponType = WeaponType.WEAPON_BURST_1D6;
-        Vector<Report> reports = new Vector<Report>();
+        Vector<Report> reports = new Vector<>();
         int newDamage = directBlowInfantryDamage(
               originalDamage,
               3,
@@ -967,6 +956,6 @@ class ComputeTest {
         );
         assertTrue(newDamage >= 2.0 && newDamage <= 12.0, "10 -> 4D6 / 2.0, rounded up: " + newDamage);
         assertEquals(1, reports.size(), "Report size");
-        assertTrue(reports.get(0).text().contains("in building"));
+        assertTrue(reports.getFirst().text().contains("in building"));
     }
 }

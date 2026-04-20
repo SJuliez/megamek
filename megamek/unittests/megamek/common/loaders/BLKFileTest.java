@@ -35,6 +35,7 @@ package megamek.common.loaders;
 import static megamek.common.bays.Bay.UNSET_BAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -384,7 +385,7 @@ class BLKFileTest {
         MekFileParser parser = new MekFileParser(file);
         Entity entity = parser.getEntity();
         assertNotNull(entity, "Failed to load entity from " + filename);
-        assertTrue(entity instanceof BattleArmor, "Entity should be BattleArmor");
+        assertInstanceOf(BattleArmor.class, entity, "Entity should be BattleArmor");
         return (BattleArmor) entity;
     }
 

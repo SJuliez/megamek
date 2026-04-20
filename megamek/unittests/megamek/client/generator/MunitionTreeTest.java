@@ -151,9 +151,9 @@ class MunitionTreeTest {
         // Expect Standard to be first; this will be used if all imperatives are
         // fulfilled and bins remain
         List<String> ammoOrdering = mt.getPriorityList("Paladin Defense System", "any", "any", "Long Tom");
-        assertEquals("Standard", ammoOrdering.get(0));
+        assertEquals("Standard", ammoOrdering.getFirst());
         assertEquals("Thunder", ammoOrdering.get(3));
-        assertEquals("Smoke", ammoOrdering.get(ammoOrdering.size() - 1));
+        assertEquals("Smoke", ammoOrdering.getLast());
     }
 
     @Test
