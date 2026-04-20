@@ -237,7 +237,7 @@ class GeneralEntityReadout implements EntityReadout {
                 if (!activeWeaponQuirkElements.isEmpty()) {
                     JoinedViewElement wq = new JoinedViewElement();
                     wq.add(weapon.getDesc() + " (" + entity.getLocationAbbr(weapon.getLocation()) + "): ");
-                    wq.add(activeWeaponQuirkElements.get(0));
+                    wq.add(activeWeaponQuirkElements.getFirst());
                     for (int i = 1; i < activeWeaponQuirkElements.size(); i++) {
                         wq.add(", ");
                         wq.add(activeWeaponQuirkElements.get(i));

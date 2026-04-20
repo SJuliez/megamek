@@ -40,6 +40,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.io.Serial;
 import java.util.Hashtable;
+import java.util.Optional;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -171,6 +172,11 @@ public class Report implements ReportEntry {
     public int messageId = Report.MESSAGE_NONE;
 
     /**
+     * Additional sections to add to raw message prior to inserting tags
+     */
+    public Vector<Integer> extensions = new Vector<>();
+
+    /**
      * The number of spaces this report should be indented.
      */
     private int indentation = 0;
@@ -272,6 +278,7 @@ public class Report implements ReportEntry {
     @SuppressWarnings("unchecked")
     public Report(Report r) {
         messageId = r.messageId;
+        extensions = (Vector<Integer>) r.getExtensions().clone();
         indentation = r.indentation;
         newlines = r.newlines;
         tagData = (Vector<String>) r.tagData.clone();
@@ -336,6 +343,25 @@ public class Report implements ReportEntry {
      */
     public Report noNL() {
         return newLines(0);
+    }
+
+    /**
+     * Add an additional message id that will extend the base message
+     * @param id
+     */
+    public void extend(int id) {
+        getExtensions().add(id);
+    }
+
+    /**
+     * Safety accessor for extensions
+     * @return extensions Vector of integer values of report messages
+     */
+    public Vector<Integer> getExtensions() {
+        if (this.extensions == null) {
+            this.extensions = new Vector<>();
+        }
+        return this.extensions;
     }
 
     /**
@@ -629,13 +655,21 @@ public class Report implements ReportEntry {
      */
     @Override
     public String text() {
-        // The raw text of the message, with tags.
-        String raw = ReportMessages.getString(String.valueOf(messageId));
+        // Build the raw text of the message, with tags.
+        StringBuilder rawBuilder = new StringBuilder();
+        rawBuilder.append(Optional.ofNullable(ReportMessages.getString(String.valueOf(messageId))).orElse(""));
+
+        for (int extension: getExtensions()) {
+            rawBuilder.append(Optional.ofNullable(ReportMessages.getString(String.valueOf(extension))).orElse(""));
+        }
+
+        // Use string representation for actual work
+        String raw = rawBuilder.toString();
 
         // This will be the finished product, with data substituted for tags.
         StringBuffer text = new StringBuffer();
 
-        if (raw == null) {
+        if (raw.isEmpty()) {
             // Should we handle this better? Check alternate language files?
             logger.error("No message found for ID {}", messageId);
             text.append("[Reporting Error for message ID ").append(messageId).append("]");

@@ -66,6 +66,7 @@ public class SBFFormationDeserializer extends StdDeserializer<SBFFormation> {
     private static final String Y = "y";
     private static final String DEPLOYMENT_ROUND = "deploymentround";
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public SBFFormationDeserializer() {
         this(null);
     }
@@ -142,7 +143,7 @@ public class SBFFormationDeserializer extends StdDeserializer<SBFFormation> {
         if (leadCount > 1) {
             throw new IllegalArgumentException("Only one Unit of a Formation may have LEAD");
         } else if ((leadCount == 0) && (formation.getUnits().size() > 1)) {
-            formation.getUnits().get(0).getSpecialAbilities().setSUA(BattleForceSUA.LEAD);
+            formation.getUnits().getFirst().getSpecialAbilities().setSUA(BattleForceSUA.LEAD);
         }
     }
 }

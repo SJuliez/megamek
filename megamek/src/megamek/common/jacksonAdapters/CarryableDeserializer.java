@@ -59,6 +59,7 @@ public class CarryableDeserializer extends StdDeserializer<GroundObjectInfo> {
     private static final String STATUS = "status";
     private static final String INVULNERABLE = "invulnerable";
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public CarryableDeserializer() {
         this(null);
     }

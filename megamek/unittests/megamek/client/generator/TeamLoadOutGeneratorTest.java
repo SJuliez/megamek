@@ -140,6 +140,34 @@ class TeamLoadOutGeneratorTest {
     void generateParameters() {
     }
 
+    /**
+     * Regression test for MekHQ #6833: the static {@code generateParameters} overload that takes
+     * {@link GameOptions} must propagate {@link OptionsConstants#ALLOWED_YEAR} onto the returned
+     * {@link ReconfigurationParameters}. Without this, the munition selection logic always behaves
+     * as if it were 3151, allowing post-Clan-Invasion ammo (e.g. Tandem-Charge SRMs) to appear
+     * on units in early-era campaigns.
+     */
+    @Test
+    void generateParametersPropagatesAllowedYearFromGameOptions() {
+        when(mockGameOptions.intOption(OptionsConstants.ALLOWED_YEAR)).thenReturn(3014);
+
+        ArrayList<Entity> ownEntities = new ArrayList<>();
+        ownEntities.add(createMek("Atlas", "AS7-D", "Pilot"));
+
+        ReconfigurationParameters rp = TeamLoadOutGenerator.generateParameters(
+              game,
+              mockGameOptions,
+              ownEntities,
+              "FS",
+              new ArrayList<>(),
+              new ArrayList<>(),
+              ForceDescriptor.RATING_5,
+              1.0f);
+
+        assertEquals(3014, rp.allowedYear,
+              "generateParameters must propagate GameOptions ALLOWED_YEAR to ReconfigurationParameters.allowedYear");
+    }
+
     @Test
     void generateMunitionTree() {
     }
@@ -968,6 +996,22 @@ class TeamLoadOutGeneratorTest {
             assertNotEquals(null, entries);
             assertFalse(entries.isEmpty());
             assertTrue(entries.getOrDefault("Standard", 0) == Integer.MAX_VALUE);
+        }
+    }
+
+    @Test
+    void testCreateUnlimitedAllMunitionsMap() {
+        // This method creates an availability map where all entries are set to "unlimited", that is, Integer.MAX_VALUE.
+        // Primary usage is for applying an existing loadout file to a set of other units; we don't wish to apply any
+        // limits to any of the specified munitions as we assume the player already knows whether they are valid or not.
+        HashMap<String, Object> availMap = TeamLoadOutGenerator.createUnlimitedAllMunitionsMap();
+        for (String weaponName: TeamLoadOutGenerator.TYPE_LIST) {
+            HashMap<String, Integer> entries = (HashMap<String, Integer>) availMap.getOrDefault(weaponName, null);
+            assertNotEquals(null, entries);
+            assertFalse(entries.isEmpty());
+            for (Map.Entry<String, Integer> entry: entries.entrySet()) {
+                assertTrue(entry.getValue() == Integer.MAX_VALUE);
+            }
         }
     }
 
