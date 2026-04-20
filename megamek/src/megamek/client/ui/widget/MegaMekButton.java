@@ -182,7 +182,7 @@ public class MegaMekButton extends JButton implements MouseListener {
         isBGTiled = skinSpec.tileBackground;
 
         if (!skinSpec.fontColors.isEmpty()) {
-            buttonColor = skinSpec.fontColors.get(0);
+            buttonColor = skinSpec.fontColors.getFirst();
         } else {
             buttonColor = defaultColor;
         }
@@ -330,6 +330,7 @@ public class MegaMekButton extends JButton implements MouseListener {
         return getActionCommand();
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public boolean isIconsLoaded() {
         return iconsLoaded;
     }

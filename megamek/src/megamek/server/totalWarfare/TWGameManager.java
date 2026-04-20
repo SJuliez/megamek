@@ -368,6 +368,11 @@ public class TWGameManager extends AbstractGameManager {
         // The packet will be sent when clients reconnect and receive the full game state.
         Map<BoardLocation, Integer> cutHexes = this.game.getWoodsClearingTracker().getTurnsRemainingPerHex();
         this.game.setHexesBeingCut(cutHexes);
+
+        // Update game's damage manager with new game instance
+        if (this.damager != null) {
+            this.damager.setGame(this.game);
+        }
     }
 
     /**
@@ -1144,6 +1149,12 @@ public class TWGameManager extends AbstractGameManager {
                 boolean startSLOn = usingSL && isDark;
                 entity.setSearchlightState(startSLOn);
                 entity.setIlluminated(startSLOn);
+                LOGGER.debug("Searchlight deployment setup: entity={} light={} isDark={} "
+                            + "SEARCHLIGHTS_ON={} override={} hasSearchlight={} -> startSLOn={} illuminated={}",
+                      entity.getDisplayName(),
+                      conditions.getLight(),
+                      isDark, usingSL, entity.getSearchlightOverride(), entity.hasSearchlight(),
+                      startSLOn, entity.isIlluminated());
             } else {
                 entity.setIlluminated(false);
                 entity.setUsedSearchlight(false);
@@ -10239,7 +10250,7 @@ public class TWGameManager extends AbstractGameManager {
                         int[] waaIndex = (int[]) rp.getPacket().data()[1];
                         if (waaIndex != null) {
                             for (int waaNum : waaIndex) {
-                                // -1 in the waaNum indicates that None was selected in addition to others, and can be 
+                                // -1 in the waaNum indicates that None was selected in addition to others, and can be
                                 // ignored
                                 if (waaNum == -1) {
                                     continue;
@@ -10448,6 +10459,10 @@ public class TWGameManager extends AbstractGameManager {
      * Called to what players can see what units. This is used to determine who can see what in double-blind reports.
      */
     void resolveWhatPlayersCanSeeWhatUnits() {
+        LOGGER.debug("=== resolveWhatPlayersCanSeeWhatUnits START === doubleBlind={} tacopsSensors={} phase={}",
+              game.getOptions().booleanOption(OptionsConstants.ADVANCED_DOUBLE_BLIND),
+              game.getOptions().booleanOption(OptionsConstants.ADVANCED_TAC_OPS_SENSORS),
+              game.getPhase());
         List<ECMInfo> allECMInfo = null;
         if (game.getOptions().booleanOption(OptionsConstants.ADVANCED_TAC_OPS_SENSORS)) {
             allECMInfo = ComputeECM.computeAllEntitiesECMInfo(game.getEntitiesVector());
@@ -10458,14 +10473,23 @@ public class TWGameManager extends AbstractGameManager {
             entity.clearSeenBy();
             entity.clearDetectedBy();
             // Handle visual spotting
-            for (Player p : whoCanSee(entity, false, losCache)) {
+            Vector<Player> seenBy = whoCanSee(entity, false, losCache);
+            for (Player p : seenBy) {
                 entity.addBeenSeenBy(p);
             }
             // Handle detection by sensors
-            for (Player p : whoCanDetect(entity, allECMInfo, losCache)) {
+            Vector<Player> detectedBy = whoCanDetect(entity, allECMInfo, losCache);
+            for (Player p : detectedBy) {
                 entity.addBeenDetectedBy(p);
             }
+            LOGGER.debug("  entity {} (owner {}) at {}: seenBy={} detectedBy={}",
+                  entity.getDisplayName(),
+                  (entity.getOwner() != null ? entity.getOwner().getName() : "?"),
+                  entity.getPosition(),
+                  seenBy.stream().map(Player::getName).toList(),
+                  detectedBy.stream().map(Player::getName).toList());
         }
+        LOGGER.debug("=== resolveWhatPlayersCanSeeWhatUnits END ===");
     }
 
     /**

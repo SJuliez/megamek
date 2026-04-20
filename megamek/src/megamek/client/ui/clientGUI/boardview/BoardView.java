@@ -1061,7 +1061,7 @@ public final class BoardView extends AbstractBoardView
             ghostEntitySprites.add(ghostSprite);
 
             // Center on the starting hex of the moving unit.
-            UnitLocation loc = movePath.get(0);
+            UnitLocation loc = movePath.getFirst();
 
             if (GUIP.getAutoCenter()) {
                 centerOnHex(loc.coords());
@@ -1739,11 +1739,11 @@ public final class BoardView extends AbstractBoardView
             Point hexPos = getHexLocation(hex);
             Shape hexBorder = HexDrawUtilities.getHexFullBorderLine(0);
             Shape scaled = AffineTransform
-                    .getScaleInstance(scale, scale)
-                    .createTransformedShape(hexBorder);
+                  .getScaleInstance(scale, scale)
+                  .createTransformedShape(hexBorder);
             Shape translated = AffineTransform
-                    .getTranslateInstance(hexPos.x, hexPos.y)
-                    .createTransformedShape(scaled);
+                  .getTranslateInstance(hexPos.x, hexPos.y)
+                  .createTransformedShape(scaled);
             graphics.draw(translated);
         }
     }
@@ -1896,7 +1896,7 @@ public final class BoardView extends AbstractBoardView
                       font_minefield,
                       graphics2D);
             } else if (numberOfMinefields == 1) {
-                Minefield minefield = game.getMinefields(coords).get(0);
+                Minefield minefield = game.getMinefields(coords).getFirst();
 
                 switch (minefield.getType()) {
                     case Minefield.TYPE_CONVENTIONAL:
@@ -2322,7 +2322,7 @@ public final class BoardView extends AbstractBoardView
         // Check for buildings and woods buried under their own shadows.
         if ((supers != null) && supersUnderShadow && (hex.containsTerrain(Terrains.BUILDING) || hex.containsTerrain(
               Terrains.WOODS))) {
-            Image lastSuper = supers.get(supers.size() - 1);
+            Image lastSuper = supers.getLast();
             scaledImage = getScaledImage(lastSuper, true);
             graphics2D.drawImage(scaledImage, 0, 0, boardPanel);
         }
@@ -3694,7 +3694,7 @@ public final class BoardView extends AbstractBoardView
                   || (step.getType() == MoveStepType.DECELERATION))) {
                 // Mark the previous elevation change sprite hidden so that we can draw a new one in its place
                 // without having overlap.
-                pathSprites.get(pathSprites.size() - 1).setHidden(true);
+                pathSprites.getLast().setHidden(true);
             }
 
             if (previousStep != null
@@ -3706,7 +3706,7 @@ public final class BoardView extends AbstractBoardView
                   || (step.getType() == MoveStepType.CONVERT_MODE
                   && previousStep.getType() == MoveStepType.CONVERT_MODE)
                   || step.getType() == MoveStepType.BOOTLEGGER)) {
-                pathSprites.get(pathSprites.size() - 1).setHidden(true);
+                pathSprites.getLast().setHidden(true);
             }
 
             pathSprites.add(new StepSprite(this, step, movePath.isEndStep(step)));
@@ -4207,12 +4207,12 @@ public final class BoardView extends AbstractBoardView
                     movingSomething = true;
                     Entity entity = game.getEntity(move.entity.getId());
                     if (!move.path.isEmpty()) {
-                        UnitLocation loc = move.path.get(0);
+                        UnitLocation loc = move.path.getFirst();
 
                         if (entity != null) {
                             redrawMovingEntity(move.entity, loc.coords(), loc.facing(), loc.elevation());
                         }
-                        move.path.remove(0);
+                        move.path.removeFirst();
                     } else {
                         if (entity != null) {
                             redrawEntity(entity);
@@ -4474,9 +4474,8 @@ public final class BoardView extends AbstractBoardView
     }
 
     /**
-     * Highlights multiple entities on the board view.
-     * All entities in the provided list will be highlighted.
-     * All other entities will be unhighlighted.
+     * Highlights multiple entities on the board view. All entities in the provided list will be highlighted. All other
+     * entities will be unhighlighted.
      *
      * @param entities List of entities to highlight (can be empty to clear all highlights)
      */
@@ -4487,8 +4486,8 @@ public final class BoardView extends AbstractBoardView
     }
 
     /**
-     * Sets the hexes to highlight with white borders (for Nova CEWS network dialog).
-     * Draws white hexagon borders around the specified hex coordinates.
+     * Sets the hexes to highlight with white borders (for Nova CEWS network dialog). Draws white hexagon borders around
+     * the specified hex coordinates.
      *
      * @param hexes List of hex coordinates to highlight (can be empty to clear all highlights)
      */
@@ -4901,6 +4900,7 @@ public final class BoardView extends AbstractBoardView
      *
      * @param position - the <code>Coords</code> containing targets.
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     private Entity chooseEntity(Coords position) {
         // Assume that we have *no* choice.
         Entity choice = null;
@@ -4911,7 +4911,7 @@ public final class BoardView extends AbstractBoardView
         // Do we have a single choice?
         if (entities.size() == 1) {
             // Return that choice.
-            choice = entities.get(0);
+            choice = entities.getFirst();
         } else if (entities.size() > 1) {
             // If we have multiple choices, display a selection dialog.
             choice = EntityChoiceDialog.showSingleChoiceDialog(clientgui.getFrame(),
@@ -4952,7 +4952,7 @@ public final class BoardView extends AbstractBoardView
             File file;
 
             if (!bvSkinSpec.backgrounds.isEmpty()) {
-                file = new MegaMekFile(Configuration.widgetsDir(), bvSkinSpec.backgrounds.get(0)).getFile();
+                file = new MegaMekFile(Configuration.widgetsDir(), bvSkinSpec.backgrounds.getFirst()).getFile();
                 if (!file.exists()) {
                     LOGGER.error("BoardView1 Error: Background 0 icon doesn't exist: {}", file.getAbsolutePath());
                 } else {
