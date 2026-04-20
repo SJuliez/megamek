@@ -35,6 +35,8 @@
 
 package megamek;
 
+import java.awt.Color;
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputFilter;
@@ -45,7 +47,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -428,9 +429,7 @@ public class MegaMek {
             // The "About" dialog must be handled separately on MML and MHQ
             Desktop desktop = Desktop.getDesktop();
             if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {
-                desktop.setAboutHandler(e -> {
-                    new MMAboutDialog(null).show();
-                });
+                desktop.setAboutHandler(e -> new MMAboutDialog(null).show());
             }
         }
 
