@@ -46,6 +46,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -85,7 +86,10 @@ public class MegaMek {
     private static final MMLogger LOGGER = MMLogger.create(MegaMek.class);
     private static final SanityInputFilter sanityInputFilter = new SanityInputFilter();
 
+    private static String originProject = "Unknown";
+
     public static void main(String... args) {
+        originProject = MMConstants.PROJECT_NAME;
         ObjectInputFilter.Config.setSerialFilter(sanityInputFilter);
 
         // Configure Sentry with defaults. Although the client defaults to enabled, the properties file is used to
@@ -163,6 +167,14 @@ public class MegaMek {
         } else {
             startGUI();
         }
+    }
+
+    public static void setOriginProject(String originProject) {
+        MegaMek.originProject = originProject;
+    }
+
+    public static String getOriginProject() {
+        return originProject;
     }
 
     public static void initializeLogging(final String originProject) {
@@ -326,6 +338,10 @@ public class MegaMek {
     private static void startGUI() {
         LOGGER.info("Starting MegaMekGUI.");
         SwingUtilities.invokeLater(() -> new MegaMekGUI().start(true));
+    }
+
+    public static String getUnderlyingInformation() {
+        return getUnderlyingInformation(originProject, MMConstants.PROJECT_NAME);
     }
 
     /**

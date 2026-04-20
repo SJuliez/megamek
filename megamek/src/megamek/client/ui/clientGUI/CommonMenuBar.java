@@ -38,6 +38,9 @@ import static java.awt.event.KeyEvent.*;
 import static megamek.client.ui.Messages.getString;
 import static megamek.client.ui.clientGUI.ClientGUI.*;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -51,10 +54,13 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 
 import megamek.MMConstants;
 import megamek.MegaMek;
+import megamek.client.ui.CopySystemDataAction;
 import megamek.client.ui.Messages;
 import megamek.client.ui.util.KeyCommandBind;
 import megamek.common.KeyBindParser;
@@ -376,6 +382,17 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         initMenuItem(helpContents, menu, HELP_CONTENTS);
         JMenuItem helpSkinning = new JMenuItem(getString("CommonMenuBar.helpSkinning"));
         initMenuItem(helpSkinning, menu, HELP_SKINNING);
+
+        menu.add(new JSeparator());
+
+        JMenuItem menuBugReportItem = new JMenuItem(getString("CommonMenuBar.helpReportBug"));
+        menuBugReportItem.setName("ReportBug");
+        menuBugReportItem.addActionListener(evt ->
+              new BugReportDialog(SwingUtilities.getWindowAncestor(this), new CopySystemDataAction()).show());
+        menu.add(menuBugReportItem);
+
+        menu.add(new CopySystemDataAction());
+
         menu.addSeparator();
         JMenuItem helpAbout = new JMenuItem(getString("CommonMenuBar.helpAbout"));
         initMenuItem(helpAbout, menu, HELP_ABOUT);
