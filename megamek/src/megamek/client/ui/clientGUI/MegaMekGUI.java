@@ -313,7 +313,7 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         frame.setForeground(SystemColor.menuText);
         frame.setResizable(false);
 
-        JLabel labVersion = new JLabel(Messages.getString("MegaMek.Version") + MMConstants.VERSION, JLabel.CENTER);
+        JLabel labVersion = new JLabel(Messages.getString("MegaMek.Version", MMConstants.VERSION), JLabel.CENTER);
         labVersion.setPreferredSize(new Dimension(250, 15));
         if (!skinSpec.fontColors.isEmpty()) {
             labVersion.setForeground(skinSpec.fontColors.getFirst());
@@ -1314,8 +1314,6 @@ public class MegaMekGUI implements IPreferenceChangeListener {
                 showNetworkInformation();
                 break;
             case ClientGUI.HELP_ABOUT:
-//                new CommonAboutDialog(frame).setVisible(true);
-//                CommonAboutDialog2.show(frame);
                 new MMAboutDialog(frame).show();
                 break;
             case ClientGUI.HELP_CONTENTS:
