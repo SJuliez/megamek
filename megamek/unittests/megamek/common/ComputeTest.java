@@ -33,6 +33,7 @@
 
 package megamek.common;
 
+import static megamek.common.compute.Compute.directBlowInfantryDamage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Vector;
 
 import megamek.client.Client;
 import megamek.client.ui.clientGUI.ClientGUI;
@@ -884,5 +886,87 @@ class ComputeTest {
                 assertEquals(4, result.getValue(), "Should have +4 range modifier at long range (3 hexes)");
             }
         }
+    }
+
+    @Test
+    void testDirectBlowInfantryStandardMod() {
+        // Damage should just be divided by 10
+        double originalDamage = 5.0;
+        int weaponType = WeaponType.WEAPON_DIRECT_FIRE;
+        Vector<Report> reports = new Vector<Report>();
+        int newDamage = directBlowInfantryDamage(
+             originalDamage,
+             0,
+             weaponType,
+             false,
+             false,
+             1,
+              reports,
+              0
+        );
+        assertEquals(1, newDamage, "5.0 / 10, rounded up.");
+        assertEquals(1, reports.size(), "Report size");
+    }
+
+    @Test
+    void testDirectBlowInfantryMechanizedMod() {
+        // Damage should be divided by 10, then rounded, then doubled due to non-burst damage
+        double originalDamage = 5.0;
+        int weaponType = WeaponType.WEAPON_DIRECT_FIRE;
+        Vector<Report> reports = new Vector<Report>();
+        int newDamage = directBlowInfantryDamage(
+              originalDamage,
+              0,
+              weaponType,
+              true,
+              false,
+              1,
+              reports,
+              0
+        );
+        assertEquals(2, newDamage, "5.0 / 10, rounded up.");
+        assertEquals(1, reports.size(), "Report size");
+    }
+
+    @Test
+    void testDirectBlowInfantryMechanizedBurstMod() {
+        // 5 BA LMGs -> 1D6 / 2, halved by Mechanized Armor vs Burst
+        double originalDamage = 5.0;
+        int weaponType = WeaponType.WEAPON_BURST_HALF_D6;
+        Vector<Report> reports = new Vector<Report>();
+        int newDamage = directBlowInfantryDamage(
+              originalDamage,
+              0,
+              weaponType,
+              true,
+              false,
+              1,
+              reports,
+              0
+        );
+        assertTrue(1 >= newDamage, "5 -> 1d6/2, rounded up, then halved and _not_ rounded.");
+        assertEquals(1, reports.size(), "Report size");
+    }
+
+    @Test
+    void testDirectBlowInfantryMOS3BurstInBuilding() {
+        // Burst Weapon in the building attacking infantry also in the building.
+        // 1D6 -> 4D6 -> 4D6 / 2
+        double originalDamage = 10.0;
+        int weaponType = WeaponType.WEAPON_BURST_1D6;
+        Vector<Report> reports = new Vector<Report>();
+        int newDamage = directBlowInfantryDamage(
+              originalDamage,
+              3,
+              weaponType,
+              false,
+              true,
+              1,
+              reports,
+              1
+        );
+        assertTrue(newDamage >= 2.0 && newDamage <= 12.0, "10 -> 4D6 / 2.0, rounded up: " + newDamage);
+        assertEquals(1, reports.size(), "Report size");
+        assertTrue(reports.get(0).text().contains("in building"));
     }
 }
