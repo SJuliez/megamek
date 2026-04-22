@@ -34,7 +34,6 @@
 package megamek.client.ui;
 
 import java.text.MessageFormat;
-import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import megamek.MegaMek;
@@ -46,21 +45,20 @@ public class BugReportMessages {
     private static final ResourceBundle RESOURCE_BUNDLE =
           ResourceBundle.getBundle(BUNDLE_NAME, MegaMek.getMMOptions().getLocale());
 
-    public boolean keyExists(String key) {
-        return RESOURCE_BUNDLE.containsKey(key);
-    }
-
-    public String get(String key) {
-        try {
-            return RESOURCE_BUNDLE.getString(key);
-        } catch (MissingResourceException e) {
-            return "!!! %s !!!".formatted(key);
-        }
-    }
-
+    /**
+     * Retrieves the string for the given key from this resource bundle or one of its parents. Additional parameters are
+     * applied using MessageFormat (so the resource string should use {x} formatting). This method works without
+     * giving additional parameters for strings that don't contain placeholders. Note that all exceptions are caught
+     * and, in when one occurs, "!!! key !!!" is returned.
+     *
+     * @param key  The resource key
+     * @param args Additional info to insert for placeholders
+     *
+     * @return The formatted resource bundle i18n string
+     */
     public String get(String key, Object... args) {
         try {
-            return MessageFormat.format(get(key), args);
+            return MessageFormat.format(RESOURCE_BUNDLE.getString(key), args);
         } catch (Exception ex) {
             return "!!! %s !!!".formatted(key);
         }
