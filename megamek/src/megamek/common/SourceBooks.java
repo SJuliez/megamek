@@ -84,7 +84,7 @@ public class SourceBooks {
      *
      * SourceBooks sourceBooks = new SourceBooks();
      * List<String> allBooks = sourceBooks.availableSourcebooks();
-     * String firstBook = allBooks.get(0) // assuming there are sourcebooks
+     * String firstBook = allBooks.getFirst() // assuming there are sourcebooks
      * Optional<SourceBook> book = sourceBooks.loadSourceBook(firstBook);
      *
      * }</pre>

@@ -204,7 +204,7 @@ public record ASDamageVector(ASDamage S, ASDamage M, ASDamage L, ASDamage E, int
         while (copy.size() < 4) {
             copy.add(0.0);
         }
-        return create(copy.get(0), copy.get(1), copy.get(2), copy.get(3),
+        return create(copy.getFirst(), copy.get(1), copy.get(2), copy.get(3),
               ASDamage::createDualRoundedNormal, ranges, false);
     }
 
@@ -221,7 +221,7 @@ public record ASDamageVector(ASDamage S, ASDamage M, ASDamage L, ASDamage E, int
         while (copy.size() < 4) {
             copy.add(0.0);
         }
-        return create(copy.get(0), copy.get(1), copy.get(2), copy.get(3),
+        return create(copy.getFirst(), copy.get(1), copy.get(2), copy.get(3),
               ASDamage::createDualRoundedNormalNoMinimal, ranges, false);
     }
 
@@ -240,7 +240,7 @@ public record ASDamageVector(ASDamage S, ASDamage M, ASDamage L, ASDamage E, int
         while (copy.size() < 4) {
             copy.add(0.0);
         }
-        return create(copy.get(0), copy.get(1), copy.get(2), copy.get(3),
+        return create(copy.getFirst(), copy.get(1), copy.get(2), copy.get(3),
               ASDamage::createDualRoundedUp, ranges, true);
     }
 
@@ -257,7 +257,7 @@ public record ASDamageVector(ASDamage S, ASDamage M, ASDamage L, ASDamage E, int
         while (copy.size() < 4) {
             copy.add(0.0);
         }
-        return create(copy.get(0), copy.get(1), copy.get(2), copy.get(3),
+        return create(copy.getFirst(), copy.get(1), copy.get(2), copy.get(3),
               ASDamage::createDualRoundedUp, ranges, false);
     }
 

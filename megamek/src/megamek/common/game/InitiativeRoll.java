@@ -146,7 +146,7 @@ public class InitiativeRoll implements Comparable<InitiativeRoll>, Serializable 
                 rolls.sort(Comparator.naturalOrder());
             }
 
-            return rolls.get(0) + rolls.get(1);
+            return rolls.getFirst() + rolls.get(1);
         }
 
         return roll;

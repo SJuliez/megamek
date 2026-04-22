@@ -666,11 +666,11 @@ class TeamLoadOutGeneratorTest {
         mwc.decreaseFlakMunitions();
 
         HashMap<String, List<String>> cutoff = mwc.getAboveCutoff(0.0);
-        assertEquals("Armor-Piercing=3.0", cutoff.get("AC").get(0));
+        assertEquals("Armor-Piercing=3.0", cutoff.get("AC").getFirst());
         assertEquals("Standard=2.0", cutoff.get("AC").get(1));
         assertEquals("Caseless=1.0", cutoff.get("AC").get(2));
 
-        assertEquals("Tandem-Charge=3.0", cutoff.get("SRM").get(0));
+        assertEquals("Tandem-Charge=3.0", cutoff.get("SRM").getFirst());
         assertEquals("Dead-Fire=3.0", cutoff.get("SRM").get(1));
         assertEquals("Standard=2.0", cutoff.get("SRM").get(2));
     }

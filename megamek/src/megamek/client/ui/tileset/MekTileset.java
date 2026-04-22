@@ -364,7 +364,7 @@ public class MekTileset {
                         } catch (IOException e) {
                             LOGGER.error("... failed: {}.", e.getMessage(), e);
                         }
-                    } else if (tokens.get(0).equals(CHASSIS_KEY)) {
+                    } else if (tokens.getFirst().equals(CHASSIS_KEY)) {
                         chassis.put(tokens.get(1).toUpperCase(Locale.ROOT), new MekEntry(tokens.get(2)));
                     } else {
                         exact.put(tokens.get(1).toUpperCase(Locale.ROOT), new MekEntry(tokens.get(2)));

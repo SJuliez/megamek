@@ -87,7 +87,7 @@ public class CarryableDeserializer extends StdDeserializer<GroundObjectInfo> {
             if (node.has(AT)) {
                 List<Integer> xyList = new ArrayList<>();
                 node.get(AT).elements().forEachRemaining(n -> xyList.add(n.asInt()));
-                return new Coords(xyList.get(0), xyList.get(1));
+                return new Coords(xyList.getFirst(), xyList.get(1));
 
             } else if (node.has(X) || node.has(Y)) {
                 requireFields("Carryable", node, X, Y);

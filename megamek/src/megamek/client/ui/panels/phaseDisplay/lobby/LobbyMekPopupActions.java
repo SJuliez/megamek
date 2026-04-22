@@ -444,7 +444,7 @@ public record LobbyMekPopupActions(ChatLounge lobby) implements ActionListener {
         MunitionTree munitionTree = new MunitionTree();
         ArrayList<Entity> entityArrayList = new ArrayList<>(entities);
         ClientGUI clientGUI = lobby.getClientGUI();
-        // Team team = lobby.game().getTeamForPlayer(entityArrayList.get(0).getOwner());
+        // Team team = lobby.game().getTeamForPlayer(entityArrayList.getFirst().getOwner());
         Team team = clientGUI.getClient().getGame().getTeamForPlayer(entityArrayList.getFirst().getOwner());
         String faction = (team != null) ? team.getFaction() : FactionRecord.IS_GENERAL_KEY;
 

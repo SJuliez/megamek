@@ -225,7 +225,7 @@ public class MegaMekButton extends JButton implements MouseListener {
                 iconsLoaded = false;
             }
             java.net.URI imgURL = new MegaMekFile(Configuration.widgetsDir(),
-                  spec.backgrounds.get(0)).getFile().toURI();
+                  spec.backgrounds.getFirst()).getFile().toURI();
             backgroundIcon = new ImageIcon(imgURL.toURL());
             imgURL = new MegaMekFile(Configuration.widgetsDir(),
                   spec.backgrounds.get(1)).getFile().toURI();

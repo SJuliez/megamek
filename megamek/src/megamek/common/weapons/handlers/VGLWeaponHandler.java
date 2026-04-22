@@ -102,7 +102,7 @@ public class VGLWeaponHandler extends AmmoWeaponHandler {
         r.subject = subjectId;
         r.add(weaponType.getName());
         r.add(ammoType.getSubMunitionName());
-        r.add(affectedCoords.get(0).getBoardNum());
+        r.add(affectedCoords.getFirst().getBoardNum());
         r.add(affectedCoords.get(1).getBoardNum());
         r.add(affectedCoords.get(2).getBoardNum());
         vPhaseReport.add(r);

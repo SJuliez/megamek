@@ -106,7 +106,7 @@ public class SBFFormationDeserializer extends StdDeserializer<SBFFormation> {
             if (node.has(AT)) {
                 List<Integer> xyList = new ArrayList<>();
                 node.get(AT).elements().forEachRemaining(n -> xyList.add(n.asInt()));
-                setDeployedPosition(formation, new Coords(xyList.get(0), xyList.get(1)));
+                setDeployedPosition(formation, new Coords(xyList.getFirst(), xyList.get(1)));
 
             } else if (node.has(X) || node.has(Y)) {
                 requireFields("SBFFormation", node, X, Y);

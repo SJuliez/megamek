@@ -140,7 +140,7 @@ class BoardDataTest {
         data.put(BoardData.Field.WIDTH, 16);
         List<BoardData.Field> order = data.getFieldOrder();
         assertEquals(2, order.size());
-        assertEquals(BoardData.Field.BOARD_NAME, order.get(0));
+        assertEquals(BoardData.Field.BOARD_NAME, order.getFirst());
         assertEquals(BoardData.Field.WIDTH, order.get(1));
     }
 

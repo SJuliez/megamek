@@ -2752,7 +2752,7 @@ class MovePathHandler extends AbstractTWRuleHandler {
                       .stream().filter(Mounted::isReady)
                       .collect(Collectors.toList());
                 if (!chaffDispensers.isEmpty()) {
-                    chaffDispensers.get(0).setFired(true);
+                    chaffDispensers.getFirst().setFired(true);
                     gameManager.createSmoke(curPos, getGame().getBoard(step.getBoardId()),
                           SmokeCloud.SMOKE_CHAFF_LIGHT, 1);
                     Hex hex = getGame().getBoard(curBoardId).getHex(curPos);
@@ -3246,7 +3246,7 @@ class MovePathHandler extends AbstractTWRuleHandler {
                 // if we're not supplied a specific location, then the assumption is we only have one piece of cargo,
                 // and we're going to just drop that one
                 if (cargoLocation == null) {
-                    cargo = entity.getDistinctCarriedObjects().get(0);
+                    cargo = entity.getDistinctCarriedObjects().getFirst();
                 } else if (entity.getCarriedObject(cargoLocation) != null) {
                     cargo = entity.getCarriedObject(cargoLocation);
                 } else if ((cargoLocation >= 0) && (Integer.MAX_VALUE - cargoLocation < entity.getTransports()
