@@ -436,7 +436,7 @@ public class MegaMek {
         // Setup Fonts
         FontHandler.initialize();
 
-        // Setup ThemesÏ
+        // Setup Themes
         UIManager.installLookAndFeel("Flat Light", "com.formdev.flatlaf.FlatLightLaf");
         UIManager.installLookAndFeel("Flat IntelliJ", "com.formdev.flatlaf.FlatIntelliJLaf");
         UIManager.installLookAndFeel("Flat Dark", "com.formdev.flatlaf.FlatDarkLaf");

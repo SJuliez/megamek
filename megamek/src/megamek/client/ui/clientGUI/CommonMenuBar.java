@@ -62,6 +62,7 @@ import megamek.MMConstants;
 import megamek.MegaMek;
 import megamek.client.ui.CopySystemDataAction;
 import megamek.client.ui.Messages;
+import megamek.client.ui.ShowBugReportDialogAction;
 import megamek.client.ui.util.KeyCommandBind;
 import megamek.common.KeyBindParser;
 import megamek.common.enums.GamePhase;
@@ -383,17 +384,13 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         JMenuItem helpSkinning = new JMenuItem(getString("CommonMenuBar.helpSkinning"));
         initMenuItem(helpSkinning, menu, HELP_SKINNING);
 
-        menu.add(new JSeparator());
+        menu.addSeparator();
 
-        JMenuItem menuBugReportItem = new JMenuItem(getString("CommonMenuBar.helpReportBug"));
-        menuBugReportItem.setName("ReportBug");
-        menuBugReportItem.addActionListener(evt ->
-              new BugReportDialog(SwingUtilities.getWindowAncestor(this), new CopySystemDataAction()).show());
-        menu.add(menuBugReportItem);
-
+        menu.add(new ShowBugReportDialogAction(this, new CopySystemDataAction()));
         menu.add(new CopySystemDataAction());
 
         menu.addSeparator();
+
         JMenuItem helpAbout = new JMenuItem(getString("CommonMenuBar.helpAbout"));
         initMenuItem(helpAbout, menu, HELP_ABOUT);
 

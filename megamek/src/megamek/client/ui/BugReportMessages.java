@@ -38,7 +38,6 @@ import java.util.ResourceBundle;
 
 import megamek.MegaMek;
 
-@SuppressWarnings("unused") // Utility class
 public class BugReportMessages {
 
     private static final String BUNDLE_NAME = "megamek.client.BugReport";
