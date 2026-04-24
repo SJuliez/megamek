@@ -170,10 +170,23 @@ public class MegaMek {
         }
     }
 
+    /**
+     * Sets the origin project to the given String. The origin project is the one whose main() method has been executed
+     * to arrive here. Therefore, this method should only be called from any of the main() methods. Used for logging
+     * purposes.
+     *
+     * @param originProject The origin project name, e.g. MMLConstants.PROJECT_NAME
+     */
     public static void setOriginProject(String originProject) {
         MegaMek.originProject = originProject;
     }
 
+    /**
+     * The origin project name, i.e. the project whose main() method was executed to arrive here. As this is only a
+     * project name and not necessarily set, it should be used only for logging purposes.
+     *
+     * @return The name of the origin project, typically either of (MM/MML/MHQ)Constants.PROJECT_NAME
+     */
     public static String getOriginProject() {
         return originProject;
     }
@@ -339,10 +352,6 @@ public class MegaMek {
     private static void startGUI() {
         LOGGER.info("Starting MegaMekGUI.");
         SwingUtilities.invokeLater(() -> new MegaMekGUI().start(true));
-    }
-
-    public static String getUnderlyingInformation() {
-        return getUnderlyingInformation(originProject, MMConstants.PROJECT_NAME);
     }
 
     /**
