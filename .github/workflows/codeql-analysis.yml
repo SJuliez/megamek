@@ -23,16 +23,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout Data Repo
-        uses: actions/checkout@v6
-        with:
-          repository: megamek/mm-data
-          path: mm-data
-
       - name: "Check out MegaMek"
         uses: actions/checkout@v6
-        with:
-          path: megamek
 
       - name: Set up ${{ matrix.java-distribution }} JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v5
@@ -40,19 +32,12 @@ jobs:
           distribution: ${{ matrix.java-distribution }}
           java-version: ${{ matrix.java-version }}
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: java-kotlin
+          build-mode: none
           queries: security-and-quality
-          dependency-caching: true
-          source-root: megamek
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
-        with:
-          checkout_path: megamek
-
