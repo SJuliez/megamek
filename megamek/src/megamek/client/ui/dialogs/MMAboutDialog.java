@@ -32,30 +32,23 @@
  */
 package megamek.client.ui.dialogs;
 
-import com.formdev.flatlaf.FlatClientProperties;
 import megamek.MMConstants;
-import megamek.client.ui.Messages;
 
-import javax.swing.Box;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
+import java.awt.Window;
 
 public class MMAboutDialog extends AbstractAboutDialog {
 
-    public MMAboutDialog(JFrame parentFrame) {
-        super(parentFrame);
+    public MMAboutDialog(Window parent) {
+        super(parent);
     }
 
     @Override
-    protected JComponent version() {
-        JLabel program = new JLabel(MMConstants.PROJECT_NAME);
-        program.putClientProperty(FlatClientProperties.STYLE_CLASS, "h3");
-        JLabel version = new JLabel(Messages.getString("about.version", MMConstants.VERSION));
-        var panel = Box.createVerticalBox();
-        panel.add(program);
-        panel.add(Box.createVerticalStrut(8));
-        panel.add(version);
-        return panel;
+    protected String currentProjectName() {
+        return MMConstants.PROJECT_NAME;
+    }
+
+    @Override
+    protected String currentVersion() {
+        return MMConstants.VERSION.toString();
     }
 }

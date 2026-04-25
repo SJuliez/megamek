@@ -40,21 +40,22 @@ import java.awt.Window;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
+import com.formdev.flatlaf.FlatClientProperties;
 import megamek.client.ui.Messages;
 import megamek.client.ui.util.UIUtil;
 
 /**
- * A base "About..." dialog showing a version block ("MegaMek Version: 0.50.xx") that subclasses supply and the license
- * block.
+ * A base "About..." dialog showing a name and version block ("MegaMek Version: 0.50.xx") and the license block as in
+ * the license dialog.
  */
 public abstract class AbstractAboutDialog {
 
     private static final String LICENSE_FORMAT = "<html><body width='%d'>%s</body></html>";
     private static final int BASE_WIDTH = 500;
-    private final Window parentFrame;
+    private final Window parent;
 
-    protected AbstractAboutDialog(JFrame parentFrame) {
-        this.parentFrame = parentFrame;
+    protected AbstractAboutDialog(Window parent) {
+        this.parent = parent;
     }
 
     private JComponent setupContent() {
@@ -64,7 +65,7 @@ public abstract class AbstractAboutDialog {
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         content.setBorder(new EmptyBorder(40, 15, 0, 15));
-        content.add(version(), gbc);
+        content.add(versionSection(), gbc);
         content.add(licenseSection(), gbc);
         return content;
     }
@@ -79,20 +80,36 @@ public abstract class AbstractAboutDialog {
         return licenseSection;
     }
 
+    private JComponent versionSection() {
+        JLabel project = new JLabel(currentProjectName());
+        project.putClientProperty(FlatClientProperties.STYLE_CLASS, "h3");
+        JLabel version = new JLabel(Messages.getString("about.version", currentVersion()));
+        var panel = Box.createVerticalBox();
+        panel.add(project);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(version);
+        return panel;
+    }
+
     /**
-     * Override this to return a block showing the current program and its version (and possibly versions of the other
-     * programs).
-     *
-     * @return A component (label or panel) showing the program and version
+     * @return The current project's name. Since this is a name, there's no reason to i18n it.
      */
-    protected abstract JComponent version();
+    protected abstract String currentProjectName();
+
+    /**
+     * @return The version as a String without decoration.
+     */
+    protected abstract String currentVersion();
 
     /**
      * Displays the dialog (modal).
      */
     public void show() {
-        JOptionPane.showMessageDialog(parentFrame, setupContent(), Messages.getString("CommonAboutDialog.title"),
-              JOptionPane.PLAIN_MESSAGE, null);
+        JOptionPane.showMessageDialog(parent,
+              setupContent(),
+              Messages.getString("about.title", currentProjectName()),
+              JOptionPane.PLAIN_MESSAGE,
+              null);
     }
 
     private String buildAboutHtml() {
