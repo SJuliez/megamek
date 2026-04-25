@@ -32,13 +32,11 @@ jobs:
           distribution: ${{ matrix.java-distribution }}
           java-version: ${{ matrix.java-version }}
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: java-kotlin
+          build-mode: none
           queries: security-and-quality
 
       - name: Perform CodeQL Analysis
