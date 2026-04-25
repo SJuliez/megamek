@@ -740,6 +740,10 @@ public class RulerDialog extends JDialog implements BoardViewListener {
             Entity tallest = populateEntityCombo(c, cboEntity2);
             if (tallest != null) {
                 applyEntitySelection(tallest, false);
+            } else {
+                // No unit at the new hex - clear stale entity state from the previous endpoint
+                // so the unit panel reflects "no unit here" rather than the prior occupant.
+                resetUnitPanelState(false);
             }
             setText();
             showWithoutFocus();
@@ -757,6 +761,8 @@ public class RulerDialog extends JDialog implements BoardViewListener {
             Entity tallest = populateEntityCombo(c, cboEntity1);
             if (tallest != null) {
                 applyEntitySelection(tallest, true);
+            } else {
+                resetUnitPanelState(true);
             }
             setText();
             showWithoutFocus();
@@ -822,6 +828,36 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         }
         if ((end == null) && lockEnd.isSelected()) {
             lockEnd.setSelected(false);
+        }
+    }
+
+    /**
+     * Resets the entity-related unit-panel state for one point (name, short name, unit type, altitude flag, expected
+     * height, height labels). Called from the lock branches when a click lands on a hex with no unit, so the unit
+     * panel doesn't keep displaying the previous endpoint's occupant. The combo box itself is reset by
+     * {@link #populateEntityCombo} on the same click; this method handles everything else.
+     *
+     * @param isFirstPoint true to reset point 1 (start side), false to reset point 2 (end side)
+     */
+    private void resetUnitPanelState(boolean isFirstPoint) {
+        if (isFirstPoint) {
+            entityName1 = "";
+            shortName1 = null;
+            unitType1 = DiagramUnitType.OTHER;
+            atAltitude1 = false;
+            entityExpectedHeight1 = -1;
+            heightLabel1.setText(Messages.getString("Ruler.Height"));
+            effectiveHeight1.setText("");
+            heightInfo1.setText("");
+        } else {
+            entityName2 = "";
+            shortName2 = null;
+            unitType2 = DiagramUnitType.OTHER;
+            atAltitude2 = false;
+            entityExpectedHeight2 = -1;
+            heightLabel2.setText(Messages.getString("Ruler.Height"));
+            effectiveHeight2.setText("");
+            heightInfo2.setText("");
         }
     }
 
