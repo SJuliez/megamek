@@ -587,18 +587,16 @@ public class RulerDialog extends JDialog implements BoardViewListener {
             targetPovLabel.setText(formatPovLabel(targetName, false) + ":");
         }
 
-        if (compareTable != null) {
-            String attackerHeader = (attackerName != null)
-                  ? attackerName
-                  : Messages.getString("Ruler.compareAttacker");
-            String targetHeader = (targetName != null)
-                  ? targetName
-                  : Messages.getString("Ruler.compareTarget");
-            if (compareTable.getColumnModel().getColumnCount() >= 3) {
-                compareTable.getColumnModel().getColumn(1).setHeaderValue(attackerHeader);
-                compareTable.getColumnModel().getColumn(2).setHeaderValue(targetHeader);
-                compareTable.getTableHeader().repaint();
-            }
+        String attackerHeader = (attackerName != null)
+              ? attackerName
+              : Messages.getString("Ruler.compareAttacker");
+        String targetHeader = (targetName != null)
+              ? targetName
+              : Messages.getString("Ruler.compareTarget");
+        if (compareTable.getColumnModel().getColumnCount() >= 3) {
+            compareTable.getColumnModel().getColumn(1).setHeaderValue(attackerHeader);
+            compareTable.getColumnModel().getColumn(2).setHeaderValue(targetHeader);
+            compareTable.getTableHeader().repaint();
         }
     }
 
@@ -642,7 +640,13 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         for (int type : priority) {
             if (hex.containsTerrain(type)) {
                 String name = Terrains.getDisplayName(type, hex.terrainLevel(type));
-                if (name != null) {
+                // getDisplayName() returns null for terrain types without an explicit case
+                // (e.g. BRIDGE, FUEL_TANK). Fall back to the editor name so those still
+                // produce a meaningful label instead of slipping through to "Clear".
+                if ((name == null) || name.isEmpty()) {
+                    name = Terrains.getEditorName(type);
+                }
+                if ((name != null) && !name.isEmpty()) {
                     return name;
                 }
             }
