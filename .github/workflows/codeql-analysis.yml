@@ -65,4 +65,4 @@ jobs:
         with:
           checkout_path: megamek
           sha: ${{ github.event.pull_request.head.sha }}
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.ref }}
