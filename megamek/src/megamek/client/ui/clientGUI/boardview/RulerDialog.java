@@ -44,6 +44,7 @@ import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
 import java.awt.event.WindowEvent;
 import java.io.Serial;
 import java.text.MessageFormat;
@@ -125,6 +126,10 @@ public class RulerDialog extends JDialog implements BoardViewListener {
           + "<b>Altitude</b> (aerospace): fixed value (1-10)</html>";
     private final JComboBox<EntityItem> cboEntity1 = new JComboBox<>();
     private final JComboBox<EntityItem> cboEntity2 = new JComboBox<>();
+    /** When selected, clicks update only the END point; the START hex stays put. Mutually exclusive with {@link #lockEnd}. */
+    private final JCheckBox lockStart = new JCheckBox();
+    /** When selected, clicks update only the START point; the END hex stays put. Mutually exclusive with {@link #lockStart}. */
+    private final JCheckBox lockEnd = new JCheckBox();
     private String entityName1 = "";
     private String entityName2 = "";
     /** Short name (chassis + model) for the point 1 entity, or null if no entity / sensor return / "None" selected. */
@@ -223,11 +228,30 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         cboEntity2.setVisible(false);
         cboEntity2.addActionListener(e -> entityComboChanged(cboEntity2, false));
 
+        // --- Endpoint locks ---
+        // Start disabled until each point is set; mutually exclusive (selecting one clears the other).
+        lockStart.setText(Messages.getString("Ruler.lock"));
+        lockEnd.setText(Messages.getString("Ruler.lock"));
+        lockStart.setToolTipText(Messages.getString("Ruler.lockTooltip"));
+        lockEnd.setToolTipText(Messages.getString("Ruler.lockTooltip"));
+        lockStart.setEnabled(false);
+        lockEnd.setEnabled(false);
+        lockStart.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                lockEnd.setSelected(false);
+            }
+        });
+        lockEnd.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                lockStart.setSelected(false);
+            }
+        });
+
         // --- Side-by-side unit panels ---
         unitPanel1 = buildUnitPanel(heightLabel1, height1, effectiveHeight1,
-              heightInfo1, cboEntity1, color1);
+              heightInfo1, cboEntity1, lockStart, color1);
         unitPanel2 = buildUnitPanel(heightLabel2, height2, effectiveHeight2,
-              heightInfo2, cboEntity2, color2);
+              heightInfo2, cboEntity2, lockEnd, color2);
 
         // Range display between unit panels: "Range" header + "<- NUMBER ->" value
         rangeLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -411,7 +435,8 @@ public class RulerDialog extends JDialog implements BoardViewListener {
      * entity combo.
      */
     private JPanel buildUnitPanel(JLabel heightLabel, JSpinner heightSpinner,
-          JLabel effectiveLabel, JLabel infoLabel, JComboBox<EntityItem> entityCombo, Color color) {
+          JLabel effectiveLabel, JLabel infoLabel, JComboBox<EntityItem> entityCombo,
+          JCheckBox lockBox, Color color) {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createLineBorder(color.darker(), 1));
 
@@ -424,7 +449,17 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         gc.insets = new Insets(2, 4, 0, 4);
         int row = 0;
 
-        // Row 0: Height label + spinner + effective height
+        // Row 0: Lock checkbox (always visible at top of panel)
+        gc.gridy = row;
+        gc.gridx = 0;
+        gc.gridwidth = 3;
+        gc.anchor = GridBagConstraints.WEST;
+        gc.fill = GridBagConstraints.NONE;
+        panel.add(lockBox, gc);
+        gc.gridwidth = 1;
+        row++;
+
+        // Row 1: Height label + spinner + effective height
         gc.gridy = row;
         gc.gridx = 0;
         gc.anchor = GridBagConstraints.EAST;
@@ -520,6 +555,11 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         } finally {
             updatingCombo = false;
         }
+        // Endpoint locks always reset to unlocked when the ruler clears.
+        lockStart.setSelected(false);
+        lockEnd.setSelected(false);
+        lockStart.setEnabled(false);
+        lockEnd.setEnabled(false);
     }
 
     /**
@@ -666,6 +706,41 @@ public class RulerDialog extends JDialog implements BoardViewListener {
     }
 
     private void addPoint(Coords c) {
+        // Lock-start active: only the END point updates. Suppresses the auto-restart
+        // that the default branch triggers when both points are already set.
+        if (lockStart.isSelected() && (start != null)) {
+            if (c.equals(start) || c.equals(end)) {
+                return;
+            }
+            end = c;
+            distance = start.distance(end);
+            Entity tallest = populateEntityCombo(c, cboEntity2);
+            if (tallest != null) {
+                applyEntitySelection(tallest, false);
+            }
+            setText();
+            showWithoutFocus();
+            updateLockEnableStates();
+            return;
+        }
+
+        // Lock-end active: only the START point updates.
+        if (lockEnd.isSelected() && (end != null)) {
+            if (c.equals(end) || c.equals(start)) {
+                return;
+            }
+            start = c;
+            distance = start.distance(end);
+            Entity tallest = populateEntityCombo(c, cboEntity1);
+            if (tallest != null) {
+                applyEntitySelection(tallest, true);
+            }
+            setText();
+            showWithoutFocus();
+            updateLockEnableStates();
+            return;
+        }
+
         if (end != null) {
             // Both points already set - start a new measurement
             clear();
@@ -690,6 +765,22 @@ public class RulerDialog extends JDialog implements BoardViewListener {
             }
             setText();
             showWithoutFocus();
+        }
+        updateLockEnableStates();
+    }
+
+    /**
+     * Enables each lock checkbox only when its endpoint is set, and silently clears any selection on a checkbox whose
+     * endpoint has just become null (defensive guard against stale state).
+     */
+    private void updateLockEnableStates() {
+        lockStart.setEnabled(start != null);
+        lockEnd.setEnabled(end != null);
+        if ((start == null) && lockStart.isSelected()) {
+            lockStart.setSelected(false);
+        }
+        if ((end == null) && lockEnd.isSelected()) {
+            lockEnd.setSelected(false);
         }
     }
 
