@@ -239,7 +239,8 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         cboEntity2.addActionListener(e -> entityComboChanged(cboEntity2, false));
 
         // --- Endpoint locks ---
-        // Start disabled until each point is set; mutually exclusive (selecting one clears the other).
+        // Both start disabled initially; each lock is enabled once its corresponding point is set.
+        // The locks are mutually exclusive, so selecting one clears the other.
         lockStart.setText(Messages.getString("Ruler.lock"));
         lockEnd.setText(Messages.getString("Ruler.lock"));
         lockStart.setToolTipText(Messages.getString("Ruler.lockTooltip"));
@@ -677,6 +678,19 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         if (entityName != null && !entityName.isEmpty()) {
             // Sensor return: identity hidden, but a unit is present
             return entityName;
+        }
+        // Distinguish "user explicitly selected None in manual mode" from "no entity at this hex".
+        // When the combo has real entity options but None is the selected item, the user wants the
+        // generic Attacker/Target fallback strings, not a terrain label. Returning null here lets
+        // formatPovLabel() and updateUnitLabels() fall back to Ruler.attackerPOV / Ruler.targetPOV /
+        // Ruler.compareAttacker / Ruler.compareTarget. Terrain labels still apply when the combo has
+        // no real entity options (model size 1 = just the "None" sentinel).
+        JComboBox<EntityItem> combo = isFirstPoint ? cboEntity1 : cboEntity2;
+        EntityItem selected = (EntityItem) combo.getSelectedItem();
+        boolean comboHasEntityOptions = (combo.getModel().getSize() > 1);
+        boolean noneSelected = (selected != null) && (selected.entity() == null);
+        if (comboHasEntityOptions && noneSelected) {
+            return null;
         }
         Coords coords = isFirstPoint ? start : end;
         return describeHexTerrain(coords);
