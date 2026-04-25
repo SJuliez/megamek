@@ -90,6 +90,15 @@ public class RulerDialog extends JDialog implements BoardViewListener {
     public static Color color1 = DARK_COLOR_1;
     public static Color color2 = DARK_COLOR_2;
 
+    // Range panel font sizing. Base sizes scale with the user's GUI scale (UIUtil.scaleForGUI).
+    // Fraction sizes kick in when the rendered panel is taller than the base sizes alone would
+    // fill, so the range display stays proportional whether the unit panels are short (combo
+    // hidden) or tall (combo shown, dialog resized, lock row added, etc.).
+    private static final float RANGE_HEADER_BASE_PT = 14.0f;
+    private static final float RANGE_VALUE_BASE_PT = 32.0f;
+    private static final float RANGE_HEADER_FRACTION = 0.18f;
+    private static final float RANGE_VALUE_FRACTION = 0.45f;
+
     private Coords start;
     private Coords end;
     private Color startColor;
@@ -103,6 +112,7 @@ public class RulerDialog extends JDialog implements BoardViewListener {
     private final JTextField tf_start = new JTextField();
     private final JTextField tf_end = new JTextField();
     private final JLabel rangeLabel = new JLabel();
+    private final JLabel rangeHeader = new JLabel();
     private final JTextField tf_los1 = new JTextField();
     private final JTextField tf_los2 = new JTextField();
     private final JButton butClose = new JButton();
@@ -253,12 +263,15 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         unitPanel2 = buildUnitPanel(heightLabel2, height2, effectiveHeight2,
               heightInfo2, cboEntity2, lockEnd, color2);
 
-        // Range display between unit panels: "Range" header + "<- NUMBER ->" value
+        // Range display between unit panels: "Range" header + "<- NUMBER ->" value.
+        // Base sizes are the floor; the ComponentListener below bumps them up proportionally
+        // when the actual rendered panel is taller (so we fill the available area).
         rangeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        rangeLabel.setFont(rangeLabel.getFont().deriveFont(Font.BOLD, UIUtil.scaleForGUI(18.0f)));
+        rangeLabel.setFont(rangeLabel.getFont().deriveFont(Font.BOLD, UIUtil.scaleForGUI(RANGE_VALUE_BASE_PT)));
 
-        JLabel rangeHeader = new JLabel(Messages.getString("Ruler.Distance"), SwingConstants.CENTER);
-        rangeHeader.setFont(rangeHeader.getFont().deriveFont(Font.PLAIN, UIUtil.scaleForGUI(10.0f)));
+        rangeHeader.setText(Messages.getString("Ruler.Distance"));
+        rangeHeader.setHorizontalAlignment(SwingConstants.CENTER);
+        rangeHeader.setFont(rangeHeader.getFont().deriveFont(Font.PLAIN, UIUtil.scaleForGUI(RANGE_HEADER_BASE_PT)));
 
         JPanel rangePanel = new JPanel(new GridBagLayout());
         GridBagConstraints rc = new GridBagConstraints();
@@ -268,6 +281,16 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         rangePanel.add(rangeHeader, rc);
         rc.gridy = 1;
         rangePanel.add(rangeLabel, rc);
+
+        // Responsive font sizing: re-derive header/value fonts whenever the panel resizes.
+        // Triggers on initial layout, dialog resize, GUI scale change, and any future event
+        // that changes the unit panels' height (e.g., entity combo becoming visible).
+        rangePanel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                adjustRangeFonts(e.getComponent().getHeight());
+            }
+        });
 
         JPanel unitsRow = new JPanel(new GridBagLayout());
         GridBagConstraints uc = new GridBagConstraints();
@@ -767,6 +790,24 @@ public class RulerDialog extends JDialog implements BoardViewListener {
             showWithoutFocus();
         }
         updateLockEnableStates();
+    }
+
+    /**
+     * Recomputes the Range header and value font sizes based on the current rendered height of the range panel. The base
+     * sizes (scaled with the user's GUI scale) act as a floor; if the rendered height is large enough that the
+     * fractional sizes exceed the floor, those win — keeping the display proportionally filled. Called from a
+     * {@link ComponentAdapter#componentResized} listener on the range panel.
+     *
+     * @param panelHeight the current height of the range panel in pixels; values &le; 0 are ignored
+     */
+    private void adjustRangeFonts(int panelHeight) {
+        if (panelHeight <= 0) {
+            return;
+        }
+        float headerPt = Math.max(UIUtil.scaleForGUI(RANGE_HEADER_BASE_PT), panelHeight * RANGE_HEADER_FRACTION);
+        float valuePt = Math.max(UIUtil.scaleForGUI(RANGE_VALUE_BASE_PT), panelHeight * RANGE_VALUE_FRACTION);
+        rangeHeader.setFont(rangeHeader.getFont().deriveFont(Font.PLAIN, headerPt));
+        rangeLabel.setFont(rangeLabel.getFont().deriveFont(Font.BOLD, valuePt));
     }
 
     /**
