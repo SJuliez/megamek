@@ -46,6 +46,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.WindowEvent;
 import java.io.Serial;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
@@ -126,6 +127,10 @@ public class RulerDialog extends JDialog implements BoardViewListener {
     private final JComboBox<EntityItem> cboEntity2 = new JComboBox<>();
     private String entityName1 = "";
     private String entityName2 = "";
+    /** Short name (chassis + model) for the point 1 entity, or null if no entity / sensor return / "None" selected. */
+    private String shortName1;
+    /** Short name (chassis + model) for the point 2 entity, or null if no entity / sensor return / "None" selected. */
+    private String shortName2;
     private DiagramUnitType unitType1 = DiagramUnitType.OTHER;
     private DiagramUnitType unitType2 = DiagramUnitType.OTHER;
     /** True if point 1 entity is actually at altitude (airborne aero with altitude > 0). */
@@ -492,6 +497,8 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         end = null;
         entityName1 = "";
         entityName2 = "";
+        shortName1 = null;
+        shortName2 = null;
         unitType1 = DiagramUnitType.OTHER;
         unitType2 = DiagramUnitType.OTHER;
         atAltitude1 = false;
@@ -558,6 +565,100 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         if (targetPovLabel != null) {
             targetPovLabel.setForeground(endColor);
         }
+
+        updateUnitLabels();
+    }
+
+    /**
+     * Refreshes the POV row labels and the Compare table column headers to reflect the currently selected entities and
+     * flip state. The label source falls back through: entity short name (chassis + model) -> sensor return label ->
+     * dominant terrain at the hex -> generic "Attacker"/"Target" string.
+     */
+    private void updateUnitLabels() {
+        // attackerIsFirst mirrors setText(): when flip is true, point 1 is the attacker
+        boolean attackerIsFirst = flip;
+        String attackerName = unitOrTerrainNameFor(attackerIsFirst);
+        String targetName = unitOrTerrainNameFor(!attackerIsFirst);
+
+        if (attackerPovLabel != null) {
+            attackerPovLabel.setText(formatPovLabel(attackerName, true) + ":");
+        }
+        if (targetPovLabel != null) {
+            targetPovLabel.setText(formatPovLabel(targetName, false) + ":");
+        }
+
+        if (compareTable != null) {
+            String attackerHeader = (attackerName != null)
+                  ? attackerName
+                  : Messages.getString("Ruler.compareAttacker");
+            String targetHeader = (targetName != null)
+                  ? targetName
+                  : Messages.getString("Ruler.compareTarget");
+            if (compareTable.getColumnModel().getColumnCount() >= 3) {
+                compareTable.getColumnModel().getColumn(1).setHeaderValue(attackerHeader);
+                compareTable.getColumnModel().getColumn(2).setHeaderValue(targetHeader);
+                compareTable.getTableHeader().repaint();
+            }
+        }
+    }
+
+    /**
+     * Returns a display name for the unit or terrain at the given point. Priority: visible entity short name -> sensor
+     * return label (when entity is detected but identity hidden) -> dominant terrain at the hex. Returns null only when
+     * nothing meaningful can be derived (e.g., point not yet selected).
+     */
+    private String unitOrTerrainNameFor(boolean isFirstPoint) {
+        String shortName = isFirstPoint ? shortName1 : shortName2;
+        if (shortName != null) {
+            return shortName;
+        }
+        String entityName = isFirstPoint ? entityName1 : entityName2;
+        if (entityName != null && !entityName.isEmpty()) {
+            // Sensor return: identity hidden, but a unit is present
+            return entityName;
+        }
+        Coords coords = isFirstPoint ? start : end;
+        return describeHexTerrain(coords);
+    }
+
+    /**
+     * Returns the dominant terrain feature name at the given hex (e.g. "Light woods", "Water (depth 2)") or "Clear" if
+     * none. Returns null if the coords are not on the board.
+     */
+    private String describeHexTerrain(Coords coords) {
+        if (coords == null || !game.getBoard().contains(coords)) {
+            return null;
+        }
+        Hex hex = game.getBoard().getHex(coords);
+        if (hex == null) {
+            return null;
+        }
+        // Priority order: terrain features that most affect LOS / cover
+        int[] priority = {
+              Terrains.BUILDING, Terrains.WOODS, Terrains.JUNGLE, Terrains.FUEL_TANK,
+              Terrains.BRIDGE, Terrains.RUBBLE, Terrains.ROUGH, Terrains.WATER,
+              Terrains.SWAMP, Terrains.MAGMA, Terrains.MUD, Terrains.SAND
+        };
+        for (int type : priority) {
+            if (hex.containsTerrain(type)) {
+                String name = Terrains.getDisplayName(type, hex.terrainLevel(type));
+                if (name != null) {
+                    return name;
+                }
+            }
+        }
+        return Messages.getString("Ruler.terrainClear");
+    }
+
+    /**
+     * Wraps a name in the POV format string (e.g. "Marauder MAD-3R POV"). Falls back to the generic "Attacker
+     * POV"/"Target POV" string only when no name is available (early init / off-board coords).
+     */
+    private static String formatPovLabel(String name, boolean isAttacker) {
+        if (name == null) {
+            return Messages.getString(isAttacker ? "Ruler.attackerPOV" : "Ruler.targetPOV");
+        }
+        return MessageFormat.format(Messages.getString("Ruler.povFormat"), name);
     }
 
     private void addPoint(Coords c) {
@@ -612,17 +713,20 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         heightSpinner.setValue(twHeight);
         if (isFirstPoint) {
             entityName1 = sensorReturn ? Messages.getString("BoardView1.sensorReturn") : entity.getDisplayName();
+            shortName1 = sensorReturn ? null : entity.getShortName();
             unitType1 = unitType;
             atAltitude1 = isAtAltitude;
             entityExpectedHeight1 = twHeight;
             heightLabel1.setText(label);
         } else {
             entityName2 = sensorReturn ? Messages.getString("BoardView1.sensorReturn") : entity.getDisplayName();
+            shortName2 = sensorReturn ? null : entity.getShortName();
             unitType2 = unitType;
             atAltitude2 = isAtAltitude;
             entityExpectedHeight2 = twHeight;
             heightLabel2.setText(label);
         }
+        updateUnitLabels();
     }
 
     /**
@@ -724,6 +828,7 @@ public class RulerDialog extends JDialog implements BoardViewListener {
         }
 
         updateHeightInfo();
+        updateUnitLabels();
         updateDiagram(entityLosBlocked);
         if (compareExpanded) {
             updateCompareTable();
@@ -1150,17 +1255,20 @@ public class RulerDialog extends JDialog implements BoardViewListener {
             heightSpinner.setValue(1);
             if (isFirstPoint) {
                 entityName1 = "";
+                shortName1 = null;
                 unitType1 = DiagramUnitType.OTHER;
                 atAltitude1 = false;
                 entityExpectedHeight1 = -1;
                 heightLabel1.setText(Messages.getString("Ruler.Height"));
             } else {
                 entityName2 = "";
+                shortName2 = null;
                 unitType2 = DiagramUnitType.OTHER;
                 atAltitude2 = false;
                 entityExpectedHeight2 = -1;
                 heightLabel2.setText(Messages.getString("Ruler.Height"));
             }
+            updateUnitLabels();
         }
 
         if (start != null && end != null) {
