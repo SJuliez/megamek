@@ -656,82 +656,81 @@ public class Report implements ReportEntry {
      */
     @Override
     public String text() {
-        // Build the raw text of the message, with tags.
-        StringBuilder rawBuilder = new StringBuilder();
-        rawBuilder.append(Optional.ofNullable(ReportMessages.getString(String.valueOf(messageId))).orElse(""));
-
-        for (int extension : getExtensions()) {
-            rawBuilder.append(Optional.ofNullable(ReportMessages.getString(String.valueOf(extension))).orElse(""));
+        String primary = ReportMessages.getString(String.valueOf(messageId));
+        if (primary == null) {
+            logger.error("No message found for ID {}", messageId);
+            return "[Reporting Error for message ID " + messageId + "]";
         }
-
-        // Use string representation for actual work
+        StringBuilder rawBuilder = new StringBuilder(primary);
+        for (int extension : getExtensions()) {
+            String extText = ReportMessages.getString(String.valueOf(extension));
+            if (extText != null) {
+                rawBuilder.append(extText);
+            }
+        }
+        
+        // `raw` may be empty; this is intentional (e.g., 1210 = blank-line spacer)
+        // - process zero chars, render nothing.
         String raw = rawBuilder.toString();
-
-        // This will be the finished product, with data substituted for tags.
         StringBuffer text = new StringBuffer();
 
-        if (raw.isEmpty()) {
-            // Should we handle this better? Check alternate language files?
-            logger.error("No message found for ID {}", messageId);
-            text.append("[Reporting Error for message ID ").append(messageId).append("]");
-        } else {
-            int i = 0;
-            int mark = 0;
-            while (i < raw.length()) {
-                if (raw.charAt(i) == '<') {
-                    // find end of tag
-                    int endTagIdx = raw.indexOf('>', i);
-                    if ((raw.indexOf('<', i + 1) != -1) && (raw.indexOf('<', i + 1) < endTagIdx)) {
-                        // hmm...this must be a literal '<' character
-                        i++;
-                        continue;
+        int i = 0;
+        int mark = 0;
+        while (i < raw.length()) {
+            if (raw.charAt(i) == '<') {
+                // find end of tag
+                int endTagIdx = raw.indexOf('>', i);
+                if ((raw.indexOf('<', i + 1) != -1) && (raw.indexOf('<', i + 1) < endTagIdx)) {
+                    // hmm...this must be a literal '<' character
+                    i++;
+                    continue;
+                }
+                // copy the preceding characters into the buffer
+                text.append(raw, mark, i);
+                if (raw.substring(i + 1, endTagIdx).equals("data")) {
+                    text.append(getTag());
+                    tagCounter++;
+                } else if (raw.substring(i + 1, endTagIdx).equals("list")) {
+                    for (int j = tagCounter; j < tagData.size(); j++) {
+                        text.append(getTag(j)).append(", ");
                     }
-                    // copy the preceding characters into the buffer
-                    text.append(raw, mark, i);
-                    if (raw.substring(i + 1, endTagIdx).equals("data")) {
-                        text.append(getTag());
-                        tagCounter++;
-                    } else if (raw.substring(i + 1, endTagIdx).equals("list")) {
-                        for (int j = tagCounter; j < tagData.size(); j++) {
-                            text.append(getTag(j)).append(", ");
-                        }
-                        text.setLength(text.length() - 2); // trim last comma
-                    } else if (raw.substring(i + 1, endTagIdx).startsWith("msg:")) {
-                        boolean selector = Boolean.parseBoolean(getTag());
-                        if (selector) {
-                            text.append(ReportMessages.getString(raw.substring(i + 5, raw.indexOf(',', i))));
-                        } else {
-                            text.append(ReportMessages.getString(raw.substring(raw.indexOf(',', i) + 1, endTagIdx)));
-                        }
-                        tagCounter++;
-                    } else if (raw.substring(i + 1, endTagIdx).equals("newline")) {
-                        text.append("<br>");
+                    text.setLength(text.length() - 2); // trim last comma
+                } else if (raw.substring(i + 1, endTagIdx).startsWith("msg:")) {
+                    boolean selector = Boolean.parseBoolean(getTag());
+                    if (selector) {
+                        text.append(ReportMessages.getString(raw.substring(i + 5, raw.indexOf(',', i))));
                     } else {
-                        // not a special tag, so treat as literal text
-                        text.append(raw, i, endTagIdx + 1);
+                        text.append(ReportMessages.getString(raw.substring(raw.indexOf(',', i) + 1, endTagIdx)));
                     }
-                    mark = endTagIdx + 1;
-                    i = endTagIdx;
-                }
-                i++;
-            }
-
-            if (indentation > MAX_INDENTATION) { // limit indentation for a cleaner look of the report
-                indentation = MAX_INDENTATION;
-            }
-
-            // add the sprite code at the beginning of the line
-            if (imageCode != null && !imageCode.isEmpty()) {
-                if (text.toString().startsWith("<br>")) {
-                    text.insert(4, imageCode);
+                    tagCounter++;
+                } else if (raw.substring(i + 1, endTagIdx).equals("newline")) {
+                    text.append("<br>");
                 } else {
-                    text.insert(0, imageCode);
+                    // not a special tag, so treat as literal text
+                    text.append(raw, i, endTagIdx + 1);
                 }
+                mark = endTagIdx + 1;
+                i = endTagIdx;
             }
-            text.append(raw.substring(mark));
-            handleIndentation(text);
-            text.append(getNewlines());
+            i++;
         }
+
+        if (indentation > MAX_INDENTATION) { // limit indentation for a cleaner look of the report
+            indentation = MAX_INDENTATION;
+        }
+
+        // add the sprite code at the beginning of the line
+        if (imageCode != null && !imageCode.isEmpty()) {
+            if (text.toString().startsWith("<br>")) {
+                text.insert(4, imageCode);
+            } else {
+                text.insert(0, imageCode);
+            }
+        }
+        text.append(raw.substring(mark));
+        handleIndentation(text);
+        text.append(getNewlines());
+
         tagCounter = 0;
         // debugReport
         if (type == Report.TESTING) {
