@@ -36,7 +36,6 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: java-kotlin
-          build-mode: none
           queries: security-and-quality
 
       - name: Perform CodeQL Analysis
