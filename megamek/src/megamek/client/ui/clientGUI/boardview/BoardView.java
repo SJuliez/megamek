@@ -2078,12 +2078,14 @@ public final class BoardView extends AbstractBoardView
                     // For s == 0 the x coordinate MUST be an even number to get correct occlusion; drawX may be
                     // any int though
                     Coords coords = new Coords(x + drawX / 2 * 2, y + drawY);
-                    if (board.getHex(coords) != null) {
+                    Hex hex = board.getHex(coords);
+                    if (hex != null) {
                         drawHex(coords, graphics2D, saveBoardImage);
                         drawOrthograph(coords, graphics2D);
                         drawHexSpritesForHex(coords, graphics2D, behindTerrainHexSprites);
                         drawDeployment(graphics2D, coords);
                         drawOrthograph(coords, graphics2D);
+                        drawHexText(coords, hex, board, graphics2D);
                     }
                 }
             }
@@ -2132,15 +2134,6 @@ public final class BoardView extends AbstractBoardView
         }
 
         int level = hex.getLevel();
-        int depth = hex.depth(false);
-
-        Terrain basement = hex.getTerrain(Terrains.BLDG_BASEMENT_TYPE);
-        if (basement != null) {
-            depth = 0;
-        }
-
-        int height = Math.max(hex.terrainLevel(Terrains.BLDG_ELEV), hex.terrainLevel(Terrains.BRIDGE_ELEV));
-        height = Math.max(height, hex.terrainLevel(Terrains.INDUSTRIAL));
 
         // get the base tile image
         Image baseImage = tileManager.baseFor(hex);
@@ -2509,56 +2502,8 @@ public final class BoardView extends AbstractBoardView
             return;
         }
 
-        // write hex coordinate unless deactivated or scale factor too small
-        if (GUIP.getCoordsEnabled() && (scale >= 0.5)) {
-            drawCenteredString(coords.getBoardNum(), 0, (int) (12 * scale), font_hexNumber, graphics2D);
-        }
-
-        if (displayInvalidHexInfo && !hex.isValid(null)) {
-            Point hexCenter = new Point((int) (HEX_W / 2.0f * scale), (int) (HEX_H / 2.0f * scale));
-            invalidString.at(hexCenter).fontSize(14.0f * scale).outline(Color.WHITE, scale / 2).draw(graphics2D);
-        }
-
-        // write terrain level / water depth / building height
-        if (scale > 0.5f) {
-            int yPosition = HEX_H - 2;
-            if (level != 0) {
-                drawCenteredString(Messages.getString("BoardView1.LEVEL") + level,
-                      0,
-                      (int) (yPosition * scale),
-                      font_elev,
-                      graphics2D);
-                yPosition -= 10;
-            }
-
-            if (depth != 0) {
-                drawCenteredString(Messages.getString("BoardView1.DEPTH") + depth,
-                      0,
-                      (int) (yPosition * scale),
-                      font_elev,
-                      graphics2D);
-                yPosition -= 10;
-            }
-
-            if (height > 0) {
-                graphics2D.setColor(GUIP.getBuildingTextColor());
-                drawCenteredString(Messages.getString("BoardView1.HEIGHT") + height,
-                      0,
-                      (int) (yPosition * scale),
-                      font_elev,
-                      graphics2D);
-                yPosition -= 10;
-            }
-
-            if (hex.terrainLevel(Terrains.FOLIAGE_ELEV) == 1) {
-                graphics2D.setColor(GUIP.getLowFoliageColor());
-                drawCenteredString(Messages.getString("BoardView1.LowFoliage"),
-                      0,
-                      (int) (yPosition * scale),
-                      font_elev,
-                      graphics2D);
-            }
-        }
+        // Hex text (coordinates, level/depth/height) is drawn separately in drawHexText()
+        // so that it renders on top of bridge orthographs
 
         // Used to make the following draw calls shorter
         int s21 = (int) (21 * scale);
@@ -2726,6 +2671,84 @@ public final class BoardView extends AbstractBoardView
 
                 // draw orthogonal
                 boardGraph.drawImage(scaledImage, orthogonalX, orthogonalY, boardPanel);
+            }
+        }
+    }
+
+    /**
+     * Draws hex text overlays (coordinates, level, depth, height, foliage, invalid hex info) directly to the board
+     * graphics. This is called after drawOrthograph so that text renders on top of bridge images.
+     */
+    private void drawHexText(Coords coords, Hex hex, Board board, Graphics2D boardGraph) {
+        final Point hexLocation = getHexLocation(coords);
+        int hexX = hexLocation.x;
+        int hexY = hexLocation.y;
+
+        // Set the text color according to Preferences or Light Gray in space
+        boardGraph.setColor(GUIP.getBoardTextColor());
+        if (board.isSpace()) {
+            boardGraph.setColor(GUIP.getBoardSpaceTextColor());
+        }
+
+        // write hex coordinate unless deactivated or scale factor too small
+        if (GUIP.getCoordsEnabled() && (scale >= 0.5)) {
+            drawCenteredString(coords.getBoardNum(), hexX, hexY + (int) (12 * scale), font_hexNumber, boardGraph);
+        }
+
+        if (displayInvalidHexInfo && !hex.isValid(null)) {
+            Point hexCenter = new Point(hexX + (int) (HEX_W / 2.0f * scale), hexY + (int) (HEX_H / 2.0f * scale));
+            invalidString.at(hexCenter).fontSize(14.0f * scale).outline(Color.WHITE, scale / 2).draw(boardGraph);
+        }
+
+        // write terrain level / water depth / building height
+        if (scale > 0.5f) {
+            int level = hex.getLevel();
+            int depth = hex.depth(false);
+
+            Terrain basement = hex.getTerrain(Terrains.BLDG_BASEMENT_TYPE);
+            if (basement != null) {
+                depth = 0;
+            }
+
+            int height = Math.max(hex.terrainLevel(Terrains.BLDG_ELEV), hex.terrainLevel(Terrains.BRIDGE_ELEV));
+            height = Math.max(height, hex.terrainLevel(Terrains.INDUSTRIAL));
+
+            int yPosition = HEX_H - 2;
+            if (level != 0) {
+                drawCenteredString(Messages.getString("BoardView1.LEVEL") + level,
+                        hexX,
+                        hexY + (int) (yPosition * scale),
+                        font_elev,
+                        boardGraph);
+                yPosition -= 10;
+            }
+
+            if (depth != 0) {
+                drawCenteredString(Messages.getString("BoardView1.DEPTH") + depth,
+                        hexX,
+                        hexY + (int) (yPosition * scale),
+                        font_elev,
+                        boardGraph);
+                yPosition -= 10;
+            }
+
+            if (height > 0) {
+                boardGraph.setColor(GUIP.getBuildingTextColor());
+                drawCenteredString(Messages.getString("BoardView1.HEIGHT") + height,
+                        hexX,
+                        hexY + (int) (yPosition * scale),
+                        font_elev,
+                        boardGraph);
+                yPosition -= 10;
+            }
+
+            if (hex.terrainLevel(Terrains.FOLIAGE_ELEV) == 1) {
+                boardGraph.setColor(GUIP.getLowFoliageColor());
+                drawCenteredString(Messages.getString("BoardView1.LowFoliage"),
+                        hexX,
+                        hexY + (int) (yPosition * scale),
+                        font_elev,
+                        boardGraph);
             }
         }
     }
