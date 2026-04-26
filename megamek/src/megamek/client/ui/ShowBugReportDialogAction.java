@@ -34,6 +34,7 @@
 package megamek.client.ui;
 
 import megamek.client.ui.clientGUI.BugReportDialog;
+import megamek.common.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -43,42 +44,33 @@ import static megamek.client.ui.Messages.getString;
 
 public class ShowBugReportDialogAction extends AbstractAction {
 
-    private final Window parent;
+    private final Container container;
     private final Action copySystemDataAction;
 
     /**
-     * Creates an action that shows the Bug Report helper dialog. The given parent Window is used as a parent frame for
-     * the dialog. The given Action is used for a "Copy System Data" button. This action needs to know the current
-     * project (MM/MML/MHQ) which is why it isn't created internally.
+     * Creates an action that shows the Bug Report helper dialog. The parent frame for the dialog is the given parent if
+     * it's a window or the window the parent is in. The given Action is used for a "Copy System Data" button. This
+     * action needs to know the current project (MM/MML/MHQ) which is why it isn't created internally.
      *
-     * @param parent               The parent window
+     * @param parent               The parent component
      * @param copySystemDataAction An Action shown as a button in the dialog
      *
      * @see BugReportDialog
      */
-    public ShowBugReportDialogAction(Window parent, CopySystemDataAction copySystemDataAction) {
+    public ShowBugReportDialogAction(@Nullable Container parent, @Nullable CopySystemDataAction copySystemDataAction) {
         super(getString("CommonMenuBar.helpReportBug"));
-        this.parent = parent;
+        this.container = parent;
         this.copySystemDataAction = copySystemDataAction;
-    }
-
-    /**
-     * Creates an action that shows the Bug Report helper dialog. The given parent Component's ancestor Window is
-     * determined automatically and used as a parent frame for the dialog. The given Action is used for a "Copy System
-     * Data" button. This action needs to know the current project (MM/MML/MHQ) which is why it isn't created
-     * internally.
-     *
-     * @param parent               The parent window
-     * @param copySystemDataAction An Action shown as a button in the dialog
-     *
-     * @see BugReportDialog
-     */
-    public ShowBugReportDialogAction(Component parent, CopySystemDataAction copySystemDataAction) {
-        this(SwingUtilities.getWindowAncestor(parent), copySystemDataAction);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        new BugReportDialog(parent, copySystemDataAction).show();
+        Window parentWindow = null;
+        if (container instanceof Window window) {
+            parentWindow = window;
+        } else if (container != null) {
+            parentWindow = SwingUtilities.getWindowAncestor(container);
+        }
+        new BugReportDialog(parentWindow, copySystemDataAction).show();
     }
 }

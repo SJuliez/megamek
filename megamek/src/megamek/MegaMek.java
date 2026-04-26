@@ -434,7 +434,7 @@ public class MegaMek {
         System.setProperty("apple.awt.application.appearance", "system");
 
         // on Mac, override standard behavior of the added main menu, this is different for MML and MHQ
-        if (currentProject.equals(MMConstants.PROJECT_NAME)) {
+        if (currentProject.equals(MMConstants.PROJECT_NAME) && Desktop.isDesktopSupported()) {
             // The "About" dialog must be handled separately on MML and MHQ
             Desktop desktop = Desktop.getDesktop();
             if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {

@@ -80,7 +80,7 @@ public class BugReportDialog {
     }
 
     public void show() {
-        JOptionPane.showMessageDialog(parent, content, "Report a bug", JOptionPane.PLAIN_MESSAGE, null);
+        JOptionPane.showMessageDialog(parent, content, I18N.get("title"), JOptionPane.PLAIN_MESSAGE, null);
     }
 
     private JComponent buttonPanel() {

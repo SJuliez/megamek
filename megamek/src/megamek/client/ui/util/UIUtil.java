@@ -41,6 +41,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.Serial;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -108,7 +109,12 @@ public final class UIUtil {
 
     public static void handleHyperlink(HyperlinkEvent event) {
         if (event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-            UIUtil.browse(event.getURL().toString());
+            Component parent = (event.getSource() instanceof Component component) ? component : null;
+            URL url = event.getURL();
+            String target = (url != null) ? url.toString() : event.getDescription();
+            if ((target != null) && !target.isBlank()) {
+                UIUtil.browse(target, parent);
+            }
         }
     }
 

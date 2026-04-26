@@ -1258,9 +1258,8 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         }
 
         // on Mac, override auto-added "Quit MM" behavior; in the main menu, it can simply quit
-        Desktop desktop = Desktop.getDesktop();
-        if (desktop.isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
-            desktop.setQuitHandler(null);
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
+            Desktop.getDesktop().setQuitHandler(null);
         }
 
         // just to free some memory

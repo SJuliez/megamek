@@ -420,14 +420,16 @@ public class BoardEditorPanel extends JPanel
         setFrameTitle();
         frame.add(bvc, BorderLayout.CENTER);
         frame.add(this, BorderLayout.EAST);
+
         // on Mac, override auto-added "Quit MM" behavior to work like other exit variants (ask for save etc)
-        Desktop desktop = Desktop.getDesktop();
-        if (desktop.isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
-            desktop.setQuitHandler((e, response) -> {
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
+            Desktop.getDesktop().setQuitHandler((e, response) -> {
                 handleExit();
                 response.cancelQuit(); // MM does not really exit, it returns to the startup screen
             });
         }
+
+
         menuBar.addActionListener(this);
         frame.setJMenuBar(menuBar);
         if (GUIPreferences.getInstance().getWindowSizeHeight() != 0) {

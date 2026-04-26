@@ -123,14 +123,15 @@ public abstract class AbstractClientGUI implements IClientGUI, IClientCommandHan
                 handleExit();
             }
         });
+
         // on Mac, override auto-added "Quit MM" behavior to work like other exit variants (ask for save etc)
-        Desktop desktop = Desktop.getDesktop();
-        if (desktop.isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
-            desktop.setQuitHandler((e, response) -> {
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
+            Desktop.getDesktop().setQuitHandler((e, response) -> {
                 handleExit();
                 response.cancelQuit(); // MM does not really exit, it returns to the startup screen
             });
         }
+
         initializeFrame();
     }
 

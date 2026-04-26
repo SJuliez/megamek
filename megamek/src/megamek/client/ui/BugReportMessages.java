@@ -57,7 +57,12 @@ public class BugReportMessages {
      */
     public String get(String key, Object... args) {
         try {
-            return MessageFormat.format(RESOURCE_BUNDLE.getString(key), args);
+            String message = RESOURCE_BUNDLE.getString(key);
+            if (args.length == 0) {
+                // avoid mangling of apostrophs when MessageFormat is unnecessary
+                return message;
+            }
+            return MessageFormat.format(message, args);
         } catch (Exception ex) {
             return "!!! %s !!!".formatted(key);
         }
