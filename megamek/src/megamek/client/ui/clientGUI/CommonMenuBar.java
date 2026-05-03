@@ -103,7 +103,7 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
     // The Units menu
     private final JMenuItem fileUnitsReinforce = new JMenuItem(getString("CommonMenuBar.fileUnitsReinforce"));
     private final JMenuItem fileUnitsReinforceRAT = new JMenuItem(getString("CommonMenuBar.fileUnitsReinforceRAT"));
-    private final JMenuItem fileCreateRandom = new JMenuItem("Create Random Army");
+    private final JMenuItem fileCreateRandom = new JMenuItem(getString("CommonMenuBar.createRandomArmy"));
     private final JMenuItem fileUnitsPaste = new JMenuItem(getString("CommonMenuBar.fileUnitsPaste"));
     private final JMenuItem fileUnitsCopy = new JMenuItem(getString("CommonMenuBar.fileUnitsCopy"));
     private final JMenuItem fileUnitsSave = new JMenuItem(getString("CommonMenuBar.fileUnitsSave"));
@@ -331,12 +331,6 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         initMenuItem(viewUnitOverview, menu, VIEW_UNIT_OVERVIEW, GUIP.getShowUnitOverview());
         menu.addSeparator();
 
-        JMenuItem viewResetWindowPositions = new JMenuItem(getString("CommonMenuBar.viewResetWindowPos"));
-        initMenuItem(viewResetWindowPositions, menu, VIEW_RESET_WINDOW_POSITIONS);
-        initMenuItem(viewAccessibilityWindow, menu, VIEW_ACCESSIBILITY_WINDOW, VK_A);
-        viewAccessibilityWindow.setMnemonic(KeyEvent.VK_A);
-        menu.addSeparator();
-
         initMenuItem(viewZoomIn, menu, VIEW_ZOOM_IN);
         initMenuItem(viewZoomOut, menu, VIEW_ZOOM_OUT);
         initMenuItem(viewZoomOverviewToggle, menu, VIEW_ZOOM_OVERVIEW_TOGGLE);
@@ -371,13 +365,17 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         menu = new JMenu(Messages.getString("CommonMenuBar.HelpMenu"));
         menu.setMnemonic(VK_H);
         add(menu);
-        JMenuItem helpResetNags = new JMenuItem(getString("CommonMenuBar.helpResetNags"));
-        initMenuItem(helpResetNags, menu, HELP_RESET_NAGS);
-        // The Help menu
         JMenuItem helpContents = new JMenuItem(getString("CommonMenuBar.helpContents"));
         initMenuItem(helpContents, menu, HELP_CONTENTS);
         JMenuItem helpSkinning = new JMenuItem(getString("CommonMenuBar.helpSkinning"));
         initMenuItem(helpSkinning, menu, HELP_SKINNING);
+        JMenuItem resetWindowPositions = new JMenuItem(getString("CommonMenuBar.viewResetWindowPos"));
+        initMenuItem(resetWindowPositions, menu, VIEW_RESET_WINDOW_POSITIONS);
+        initMenuItem(viewAccessibilityWindow, menu, VIEW_ACCESSIBILITY_WINDOW, VK_A);
+        viewAccessibilityWindow.setMnemonic(KeyEvent.VK_A);
+
+        JMenuItem helpResetNags = new JMenuItem(getString("CommonMenuBar.helpResetNags"));
+        initMenuItem(helpResetNags, menu, HELP_RESET_NAGS);
 
         menu.addSeparator();
 
@@ -562,6 +560,7 @@ public class CommonMenuBar extends JMenuBar implements ActionListener, IPreferen
         viewKeybindsOverlay.setEnabled(isBoardView);
         viewPlanetaryConditionsOverlay.setEnabled(isInGameBoardView);
         toggleHexCoords.setEnabled(isBoardView);
+        viewNovaNetworks.setEnabled(isInGame || isLobby);
 
         viewLOSSetting.setEnabled(isInGameBoardView);
         viewUnitOverview.setEnabled(isInGameBoardView);
