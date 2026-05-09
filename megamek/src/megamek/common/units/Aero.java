@@ -1646,6 +1646,7 @@ public abstract class Aero extends Entity implements IAero, IBomber {
     public int getHeatCapacity(boolean includeRadicalHeatSink) {
         int capacity = (getHeatSinks() * (getHeatType() + 1));
         if (includeRadicalHeatSink && hasWorkingMisc(MiscType.F_RADICAL_HEATSINK)) {
+            // This is the BV bonus, not the in-game heat sink ability, IO:AE 3rd p.185
             capacity += (int) Math.ceil(getHeatSinks() * 0.4);
         }
         return capacity;

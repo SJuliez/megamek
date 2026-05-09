@@ -1607,6 +1607,7 @@ public abstract class Mek extends Entity {
         }
         if (includeRadicalHeatSink
               && hasWorkingMisc(MiscType.F_RADICAL_HEATSINK)) {
+            // This is the BV bonus, not the in-game heat sink ability, IO:AE 3rd p.185
             capacity += (int) Math.ceil(getActiveSinks() * 0.4);
         }
 
