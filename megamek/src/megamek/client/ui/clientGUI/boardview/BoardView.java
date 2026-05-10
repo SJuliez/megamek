@@ -174,6 +174,9 @@ public final class BoardView extends AbstractBoardView
      */
     private int verticalOffset = 0;
 
+    /** Translation factor for wheel/touchpad scrolling to scrollbar values; magic number */
+    private static final float SCROLL_SPEED = 25f;
+
     private static final String BOARD_MAX_ZOOM = "BoardMaxZoom";
     private static final String BOARD_MIN_ZOOM = "BoardMinZoom";
 
@@ -712,14 +715,11 @@ public final class BoardView extends AbstractBoardView
                 }
             } else {
                 // SCROLL
+                double delta = SCROLL_SPEED * mouseWheelEvent.getPreciseWheelRotation();
                 if (horizontalScroll) {
-                    horizontalBar.setValue((int) (horizontalBar.getValue() + (HEX_H
-                          * scale
-                          * (mouseWheelEvent.getWheelRotation()))));
+                    horizontalBar.setValue((int) (horizontalBar.getValue() + delta));
                 } else {
-                    verticalBar.setValue((int) (verticalBar.getValue() + (HEX_H
-                          * scale
-                          * (mouseWheelEvent.getWheelRotation()))));
+                    verticalBar.setValue((int) (verticalBar.getValue() + delta));
                 }
                 stopSoftCentering();
             }
