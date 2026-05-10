@@ -961,10 +961,6 @@ public class ChatLounge extends AbstractPhaseDisplay
             RulerDialog ruler = new RulerDialog(clientgui.getFrame(), previewBV, boardPreviewGame);
 
             // Most boards will be far too large on the standard zoom
-            previewBV.zoomOut();
-            previewBV.zoomOut();
-            previewBV.zoomOut();
-            previewBV.zoomOut();
             boardPreviewW.center();
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this,

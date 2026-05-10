@@ -450,6 +450,8 @@ public class GUIPreferences extends PreferenceStoreProxy {
     public static final String BOT_COMMANDS_AUTO_DISPLAY_NON_REPORT_PHASE = "BotCommandsAutoDisplayNonReportPhase";
     public static final String BOT_COMMANDS_AUTO_DISPLAY_REPORT_PHASE = "BotCommandsAutoDisplayReportPhase";
 
+    public static final String TOUCHPAD_MODE = "TouchPadMode";
+
 
     // RAT dialog preferences
     public static String RAT_TECH_LEVEL = "RATTechLevel";
@@ -865,7 +867,7 @@ public class GUIPreferences extends PreferenceStoreProxy {
 
         store.setDefault(TOOLTIP_DELAY, 1000);
         store.setDefault(TOOLTIP_DISMISS_DELAY, -1);
-        store.setDefault(TOOLTIP_DIST_SUPPRESSION, BoardView.HEX_DIAG);
+        store.setDefault(TOOLTIP_DIST_SUPPRESSION, 75);
         store.setDefault(SHOW_WPS_IN_TT, true);
         store.setDefault(SHOW_WPS_LOC_IN_TT, true);
         store.setDefault(SHOW_ARMOR_MINI_VIS_TT, true);
@@ -922,6 +924,8 @@ public class GUIPreferences extends PreferenceStoreProxy {
         setDefault(SBF_SHEET_HEADER_FONT, "");
         setDefault(SBF_SHEET_VALUE_FONT, "");
         setDefault(SUMMARY_FONT, "");
+
+        setDefault(TOUCHPAD_MODE, true);
     }
 
     public void setDefault(String name, Color color) {
@@ -3816,4 +3820,8 @@ public class GUIPreferences extends PreferenceStoreProxy {
         store.setValue(RULER_COMPARE_VISIBLE, visible);
     }
     // endregion Ruler Diagram
+
+    public boolean isTouchPadMode() {
+        return getBoolean(TOUCHPAD_MODE);
+    }
 }

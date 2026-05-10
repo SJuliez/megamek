@@ -149,7 +149,9 @@ import megamek.server.props.OrbitalBombardment;
  */
 public final class BoardView extends AbstractBoardView
       implements BoardListener, MouseListener, IPreferenceChangeListener, KeyBindReceiver {
+
     private static final MMLogger LOGGER = MMLogger.create(BoardView.class);
+    private static final GUIPreferences GUIP = GUIPreferences.getInstance();
 
     private static final int BOARD_HEX_CLICK = 1;
     private static final int BOARD_HEX_DOUBLE_CLICK = 2;
@@ -172,28 +174,26 @@ public final class BoardView extends AbstractBoardView
      */
     private int verticalOffset = 0;
 
-    private static final float[] ZOOM_FACTORS = { 0.30f, 0.41f, 0.50f, 0.60f, 0.68f, 0.79f, 0.90f, 1.00f, 1.09f, 1.17f,
-                                                  1.3f, 1.6f, 2.0f, 3.0f };
+    private static final String BOARD_MAX_ZOOM = "BoardMaxZoom";
+    private static final String BOARD_MIN_ZOOM = "BoardMinZoom";
 
-    private static final int[] ZOOM_SCALE_TYPES = { ImageUtil.IMAGE_SCALE_AVG_FILTER, ImageUtil.IMAGE_SCALE_AVG_FILTER,
-                                                    ImageUtil.IMAGE_SCALE_BICUBIC, ImageUtil.IMAGE_SCALE_BICUBIC,
-                                                    ImageUtil.IMAGE_SCALE_BICUBIC, ImageUtil.IMAGE_SCALE_BICUBIC,
-                                                    ImageUtil.IMAGE_SCALE_BICUBIC, ImageUtil.IMAGE_SCALE_BICUBIC,
-                                                    ImageUtil.IMAGE_SCALE_BICUBIC, ImageUtil.IMAGE_SCALE_BICUBIC,
-                                                    ImageUtil.IMAGE_SCALE_BICUBIC, ImageUtil.IMAGE_SCALE_BICUBIC,
-                                                    ImageUtil.IMAGE_SCALE_BICUBIC, ImageUtil.IMAGE_SCALE_BICUBIC };
+    private static final float MAX_ZOOM = GUIP.getFloat(BOARD_MAX_ZOOM);
+    private static final float MIN_ZOOM = GUIP.getFloat(BOARD_MIN_ZOOM);
+
+    private static final float IMAGE_SCALE_THRESHOLD = GUIP.getFloat("BoardImageScaleThreshold");
+
+    private int scaleTypeForZoom() {
+        return scale < IMAGE_SCALE_THRESHOLD ? ImageUtil.IMAGE_SCALE_AVG_FILTER : ImageUtil.IMAGE_SCALE_BICUBIC;
+    }
+
+    /** When zooming in or out step-wise (by keyboard or menu command), this is the scale factor */
+    private static final float ZOOM_STEP = 1.15f;
 
     public static final int[] allDirections = { 0, 1, 2, 3, 4, 5 };
 
     public int DROP_SHADOW_DISTANCE = 20;
 
-    // the index of zoom factor 1.00f
-    static final int BASE_ZOOM_INDEX = 7;
-
-    // Initial zoom index
-    public int zoomIndex = BASE_ZOOM_INDEX;
-
-    // Set Zoom Out Overview Toggle inactive.
+    /** When true, the board is zoomed out with minimum zoom. */
     public boolean zoomOverview = false;
 
     // line width of the c3 network lines
@@ -230,10 +230,10 @@ public final class BoardView extends AbstractBoardView
     private JScrollBar horizontalBar;
     private int scrollXDifference = 0;
     private int scrollYDifference = 0;
-    private int preZoomOverviewIndex = 0;
+    private float preZoomScale = 1;
+    private float bestZoomScale = 0;
     private int preZoomOverviewViewX = 0;
     private int preZoomOverviewViewY = 0;
-    private int bestZoomFactor = 0;
     // are we drag-scrolling?
     private boolean dragging = false;
     private boolean wantsPopup = false;
@@ -440,7 +440,7 @@ public final class BoardView extends AbstractBoardView
     /** The coords where the mouse was last. */
     Coords lastCoords;
 
-    private final GUIPreferences GUIP = GUIPreferences.getInstance();
+
 
     private final TerrainShadowHelper shadowHelper = new TerrainShadowHelper(this);
 
@@ -689,22 +689,25 @@ public final class BoardView extends AbstractBoardView
             inHexDelta.translate(-hexL.x, -hexL.y);
             double inHexDeltaX = ((double) inHexDelta.x) / ((double) HEX_W) / scale;
             double inHexDeltaY = ((double) inHexDelta.y) / ((double) HEX_H) / scale;
-            int oldZoomIndex = zoomIndex;
+            float oldScale = scale;
 
             boolean ZoomNoCtrl = GUIP.getMouseWheelZoom();
             boolean wheelFlip = GUIP.getMouseWheelZoomFlip();
-            boolean zoomIn = (mouseWheelEvent.getWheelRotation() > 0) ^ wheelFlip; // = XOR
+            boolean zoomIn = (mouseWheelEvent.getPreciseWheelRotation() > 0) ^ wheelFlip; // = XOR
             boolean doZoom = ZoomNoCtrl ^ mouseWheelEvent.isControlDown(); // = XOR
             boolean horizontalScroll = !doZoom && mouseWheelEvent.isShiftDown();
 
             if (doZoom) {
-                if (zoomIn) {
-                    zoomIn();
+                if (GUIP.isTouchPadMode()) {
+                    zoomBy((float) (1.0f + mouseWheelEvent.getPreciseWheelRotation() / 10f));
                 } else {
-                    zoomOut();
+                    if (zoomIn) {
+                        zoomIn();
+                    } else {
+                        zoomOut();
+                    }
                 }
-
-                if (zoomIndex != oldZoomIndex) {
+                if (scale != oldScale) {
                     adjustVisiblePosition(zoomCenter, dispPoint, inHexDeltaX, inHexDeltaY);
                 }
             } else {
@@ -1962,9 +1965,9 @@ public final class BoardView extends AbstractBoardView
     @Override
     public BufferedImage getEntireBoardImage(boolean ignoreUnits, boolean useBaseZoom) {
         // Set zoom to base, so we get a consistent board image
-        int oldZoom = zoomIndex;
+        float oldScale = scale;
         if (useBaseZoom) {
-            zoomIndex = BASE_ZOOM_INDEX;
+            scale = 1;
             zoom();
         }
 
@@ -2046,7 +2049,7 @@ public final class BoardView extends AbstractBoardView
         boardGraph.dispose();
 
         // Restore the zoom setting
-        zoomIndex = oldZoom;
+        scale = oldScale;
         zoom();
 
         return (BufferedImage) entireBoard;
@@ -4277,8 +4280,13 @@ public final class BoardView extends AbstractBoardView
             }
         }
 
-        // we clicked the right mouse button, remember the position if we start to scroll if we drag, we should scroll
-        if (SwingUtilities.isRightMouseButton(mouseEvent)) {
+        boolean isLMB = SwingUtilities.isLeftMouseButton(mouseEvent);
+        boolean isRMB = SwingUtilities.isRightMouseButton(mouseEvent);
+        boolean isTouchpadMode = GUIP.isTouchPadMode();
+
+        // for scrolling, remember the start position
+        // for touchpad mode, scroll on LMB as that is much easier, otherwise (old behavior) on RMB
+        if ((isLMB && isTouchpadMode) || (isRMB && !isTouchpadMode)) {
             scrollXDifference = mouseEvent.getX();
             scrollYDifference = mouseEvent.getY();
             shouldScroll = true;
@@ -5086,56 +5094,45 @@ public final class BoardView extends AbstractBoardView
         popUp.show(boardPanel, p.x, p.y);
     }
 
-    @Override
-    public void zoomIn() {
-        if (zoomIndex == (ZOOM_FACTORS.length - 1)) {
+    private void zoomBy(float scaleFactor) {
+        if (scaleFactor < 0.01 || scaleFactor > 100) {
+            LOGGER.error("Invalid board zoom ScaleFactor {}", scaleFactor);
             return;
         }
-
-        zoomIndex++;
+        scale = Math.clamp(scale * scaleFactor, MIN_ZOOM, MAX_ZOOM);
         zoom();
     }
 
     @Override
-    public void zoomOut() {
-        if (zoomIndex == 0) {
-            return;
-        }
+    public void zoomIn() {
+        zoomBy(ZOOM_STEP);
+    }
 
-        zoomIndex--;
-        zoom();
+    @Override
+    public void zoomOut() {
+        zoomBy(1 / ZOOM_STEP);
     }
 
     @Override
     public void zoomOverviewToggle() {
         if (!zoomOverview) {
-            preZoomOverviewIndex = zoomIndex;
+            // store the present view on the board and zoom out to show the whole board
+            preZoomScale = scale;
             preZoomOverviewViewX = scrollPane.getHorizontalScrollBar().getValue();
             preZoomOverviewViewY = scrollPane.getVerticalScrollBar().getValue();
 
-            for (int i = ZOOM_FACTORS.length - 1;
-                  i > 0;
-                  i--) {
-                if (getComponent().getWidth() / getComponent().getHeight() < 1) {
-                    if (((boardSize.width / ZOOM_FACTORS[zoomIndex]) + HEX_W * 2) * ZOOM_FACTORS[i]
-                          < getComponent().getWidth()) {
-                        bestZoomFactor = i;
-                        break;
-                    }
-                } else {
-                    if (((boardSize.height / ZOOM_FACTORS[zoomIndex]) + HEX_H * 2) * ZOOM_FACTORS[i]
-                          < getComponent().getHeight()) {
-                        bestZoomFactor = i;
-                        break;
-                    }
-                }
-                bestZoomFactor = 0;
-            }
-            zoomIndex = bestZoomFactor;
+            // find the scale value that fits the entire board into the frame, if possible
+            int width = game.getBoard(boardId).getWidth() * HEX_WC + HEX_W / 4;
+            int height = game.getBoard(boardId).getHeight() * HEX_H + HEX_H / 2;
+
+            float bestXScale = Math.max(MIN_ZOOM, (float) getComponent().getWidth() / width);
+            float bestYScale = Math.max(MIN_ZOOM, (float) getComponent().getHeight() / height);
+            bestZoomScale = Math.min(bestXScale, bestYScale);
+            scale = Math.clamp(bestZoomScale, MIN_ZOOM, MAX_ZOOM);
             zoomOverview = true;
             zoom();
         } else {
-            zoomIndex = preZoomOverviewIndex;
+            scale = preZoomScale;
             zoomOverview = false;
             zoom();
             scrollPane.getHorizontalScrollBar().setValue(preZoomOverviewViewX);
@@ -5143,20 +5140,16 @@ public final class BoardView extends AbstractBoardView
         }
     }
 
-    private void checkZoomIndex() {
-        if (zoomIndex > (ZOOM_FACTORS.length - 1)) {
-            zoomIndex = ZOOM_FACTORS.length - 1;
-        }
-
-        if (zoomIndex < 0) {
-            zoomIndex = 0;
-        }
+    private void checkScale() {
+        // prevent 0 or negative scale; these values are meant to be absolute and far away from useful values
+        scale = Math.clamp(scale, 0.01f, 100);
     }
 
     /**
      * Changes hex dimensions and refreshes the map with the new scale
      */
     private void zoom() {
+        checkScale();
         Point dispPoint;
         double inHexDeltaX = 0;
         double inHexDeltaY = 0;
@@ -5181,11 +5174,7 @@ public final class BoardView extends AbstractBoardView
             zoomCenter = new Coords(getCoordsAt(viewCenter));
         }
 
-        checkZoomIndex();
         stopSoftCentering();
-        scale = ZOOM_FACTORS[zoomIndex];
-        GUIP.setMapZoomIndex(zoomIndex);
-
         hex_size = new Dimension((int) (HEX_W * scale), (int) (HEX_H * scale));
 
         scaledImageCache = new ImageCache<>();
@@ -5214,41 +5203,17 @@ public final class BoardView extends AbstractBoardView
 
         adjustVisiblePosition(zoomCenter, dispPoint, inHexDeltaX, inHexDeltaY);
 
-        if (zoomIndex != bestZoomFactor) {
+        if (scale != bestZoomScale) {
             zoomOverview = false;
         }
     }
 
     private void updateFontSizes() {
-        if (zoomIndex < 7) {
-            font_elev = FONT_7;
-            font_hexNumber = FONT_7;
-            font_minefield = FONT_7;
-        } else if ((zoomIndex < 8)) {
-            font_elev = FONT_10;
-            font_hexNumber = FONT_10;
-            font_minefield = FONT_10;
-        } else if ((zoomIndex < 10)) {
-            font_elev = FONT_12;
-            font_hexNumber = FONT_12;
-            font_minefield = FONT_12;
-        } else if ((zoomIndex < 11)) {
-            font_elev = FONT_14;
-            font_hexNumber = FONT_14;
-            font_minefield = FONT_14;
-        } else if (zoomIndex < 12) {
-            font_elev = FONT_16;
-            font_hexNumber = FONT_16;
-            font_minefield = FONT_16;
-        } else if (zoomIndex < 13) {
-            font_elev = FONT_18;
-            font_hexNumber = FONT_18;
-            font_minefield = FONT_18;
-        } else {
-            font_elev = FONT_24;
-            font_hexNumber = FONT_24;
-            font_minefield = FONT_24;
-        }
+        float fontSize = Math.max(7, scale * 7);
+        Font font = new Font(MMConstants.FONT_SANS_SERIF, Font.PLAIN, (int) fontSize);
+        font_elev = font;
+        font_hexNumber = font;
+        font_minefield = font;
     }
 
     /**
@@ -5264,7 +5229,8 @@ public final class BoardView extends AbstractBoardView
             return null;
         }
 
-        if (zoomIndex == BASE_ZOOM_INDEX) {
+        // avoid scaling not only when the scale value is exactly 1 but also when very close
+        if (scale > 0.99 && scale < 1.01) {
             return base;
         }
 
@@ -5319,7 +5285,7 @@ public final class BoardView extends AbstractBoardView
      * The actual scaling code.
      */
     private Image scale(Image image, int width, int height) {
-        return ImageUtil.getScaledImage(image, width, height, ZOOM_SCALE_TYPES[zoomIndex]);
+        return ImageUtil.getScaledImage(image, width, height, scaleTypeForZoom());
     }
 
     public void toggleIsometric() {
