@@ -1366,16 +1366,7 @@ public final class MinimapPanel extends JPanel implements IPreferenceChangeListe
         // Choose player or team color depending on preferences
         Color iconColor = entity.getOwner().getColour().getColour(false);
         if (GUIP.getTeamColoring() && (getLocalPlayer() != null)) {
-            boolean isLocalTeam = (getLocalPlayer() != null) && (entity.getOwner().getTeam()
-                  == getLocalPlayer().getTeam());
-            boolean isLocalPlayer = entity.getOwner().equals(getLocalPlayer());
-            if (isLocalPlayer) {
-                iconColor = GUIP.getMyUnitColor();
-            } else if (isLocalTeam) {
-                iconColor = GUIP.getAllyUnitColor();
-            } else {
-                iconColor = GUIP.getEnemyUnitColor();
-            }
+            iconColor = UIUtil.mapTeamColor(entity.getOwner(), getLocalPlayer());
         }
 
         if (removedFromGame) {
@@ -1576,18 +1567,10 @@ public final class MinimapPanel extends JPanel implements IPreferenceChangeListe
 
         // Choose player or team color depending on preferences
         Color iconColor = entity.getOwner().getColour().getColour(false);
-        if (GUIP.getTeamColoring() && (client != null)) {
-            boolean isLocalTeam = (getLocalPlayer() != null) && (entity.getOwner().getTeam()
-                  == getLocalPlayer().getTeam());
-            boolean isLocalPlayer = entity.getOwner().equals(getLocalPlayer());
-            if (isLocalPlayer) {
-                iconColor = GUIP.getMyUnitColor();
-            } else if (isLocalTeam) {
-                iconColor = GUIP.getAllyUnitColor();
-            } else {
-                iconColor = GUIP.getEnemyUnitColor();
-            }
+        if (GUIP.getTeamColoring() && (getLocalPlayer() != null)) {
+            iconColor = UIUtil.mapTeamColor(entity.getOwner(), getLocalPlayer());
         }
+
         Graphics2D g2 = (Graphics2D) g;
         Stroke saveStroke = g2.getStroke();
 

@@ -899,7 +899,7 @@ class LobbyMekCellFormatter {
         int ownerId = game.getForces().getOwnerId(force);
         Player owner = game.getPlayer(ownerId);
 
-        Color color = UIUtil.teamColor(owner, localPlayer);
+        Color color = UIUtil.swingGuiTeamColor(owner, localPlayer);
         StringBuilder result = new StringBuilder("<HTML><NOBR>");
         result.append(fontHTML(color));
 

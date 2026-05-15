@@ -41,7 +41,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.Serial;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -325,8 +324,9 @@ public final class UIUtil {
     }
 
     /**
-     * Returns the Color associated with either enemies, allies or oneself from the GUIPreferences depending on the
-     * relation of the given player1 and player2.
+     * @return The color associated with either enemies, allies or oneself from the color preferences depending on the
+     *       relation of the given player1 and player2. This color is meant to be used in Swing GUI that may be in dark
+     *       or light mode.
      */
     public static Color swingGuiTeamColor(Player player1, Player player2) {
         ColorManager colors = MegaMek.getColorManager();
@@ -340,8 +340,9 @@ public final class UIUtil {
     }
 
     /**
-     * Returns the Color associated with either enemies, allies or oneself from the GUIPreferences depending on the
-     * relation of the given player1 and player2.
+     * @return The color associated with either enemies, allies or oneself from the color preferences depending on the
+     *       relation of the given player1 and player2. This color is meant to be used in maps (MM's board view, MHQ's
+     *       star map) where GUI dark/light mode is not relevant.
      */
     public static Color mapTeamColor(Player player1, Player player2) {
         ColorManager colors = MegaMek.getColorManager();

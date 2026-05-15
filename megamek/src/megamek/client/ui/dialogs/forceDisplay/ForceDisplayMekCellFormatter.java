@@ -113,7 +113,7 @@ class ForceDisplayMekCellFormatter {
         StringBuilder result = new StringBuilder();
         boolean isCarried = entity.getTransportId() != Entity.NONE;
 
-        Color color = UIUtil.teamColor(owner, localPlayer);
+        Color color = UIUtil.swingGuiTeamColor(owner, localPlayer);
 
         if (entity.getForceId() == Force.NO_FORCE) {
             result.append(formatCell(UIUtil.fontHTML(color) + "\u25AD" + "</FONT>", 10));
@@ -444,7 +444,7 @@ class ForceDisplayMekCellFormatter {
         Player localPlayer = client.getLocalPlayer();
         int ownerId = game.getForces().getOwnerId(force);
         Player owner = game.getPlayer(ownerId);
-        Color color = UIUtil.teamColor(owner, localPlayer);
+        Color color = UIUtil.swingGuiTeamColor(owner, localPlayer);
 
         StringBuilder result = new StringBuilder("<NOBR>");
 

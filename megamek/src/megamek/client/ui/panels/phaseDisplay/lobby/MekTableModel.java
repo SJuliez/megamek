@@ -284,7 +284,7 @@ public class MekTableModel extends AbstractTableModel {
 
         Player owner = ownerOf(entity);
         Player localPlayer = clientGui.getClient().getLocalPlayer();
-        String color = UIUtil.toColorHexString(UIUtil.teamColor(owner, localPlayer));
+        String color = UIUtil.toColorHexString(UIUtil.swingGuiTeamColor(owner, localPlayer));
         String playerColor = UIUtil.toColorHexString(owner.getColour().getColour());
 
         String styles = "<style> " +

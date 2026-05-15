@@ -52,10 +52,12 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import megamek.MegaMek;
 import megamek.client.Client;
 import megamek.client.ui.Messages;
 import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.clientGUI.tooltip.info.WeaponInfo;
+import megamek.client.ui.colors.ColorRole;
 import megamek.client.ui.util.UIUtil;
 import megamek.common.CriticalSlot;
 import megamek.common.Hex;
@@ -2536,12 +2538,9 @@ public final class UnitToolTip {
         String sForceEntry;
 
         if (entity.partOfForce()) {
-            // Get the / ally / enemy color and desaturate it
-            Color color = GUIP.getEnemyUnitColor();
-            if (localPlayer != null && entity.getOwnerId() == localPlayer.getId()) {
-                color = GUIP.getMyUnitColor();
-            } else if (localPlayer != null && !localPlayer.isEnemyOf(entity.getOwner())) {
-                color = GUIP.getAllyUnitColor();
+            Color color = MegaMek.getColorManager().get(ColorRole.ENEMY);
+            if (localPlayer != null) {
+                color = UIUtil.swingGuiTeamColor(entity.getOwner(), localPlayer);
             }
 
             String force = getForceInfo(entity);

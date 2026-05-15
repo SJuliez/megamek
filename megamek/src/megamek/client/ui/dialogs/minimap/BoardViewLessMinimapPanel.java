@@ -69,6 +69,7 @@ import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.clientGUI.overlay.IFF;
 import megamek.client.ui.clientGUI.overlay.OverlayPainter;
 import megamek.client.ui.clientGUI.overlay.OverlayPanel;
+import megamek.client.ui.util.UIUtil;
 import megamek.common.Hex;
 import megamek.common.Player;
 import megamek.common.actions.AttackAction;
@@ -453,17 +454,8 @@ public class BoardViewLessMinimapPanel extends JPanel implements OverlayPainter 
         // Choose player or team color depending on preferences
         Color iconColor = entity.getOwner().getColour().getColour(false);
         if (GUIP.getTeamColoring()) {
-            boolean isLocalTeam = entity.getOwner().getTeam() == client.getLocalPlayer().getTeam();
-            boolean isLocalPlayer = entity.getOwner().equals(client.getLocalPlayer());
-            if (isLocalPlayer) {
-                iconColor = GUIP.getMyUnitColor();
-            } else if (isLocalTeam) {
-                iconColor = GUIP.getAllyUnitColor();
-            } else {
-                iconColor = GUIP.getEnemyUnitColor();
-            }
+            iconColor = UIUtil.mapTeamColor(entity.getOwner(), client.getLocalPlayer());
         }
-
 
         // Transform for placement and scaling
         var placement = AffineTransform.getTranslateInstance(baseX, baseY);
@@ -569,15 +561,7 @@ public class BoardViewLessMinimapPanel extends JPanel implements OverlayPainter 
         Stroke saveStroke = g2.getStroke();
         Color iconColor = entity.getOwner().getColour().getColour(false);
         if (GUIP.getTeamColoring()) {
-            boolean isLocalTeam = entity.getOwner().getTeam() == client.getLocalPlayer().getTeam();
-            boolean isLocalPlayer = entity.getOwner().equals(client.getLocalPlayer());
-            if (isLocalPlayer) {
-                iconColor = GUIP.getMyUnitColor();
-            } else if (isLocalTeam) {
-                iconColor = GUIP.getAllyUnitColor();
-            } else {
-                iconColor = GUIP.getEnemyUnitColor();
-            }
+            iconColor = UIUtil.mapTeamColor(entity.getOwner(), client.getLocalPlayer());
         }
         Color iconColorSemiTransparent = new Color(iconColor.getRed(), iconColor.getGreen(), iconColor.getBlue(), 200);
         // White border to set off the icon from the background

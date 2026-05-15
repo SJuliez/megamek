@@ -35,7 +35,6 @@ package megamek.client.ui.panels.phaseDisplay.lobby;
 
 import static megamek.client.ui.Messages.getString;
 import static megamek.client.ui.panels.phaseDisplay.lobby.LobbyUtility.isValidStartPos;
-import static megamek.client.ui.util.UIUtil.teamColor;
 import static megamek.client.ui.util.UIUtil.uiYellow;
 
 import java.awt.Color;
@@ -76,7 +75,6 @@ import megamek.client.ratgenerator.RATGenerator;
 import megamek.client.ui.GBC;
 import megamek.client.ui.Messages;
 import megamek.client.ui.clientGUI.ClientGUI;
-import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.clientGUI.boardview.BoardView;
 import megamek.client.ui.colors.ColorRole;
 import megamek.client.ui.dialogs.buttonDialogs.AbstractButtonDialog;
@@ -845,7 +843,7 @@ public class PlayerSettingsDialog extends AbstractButtonDialog {
         for (Player listedPlayer : client.getGame().getPlayersList()) {
             int pos = listedPlayer.getStartingPos();
             if (!listedPlayer.equals(client.getLocalPlayer()) && (pos != Board.START_ANY)) {
-                butText.get(pos).append(UIUtil.fontHTML(teamColor(listedPlayer, client.getLocalPlayer())));
+                butText.get(pos).append(UIUtil.fontHTML(UIUtil.swingGuiTeamColor(listedPlayer, client.getLocalPlayer())));
                 butText.get(pos).append("\u25A0</FONT>");
                 if (!hasPlayer.containsKey(pos)) {
                     if (!butTT.get(pos).isEmpty()) {
