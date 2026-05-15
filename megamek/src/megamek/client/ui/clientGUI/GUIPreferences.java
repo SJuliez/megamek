@@ -3606,7 +3606,7 @@ public class GUIPreferences extends PreferenceStoreProxy {
         return colour.getRed() + " " + colour.getGreen() + " " + colour.getBlue();
     }
 
-    protected Color parseRGB(String text) {
+    public static Color parseRGB(String text) {
         final String[] codesText = text.split(" ");
         if (codesText.length == 3) {
             int[] codes = new int[codesText.length];

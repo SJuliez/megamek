@@ -1365,7 +1365,7 @@ public final class MinimapPanel extends JPanel implements IPreferenceChangeListe
 
         // Choose player or team color depending on preferences
         Color iconColor = entity.getOwner().getColour().getColour(false);
-        if (GUIP.getTeamColoring() && (client != null)) {
+        if (GUIP.getTeamColoring() && (getLocalPlayer() != null)) {
             boolean isLocalTeam = (getLocalPlayer() != null) && (entity.getOwner().getTeam()
                   == getLocalPlayer().getTeam());
             boolean isLocalPlayer = entity.getOwner().equals(getLocalPlayer());

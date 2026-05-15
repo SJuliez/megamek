@@ -59,6 +59,7 @@ import megamek.MegaMek;
 import megamek.client.bot.BotClient;
 import megamek.client.ui.Messages;
 import megamek.client.ui.clientGUI.GUIPreferences;
+import megamek.client.ui.colors.ColorRole;
 import megamek.client.ui.util.UIUtil;
 import megamek.common.board.Board;
 import megamek.common.interfaces.IStartingPositions;
@@ -219,7 +220,7 @@ class PlayerTable extends JTable {
 
             // Second Line - Team
             boolean isEnemy = lobby.localPlayer().isEnemyOf(player);
-            Color color = isEnemy ? GUIPreferences.getInstance().getWarningColor() : uiGreen();
+            Color color = UIUtil.teamColor(player, lobby.localPlayer());
             result.append("<FONT").append(UIUtil.colorString(color)).append(">");
             result.append(Player.TEAM_NAMES[player.getTeam()]);
             result.append("</FONT>");

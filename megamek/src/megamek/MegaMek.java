@@ -57,6 +57,7 @@ import javax.swing.UIManager;
 import io.sentry.Sentry;
 import megamek.client.ui.clientGUI.ButtonOrderPreferences;
 import megamek.client.ui.clientGUI.MegaMekGUI;
+import megamek.client.ui.colors.ColorManager;
 import megamek.client.ui.dialogs.MMAboutDialog;
 import megamek.client.ui.preferences.SuitePreferences;
 import megamek.client.ui.util.FontHandler;
@@ -86,6 +87,7 @@ public class MegaMek {
     private static final MMLogger LOGGER = MMLogger.create(MegaMek.class);
     private static final SanityInputFilter sanityInputFilter = new SanityInputFilter();
     private static final Color TABLE_ALTERNATE_ROW_COLOR = new Color(125, 125, 125, 50);
+    private static final ColorManager COLOR_MANAGER = new ColorManager();
 
     private static String originProject = "Unknown";
 
@@ -442,7 +444,6 @@ public class MegaMek {
             }
         }
 
-        // Setup Fonts
         FontHandler.initialize();
 
         // Setup Themes
@@ -462,5 +463,9 @@ public class MegaMek {
 
         // Set an alternate table row color; it uses alpha and is valid for both dark and light UIs
         UIManager.put("Table.alternateRowColor", TABLE_ALTERNATE_ROW_COLOR);
+    }
+
+    public static ColorManager getColorManager() {
+        return COLOR_MANAGER;
     }
 }

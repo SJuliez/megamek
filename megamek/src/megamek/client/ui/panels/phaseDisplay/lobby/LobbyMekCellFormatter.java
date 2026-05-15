@@ -46,6 +46,8 @@ import megamek.MegaMek;
 import megamek.client.Client;
 import megamek.client.ui.Messages;
 import megamek.client.ui.clientGUI.GUIPreferences;
+import megamek.client.ui.colors.ColorManager;
+import megamek.client.ui.colors.ColorRole;
 import megamek.client.ui.util.PlayerColour;
 import megamek.client.ui.util.UIUtil;
 import megamek.common.Player;
@@ -67,6 +69,7 @@ import megamek.common.util.CrewSkillSummaryUtil;
 class LobbyMekCellFormatter {
 
     private static final GUIPreferences GUIP = GUIPreferences.getInstance();
+    private static final ColorManager colors = MegaMek.getColorManager();
 
     private LobbyMekCellFormatter() {
     }
@@ -153,16 +156,16 @@ class LobbyMekCellFormatter {
               || (entity.doomedOnGround() && mapType == MapSettings.MEDIUM_GROUND)
               || (entity.doomedInSpace() && mapType == MapSettings.MEDIUM_SPACE)
               || (!entity.isDesignValid())) {
-            result.append(UIUtil.fontHTML(GUIP.getWarningColor()));
+            result.append(UIUtil.fontHTML(colors.get(ColorRole.WARNING)));
             result.append(WARNING_SIGN + "</FONT>");
             hasCritical = true;
         }
 
         // Unit Name
         if (hasCritical) {
-            result.append(UIUtil.fontHTML(GUIP.getWarningColor()));
+            result.append(UIUtil.fontHTML(colors.get(ColorRole.WARNING)));
         } else if (hasWarning) {
-            result.append(UIUtil.fontHTML(uiYellow()));
+            result.append(UIUtil.fontHTML(colors.get(ColorRole.CAUTION)));
         } else {
             result.append(fontHTML());
         }
@@ -197,7 +200,7 @@ class LobbyMekCellFormatter {
         if (!forceView) {
             if (!entity.isDesignValid()) {
                 result.append(MekTableModel.DOT_SPACER);
-                result.append(UIUtil.fontHTML(GUIP.getWarningColor()));
+                result.append(UIUtil.fontHTML(colors.get(ColorRole.WARNING)));
                 result.append("\u26D4 ").append(Messages.getString("ChatLounge.invalidDesign"));
                 result.append("</FONT>");
             }
@@ -207,7 +210,7 @@ class LobbyMekCellFormatter {
         if (!forceView) {
             if (entity.isShutDown()) {
                 result.append(MekTableModel.DOT_SPACER);
-                result.append(UIUtil.fontHTML(GUIP.getWarningColor()));
+                result.append(UIUtil.fontHTML(colors.get(ColorRole.WARNING)));
                 result.append(WARNING_SIGN).append(Messages.getString("ChatLounge.shutdown"));
                 result.append("</FONT>");
             }
@@ -329,7 +332,7 @@ class LobbyMekCellFormatter {
         if (forceView) {
             if (!entity.isDesignValid()) {
                 firstEntry = dotSpacer(result, firstEntry);
-                result.append(UIUtil.fontHTML(GUIP.getWarningColor()));
+                result.append(UIUtil.fontHTML(colors.get(ColorRole.WARNING)));
                 result.append("\u26D4 </FONT>").append(Messages.getString("ChatLounge.invalidDesign"));
             }
         }
@@ -604,11 +607,11 @@ class LobbyMekCellFormatter {
         boolean isCarried = entity.getTransportId() != Entity.NONE;
         int mapType = lobby.mapSettings.getMedium();
 
-        Color color = GUIP.getEnemyUnitColor();
+        Color color = colors.get(ColorRole.ENEMY);
         if (owner.getId() == localPlayer.getId()) {
-            color = GUIP.getMyUnitColor();
+            color = colors.get(ColorRole.MY_FORCE);
         } else if (!localPlayer.isEnemyOf(owner)) {
-            color = GUIP.getAllyUnitColor();
+            color = colors.get(ColorRole.ALLY);
         }
         color = addGray(color, 128).brighter();
 
@@ -636,7 +639,7 @@ class LobbyMekCellFormatter {
 
         // General (Yellow) Warnings
         if (LobbyUtility.hasYellowWarning(entity)) {
-            result.append(UIUtil.fontHTML(uiYellow()));
+            result.append(UIUtil.fontHTML(colors.get(ColorRole.CAUTION)));
             result.append(WARNING_SIGN + "</FONT>");
         }
 
@@ -691,7 +694,7 @@ class LobbyMekCellFormatter {
         // Invalid unit design
         if (!entity.isDesignValid()) {
             result.append(MekTableModel.DOT_SPACER);
-            result.append(UIUtil.fontHTML(GUIP.getWarningColor()));
+            result.append(UIUtil.fontHTML(colors.get(ColorRole.WARNING)));
             result.append("\u26D4 </FONT>").append(Messages.getString("ChatLounge.invalidDesign"));
         }
 
@@ -896,15 +899,7 @@ class LobbyMekCellFormatter {
         int ownerId = game.getForces().getOwnerId(force);
         Player owner = game.getPlayer(ownerId);
 
-        // Get the my / ally / enemy color and desaturate it
-        Color color = GUIP.getEnemyUnitColor();
-        if (ownerId == localPlayer.getId()) {
-            color = GUIP.getMyUnitColor();
-        } else if (!localPlayer.isEnemyOf(owner)) {
-            color = GUIP.getAllyUnitColor();
-        }
-        color = addGray(color, 128).brighter();
-
+        Color color = UIUtil.teamColor(owner, localPlayer);
         StringBuilder result = new StringBuilder("<HTML><NOBR>");
         result.append(fontHTML(color));
 

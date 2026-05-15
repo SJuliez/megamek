@@ -33,9 +33,8 @@
 package megamek.client.ui.panels.phaseDisplay.lobby;
 
 import static megamek.client.ui.util.UIUtil.fontHTML;
-import static megamek.client.ui.util.UIUtil.uiGreen;
+import static megamek.client.ui.util.UIUtil.spanCSS;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Image;
 import java.text.NumberFormat;
@@ -43,6 +42,7 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTable;
+import javax.swing.UIManager;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
@@ -119,6 +119,13 @@ public class MekTableModel extends AbstractTableModel {
     public MekTableModel(ClientGUI cg, ChatLounge cl) {
         clientGui = cg;
         chatLounge = cl;
+
+        // Cell content needs to be redrawn actively when settings change
+        UIManager.addPropertyChangeListener(evt -> {
+            if ("lookAndFeel".equals(evt.getPropertyName())) {
+                refreshCells();
+            }
+        });
     }
     // endregion Constructors
 
@@ -270,20 +277,26 @@ public class MekTableModel extends AbstractTableModel {
     /**
      * Creates and returns the display content of the "Player" column for the given entity.
      */
-    private String playerCellContent(final InGameObject entity) {
+    private String playerCellContent(InGameObject entity) {
         if (entity == null) {
             return "";
         }
 
-        StringBuilder result = new StringBuilder("<HTML><NOBR>");
         Player owner = ownerOf(entity);
-        boolean isEnemy = clientGui.getClient().getLocalPlayer().isEnemyOf(owner);
-        String sep = chatLounge.isCompact() ? DOT_SPACER : "<BR>";
-        result.append(UIUtil.fontHTML(owner.getColour().getColour())).append(owner.getName())
-              .append("</FONT>").append(fontHTML()).append(sep).append("</FONT>")
-              .append(UIUtil.fontHTML(isEnemy ? Color.RED : uiGreen()))
-              .append(Player.TEAM_NAMES[owner.getTeam()]);
-        return result.toString();
+        Player localPlayer = clientGui.getClient().getLocalPlayer();
+        String color = UIUtil.toColorHexString(UIUtil.teamColor(owner, localPlayer));
+        String playerColor = UIUtil.toColorHexString(owner.getColour().getColour());
+
+        String styles = "<style> " +
+              " .player { color:" + playerColor + "; }" +
+              " .team { color:" + color + "; }</style>";
+
+        String spacer = chatLounge.isCompact() ? DOT_SPACER : "<BR>";
+        return "<HEAD>" + styles + "</HEAD><BODY><NOBR>"
+              + spanCSS("player", owner.getName())
+              + spacer
+              + spanCSS("team", Player.TEAM_NAMES[owner.getTeam()])
+              + "</BODY></HTML>";
     }
 
     /** Returns the entity of the given table row. */

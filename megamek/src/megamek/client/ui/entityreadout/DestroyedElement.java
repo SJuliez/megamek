@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2025-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MegaMek.
  *
@@ -32,13 +32,15 @@
  */
 package megamek.client.ui.entityreadout;
 
-import megamek.client.ui.clientGUI.GUIPreferences;
+import megamek.MegaMek;
+import megamek.client.ui.colors.ColorRole;
+import megamek.client.ui.colors.ColorManager;
 import megamek.client.ui.util.DiscordFormat;
 import megamek.client.ui.util.UIUtil;
 
 record DestroyedElement(String text) implements ViewElement {
 
-    private static final GUIPreferences GUIP = GUIPreferences.getInstance();
+    private static final ColorManager colors = MegaMek.getColorManager();
     private static final String HTML_FORMAT = "<FONT %s>%s</FONT>";
 
     public DestroyedElement(int number) {
@@ -52,7 +54,7 @@ record DestroyedElement(String text) implements ViewElement {
 
     @Override
     public String toHTML() {
-        String colorString = UIUtil.colorString(GUIP.getWarningColor());
+        String colorString = UIUtil.colorString(colors.get(ColorRole.WARNING));
         return HTML_FORMAT.formatted(colorString, text);
     }
 

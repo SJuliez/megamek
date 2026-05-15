@@ -38,6 +38,7 @@ import static megamek.client.ui.panels.phaseDisplay.lobby.LobbyUtility.isValidSt
 import static megamek.client.ui.util.UIUtil.teamColor;
 import static megamek.client.ui.util.UIUtil.uiYellow;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.FlowLayout;
@@ -63,6 +64,7 @@ import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
 
 import megamek.MMConstants;
+import megamek.MegaMek;
 import megamek.client.Client;
 import megamek.client.bot.BotClient;
 import megamek.client.bot.princess.BehaviorSettings;
@@ -76,6 +78,7 @@ import megamek.client.ui.Messages;
 import megamek.client.ui.clientGUI.ClientGUI;
 import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.clientGUI.boardview.BoardView;
+import megamek.client.ui.colors.ColorRole;
 import megamek.client.ui.dialogs.buttonDialogs.AbstractButtonDialog;
 import megamek.client.ui.dialogs.buttonDialogs.BotConfigDialog;
 import megamek.client.ui.enums.DialogResult;
@@ -855,7 +858,8 @@ public class PlayerSettingsDialog extends AbstractButtonDialog {
             }
         }
 
-        butText.get(currentPlayerStartPos).append(UIUtil.fontHTML(GUIPreferences.getInstance().getMyUnitColor()));
+        Color color = MegaMek.getColorManager().get(ColorRole.MY_FORCE);
+        butText.get(currentPlayerStartPos).append(UIUtil.fontHTML(color));
         butText.get(currentPlayerStartPos).append("\u2B24</FONT>");
 
         // Turn off custom deployment if start is not Any

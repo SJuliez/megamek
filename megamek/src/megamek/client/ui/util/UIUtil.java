@@ -53,9 +53,12 @@ import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 
 import megamek.MMConstants;
+import megamek.MegaMek;
 import megamek.client.ui.Messages;
 import megamek.client.ui.buttons.MMToggleButton;
 import megamek.client.ui.clientGUI.GUIPreferences;
+import megamek.client.ui.colors.ColorManager;
+import megamek.client.ui.colors.ColorRole;
 import megamek.client.ui.comboBoxes.MMComboBox;
 import megamek.client.ui.widget.RawImagePanel;
 import megamek.common.Player;
@@ -325,13 +328,29 @@ public final class UIUtil {
      * Returns the Color associated with either enemies, allies or oneself from the GUIPreferences depending on the
      * relation of the given player1 and player2.
      */
-    public static Color teamColor(Player player1, Player player2) {
+    public static Color swingGuiTeamColor(Player player1, Player player2) {
+        ColorManager colors = MegaMek.getColorManager();
         if (player1.getId() == player2.getId()) {
-            return GUIPreferences.getInstance().getMyUnitColor();
+            return colors.get(ColorRole.MY_FORCE);
         } else if (player1.isEnemyOf(player2)) {
-            return GUIPreferences.getInstance().getEnemyUnitColor();
+            return colors.get(ColorRole.ENEMY);
         } else {
-            return GUIPreferences.getInstance().getAllyUnitColor();
+            return colors.get(ColorRole.ALLY);
+        }
+    }
+
+    /**
+     * Returns the Color associated with either enemies, allies or oneself from the GUIPreferences depending on the
+     * relation of the given player1 and player2.
+     */
+    public static Color mapTeamColor(Player player1, Player player2) {
+        ColorManager colors = MegaMek.getColorManager();
+        if (player1.getId() == player2.getId()) {
+            return colors.get(ColorRole.MAP_MY_FORCE);
+        } else if (player1.isEnemyOf(player2)) {
+            return colors.get(ColorRole.MAP_ENEMY);
+        } else {
+            return colors.get(ColorRole.MAP_ALLY);
         }
     }
 

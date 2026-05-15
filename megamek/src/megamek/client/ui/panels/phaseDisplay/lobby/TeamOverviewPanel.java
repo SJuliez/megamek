@@ -58,10 +58,12 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import megamek.MMConstants;
+import megamek.MegaMek;
 import megamek.client.ui.Messages;
 import megamek.client.ui.clientGUI.ClientGUI;
 import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.clientGUI.TableColumnManager;
+import megamek.client.ui.colors.ColorRole;
 import megamek.client.ui.util.UIUtil;
 import megamek.common.Player;
 import megamek.common.Team;
@@ -355,8 +357,7 @@ public class TeamOverviewPanel extends JPanel {
             switch (column) {
                 case TEAM:
                     boolean isEnemy = !teams.get(row).players().contains(clientGui.getClient().getLocalPlayer());
-                    Color color = isEnemy ? GUIPreferences.getInstance().getEnemyUnitColor()
-                          : GUIPreferences.getInstance().getMyUnitColor();
+                    Color color = MegaMek.getColorManager().get(isEnemy ? ColorRole.ENEMY : ColorRole.MY_FORCE);
                     result.append(UIUtil.fontHTML(color)).append("&nbsp;");
                     result.append(teamNames.get(row)).append("</FONT>");
                     break;
