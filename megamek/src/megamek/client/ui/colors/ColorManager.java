@@ -103,7 +103,7 @@ public final class ColorManager {
 
         // Read in the current configuration (override legacy values)
         for (ColorRole role : ColorRole.values()) {
-            if (colorsPreferences.hasProperty(role.name())) {
+            if (colorsPreferences.hasProperty(role.name()) && !colorsPreferences.getString(role.name()).isBlank()) {
                 try {
                     // set directly, no event and no re-save is needed here
                     settings.get(role).setOverride(colorsPreferences.getColor(role.name()));
@@ -138,6 +138,18 @@ public final class ColorManager {
      */
     public Color get(ColorRole role) {
         return settings.get(role).get();
+    }
+
+    /**
+     * Returns the effective color for the specified color role. The effective color is a user-set color for this role
+     * if one has been set, or a default color supplied for this role, if not.
+     *
+     * @param role semantic color role
+     *
+     * @return The effective color for the role
+     */
+    public Color getDefault(ColorRole role) {
+        return settings.get(role).getDefault();
     }
 
     /**
@@ -182,7 +194,7 @@ public final class ColorManager {
      */
     public void clearColorOverride(ColorRole role) {
         settings.get(role).clearOverride();
-        colorsPreferences.setValue(role.name(), null);
+        colorsPreferences.setValue(role.name(), "");
         pcs.firePropertyChange(PROPERTY_COLORS_CHANGED, null, role);
     }
 

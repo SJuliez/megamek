@@ -74,6 +74,7 @@ import megamek.client.ui.clientGUI.ClientGUI;
 import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.clientGUI.UITheme;
 import megamek.client.ui.clientGUI.UnitDisplayOrderPreferences;
+import megamek.client.ui.colors.ColorSettingPanel;
 import megamek.client.ui.comboBoxes.MMComboBox;
 import megamek.client.ui.dialogs.helpDialogs.HelpDialog;
 import megamek.client.ui.dialogs.minimap.MinimapPanel;
@@ -577,6 +578,8 @@ public class CommonSettingsDialog extends AbstractButtonDialog
 
     HashMap<String, String> savedAdvancedOpt = new HashMap<>();
 
+    private ColorSettingsTab colorSettingsTab;
+
     /**
      * Constructs the Client Settings Dialog with a {@link ClientGUI} (used within the client, i.e. in lobby and game).
      */
@@ -625,6 +628,7 @@ public class CommonSettingsDialog extends AbstractButtonDialog
         autoDisplayPane.getVerticalScrollBar().setUnitIncrement(16);
         JScrollPane aiDisplayPane = new JScrollPane(aiDisplayPanel());
         aiDisplayPane.getVerticalScrollBar().setUnitIncrement(16);
+        colorSettingsTab = new ColorSettingsTab();
 
         panTabs.add(Messages.getString("CommonSettingsDialog.main"), settingsPane);
         panTabs.add(Messages.getString("CommonSettingsDialog.audio"), audioPane);
@@ -638,6 +642,7 @@ public class CommonSettingsDialog extends AbstractButtonDialog
         panTabs.add(Messages.getString("CommonSettingsDialog.autoDisplay"), autoDisplayPane);
         panTabs.add(Messages.getString("CommonSettingsDialog.aiDisplay"), aiDisplayPane);
         panTabs.add(Messages.getString("CommonSettingsDialog.advanced"), advancedSettingsPane);
+        panTabs.add(Messages.getString("CommonSettingsDialog.colors"), colorSettingsTab.getComponent());
 
         return panTabs;
     }
@@ -2271,6 +2276,8 @@ public class CommonSettingsDialog extends AbstractButtonDialog
                 }
             }
 
+            colorSettingsTab.update();
+
             masterVolumeSlider.setValue(GUIP.getMasterVolume());
             soundMuteChat.setSelected(GUIP.getSoundMuteChat());
             soundMuteMyTurn.setSelected(GUIP.getSoundMuteMyTurn());
@@ -2694,6 +2701,8 @@ public class CommonSettingsDialog extends AbstractButtonDialog
         for (PlayerColourHelper pch : playerColours) {
             GUIP.setColor(pch.pc.getText(), pch.csb.getColour());
         }
+
+        colorSettingsTab.applySettings();
 
         GUIP.setMoveDefaultColor(csbMoveDefaultColor.getColour());
         GUIP.setMoveIllegalColor(csbMoveIllegalColor.getColour());

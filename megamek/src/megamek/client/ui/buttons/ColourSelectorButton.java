@@ -42,11 +42,9 @@ import javax.swing.JColorChooser;
 import megamek.common.annotations.Nullable;
 
 public class ColourSelectorButton extends JButton {
-    //region Variable Declarations
-    private Color colour;
-    //endregion Variable Declarations
 
-    //region Constructors
+    private Color colour;
+
     public ColourSelectorButton(String text) {
         this(null, text);
     }
@@ -54,9 +52,7 @@ public class ColourSelectorButton extends JButton {
     public ColourSelectorButton(@Nullable Color colour, String text) {
         initialize(colour, text);
     }
-    //endregion Constructors
 
-    //region Initialization
     private void initialize(@Nullable Color colour, String text) {
         setText(text);
         setColour(colour);
@@ -64,9 +60,7 @@ public class ColourSelectorButton extends JButton {
         addActionListener(evt -> setColour(JColorChooser.showDialog(this,
               "Choose Color", getColour())));
     }
-    //endregion Initialization
 
-    //region Getters/Setters
     public Color getColour() {
         return colour;
     }
@@ -77,7 +71,6 @@ public class ColourSelectorButton extends JButton {
             setIcon(getColourIcon());
         }
     }
-    //endregion Getters/Setters
 
     private ImageIcon getColourIcon() {
         BufferedImage result = new BufferedImage(36, 36, BufferedImage.TYPE_INT_RGB);

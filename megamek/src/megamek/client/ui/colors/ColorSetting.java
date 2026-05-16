@@ -55,6 +55,10 @@ final class ColorSetting {
         return override != null ? override : defaultSupplier.get();
     }
 
+    Color getDefault() {
+        return defaultSupplier.get();
+    }
+
     /**
      * Returns whether this setting currently uses its adaptive default.
      *

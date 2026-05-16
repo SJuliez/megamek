@@ -53,11 +53,15 @@ public enum ColorRole {
     /** Map: Enemies of the player's forces */
     MAP_ENEMY;
 
-    public String getName() {
+    public String getDisplayName() {
         return Messages.getString("ColorRole." + name());
     }
 
     public String getDescription() {
         return Messages.getString("ColorRole." + name() + ".desc");
+    }
+
+    public String getExampleText() {
+        return Messages.getString("ColorRole." + name() + ".example");
     }
 }
