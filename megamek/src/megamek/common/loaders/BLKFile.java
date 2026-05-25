@@ -142,6 +142,10 @@ public class BLKFile {
             entity.setSource(SourceBooks.formatSourceList(List.of(dataFile.getDataAsString("source"))));
         }
 
+        if (dataFile.exists("published")) {
+            entity.setPublished(SourceBooks.formatSourceList(List.of(dataFile.getDataAsString("published"))));
+        }
+
         if (dataFile.exists("faction")) {
             entity.setTechFaction(Faction.fromAbbr(dataFile.getDataAsString("faction")[0]));
         }
@@ -212,7 +216,7 @@ public class BLKFile {
 
     protected void loadEquipment(Entity t, String sName, int nLoc) throws EntityLoadingException {
         String[] saEquip = dataFile.getDataAsString(sName + " Equipment");
-        if (saEquip == null) {
+        if (saEquip == null || saEquip.length == 0 || saEquip[0].isEmpty()) {
             return;
         }
 
@@ -617,6 +621,10 @@ public class BLKFile {
         }
         e.setYear(dataFile.getDataAsInt("year")[0]);
 
+        if (dataFile.exists("originalBuildYear")) {
+            e.setOriginalBuildYear(dataFile.getDataAsInt("originalBuildYear")[0]);
+        }
+        
         if (!dataFile.exists("type")) {
             throw new EntityLoadingException("Could not find type block.");
         }
@@ -751,7 +759,7 @@ public class BLKFile {
             blk.writeBlockData(MtfFile.MUL_ID, t.getMulId());
         }
         blk.writeBlockData("year", t.getYear());
-        if (t.getOriginalBuildYear() >= 0) {
+        if (t.getOriginalBuildYear() > 0 && t.getOriginalBuildYear() != t.getYear()) {
             blk.writeBlockData("originalBuildYear", t.getOriginalBuildYear());
         }
         String type = getType(t);
@@ -788,8 +796,8 @@ public class BLKFile {
             blk.writeBlockData("weaponQuirks", String.join("\n", weaponQuirkList));
         }
 
-        if ((t instanceof Infantry) && ((Infantry) t).getMount() != null) {
-            blk.writeBlockData("motion_type", ((Infantry) t).getMount().toString());
+        if ((t instanceof ConvInfantry infantry) && infantry.isMounted()) {
+            blk.writeBlockData("motion_type", infantry.getMount().toString());
         } else if (!t.isHandheldWeapon() && !(t instanceof GunEmplacement)) {
             blk.writeBlockData("motion_type", t.getMovementModeAsString());
         }
@@ -1072,6 +1080,10 @@ public class BLKFile {
             blk.writeBlockData("source", t.getSource());
         }
 
+        if (!t.getPublished().isBlank()) {
+            blk.writeBlockData("published", t.getPublished());
+        }
+
         if (t.getTechFaction() != Faction.NONE) {
             blk.writeBlockData("faction", t.getTechFaction().getCode());
         }
@@ -1094,7 +1106,7 @@ public class BLKFile {
             blk.writeBlockData("armor", new int[] { ba.getArmor(1) });
             blk.writeBlockData("Trooper Count", (int) t.getWeight());
             blk.writeBlockData("weightclass", ba.getWeightClass());
-        } else if (t instanceof Infantry infantry) {
+        } else if (t instanceof ConvInfantry infantry) {
             blk.writeBlockData("squad_size", infantry.getSquadSize());
             blk.writeBlockData("squadn", infantry.getSquadCount());
             if (infantry.getSecondaryWeaponsPerSquad() > 0) {

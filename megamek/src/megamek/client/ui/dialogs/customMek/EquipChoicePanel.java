@@ -75,15 +75,7 @@ import megamek.common.game.Game;
 import megamek.common.options.IGameOptions;
 import megamek.common.options.IOption;
 import megamek.common.options.OptionsConstants;
-import megamek.common.units.Aero;
-import megamek.common.units.AeroSpaceFighter;
-import megamek.common.units.Dropship;
-import megamek.common.units.Entity;
-import megamek.common.units.EntityWeightClass;
-import megamek.common.units.IBomber;
-import megamek.common.units.Infantry;
-import megamek.common.units.Mek;
-import megamek.common.units.ProtoMek;
+import megamek.common.units.*;
 import megamek.common.weapons.infantry.InfantryWeapon;
 import megamek.logging.MMLogger;
 import org.apache.logging.log4j.Logger;
@@ -234,7 +226,7 @@ public class EquipChoicePanel extends JPanel {
             }
         }
 
-        if (entity.isBattleArmor() || !(entity instanceof Infantry infantry) || infantry.hasFieldWeapon()) {
+        if (shouldSetupMunitions(entity)) {
             setupMunitions(gbc);
             if (clientgui != null) {
                 setupWeaponAmmoChoice(gbc);
@@ -257,8 +249,8 @@ public class EquipChoicePanel extends JPanel {
         }
 
         // set up infantry armor
-        if (entity.isConventionalInfantry()) {
-            panInfArmor = new InfantryArmorPanel(entity, this, gbc);
+        if (entity instanceof ConvInfantry convInfantry) {
+            panInfArmor = new InfantryArmorPanel(convInfantry, this, gbc);
         }
 
         // Set up mines
@@ -545,6 +537,19 @@ public class EquipChoicePanel extends JPanel {
                 entityCorrespondence[listIndex++] = e.getId();
             }
         }
+    }
+
+    /**
+     * Determines whether the manual ammo/munitions configuration section applies to the given unit. Conventional
+     * infantry without a field weapon have no configurable ammo bins; every other unit type (BattleMeks, vehicles,
+     * aerospace, ProtoMeks, BattleArmor, and field-gun conventional infantry) does.
+     *
+     * @param entity the unit being configured
+     *
+     * @return true if the munitions section should be built for this unit
+     */
+    static boolean shouldSetupMunitions(Entity entity) {
+        return entity.isBattleArmor() || !(entity instanceof ConvInfantry infantry) || infantry.hasFieldWeapon();
     }
 
     private void setupMunitions(GBC2 gbc) {

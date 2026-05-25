@@ -45,7 +45,7 @@ import megamek.common.equipment.Mounted;
 import megamek.common.options.IOption;
 import megamek.common.options.OptionsConstants;
 import megamek.common.options.PilotOptions;
-import megamek.common.units.Infantry;
+import megamek.common.units.ConvInfantry;
 import megamek.common.units.InfantryMount;
 import megamek.common.verifier.TestInfantry;
 
@@ -54,9 +54,9 @@ import megamek.common.verifier.TestInfantry;
  */
 class InfantryReadout extends GeneralEntityReadout {
 
-    protected final Infantry infantry;
+    protected final ConvInfantry infantry;
 
-    protected InfantryReadout(Infantry infantry, boolean showDetail, boolean useAlternateCost,
+    protected InfantryReadout(ConvInfantry infantry, boolean showDetail, boolean useAlternateCost,
           boolean ignorePilotBV) {
 
         super(infantry, showDetail, useAlternateCost, ignorePilotBV);
@@ -153,10 +153,10 @@ class InfantryReadout extends GeneralEntityReadout {
 
         if (infantry.getSpecializations() > 0) {
             var specList = new ItemList("Infantry Specializations");
-            for (int i = 0; i < Infantry.NUM_SPECIALIZATIONS; i++) {
+            for (int i = 0; i < ConvInfantry.NUM_SPECIALIZATIONS; i++) {
                 int spec = 1 << i;
                 if (infantry.hasSpecialization(spec)) {
-                    specList.addItem(Infantry.getSpecializationName(spec));
+                    specList.addItem(ConvInfantry.getSpecializationName(spec));
                 }
             }
             result.add(new PlainLine());
@@ -296,11 +296,14 @@ class InfantryReadout extends GeneralEntityReadout {
     protected List<ViewElement> createArmorElements() {
         List<ViewElement> result = new ArrayList<>();
 
-        ViewElement troopers = new PlainElement(infantry.getShootingStrength());
-        if (infantry.getShootingStrength() == 0) {
+        int activeTroopersCount = infantry.getActiveTroopers();
+        int originalTrooperCount = infantry.getOriginalTrooperCount();
+
+        ViewElement troopers = new PlainElement(activeTroopersCount);
+        if (activeTroopersCount == 0) {
             troopers = new DestroyedElement(0);
-        } else if (infantry.getShootingStrength() < infantry.getOriginalTrooperCount()) {
-            troopers = new DamagedElement(infantry.getShootingStrength());
+        } else if (activeTroopersCount < originalTrooperCount) {
+            troopers = new DamagedElement(activeTroopersCount);
         }
         result.add(new LabeledLine(Messages.getString("MekView.Men"), troopers));
 

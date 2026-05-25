@@ -1728,7 +1728,8 @@ public class Compute {
         if (isWeaponInfantry) {
             mods = Compute.getInfantryRangeMods(min(distance, c3dist),
                   (InfantryWeapon) weaponType,
-                  (attackingEntity instanceof Infantry) ? ((Infantry) attackingEntity).getSecondaryWeapon() : null,
+                  (attackingEntity instanceof ConvInfantry infantry) ? infantry.getSecondaryWeapon() :
+                        null,
                   weaponUnderwater);
 
             int rangeModifier = mods.getValue();
@@ -3218,7 +3219,10 @@ public class Compute {
                     break;
             }
         }
-        if (hex.terrainLevel(Terrains.GEYSER) == 2) {
+        if (hex.terrainLevel(Terrains.GEYSER) == Terrains.GEYSER_LVL_ACTIVE) {
+            // Per TacOps an erupting geyser also blocks LOS as ultra-heavy woods (see
+            // LosEffects), so a target engulfed by the plume is already unreachable; this
+            // modifier still applies to a target raised above the plume that remains visible.
             // Always add full geyser modifier
             toHit.addModifier(2, "target in erupting geyser");
             if (eiStatus > 0) {
@@ -3313,7 +3317,7 @@ public class Compute {
                 break;
         }
 
-        if (hex.terrainLevel(Terrains.GEYSER) == 2) {
+        if (hex.terrainLevel(Terrains.GEYSER) == Terrains.GEYSER_LVL_ACTIVE) {
             // Always add full geyser modifier
             toHit.addModifier(2, "erupting geyser");
             if (eiStatus > 0) {
@@ -3501,7 +3505,7 @@ public class Compute {
 
         ToHitData hitData = weaponAttackAction.toHit(game, allECMInfo);
 
-        if (attacker.isConventionalInfantry() && attacker instanceof Infantry infantry) {
+        if (attacker instanceof ConvInfantry infantry) {
             infShootingStrength = infantry.getShootingStrength();
             infDamagePerTrooper = infantry.getDamagePerTrooper();
         }
@@ -4431,7 +4435,7 @@ public class Compute {
                 visualRange = visualRange / 2;
             } else if (targetedEntity.isChameleonShieldActive()) {
                 visualRange = visualRange / 2;
-            } else if (targetedEntity.isConventionalInfantry() && ((Infantry) targetedEntity).hasSneakCamo()) {
+            } else if (targetedEntity instanceof ConvInfantry infantry && infantry.hasSneakCamo()) {
                 visualRange = visualRange / 2;
             }
 
@@ -5834,9 +5838,9 @@ public class Compute {
             return data;
         }
 
-        if (attacker instanceof BattleArmor) {
+        if (attacker instanceof BattleArmor battleArmor) {
             // Battle Armor units can't do an AM Attack if they're burdened.
-            if (((BattleArmor) attacker).isBurdened()) {
+            if (battleArmor.isBurdened()) {
                 data.addModifier(TargetRoll.IMPOSSIBLE,
                       "Launcher not jettisoned.");
                 return data;
@@ -5859,7 +5863,7 @@ public class Compute {
             }
         } else {
             // Infantry can't have encumbering armor
-            if (attacker.isArmorEncumbering()) {
+            if (((ConvInfantry) attacker).isArmorEncumbering()) {
                 data.addModifier(TargetRoll.IMPOSSIBLE,
                       "can't engage in anti-mek attacks with encumbering armor.");
                 return data;
@@ -5904,12 +5908,12 @@ public class Compute {
         // Prosthetic enhancement anti-Mek bonus (Grappler or Climbing Claws) - IO p.84
         // Uses the best (most negative) modifier from either enhancement slot
         // Only applies if the unit has the MD_PL_ENHANCED or MD_PL_I_ENHANCED ability
-        if (attacker.hasProstheticEnhancement()
+        if (attacker instanceof ConvInfantry attackingInfantry && attackingInfantry.hasProstheticEnhancement()
               && (attacker.hasAbility(OptionsConstants.MD_PL_ENHANCED)
               || attacker.hasAbility(OptionsConstants.MD_PL_I_ENHANCED))) {
-            int antiMekMod = attacker.getBestProstheticAntiMekModifier();
+            int antiMekMod = attackingInfantry.getBestProstheticAntiMekModifier();
             if (antiMekMod != 0) {
-                String modName = attacker.getBestProstheticAntiMekName();
+                String modName = attackingInfantry.getBestProstheticAntiMekName();
                 data.addModifier(antiMekMod,
                       modName != null ? modName : Messages.getString("Compute.ProstheticEnhancement"));
             }
@@ -5917,7 +5921,8 @@ public class Compute {
 
         // Mountain Troops anti-Mek bonus - TO:AUE p.153
         // "Mountain troops apply a -2 modifier to any Anti-Mek Skill Rolls"
-        if (attacker.hasSpecialization(Infantry.MOUNTAIN_TROOPS)) {
+        if (attacker instanceof ConvInfantry attackingInfantry
+              && attackingInfantry.hasSpecialization(ConvInfantry.MOUNTAIN_TROOPS)) {
             data.addModifier(-2, Messages.getString("Compute.MountainTroops"));
         }
 
@@ -7689,7 +7694,10 @@ public class Compute {
         if (entity.getCrew().getCrewType() == CrewType.COMMAND_CONSOLE) {
             return 2;
         }
-        if (entity instanceof Mek || entity instanceof Tank || entity instanceof Aero || entity instanceof ProtoMek) {
+
+        boolean tankWithDriver =
+              entity instanceof Tank tank && !(tank.isTrailer() && (entity.getOriginalWalkMP() <= 0));
+        if (entity instanceof Mek || tankWithDriver || entity instanceof Aero || entity instanceof ProtoMek) {
             // only one driver please
             return 1;
         } else if (entity instanceof Infantry) {
@@ -7854,7 +7862,8 @@ public class Compute {
                     // Infantry attacker needs long-range weapons that can hit an aircraft
                     return false;
                 } else {
-                    boolean hasFieldGuns = ((Infantry) attacker).hasActiveFieldWeapon();
+                    boolean hasFieldGuns =
+                          attacker instanceof ConvInfantry infantry && infantry.hasActiveFieldWeapon();
                     boolean hasInfantryAA = attacker.getEquipment().stream().anyMatch(
                           eq -> eq instanceof WeaponMounted
                                 && ((WeaponMounted) eq).getType().hasFlag(WeaponType.F_INF_AA)
@@ -7945,7 +7954,7 @@ public class Compute {
         // Get radius, base damage
         DamageFalloff falloff = AreaEffectHelper.calculateDamageFallOff(
               ammoType,
-              attacker.isBattleArmor() ? ((BattleArmor) attacker).getTroopers() : 0,
+              attacker.isBattleArmor() ? ((BattleArmor) attacker).getSquadSize() : 0,
               false
         );
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2003, 2004, 2005 Ben Mazur (bmazur@sev.org)
- * Copyright (C) 2003-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2003-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MegaMek.
  *
@@ -241,10 +241,10 @@ public class EntityListFile {
                 isDestroyed = true;
             }
 
-            // exact zeroes for BA should not be treated as destroyed as MHQ uses this to
-            // signify
-            // suits without pilots
-            if (entity instanceof BattleArmor && entity.getInternalForReal(loc) >= 0) {
+            // exact zeroes for BA should not be treated as destroyed as MHQ uses this to signify suits without pilots
+            // HHW always have zero internal structure
+            if ((entity instanceof BattleArmor || entity instanceof HandheldWeapon)
+                  && entity.getInternalForReal(loc) >= 0) {
                 isDestroyed = false;
             }
 
@@ -952,7 +952,7 @@ public class EntityListFile {
             }
 
             // Save some values for conventional infantry
-            if (entity.isConventionalInfantry() && entity instanceof Infantry infantry) {
+            if (entity instanceof ConvInfantry infantry) {
                 if (infantry.getCustomArmorDamageDivisor() != 1) {
                     output.write("\" " + MULParser.ATTR_ARMOR_DIVISOR + "=\"");
                     output.write(infantry.getCustomArmorDamageDivisor() + "");
@@ -1424,7 +1424,7 @@ public class EntityListFile {
                       ' ' +
                       MULParser.ATTR_NUMBER +
                       "=\"" +
-                      eCrew.getOInternal(Infantry.LOC_INFANTRY));
+                      eCrew.getOInternal(ConvInfantry.LOC_INFANTRY));
                 output.write("\"/>\n");
             }
 
@@ -1608,7 +1608,7 @@ public class EntityListFile {
             }
         }
         // Write prosthetic enhancement data for infantry (IO p.84)
-        if (entity instanceof Infantry infantry) {
+        if (entity instanceof ConvInfantry infantry) {
             if (infantry.getProstheticEnhancement1() != null) {
                 output.write("\" " + MULParser.ATTR_PROSTHETIC_ENHANCEMENT_1 + "=\"");
                 output.write(infantry.getProstheticEnhancement1().name());

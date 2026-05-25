@@ -32,15 +32,7 @@
  */
 package megamek.client.ui.clientGUI.boardview;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.Stroke;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -62,6 +54,7 @@ import megamek.client.ui.Messages;
 import megamek.client.ui.clientGUI.boardview.LOSDiagramData.HexRow;
 import megamek.client.ui.util.UIUtil;
 import megamek.common.Configuration;
+import megamek.common.LosEffects;
 
 /**
  * A panel that renders a 2D elevation cross-section diagram for a LOS path. Shows ground elevation, terrain features,
@@ -104,6 +97,8 @@ class LOSElevationDiagramPanel extends JPanel {
     private static final Color COLOR_FIRE = new Color(255, 50, 0, 210);
     private static final Color COLOR_SCREEN = new Color(180, 180, 255, 120);
     private static final Color COLOR_FIELDS = new Color(200, 180, 50, 100);
+    private static final Color COLOR_GEYSER_JET = new Color(150, 200, 235, 175);
+    private static final Color COLOR_GEYSER_SPRAY = new Color(215, 238, 250, 160);
     private static final Color COLOR_LOS_CLEAR = new Color(60, 220, 60);
     private static final Color COLOR_LOS_BLOCKED = new Color(240, 50, 50);
     private static final Color COLOR_SPLIT_MARKER = new Color(255, 165, 0, 120);
@@ -115,6 +110,7 @@ class LOSElevationDiagramPanel extends JPanel {
           2.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, LOS_DASH_PATTERN, 0.0f);
     private static final Stroke STROKE_GRID = new BasicStroke(0.5f);
     private static final Stroke STROKE_DEFAULT = new BasicStroke(1.0f);
+    private static final Stroke STROKE_BLOCKER_OUTLINE = new BasicStroke(2.5f);
     private static final float[] DASH_PATTERN = { 6.0f, 4.0f };
     private static final Stroke STROKE_SPLIT = new BasicStroke(
           1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, DASH_PATTERN, 0.0f);
@@ -139,6 +135,15 @@ class LOSElevationDiagramPanel extends JPanel {
 
     /** Aspect ratio (height/width) for the larger crown puffs at the plume top. */
     private static final double SMOKE_CROWN_ASPECT_RATIO = 0.65;
+
+    /**
+     * Erupting-geyser plume height in TW levels; treated as ultra-heavy woods for LOS (TacOps). Derived from the LOS
+     * engine's {@link LosEffects#GEYSER_PLUME_HEIGHT} so the diagram cannot drift out of sync with the rule.
+     */
+    private static final int GEYSER_PLUME_LEVELS = LosEffects.GEYSER_PLUME_HEIGHT;
+
+    /** Width of the geyser water jet as a fraction of the column width. */
+    private static final double GEYSER_JET_WIDTH_FACTOR = 0.28;
 
     private static final String LOS_SILHOUETTE_DIR = "units" + File.separator + "LOS" + File.separator;
 
@@ -565,7 +570,83 @@ class LOSElevationDiagramPanel extends JPanel {
                       columnWidth - 2, metrics.drawAreaHeight - 2);
                 g2d.setStroke(STROKE_DEFAULT);
             }
+
+            // Highlight the hex bar in red when this hex's solid terrain blocks LOS so the offender pops
+            // visually. Outline runs from the hex's effective top (ground + buildings) down to ground level.
+            if (hex.blocksLOS()) {
+                int blockerTopElevation = hex.groundElevation() + hex.buildingHeight();
+                int yBlockerTop = metrics.levelToY(blockerTopElevation);
+                int blockerHeight = yGround - yBlockerTop;
+                if (blockerHeight <= 0) {
+                    // No building above ground: outline the ground bar itself
+                    yBlockerTop = yGround;
+                    blockerHeight = Math.max(yBottom - yGround, 1);
+                }
+                g2d.setColor(COLOR_LOS_BLOCKED);
+                g2d.setStroke(STROKE_BLOCKER_OUTLINE);
+                g2d.drawRect(xLeft, yBlockerTop, columnWidth, blockerHeight);
+                g2d.setStroke(STROKE_DEFAULT);
+            }
+
+            // Mark the dead-zone victim hex with diagonal hatching across its ground bar so the player
+            // sees that the lower unit sits inside a TacOps dead-zone shadow. Only fires when the engine
+            // flagged the LOS as blocked by the dead-zone rule (Standard/BMM blocking uses the red outline
+            // above).
+            if (diagramData.deadZone() && hex.coords().equals(diagramData.deadZoneVictimPos())) {
+                drawDeadZoneHatch(g2d, xLeft, yGround, columnWidth, yBottom - yGround);
+            }
         }
+    }
+
+    /**
+     * Draws a {@code ///} pattern across the given rectangle in semi-opaque black, then a centered
+     * "Dead Zone" label on top so the marker is unambiguous. Used to mark a hex that sits inside a
+     * TacOps dead-zone shadow. Doesn't fill the air above the hex, so silhouettes and the LOS line
+     * stay readable.
+     */
+    private static void drawDeadZoneHatch(Graphics2D g2d, int x, int y, int width, int height) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        Shape oldClip = g2d.getClip();
+        Color oldColor = g2d.getColor();
+        Stroke oldStroke = g2d.getStroke();
+        Font oldFont = g2d.getFont();
+        g2d.setClip(x, y, width, height);
+        g2d.setColor(new Color(0, 0, 0, 180));
+        g2d.setStroke(new BasicStroke(2.0f));
+        int spacing = UIUtil.scaleForGUI(8);
+        // Each line goes from (x + offset - height) at the bottom to (x + offset) at the top, creating
+        // a 45-degree slash that fully covers the rectangle when offsets march from -height to width.
+        for (int offset = -height; offset < width + height; offset += spacing) {
+            g2d.drawLine(x + offset, y + height, x + offset + height, y);
+        }
+
+        // Centered label. Falls back to a short form if the hex column is too narrow for the full text.
+        Font labelFont = oldFont.deriveFont(Font.BOLD, UIUtil.scaleForGUI(10.0f));
+        g2d.setFont(labelFont);
+        FontMetrics fm = g2d.getFontMetrics();
+        String label = Messages.getString("Ruler.deadZoneLabel");
+        int labelWidth = fm.stringWidth(label);
+        if (labelWidth > width - 4) {
+            label = Messages.getString("Ruler.deadZoneLabelShort");
+            labelWidth = fm.stringWidth(label);
+        }
+        int textX = x + (width - labelWidth) / 2;
+        int textY = y + (height + fm.getAscent()) / 2 - fm.getDescent();
+        // White text with a thin black halo for contrast against the brown ground + black slashes.
+        g2d.setColor(Color.BLACK);
+        g2d.drawString(label, textX - 1, textY);
+        g2d.drawString(label, textX + 1, textY);
+        g2d.drawString(label, textX, textY - 1);
+        g2d.drawString(label, textX, textY + 1);
+        g2d.setColor(Color.WHITE);
+        g2d.drawString(label, textX, textY);
+
+        g2d.setFont(oldFont);
+        g2d.setStroke(oldStroke);
+        g2d.setColor(oldColor);
+        g2d.setClip(oldClip);
     }
 
     /**
@@ -900,6 +981,61 @@ class LOSElevationDiagramPanel extends JPanel {
     }
 
     /**
+     * Draws an erupting geyser as a narrow vertical water jet topped by a fountain-like spray crown of droplets.
+     * Deliberately distinct from the wide billowing smoke plume: a thin, fast column of water shooting straight up with
+     * droplets arcing outward at the top.
+     *
+     * @param g2d    the graphics context
+     * @param x      the left edge of the hex column
+     * @param y      the top of the plume (three levels above ground)
+     * @param width  the hex column width
+     * @param height the pixel height of the three-level plume (ground to plume top)
+     */
+    private void drawGeyserJet(Graphics2D g2d, int x, int y, int width, int height) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+
+        int centerX = x + width / 2;
+        int jetWidth = Math.max((int) (width * GEYSER_JET_WIDTH_FACTOR), 3);
+
+        // Central rising water jet: a translucent column that tapers slightly toward the top.
+        int[] jetX = {
+              centerX - jetWidth / 2,
+              centerX + jetWidth / 2,
+              centerX + jetWidth / 4,
+              centerX - jetWidth / 4
+        };
+        int[] jetY = { y + height, y + height, y, y };
+        g2d.setColor(COLOR_GEYSER_JET);
+        g2d.fillPolygon(jetX, jetY, 4);
+
+        // Vertical streaks suggesting fast-moving water inside the jet.
+        g2d.setColor(COLOR_GEYSER_SPRAY);
+        g2d.setStroke(STROKE_DEFAULT);
+        for (int streak = 0; streak < 3; streak++) {
+            int streakX = centerX - jetWidth / 3 + streak * jetWidth / 3;
+            g2d.drawLine(streakX, y + height, streakX, y + height / 6);
+        }
+
+        // Spray crown: droplets arcing up and outward from the jet top like a fountain. The arc is a
+        // parabola - highest in the middle of the fan, tailing off toward the edges.
+        int dropSize = Math.max(jetWidth / 2, 3);
+        int fanWidth = width;
+        int drops = 9;
+        for (int drop = 0; drop < drops; drop++) {
+            double fan = (drop / (double) (drops - 1)) * 2.0 - 1.0; // -1.0 .. 1.0
+            int hash = (drop * 13 + 5) % 11;
+            int dropX = centerX + (int) (fan * fanWidth / 2.0);
+            int arc = (int) ((1.0 - fan * fan) * height * 0.5);
+            int dropY = y - arc + (hash % 3) * dropSize / 2;
+            int diameter = dropSize + (hash % 3);
+            g2d.setColor(COLOR_GEYSER_SPRAY);
+            g2d.fillOval(dropX - diameter / 2, dropY, diameter, diameter);
+        }
+    }
+
+    /**
      * Draws overlay indicators for terrain that modifies LOS (smoke, fire, screen, fields).
      */
     private void drawTerrainOverlays(Graphics2D g2d, DiagramMetrics metrics, HexRow hex,
@@ -932,6 +1068,12 @@ class LOSElevationDiagramPanel extends JPanel {
         if (hex.hasFields()) {
             int yFieldsTop = metrics.levelToY(hex.groundElevation() + 1);
             drawFieldStalks(g2d, xLeft, yFieldsTop, columnWidth, yGround - yFieldsTop);
+        }
+
+        // Erupting geyser: a rising water/steam jet, three levels tall (ultra-heavy woods for LOS)
+        if (hex.eruptingGeyser()) {
+            int yGeyserTop = metrics.levelToY(hex.groundElevation() + GEYSER_PLUME_LEVELS);
+            drawGeyserJet(g2d, xLeft, yGeyserTop, columnWidth, yGround - yGeyserTop);
         }
     }
 
@@ -980,6 +1122,13 @@ class LOSElevationDiagramPanel extends JPanel {
                 int barMidY = (ySmokeTop + yGround) / 2 + fontHeight / 2;
                 String label = hex.smokeLevel() >= 2 ? "S2" : "S1";
                 drawCenteredLabel(g2d, fontMetrics, label, xCenter, barMidY, getLabelColor());
+            }
+
+            // Erupting geyser label
+            if (hex.eruptingGeyser()) {
+                int yGeyserTop = metrics.levelToY(hex.groundElevation() + GEYSER_PLUME_LEVELS);
+                int barMidY = (yGeyserTop + yGround) / 2 + fontHeight / 2;
+                drawCenteredLabel(g2d, fontMetrics, "G", xCenter, barMidY, getLabelColor());
             }
 
             // Water depth label
@@ -2089,6 +2238,14 @@ class LOSElevationDiagramPanel extends JPanel {
         g2d.drawString(label, labelX, labelY);
     }
 
+    /**
+     * Draws the LOS line as a straight segment from the attacker's eye level to the target's eye level. The
+     * line is informational — it shows the path the units' eyes would trace toward each other. Whether terrain
+     * actually blocks LOS is conveyed by the red outline on the offending hex bar (drawn in {@link #drawTerrain})
+     * and by the colour of this line itself ({@link #COLOR_LOS_BLOCKED} vs {@link #COLOR_LOS_CLEAR}). Mode-aware
+     * blocking detection lives in {@link LOSDiagramDataBuilder}; the line stays the same shape in every mode so
+     * players read "blocked by this red hex" instead of trying to interpret a bent line.
+     */
     private void drawLosLine(Graphics2D g2d, DiagramMetrics metrics, List<HexRow> hexPath) {
         if (hexPath.size() < 2) {
             return;
@@ -2098,7 +2255,6 @@ class LOSElevationDiagramPanel extends JPanel {
         int xEnd = metrics.leftMargin + ((hexPath.size() - 1) * metrics.hexColumnWidth)
               + (metrics.hexColumnWidth / 2);
 
-        // For altitude units, the LOS line originates from above the break indicator
         int yStart;
         if (metrics.attackerIsAltitude) {
             yStart = metrics.topMargin - UIUtil.scaleForGUI(ALTITUDE_SILHOUETTE_HEIGHT / 2);
@@ -2114,7 +2270,6 @@ class LOSElevationDiagramPanel extends JPanel {
 
         // Clip the LOS line to the visible drawing area so it spans the full diagram width
         // even when endpoints are far outside the visible elevation range (e.g., aerospace at altitude 1000).
-        // Without clipping, the line would only be visible in the small region where it crosses the panel.
         int yMin = metrics.topMargin;
         int yMax = metrics.topMargin + metrics.drawAreaHeight;
 
@@ -2123,7 +2278,6 @@ class LOSElevationDiagramPanel extends JPanel {
         int clippedXEnd = xEnd;
         int clippedYEnd = yEnd;
 
-        // Cohen-Sutherland-style clipping against top and bottom edges
         if (yStart != yEnd) {
             if (yStart < yMin) {
                 clippedXStart = xStart + (int) ((long) (xEnd - xStart) * (yMin - yStart) / (yEnd - yStart));
@@ -2273,6 +2427,14 @@ class LOSElevationDiagramPanel extends JPanel {
         if (hex.hasFields()) {
             tooltip.append("<br>Planted Fields");
         }
+        if (hex.eruptingGeyser()) {
+            int geyserTopElevation = hex.groundElevation() + GEYSER_PLUME_LEVELS;
+            boolean geyserAffectsLos = geyserTopElevation >= hex.losLineElevation();
+            tooltip.append("<br>Erupting Geyser (top elev ").append(geyserTopElevation).append(")");
+            if (!geyserAffectsLos) {
+                tooltip.append(" - <i>LOS line above geyser</i>");
+            }
+        }
         if (hex.splitHex() && hex.splitAlternate() != null) {
             tooltip.append("<br><i>Split hex (alternate: ")
                   .append(hex.splitAlternate().toFriendlyString())
@@ -2294,6 +2456,9 @@ class LOSElevationDiagramPanel extends JPanel {
             }
             if (hex.hasScreen() || hex.hasFields() || hex.hasFire()) {
                 anyTerrainReachesLos = true;
+            }
+            if (hex.eruptingGeyser()) {
+                anyTerrainReachesLos |= (hex.groundElevation() + GEYSER_PLUME_LEVELS) >= hex.losLineElevation();
             }
             if (anyTerrainReachesLos) {
                 tooltip.append("<br><font color='orange'>Affects LOS (modifier)</font>");

@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import javax.swing.*;
@@ -63,6 +64,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
+import com.formdev.flatlaf.extras.components.FlatTriStateCheckBox;
 import megamek.MegaMek;
 import megamek.client.ui.Messages;
 import megamek.client.ui.clientGUI.GUIPreferences;
@@ -128,6 +130,10 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
     protected JTextField textFilter;
     protected JTextField textGunnery;
     protected JTextField textPilot;
+    private final FlatTriStateCheckBox checkboxCanonOnly = createSourceFilterCheckbox(
+          Messages.getString("MekSelectorDialog.chkCanonOnly"));
+    private final FlatTriStateCheckBox checkboxHasPublishedRecordSheet = createSourceFilterCheckbox(
+          Messages.getString("MekSelectorDialog.chkHasPublishedRecordSheet"));
     protected EntityViewPane panePreview;
     private JSplitPane splitPane;
 
@@ -143,6 +149,7 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
 
     private final MekTableModel unitModel = new MekTableModel();
     private final XTableColumnModel unitColumnModel = new XTableColumnModel();
+    private Predicate<MekSummary> unitSelectionScopeFilter = Objects::nonNull;
     private TableColumn pvColumn;
     private TableColumn bvColumn;
     private TableColumn rulesLevelColumn;
@@ -182,6 +189,12 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
         super.setVisible(false);
     }
 
+    private static FlatTriStateCheckBox createSourceFilterCheckbox(String text) {
+        FlatTriStateCheckBox checkbox = new FlatTriStateCheckBox(text, FlatTriStateCheckBox.State.UNSELECTED);
+        checkbox.setAltStateCycleOrder(true);
+        return checkbox;
+    }
+
     /**
      * This is used to update any values that are set based on individual options
      */
@@ -214,6 +227,10 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
         splitPane.setDividerLocation(GUIP.getMekSelectorSplitPos());
         setSize(GUIP.getMekSelectorSizeWidth(), GUIP.getMekSelectorSizeHeight());
         setLocation(GUIP.getMekSelectorPosX(), GUIP.getMekSelectorPosY());
+        if (canonOnly) {
+            checkboxCanonOnly.setState(FlatTriStateCheckBox.State.SELECTED);
+        }
+        checkboxCanonOnly.setEnabled(!canonOnly);
         toggleVtl(isVTL());
     }
 
@@ -343,10 +360,29 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
         gridBagConstraintsWest.gridy = 0;
         panelFilterButtons.add(comboUnitType, gridBagConstraintsWest);
 
+        JPanel panelSourceFilters = new JPanel(new GridBagLayout());
+        checkboxCanonOnly.setName("checkboxCanonOnly");
+        checkboxCanonOnly.addActionListener(this);
+        checkboxHasPublishedRecordSheet.setName("checkboxHasPublishedRecordSheet");
+        checkboxHasPublishedRecordSheet.addActionListener(this);
+
+        GridBagConstraints checkboxConstraints = new GridBagConstraints();
+        checkboxConstraints.anchor = GridBagConstraints.WEST;
+        checkboxConstraints.gridx = 0;
+        checkboxConstraints.gridy = 0;
+        panelSourceFilters.add(checkboxCanonOnly, checkboxConstraints);
+        checkboxConstraints.gridx = 1;
+        checkboxConstraints.insets = new Insets(0, 10, 0, 0);
+        panelSourceFilters.add(checkboxHasPublishedRecordSheet, checkboxConstraints);
+
+        gridBagConstraintsWest.gridx = 1;
+        gridBagConstraintsWest.gridy = 3;
+        panelFilterButtons.add(panelSourceFilters, gridBagConstraintsWest);
+
         JLabel labelFilter = new JLabel(Messages.getString("MekSelectorDialog.m_labelFilter"));
         labelFilter.setName("labelFilter");
         gridBagConstraintsWest.gridx = 0;
-        gridBagConstraintsWest.gridy = 3;
+        gridBagConstraintsWest.gridy = 4;
         panelFilterButtons.add(labelFilter, gridBagConstraintsWest);
 
         textFilter = new JTextField("");
@@ -368,7 +404,7 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
             }
         });
         gridBagConstraintsWest.gridx = 1;
-        gridBagConstraintsWest.gridy = 3;
+        gridBagConstraintsWest.gridy = 4;
         gridBagConstraintsWest.fill = GridBagConstraints.HORIZONTAL;
         panelFilterButtons.add(textFilter, gridBagConstraintsWest);
         gridBagConstraintsWest.fill = GridBagConstraints.NONE;
@@ -377,7 +413,7 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
         JLabel lblGun = new JLabel(Messages.getString("MekSelectorDialog.m_labelGunnery"));
         lblGun.setName("lblGun");
         gridBagConstraintsWest.gridx = 0;
-        gridBagConstraintsWest.gridy = 4;
+        gridBagConstraintsWest.gridy = 5;
         if (CLIENT_PREFERENCES.useGPinUnitSelection()) {
             panelFilterButtons.add(lblGun, gridBagConstraintsWest);
         }
@@ -404,14 +440,14 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
 
             });
             gridBagConstraintsWest.gridx = 1;
-            gridBagConstraintsWest.gridy = 4;
+            gridBagConstraintsWest.gridy = 5;
             panelFilterButtons.add(textGunnery, gridBagConstraintsWest);
         }
 
         JLabel lblPilot = new JLabel(Messages.getString("MekSelectorDialog.m_labelPiloting"));
         lblGun.setName("lblPilot");
         gridBagConstraintsWest.gridx = 0;
-        gridBagConstraintsWest.gridy = 5;
+        gridBagConstraintsWest.gridy = 6;
         if (CLIENT_PREFERENCES.useGPinUnitSelection()) {
             panelFilterButtons.add(lblPilot, gridBagConstraintsWest);
         }
@@ -437,7 +473,7 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
                 }
             });
             gridBagConstraintsWest.gridx = 1;
-            gridBagConstraintsWest.gridy = 5;
+            gridBagConstraintsWest.gridy = 6;
             panelFilterButtons.add(textPilot, gridBagConstraintsWest);
         }
 
@@ -446,7 +482,7 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridheight = 4;
+        gridBagConstraints.gridheight = 5;
         gridBagConstraints.fill = GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
@@ -662,7 +698,9 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
                         /* Year Limits */
                           (!enableYearLimits || (mek.getYear() <= allowedYear))
                                 /* Canon */
-                                && (!canonOnly || mek.isCanon())
+                                                                && matchesCanonFilter(mek)
+                                /* Published Record Sheet */
+                                                                && matchesPublishedRecordSheetFilter(mek)
                                 /* Invalid units */
                                 && (allowInvalid || !mek.getLevel().equals("F"))
                                 /* Weight */
@@ -672,6 +710,8 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
                                 /* Support Vehicles */
                                 && ((nUnit == -1) || (checkSupportVee && mek.isSupport())
                                 || (!checkSupportVee && mek.getUnitType().equals(UnitType.getTypeName(nUnit))))
+                                /* Additional caller-specific restrictions */
+                                && unitSelectionScopeFilter.test(mek)
                                 /* Advanced Search */
                                 && ((searchFilter == null) || MekSearchFilter.isMatch(mek, searchFilter))
                                 && advancedSearchDialog.getASAdvancedSearch().matches(mek)) {
@@ -688,6 +728,26 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
         lblCount.setText(String.format(" %s %d", msgUnitCount, sorter.getViewRowCount()));
     }
 
+    private boolean matchesCanonFilter(MekSummary mek) {
+        if (canonOnly) {
+            return !mek.isNonCanonBySource();
+        }
+
+        return switch (checkboxCanonOnly.getState()) {
+            case SELECTED -> !mek.isNonCanonBySource();
+            case INDETERMINATE -> mek.isNonCanonBySource();
+            case UNSELECTED -> true;
+        };
+    }
+
+    private boolean matchesPublishedRecordSheetFilter(MekSummary mek) {
+        return switch (checkboxHasPublishedRecordSheet.getState()) {
+            case SELECTED -> mek.hasPublishedRecordSheet();
+            case INDETERMINATE -> !mek.hasPublishedRecordSheet();
+            case UNSELECTED -> true;
+        };
+    }
+
     protected boolean matchesTextFilter(MekSummary unit) {
         if (!textFilter.getText().isBlank()) {
             String text = I18n.normalizeTextToASCII(textFilter.getText(), false).toLowerCase();
@@ -701,6 +761,23 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
         }
         return true;
     }
+
+    /**
+     * Sets additional unit-list restrictions beyond the shared selector controls. The base selector accepts every
+     * candidate that passed the built-in filters; callers can use this to constrain specialized pickers without
+     * duplicating the full filter pipeline.
+     *
+     * @param unitSelectionScopeFilter Predicate that returns true when a candidate should remain visible
+     */
+    protected void setUnitSelectionScopeFilter(Predicate<MekSummary> unitSelectionScopeFilter) {
+        this.unitSelectionScopeFilter = Objects.requireNonNull(unitSelectionScopeFilter, "unitSelectionScopeFilter");
+    }
+
+    /**
+     * Allows subclasses to keep filter controls in sync with additional unit-list restrictions after persisted user
+     * preferences have been restored.
+     */
+    protected void configureUnitSelectionScope() {}
 
     /**
      * @return the selected entity (required for MekHQ/MegaMek overrides)
@@ -784,6 +861,7 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
     public void setVisible(boolean visible) {
         if (visible) {
             setUserPreferences();
+            configureUnitSelectionScope();
         }
         searchFilter = null;
         buttonResetSearch.setEnabled(false);
@@ -803,7 +881,9 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
     protected void processWindowEvent(WindowEvent e) {
         super.processWindowEvent(e);
         if ((e.getID() == WindowEvent.WINDOW_DEACTIVATED) || (e.getID() == WindowEvent.WINDOW_CLOSING)) {
-            GUIP.setMekSelectorUnitType(comboUnitType.getSelectedIndex());
+            if (comboUnitType.isEnabled()) {
+                GUIP.setMekSelectorUnitType(comboUnitType.getSelectedIndex());
+            }
             GUIP.setMekSelectorWeightClass(comboWeight.getSelectedIndex());
             GUIP.setMekSelectorRulesLevels(Arrays.toString(listTechLevel.getSelectedIndices()));
             GUIP.setMekSelectorSortColumn(tableUnits.getRowSorter().getSortKeys().getFirst().getColumn());
@@ -874,7 +954,9 @@ public abstract class AbstractUnitSelectorDialog extends JDialog implements Runn
      */
     @Override
     public void actionPerformed(ActionEvent ev) {
-        if (ev.getSource().equals(comboWeight) || ev.getSource().equals(comboUnitType)) {
+        if (ev.getSource().equals(comboWeight) || ev.getSource().equals(comboUnitType)
+              || ev.getSource().equals(checkboxCanonOnly)
+              || ev.getSource().equals(checkboxHasPublishedRecordSheet)) {
             filterUnits();
         } else if (ev.getSource().equals(buttonSelect)) {
             select(false);

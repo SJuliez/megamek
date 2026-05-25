@@ -550,6 +550,7 @@ public abstract class Entity extends TurnOrdered
     protected int structureTechLevel = TechConstants.T_TECH_UNKNOWN;
 
     protected String source = "";
+    protected String published = "";
 
     /**
      * The tech faction associated with this Entity, used to filter available tech by faction.
@@ -2593,8 +2594,8 @@ public abstract class Entity extends TurnOrdered
                 break;
             case INF_UMU:
                 /* non-mechanized SCUBA infantry have a maximum depth of 2 */
-                if (this instanceof Infantry &&
-                      ((Infantry) this).hasSpecialization(Infantry.SCUBA) &&
+                if (this instanceof ConvInfantry convInfantry &&
+                      convInfantry.hasSpecialization(ConvInfantry.SCUBA) &&
                       hex.containsTerrain(Terrains.WATER)) {
                     minAlt = Math.max(hex.floor(), -2);
                 } else {
@@ -2729,8 +2730,8 @@ public abstract class Entity extends TurnOrdered
               ((getMovementMode() == EntityMovementMode.INF_UMU) && hex.containsTerrain(Terrains.WATER)) ||
               ((getMovementMode() == EntityMovementMode.QUAD_SWIM) && hasUMU()) ||
               ((getMovementMode() == EntityMovementMode.BIPED_SWIM) && hasUMU())) {
-            if (this instanceof Infantry &&
-                  ((Infantry) this).hasSpecialization(Infantry.SCUBA) &&
+            if (this instanceof ConvInfantry convInfantry &&
+                  convInfantry.hasSpecialization(ConvInfantry.SCUBA) &&
                   getMovementMode() == EntityMovementMode.INF_UMU) {
                 return assumedAlt >= Math.max(hex.floor(), -2) && (assumedAlt <= hex.getLevel());
             }
@@ -9084,7 +9085,9 @@ public abstract class Entity extends TurnOrdered
     /**
      * The maximum elevation change the entity can cross
      */
-    public abstract int getMaxElevationChange();
+    public int getMaxElevationChange() {
+        return 1;
+    }
 
     /**
      * by default, entities can move as far down as they can move up
@@ -11176,8 +11179,8 @@ public abstract class Entity extends TurnOrdered
     }
 
     /**
-     * Determines if this entity can initiate infantry vs infantry combat. Default implementation returns false.
-     * Infantry units override this.
+     * Determines if this entity can initiate infantry vs infantry combat (TO:AR p.169). Default implementation returns
+     * false. Infantry units override this.
      *
      * @return true if this entity can initiate infantry vs infantry combat
      */
@@ -12597,7 +12600,9 @@ public abstract class Entity extends TurnOrdered
      *
      * @return true if this is a hardened unit.
      */
-    public abstract boolean isNuclearHardened();
+    public boolean isNuclearHardened() {
+        return true;
+    }
 
     /**
      * Set the hidden state of this entity (used for hidden units rules, TW pg 259).
@@ -13712,7 +13717,9 @@ public abstract class Entity extends TurnOrdered
     /**
      * @return the total tonnage of communications gear in this entity
      */
-    public abstract int getTotalCommGearTons();
+    public int getTotalCommGearTons() {
+        return 0;
+    }
 
     /**
      * @return the initiative bonus this Entity grants for HQ
@@ -14068,6 +14075,43 @@ public abstract class Entity extends TurnOrdered
 
     public void setSources(Collection<String> sources) {
         source = SourceBooks.formatSourceList(sources);
+    }
+
+    /**
+     * Sets the sourcebook where this entity's record sheet was published.
+     *
+     * @param published The sourcebook name
+     */
+    public void setPublished(String published) {
+        if (published != null) {
+            this.published = SourceBooks.normalizeSourceList(published);
+        }
+    }
+
+    public String getPublished() {
+        return (published != null) ? published : "";
+    }
+
+    public List<String> getPublishedSources() {
+        return SourceBooks.splitSourceList(getPublished());
+    }
+
+    public void setPublishedSources(Collection<String> publishedSources) {
+        published = SourceBooks.formatSourceList(publishedSources);
+    }
+
+    /**
+     * @return true when the unit has no sourcebook entries or all listed sourcebooks are non-canon or cannot be loaded.
+     */
+    public boolean isNonCanonBySource() {
+        return isNonCanonBySource(getSource(), getPublished());
+    }
+
+    /**
+     * @return true when no sourcebook entries are present or all listed sourcebooks are non-canon or cannot be loaded.
+     */
+    public static boolean isNonCanonBySource(String source, String published) {
+        return SourceBooks.getStandardSourceBooks().isNonCanonBySource(source, published);
     }
 
     /**
@@ -15220,7 +15264,9 @@ public abstract class Entity extends TurnOrdered
         return jumpJets;
     }
 
-    public abstract String getLocationDamage(int loc);
+    public String getLocationDamage(int loc) {
+        return "";
+    }
 
     /**
      * @return true if this unit can reasonably escape from the board. It can be used to determine whether some
@@ -15863,6 +15909,17 @@ public abstract class Entity extends TurnOrdered
         return year;
     }
 
+    /**
+     * @return Years that can satisfy technology availability checks for this unit.
+     */
+    public List<Integer> getTechLevelYears() {
+        int techLevelYear = getTechLevelYear();
+        if (hasOriginalBuildYear() && (getOriginalBuildYear() != techLevelYear)) {
+            return List.of(techLevelYear, getOriginalBuildYear());
+        }
+        return List.of(techLevelYear);
+    }
+
     public int getTargetBay() {
         return targetBay;
     }
@@ -16400,6 +16457,10 @@ public abstract class Entity extends TurnOrdered
             return year;
         }
         return originalBuildYear;
+    }
+
+    public boolean hasOriginalBuildYear() {
+        return (originalBuildYear > 0) && (originalBuildYear != year);
     }
 
     public void setOriginalBuildYear(int year) {
