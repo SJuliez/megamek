@@ -44,7 +44,8 @@ import java.util.stream.Stream;
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
-import megamek.client.ui.clientGUI.SBFClientGUI;
+import megamek.client.ui.clientGUI.boardview.overlay.ToastLevel;
+import megamek.client.ui.clientGUI.sbf.SBFClientGUI;
 import megamek.client.ui.dialogs.phaseDisplay.SBFJumpChoiceDialog;
 import megamek.client.ui.enums.DialogResult;
 import megamek.client.ui.util.KeyCommandBind;
@@ -54,18 +55,19 @@ import megamek.common.board.BoardLocation;
 import megamek.common.board.Coords;
 import megamek.common.event.GameTurnChangeEvent;
 import megamek.common.pathfinder.StopConditionTimeout;
+import megamek.common.preference.ClientPreferences;
 import megamek.common.preference.PreferenceManager;
 import megamek.common.strategicBattleSystems.SBFFormation;
 import megamek.common.strategicBattleSystems.SBFFormationTurn;
-import megamek.common.strategicBattleSystems.SBFGame;
 import megamek.common.strategicBattleSystems.SBFMovePath;
 import megamek.common.strategicBattleSystems.SBFMovePathFinder;
 import megamek.common.units.BTObject;
-import megamek.common.units.Entity;
 import megamek.logging.MMLogger;
 
 public class SBFMovementDisplay extends SBFActionPhaseDisplay {
+
     private static final MMLogger logger = MMLogger.create(SBFMovementDisplay.class);
+    private static final ClientPreferences CLTP = PreferenceManager.getClientPreferences();
 
     private enum MoveCommand implements PhaseCommand {
         MOVE_NEXT("moveNext"),
@@ -178,11 +180,11 @@ public class SBFMovementDisplay extends SBFActionPhaseDisplay {
      * some extra checks to avoid errors.
      */
     private void resetPlannedMovement() {
-        if (currentFormation == SBFFormation.NONE || game().getFormation(currentFormation).isEmpty()) {
+        if (actingFormation().isEmpty()) {
             currentFormation = SBFFormation.NONE;
             plannedMovement = null;
         } else {
-            SBFFormation formation = game().getFormation(currentFormation).get();
+            SBFFormation formation = actingFormation().get();
             if (!formation.isDeployed() || formation.getPosition() == null) {
                 plannedMovement = null;
             } else {
@@ -225,8 +227,13 @@ public class SBFMovementDisplay extends SBFActionPhaseDisplay {
 
     @Override
     public void ready() {
-        Optional<SBFFormation> formation = game().getFormation(currentFormation);
+        Optional<SBFFormation> formation = actingFormation();
         if (formation.isEmpty() || plannedMovement == null) {
+            return;
+        }
+
+        if (plannedMovement.isIllegal()) {
+            clientGUI.addToast(ToastLevel.INFO, "Illegal movement");
             return;
         }
 
@@ -261,7 +268,6 @@ public class SBFMovementDisplay extends SBFActionPhaseDisplay {
         stopTimer();
         updateButtonStatus();
         selectFormation(null);
-        resetPlannedMovement();
     }
 
     @Override
@@ -274,13 +280,9 @@ public class SBFMovementDisplay extends SBFActionPhaseDisplay {
         initDonePanelForNewTurn();
         updateButtonStatus();
         if (GUIP.getAutoSelectNextUnit()) {
-            clientGUI.getClient().getGame().getNextEligibleFormation().ifPresent(this::selectFormation);
+            game().getNextEligibleFormation().ifPresent(this::selectFormation);
         }
         startTimer();
-    }
-
-    private SBFGame game() {
-        return clientGUI.getClient().getGame();
     }
 
     private void updateButtonStatus() {
@@ -308,85 +310,67 @@ public class SBFMovementDisplay extends SBFActionPhaseDisplay {
         }
     }
 
-    /**
-     * Computes all the possible moves for an {@link Entity} in a particular gear. The {@link Entity} can either be a
-     * suggested {@link Entity} or the currently selected one. If there is a selected {@link Entity} (which implies it's
-     * the current players turn), then the current gear is used (which is set by the user). If there is no selected
-     * {@link Entity}, then the current gear is invalid, and it defaults to GEAR_LAND (standard "walk forward").
-     */
     public void computeMovementEnvelope(SBFFormation formation) {
         if ((formation == null) || (formation.getPosition() == null) || !formation.isDeployed()) {
             return;
         }
 
-        Map<BoardLocation, SBFMovePath> mvEnvData;
-        SBFMovePath mp = new SBFMovePath(formation.getId(), formation.getPosition(), game());
-
         int maxMP = formation.getMovement();
-        // TO:AR PG 18 - Forth Printing.
+        // IO:BF 3rd p.199
         if (game().usesSprintingMove()) {
-            double sprintingMovementPoints = maxMP * 1.5;
-            maxMP = (int) Math.floor(sprintingMovementPoints);
+            maxMP = (int) (maxMP * 1.5);
         }
 
         SBFMovePathFinder pathFinder = SBFMovePathFinder.moveEnvelopeFinder(maxMP, game());
-        pathFinder.run(mp);
-        mvEnvData = pathFinder.getAllComputedPaths();
-        Map<Coords, Integer> mvEnvMP = new HashMap<>();
+        pathFinder.run(new SBFMovePath(formation.getId(), formation.getPosition(), game()));
+        Map<BoardLocation, SBFMovePath> mvEnvData = pathFinder.getAllComputedPaths();
 
+        Map<Coords, Integer> mvEnvMP = new HashMap<>();
         for (BoardLocation c : mvEnvData.keySet()) {
             mvEnvMP.put(c.coords(), mvEnvData.get(c).getMpUsed());
         }
 
-        clientGUI.showMovementEnvelope(formation, mvEnvMP);
+        clientGUI.showMovementEnvelope(formation, mvEnvMP, maxMP);
     }
 
     @Override
-    public void hexMoused(BoardViewEvent b) {
-        if (isIgnoringEvents() || !isMyTurn() || (b.getButton() != MouseEvent.BUTTON1)) {
+    public void hexMoused(BoardViewEvent event) {
+        if (isIgnoringEvents() || !isMyTurn() || (event.getButton() != MouseEvent.BUTTON1)) {
             return;
         }
 
-        currentMove(b.getCoords());
+        if (event.getType() == BoardViewEvent.BOARD_HEX_CLICKED) { // = button release
+            findPathTo(BoardLocation.of(event.getCoords(), 0));
+        }
     }
 
     /**
-     * Returns new MovePath for the currently selected movement type
-     */
-    private void currentMove(Coords dest) {
-        findPathTo(BoardLocation.of(dest, 0), plannedMovement);
-    }
-
-    /**
-     * Extend the current path to the destination <code>Coords</code>.
+     * Tries to extend the current planned movement to the given destination or, if the current planned movement is
+     * empty, creates a move path to the destination.
      *
-     * @param dest the destination <code>Coords</code> of the move.
+     * @param dest the new movement end point
      */
-    public void findPathTo(final BoardLocation dest, SBFMovePath currentPath) {
-        if (currentFormation == SBFFormation.NONE) {
+    public void findPathTo(BoardLocation dest) {
+        if (actingFormation().isEmpty()) {
             return;
         }
 
-        // check if currentPath is null and formation is present. If neither, confirm if currentPath is null and
-        // escape out.
-        if (currentPath == null && game().getFormation(currentFormation).isPresent()) {
-            currentPath = new SBFMovePath(currentFormation,
-                  game().getFormation(currentFormation).get().getPosition(),
-                  game());
-        } else if (currentPath == null) {
+        if (plannedMovement == null) {
+            plannedMovement = new SBFMovePath(currentFormation, actingFormation().get().getPosition(), game());
+        }
+
+        // if the destination is already the current path's end position, don't do anything
+        if (plannedMovement.getLastPosition().equals(dest)) {
             return;
         }
 
-        final int timeLimit = PreferenceManager.getClientPreferences().getMaxPathfinderTime();
-        SBFMovePathFinder pf = SBFMovePathFinder.aStarFinder(dest, game());
-        StopConditionTimeout<SBFMovePath> timeoutCondition = new StopConditionTimeout<>(
-              timeLimit);
-        pf.addStopCondition(timeoutCondition);
-        pf.run(SBFMovePath.createMovePathShallow(currentPath));
-        SBFMovePath finPath = pf.getComputedPath(dest);
+        SBFMovePathFinder pathFinder = SBFMovePathFinder.aStarFinder(dest, game());
+        pathFinder.addStopCondition(new StopConditionTimeout<>(CLTP.getMaxPathfinderTime()));
+        pathFinder.run(SBFMovePath.createMovePathShallow(plannedMovement));
+        SBFMovePath newMovement = pathFinder.getComputedPath(dest);
 
-        if (finPath != null) {
-            plannedMovement = finPath;
+        if (newMovement != null) {
+            plannedMovement = newMovement;
             clientGUI.showMovePath(plannedMovement);
         } else {
             resetPlannedMovement();

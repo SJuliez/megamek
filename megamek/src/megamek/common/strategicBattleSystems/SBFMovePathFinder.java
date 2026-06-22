@@ -60,10 +60,8 @@ public class SBFMovePathFinder extends AbstractPathFinder<BoardLocation, SBFMove
      * @param edgeComparator     implementation of path comparator. Each path is defined by its last edge. <i>(path:=
      *                           edge concatenated with the best path to the source of the edge)</i>
      */
-    public SBFMovePathFinder(SBFGame game,
-          DestinationMap<BoardLocation, SBFMovePath> edgeDestinationMap,
-          EdgeRelaxer<SBFMovePath, SBFMovePath> edgeRelaxer,
-          AdjacencyMap<SBFMovePath> edgeAdjacencyMap,
+    private SBFMovePathFinder(SBFGame game, DestinationMap<BoardLocation, SBFMovePath> edgeDestinationMap,
+          EdgeRelaxer<SBFMovePath, SBFMovePath> edgeRelaxer, AdjacencyMap<SBFMovePath> edgeAdjacencyMap,
           Comparator<SBFMovePath> edgeComparator) {
         super(edgeDestinationMap, edgeRelaxer, edgeAdjacencyMap, edgeComparator);
     }
@@ -76,8 +74,11 @@ public class SBFMovePathFinder extends AbstractPathFinder<BoardLocation, SBFMove
      * @param game  The {@link SBFGame}
      */
     public static SBFMovePathFinder moveEnvelopeFinder(int maxMP, SBFGame game) {
-        SBFMovePathFinder spf = new SBFMovePathFinder(game, SBFMovePath::getLastPosition, new MovePathRelaxer(),
-              new GroundMovementAdjacency(game), Comparator.comparingInt(SBFMovePath::getMpUsed));
+        SBFMovePathFinder spf = new SBFMovePathFinder(game,
+              SBFMovePath::getLastPosition,
+              new MovePathRelaxer(),
+              new GroundMovementAdjacency(game),
+              Comparator.comparingInt(SBFMovePath::getMpUsed));
         spf.addFilter(new MovePathLengthFilter(maxMP));
         spf.addFilter(new MovePathLegalityFilter());
         return spf;
@@ -92,7 +93,9 @@ public class SBFMovePathFinder extends AbstractPathFinder<BoardLocation, SBFMove
      * @param game The current {@link Game}
      */
     public static SBFMovePathFinder aStarFinder(BoardLocation destination, SBFGame game) {
-        SBFMovePathFinder spf = new SBFMovePathFinder(game, SBFMovePath::getLastPosition, new MovePathRelaxer(),
+        SBFMovePathFinder spf = new SBFMovePathFinder(game,
+              SBFMovePath::getLastPosition,
+              new MovePathRelaxer(),
               new GroundMovementAdjacency(game),
               new MovePathAStarComparator(destination, game.getBoard(destination.boardId())));
         spf.addStopCondition(new DestinationReachedStopCondition(destination));
@@ -101,8 +104,7 @@ public class SBFMovePathFinder extends AbstractPathFinder<BoardLocation, SBFMove
     }
 
     /**
-     * Returns a map of all computed shortest paths. If multiple paths to a single hex, each with different final
-     * facing, are present, then the minimal one is chosen for each hex.
+     * Returns a map of all computed shortest paths.
      *
      * @return a map of all computed shortest paths.
      */
@@ -139,7 +141,7 @@ public class SBFMovePathFinder extends AbstractPathFinder<BoardLocation, SBFMove
 
         @Override
         public boolean shouldStay(SBFMovePath mp) {
-            return !mp.isIllegal();
+            return !mp.hassIllegalSteps();
         }
     }
 

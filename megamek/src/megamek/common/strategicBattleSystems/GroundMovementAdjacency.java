@@ -42,25 +42,24 @@ import megamek.common.pathfinder.AdjacencyMap;
 
 public record GroundMovementAdjacency(SBFGame game) implements AdjacencyMap<SBFMovePath> {
 
-    /**
-     * Produces set of MovePaths by extending MovePath mp with MoveSteps. The set of extending steps include {F, L, R,
-     * UP, ShL, ShR} if applicable. If stepType is equal to MoveStepType.BACKWARDS then extending steps include also {B,
-     * ShBL, ShBR}. If stepType is equal to MoveStep.DFA or MoveStep.CHARGE then it is added to the resulting set.
-     *
-     * @param mp the MovePath to be extended
-     *
-     * @see AdjacencyMap
-     */
     @Override
     public Collection<SBFMovePath> getAdjacent(SBFMovePath mp) {
         List<SBFMovePath> result = new ArrayList<>();
+
         BoardLocation currentDestination = mp.getLastPosition();
-        List<BoardLocation> possibleDestinations = currentDestination.allAdjacent();
+        List<BoardLocation> possibleDestinations = new ArrayList<>(currentDestination.allAdjacent());
         possibleDestinations.removeIf(bl -> !game.hasBoardLocation(bl));
+
+        // In SBF, ground movement does not use facing; formations simply move in any direction from one hex to the next
+        // Therefore, turning steps do not have to be used, simplifying this compared to TW movement
         for (BoardLocation newDestination : possibleDestinations) {
             SBFMovePath newPath = SBFMovePath.createMovePathShallow(mp);
-            newPath.addStep(SurfaceSBFMoveStep.createSurfaceMoveStep(game, mp.getEntityId(),
-                  currentDestination, newDestination));
+            var additionalStep = SurfaceSBFMoveStep.createSurfaceMoveStep(game,
+                  mp.getEntityId(),
+                  currentDestination,
+                  newDestination);
+            newPath.addStep(additionalStep);
+            newPath.computeStatus();
             result.add(newPath);
         }
 

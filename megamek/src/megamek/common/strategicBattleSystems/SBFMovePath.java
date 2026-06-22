@@ -47,16 +47,16 @@ import megamek.common.board.BoardLocation;
 import megamek.logging.MMLogger;
 
 public class SBFMovePath implements EntityAction, Serializable {
+
     private static final MMLogger logger = MMLogger.create(SBFMovePath.class);
 
     private final int formationId;
     private final List<SBFMoveStep> steps = new ArrayList<>();
     private final BoardLocation startLocation;
+
     private boolean isIllegal;
     private int jumpUsed = 0;
 
-    // The game is used mainly during creation of the move path and shouldn't be
-    // sent in packets
     private transient SBFGame game;
 
     public SBFMovePath(int formationId, BoardLocation startLocation, SBFGame game) {
@@ -105,11 +105,11 @@ public class SBFMovePath implements EntityAction, Serializable {
 
     public void addStep(SBFMoveStep step) {
         steps.add(step);
-        compile();
+        computeStatus();
     }
 
     public SBFMoveStep getLastStep() {
-        return steps.get(steps.size() - 1);
+        return steps.getLast();
     }
 
     public BoardLocation getLastPosition() {
@@ -120,18 +120,22 @@ public class SBFMovePath implements EntityAction, Serializable {
         return isIllegal;
     }
 
+    boolean hassIllegalSteps() {
+        return steps.stream().anyMatch(SBFMoveStep::isIllegal);
+    }
+
     /**
      * Assembles and computes all data for this move path, especially if it is legal.
      */
-    private void compile() {
-        if (game == null) {
-            logger.error("Trying to compile but game is null. Call restore after serialization!");
-        }
-
+    public void computeStatus() {
         SBFFormation formation = game.getFormation(formationId).orElseThrow();
 
         isIllegal = steps.stream().anyMatch(s -> s.isIllegal);
-        isIllegal |= getMpUsed() > formation.getMovement();
+        if (game.usesSprintingMove()) {
+            isIllegal |= getMpUsed() > (int) (formation.getMovement() * 1.5);
+        } else {
+            isIllegal |= getMpUsed() > formation.getMovement();
+        }
 
         // may not leave after entering hostile hex
         for (SBFMoveStep step : steps) {
@@ -142,21 +146,25 @@ public class SBFMovePath implements EntityAction, Serializable {
             }
         }
 
-        // stacking friendly at end of turn
+        // stacking friendly at end of movement
         Player owner = game.getPlayer(formation.getOwnerId());
-        List<SBFFormation> friendliesAtDestination = game.getActiveFormationsAt(getLastPosition()).stream()
+        List<SBFFormation> friendliesAtDestination = game.getActiveFormationsAt(getLastPosition())
+              .stream()
               .filter(f -> !game.areHostile(f, owner))
               .toList();
+        isIllegal |= friendliesAtDestination.size() > 2;
 
         Set<SBFElementType> friendliesTypes = friendliesAtDestination.stream()
-              .map(SBFFormation::getType).collect(toSet());
-        isIllegal |= friendliesAtDestination.size() > 2;
-        isIllegal |= (friendliesAtDestination.size() == 2) && !friendliesTypes.contains(SBFElementType.CI)
+              .map(SBFFormation::getType)
+              .collect(toSet());
+        isIllegal |= (friendliesAtDestination.size() == 2)
+              && !friendliesTypes.contains(SBFElementType.CI)
               && !friendliesTypes.contains(SBFElementType.BA);
     }
 
     /**
-     * Restores the move path after serialization. This is unnecessary unless the {@link #compile()} method is used.
+     * Restores the move path after serialization. This is unnecessary unless the {@link #computeStatus()} method is
+     * used.
      *
      * @param game The SBFGame
      */
@@ -215,5 +223,18 @@ public class SBFMovePath implements EntityAction, Serializable {
 
     public int getJumpUsed() {
         return jumpUsed;
+    }
+
+    /**
+     * @return True if this move path is a sprinting move. When the sprinting rule (IO:BF 3rd p.199) is not used, always
+     *       returns false. When the sprinting rule is used, returns true for moves that use more than the formation's
+     *       regular movement but not more than its sprinting MP. (In other words: movement paths using more than the
+     *       sprinting MP - those should always be illegal - are NOT sprinting moves).
+     */
+    public boolean isSprintingMove() {
+        SBFFormation formation = game.getFormation(formationId).orElseThrow();
+        return game.usesSprintingMove()
+              && getMpUsed() > formation.getMovement()
+              && getMpUsed() <= (int) (formation.getMovement() * 1.5);
     }
 }

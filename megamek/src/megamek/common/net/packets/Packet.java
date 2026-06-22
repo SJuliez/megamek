@@ -75,6 +75,7 @@ import megamek.common.moves.MovePath;
 import megamek.common.net.enums.PacketCommand;
 import megamek.common.options.GameOptions;
 import megamek.common.options.IBasicOption;
+import megamek.common.options.SBFRuleOptions;
 import megamek.common.planetaryConditions.PlanetaryConditions;
 import megamek.common.strategicBattleSystems.SBFMovePath;
 import megamek.common.strategicBattleSystems.SBFReportEntry;
@@ -1004,6 +1005,21 @@ public record Packet(PacketCommand command, Object... data) implements Serializa
         }
 
         throw new InvalidPacketDataException("SBFMovePath", object, index);
+    }
+
+    /**
+     * @param index the index of the desired object
+     *
+     * @return the {@link GameOptions} value of the object at the specified index
+     */
+    public @Nullable SBFRuleOptions getSBFRuleOptions(int index) throws InvalidPacketDataException {
+        Object object = getObject(index);
+
+        if (object instanceof SBFRuleOptions options) {
+            return options;
+        }
+
+        throw new InvalidPacketDataException("SBFRuleOptions", object, index);
     }
 
     /**

@@ -45,7 +45,7 @@ import javax.swing.event.ListSelectionListener;
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
-import megamek.client.ui.clientGUI.SBFClientGUI;
+import megamek.client.ui.clientGUI.sbf.SBFClientGUI;
 import megamek.client.ui.dialogs.phaseDisplay.SBFTargetDialog;
 import megamek.client.ui.util.KeyCommandBind;
 import megamek.client.ui.widget.MegaMekButton;
@@ -262,10 +262,6 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
         }
         //            clientGUI.bingMyTurn();
         startTimer();
-    }
-
-    private SBFGame game() {
-        return clientGUI.getClient().getGame();
     }
 
     private void updateButtonStatus() {

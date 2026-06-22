@@ -48,6 +48,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import megamek.MMConstants;
 import megamek.client.ui.IDisplayable;
 import megamek.client.ui.clientGUI.ClientGUI;
+import megamek.client.ui.clientGUI.IClientGUI;
 import megamek.client.ui.clientGUI.boardview.BoardView;
 import megamek.client.ui.util.StringDrawer;
 import megamek.client.ui.util.UIUtil;
@@ -103,11 +104,11 @@ public class BoardToastOverlay implements IDisplayable {
     }
 
     private final BoardView boardView;
-    private final ClientGUI clientGui;
+    private final IClientGUI clientGui;
     private final ConcurrentLinkedQueue<ToastMessage> pendingToasts = new ConcurrentLinkedQueue<>();
     private final List<ToastMessage> activeToasts = new ArrayList<>();
 
-    public BoardToastOverlay(BoardView boardView, ClientGUI clientGui) {
+    public BoardToastOverlay(BoardView boardView, IClientGUI clientGui) {
         this.boardView = boardView;
         this.clientGui = clientGui;
     }
@@ -240,8 +241,8 @@ public class BoardToastOverlay implements IDisplayable {
 
             // Look up entity icon if available
             Image icon = null;
-            if (toast.entityId >= 0) {
-                Entity entity = clientGui.getClient().getGame().getEntity(toast.entityId);
+            if (toast.entityId >= 0 && (clientGui instanceof ClientGUI twClientGui)) {
+                Entity entity = twClientGui.getClient().getGame().getEntity(toast.entityId);
                 if (entity != null) {
                     icon = boardView.getTilesetManager().iconFor(entity);
                 }

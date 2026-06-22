@@ -106,8 +106,9 @@ public class SBFFormationSprite extends Sprite {
         UIUtil.setHighQualityRendering(graph);
 
         graph.scale(bv.getScale(), bv.getScale());
-        graph.translate(positionInHex > 1 ? 42 : 0, (positionInHex % 2 == 1) ? 36 : 0);
-        double scaling = formationCountInHex > 1 ? 0.5 : 1;
+        int xPos = formationCountInHex <= 2 ? 21 : positionInHex > 1 ? 42 : 0;
+        graph.translate(xPos, (positionInHex % 2 == 1) ? 36 : 0);
+        double scaling = 0.5;//formationCountInHex > 1 ? 0.5 : 1;
         graph.scale(scaling, scaling);
         if (isSelected) {
             graph.setColor(Color.WHITE);

@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import megamek.client.ui.Messages;
-import megamek.client.ui.clientGUI.SBFClientGUI;
+import megamek.client.ui.clientGUI.sbf.SBFClientGUI;
 import megamek.client.ui.util.KeyCommandBind;
 import megamek.client.ui.widget.MegaMekButton;
 import megamek.common.enums.GamePhase;

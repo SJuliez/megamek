@@ -47,7 +47,9 @@ import megamek.common.force.Forces;
 import megamek.common.net.enums.PacketCommand;
 import megamek.common.net.packets.InvalidPacketDataException;
 import megamek.common.net.packets.Packet;
+import megamek.common.options.GameOptions;
 import megamek.common.options.OptionsConstants;
+import megamek.common.options.SBFRuleOptions;
 import megamek.common.strategicBattleSystems.SBFGame;
 import megamek.common.strategicBattleSystems.SBFMovePath;
 import megamek.common.strategicBattleSystems.SBFReportEntry;
@@ -111,6 +113,10 @@ public class SBFClient extends AbstractClient {
                     // we'll just use the
                     // round report until the next phase actually completes.
                     phaseReport = roundReport;
+                    break;
+                case SENDING_GAME_SETTINGS:
+                    SBFRuleOptions options = packet.getSBFRuleOptions(0);
+                    game.setOptions(options);
                     break;
                 case SENDING_REPORTS:
                     phaseReport = assembleAndAddImages(packet.getSBFReportEntryList(0));

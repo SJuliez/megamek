@@ -30,7 +30,7 @@
  * <https://www.xbox.com/en-US/developers/rules> and it is not endorsed by or
  * affiliated with Microsoft.
  */
-package megamek.client.ui.clientGUI;
+package megamek.client.ui.clientGUI.sbf;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
@@ -50,9 +50,15 @@ import javax.swing.SwingUtilities;
 
 import megamek.client.SBFClient;
 import megamek.client.ui.Messages;
+import megamek.client.ui.clientGUI.AbstractClientGUI;
+import megamek.client.ui.clientGUI.CommonMenuBar;
+import megamek.client.ui.clientGUI.MegaMekGUI;
+import megamek.client.ui.clientGUI.ReportToastFormatter;
 import megamek.client.ui.clientGUI.boardview.BoardView;
+import megamek.client.ui.clientGUI.boardview.overlay.BoardToastOverlay;
 import megamek.client.ui.clientGUI.boardview.overlay.KeyBindingsOverlay;
 import megamek.client.ui.clientGUI.boardview.overlay.PlanetaryConditionsOverlay;
+import megamek.client.ui.clientGUI.boardview.overlay.ToastLevel;
 import megamek.client.ui.clientGUI.boardview.spriteHandler.BoardViewSpriteHandler;
 import megamek.client.ui.clientGUI.boardview.spriteHandler.MovePathSpriteHandler;
 import megamek.client.ui.clientGUI.boardview.spriteHandler.MovementEnvelopeSpriteHandler;
@@ -157,6 +163,8 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
     private MovementEnvelopeSpriteHandler movementEnvelopeHandler;
     private MovePathSpriteHandler movePathSpriteHandler;
 
+    private BoardToastOverlay toastOverlay;
+
     public SBFClientGUI(SBFClient client, MegaMekController megaMekController) {
         super(client);
         this.client = client;
@@ -208,6 +216,8 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
             boardViews.put(0, bv);
             bv.addOverlay(new KeyBindingsOverlay(bv));
             bv.addOverlay(new PlanetaryConditionsOverlay(bv));
+            toastOverlay = new BoardToastOverlay(bv, this);
+            bv.addOverlay(toastOverlay);
             bv.getPanel().setPreferredSize(clientGuiPanel.getSize());
             boardViewsContainer.setName(CG_BOARD_VIEW);
             boardViewsContainer.updateMapTabs();
@@ -287,17 +297,9 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
     }
 
     protected void switchPanel(GamePhase phase) {
-        // Clear the old panel's listeners.
+        deactivateCurrentPanel();
 
-        if (curPanel instanceof ActionListener) {
-            menuBar.removeActionListener((ActionListener) curPanel);
-        }
-
-        if (curPanel instanceof Distractable) {
-            ((Distractable) curPanel).setIgnoringEvents(true);
-        }
-
-        // Get the new panel.
+        // Get the new panel
         String name = String.valueOf(phase);
         curPanel = phaseComponents.get(name);
         if (curPanel == null) {
@@ -317,6 +319,22 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
             panSecondary.setVisible(false);
         }
 
+        activateCurrentPanel();
+
+        clientGuiPanel.validate();
+    }
+
+    private void deactivateCurrentPanel() {
+        if (curPanel instanceof ActionListener) {
+            menuBar.removeActionListener((ActionListener) curPanel);
+        }
+
+        if (curPanel instanceof Distractable) {
+            ((Distractable) curPanel).setIgnoringEvents(true);
+        }
+    }
+
+    private void activateCurrentPanel() {
         if (curPanel instanceof ActionListener) {
             menuBar.addActionListener((ActionListener) curPanel);
         }
@@ -324,8 +342,6 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
         if (curPanel instanceof Distractable) {
             ((Distractable) curPanel).setIgnoringEvents(false);
         }
-
-        clientGuiPanel.validate();
     }
 
     private void showReportPanel() {
@@ -466,9 +482,9 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
      * @param formation The entity for which the movement envelope is
      * @param mvEnvData The movement envelope data
      */
-    public void showMovementEnvelope(SBFFormation formation, Map<Coords, Integer> mvEnvData) {
+    public void showMovementEnvelope(SBFFormation formation, Map<Coords, Integer> mvEnvData, int maxMP) {
         movementEnvelopeHandler.setMovementEnvelope(mvEnvData, 0, formation.getMovement(),
-              formation.getMovement(), formation.getMovement(), MovementDisplay.GEAR_JUMP);
+              maxMP, maxMP, MovementDisplay.GEAR_LAND);
     }
 
     public void clearMovementEnvelope() {
@@ -477,6 +493,21 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
 
     public void showMovePath(@Nullable SBFMovePath movePath) {
         movePathSpriteHandler.update(movePath);
+    }
+
+    /**
+     * Shows a toast notification on the board view. Safe to call even when the toast overlay has not been initialized
+     * yet (e.g., during the lobby phase).
+     *
+     * @param level the severity level determining color and default duration
+     * @param text  the message text to display
+     */
+    public void addToast(ToastLevel level, String text) {
+        if (toastOverlay != null) {
+            String normalized = ReportToastFormatter.normalizeToastText(text);
+            logger.debug("Toast [{}] (no entity): {}", level, normalized);
+            toastOverlay.show(level, normalized);
+        }
     }
 
 }

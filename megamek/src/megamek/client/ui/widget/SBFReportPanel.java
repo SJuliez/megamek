@@ -63,7 +63,7 @@ import javax.swing.text.Document;
 import megamek.client.SBFClient;
 import megamek.client.ui.Messages;
 import megamek.client.ui.clientGUI.GUIPreferences;
-import megamek.client.ui.clientGUI.SBFClientGUI;
+import megamek.client.ui.clientGUI.sbf.SBFClientGUI;
 import megamek.client.ui.util.BASE64ToolKit;
 import megamek.client.ui.util.UIUtil;
 import megamek.common.Player;

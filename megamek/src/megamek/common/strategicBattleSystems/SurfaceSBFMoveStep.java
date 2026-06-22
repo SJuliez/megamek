@@ -54,25 +54,25 @@ public class SurfaceSBFMoveStep extends SBFMoveStep {
         SBFMoveStep step = new SurfaceSBFMoveStep(formationId);
         step.startingPoint = startingPoint;
         step.destination = destination;
-        step.compile(game);
+        step.computeStatus(game);
         return step;
     }
 
-    @Deprecated(since = "0.51.0", forRemoval = true)
-    public static SBFMoveStep createSurfaceMoveStep(SBFGame game, int formationId,
-          BoardLocation startingPoint, int direction) {
-        return createSurfaceMoveStep(game, formationId, startingPoint, startingPoint.translated(direction));
-    }
-
     @Override
-    protected void compile(SBFGame game) {
-        super.compile(game);
+    protected void computeStatus(SBFGame game) {
+        super.computeStatus(game);
+
+        SBFFormation formation = game.getFormation(formationId).orElseThrow();
+        final Player owner = game.getPlayer(formation.getOwnerId());
+        if (game.getActiveFormationsAt(startingPoint).stream().anyMatch(f -> game.areHostile(f, owner))) {
+            mpUsed++;
+        }
+
         if (isIllegal) {
-            // A step that is already illegal from basic tests does not need any further treatment
+            // A step that is already illegal from basic tests does not need any further legality tests
             return;
         }
 
-        SBFFormation formation = game.getFormation(formationId).orElseThrow();
         boolean isNaval = formation.getMovementMode().isDeepWater();
         boolean isHover = formation.getMovementMode().isHover();
         boolean isWige = formation.getMovementMode() == SBFMovementMode.WIGE;
@@ -120,11 +120,6 @@ public class SurfaceSBFMoveStep extends SBFMoveStep {
 
         mpUsed += levelDifference;
         isIllegal |= (levelDifference > 2) || ((levelDifference == 2) && !isMek);
-
-        final Player owner = game.getPlayer(formation.getOwnerId());
-        if (game.getActiveFormationsAt(startingPoint).stream().anyMatch(f -> game.areHostile(f, owner))) {
-            mpUsed++;
-        }
     }
 
     @Override

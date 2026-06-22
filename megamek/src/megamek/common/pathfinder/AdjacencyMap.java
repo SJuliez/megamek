@@ -40,8 +40,15 @@ import java.util.Collection;
  * @param <E> the type of directed edges used by the graph.
  */
 public interface AdjacencyMap<E> {
+
     /**
-     * @param e a directed edge
+     * Returns a collection of adjacent edges for the path finder. Note that in MegaMek, the type of edges (E) is
+     * usually not a move step, but a complete move path! An adjacent edge is therefore a move path that extends the
+     * given path e by a single new step. The destination hex of that step need not be adjacent to the previous
+     * destination. E.g., in a VTOL movement step that goes up one level the destination is the same hex but the move
+     * path is "adjacent" as it adds one UP step.
+     *
+     * @param e a directed edge (usually a move path)
      *
      * @return all the edges that lead from destination node of e
      */

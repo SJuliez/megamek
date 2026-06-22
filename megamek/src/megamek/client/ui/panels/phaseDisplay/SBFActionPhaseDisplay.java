@@ -39,12 +39,13 @@ import java.util.Optional;
 import javax.swing.AbstractAction;
 
 import megamek.client.ui.clientGUI.MegaMekGUI;
-import megamek.client.ui.clientGUI.SBFClientGUI;
+import megamek.client.ui.clientGUI.sbf.SBFClientGUI;
 import megamek.client.ui.util.KeyCommandBind;
 import megamek.client.ui.util.MegaMekController;
 import megamek.client.ui.util.UIUtil;
 import megamek.client.ui.widget.MegaMekButton;
 import megamek.client.ui.widget.SkinSpecification;
+import megamek.common.strategicBattleSystems.SBFGame;
 import megamek.common.units.Entity;
 import megamek.common.annotations.Nullable;
 import megamek.common.preference.PreferenceChangeEvent;
@@ -190,6 +191,10 @@ public abstract class SBFActionPhaseDisplay extends StatusBarPhaseDisplay {
      * @return The currently acting formation, if any
      */
     protected final Optional<SBFFormation> actingFormation() {
-        return clientGUI.getClient().getGame().getFormation(currentFormation);
+        return game().getFormation(currentFormation);
+    }
+
+    protected SBFGame game() {
+        return clientGUI.getClient().getGame();
     }
 }

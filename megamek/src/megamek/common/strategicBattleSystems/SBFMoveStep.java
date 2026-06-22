@@ -51,12 +51,17 @@ public abstract class SBFMoveStep implements Serializable {
 
     /**
      * Assembles and computes all data for this step. Tests if the start and end are on the same board and actually on
-     * that board and if the step distance is more than one. Override to provide more tests.
+     * that board and if the step distance is more than one. Override to provide more tests for specific move step
+     * types. Note: a move step should only test itself for legality; e.g., it should not assess its position in the
+     * move path. It should only be illegal if the move path with this step cannot be legal at all. E.g., a path may go
+     * through a hex with two friendly formations, but it may not end there. The move step into that hex should be legal
+     * (the move path must decide if it is legal or not).
      *
      * @param game The game
      */
-    protected void compile(SBFGame game) {
-        if (!game.hasBoardLocation(startingPoint) || !game.hasBoardLocation(destination)
+    protected void computeStatus(SBFGame game) {
+        if (!game.hasBoardLocation(startingPoint)
+              || !game.hasBoardLocation(destination)
               || (startingPoint.boardId() != destination.boardId())
               || (startingPoint.coords().distance(destination.coords()) > 1)) {
             isIllegal = true;
@@ -66,6 +71,7 @@ public abstract class SBFMoveStep implements Serializable {
     /**
      * @return An exact copy of this move step.
      */
+    //FIXME it is not an excat copy atm -> remove this if possible
     public abstract SBFMoveStep copy();
 
     public BoardLocation getLastPosition() {

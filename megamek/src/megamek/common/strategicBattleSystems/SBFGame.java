@@ -52,6 +52,7 @@ import megamek.common.board.Board;
 import megamek.common.board.BoardLocation;
 import megamek.common.enums.GamePhase;
 import megamek.common.event.GamePhaseChangeEvent;
+import megamek.common.event.GameSettingsChangeEvent;
 import megamek.common.event.GameTurnChangeEvent;
 import megamek.common.event.UnitChangedGameEvent;
 import megamek.common.event.entity.GameEntityChangeEvent;
@@ -61,10 +62,12 @@ import megamek.common.interfaces.ClientOnly;
 import megamek.common.interfaces.PlanetaryConditionsUsing;
 import megamek.common.interfaces.ReportEntry;
 import megamek.common.interfaces.ServerOnly;
+import megamek.common.options.GameOptions;
 import megamek.common.options.OptionsConstants;
 import megamek.common.options.SBFRuleOptions;
 import megamek.common.planetaryConditions.PlanetaryConditions;
 import megamek.common.units.BTObject;
+import megamek.common.units.Entity;
 import megamek.logging.MMLogger;
 import megamek.server.sbf.SBFActionHandler;
 
@@ -74,7 +77,6 @@ import megamek.server.sbf.SBFActionHandler;
 public final class SBFGame extends AbstractGame implements PlanetaryConditionsUsing, SBFRuleOptionsUser {
     private static final MMLogger logger = MMLogger.create(SBFGame.class);
 
-    private final SBFRuleOptions options = new SBFRuleOptions();
     private GamePhase phase = GamePhase.UNKNOWN;
     private GamePhase lastPhase = GamePhase.UNKNOWN;
     private final PlanetaryConditions planetaryConditions = new PlanetaryConditions();
@@ -83,6 +85,7 @@ public final class SBFGame extends AbstractGame implements PlanetaryConditionsUs
     private final SBFVisibilityHelper visibilityHelper = new SBFVisibilityHelper(this);
     private final List<SBFActionHandler> actionHandlers = new ArrayList<>();
 
+    private SBFRuleOptions options = new SBFRuleOptions();
     /**
      * Contains all units that have left the game by any means.
      */
@@ -575,5 +578,14 @@ public final class SBFGame extends AbstractGame implements PlanetaryConditionsUs
      */
     public List<SBFActionHandler> getActionHandlers() {
         return actionHandlers;
+    }
+
+    public void setOptions(SBFRuleOptions options) {
+        if (options == null) {
+            logger.error("Trying to set the game options to null!");
+        } else {
+            this.options = options;
+//            processGameEvent(new GameSettingsChangeEvent(this));
+        }
     }
 }

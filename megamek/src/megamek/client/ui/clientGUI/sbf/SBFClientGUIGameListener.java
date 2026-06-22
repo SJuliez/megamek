@@ -31,7 +31,7 @@
  * affiliated with Microsoft.
  */
 
-package megamek.client.ui.clientGUI;
+package megamek.client.ui.clientGUI.sbf;
 
 import megamek.common.event.GameListenerAdapter;
 import megamek.common.event.GamePhaseChangeEvent;
@@ -39,7 +39,7 @@ import megamek.common.event.board.GameBoardNewEvent;
 import megamek.common.event.entity.GameEntityChangeEvent;
 import megamek.common.event.entity.GameEntityNewEvent;
 
-public class SBFClientGUIGameListener extends GameListenerAdapter {
+class SBFClientGUIGameListener extends GameListenerAdapter {
 
     private final SBFClientGUI clientGUI;
 
