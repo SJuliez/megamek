@@ -67,12 +67,6 @@ public class SBFFormationSprite extends Sprite {
     private final int formationCountInHex;
     private final boolean isInfantry;
 
-    /** The area actually covered by the icon */
-    private Rectangle hitBox;
-
-    /** Used to color the label when this unit is selected for movement etc. */
-    private boolean isSelected;
-
     /** True when this formation is friendly to the local player */
     private final boolean isFriendly;
 
@@ -85,7 +79,11 @@ public class SBFFormationSprite extends Sprite {
     /** True when the formation is stacked with members of its own team (friendly to the local player or not) */
     private final boolean isStackedWithTeam;
 
+    /** The area actually covered by the icon */
+    private Rectangle hitBox;
 
+    /** Used to color the label when this unit is selected for movement etc. */
+    private boolean isSelected;
 
     public SBFFormationSprite(BoardView boardView, @Nonnull SBFFormation formation, Player owner, SBFGame game,
           int localPlayerNumber) {
@@ -95,25 +93,20 @@ public class SBFFormationSprite extends Sprite {
         this.owner = owner;
         BoardLocation location = formation.getPosition();
         //TODO: can we prevent errors when the position is null or doesnt exist?
+
         List<SBFFormation> formationsInHex = game.getActiveFormationsAt(formation.getPosition());
         formationCountInHex = formationsInHex.size();
         int friendlies = game.getFriendlyFormationsAt(location, localPlayerNumber).size();
         hasEnemies = formationCountInHex - friendlies > 0;
         hasFriendlies = friendlies > 0;
         isFriendly = game.getFriendlyFormationsAt(location, localPlayerNumber).contains(formation);
-        isStackedWithTeam = isFriendly && friendlies > 1; // missing: enemy
+        isStackedWithTeam = (isFriendly && friendlies > 1)
+              || (!isFriendly && (formationCountInHex - friendlies > 1));
         isInfantry = formation.isAnyTypeOf(SBFElementType.CI, SBFElementType.BA);
 
-        // SBF stacking rules
-        // allow 2 friendly max if one of them is inf; otherwise exactly one friendly
-        // how do flying formations count? must be pure flying, otherwise they are ground
-        // stick with pure ground for now
-        // enemies dont count at all for stacking
-        // within team: all friendly, so only max 2
+        // SBF stacking rules allow 2 friendly ground formations in a hex if one of them is infantry; otherwise exactly
+        // one friendly; enemies don't count at all for stacking
         // for MM: each team may have 1 ground formation in hex and one additional infantry formation
-        // players sort: friendly on the left, others right
-        // one F: center
-        // two friendly F: x-center, y-stack, inf bottom
 
         getBounds();
     }
