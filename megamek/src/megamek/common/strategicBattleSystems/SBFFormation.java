@@ -162,6 +162,13 @@ public class SBFFormation implements ASSpecialAbilityCollector, BattleForceSUAFo
         return movement;
     }
 
+    /**
+     * @return The sprinting MP of this formation. This method does not check if the sprinting movement rule is used.
+     */
+    public int getSprintingMovement() {
+        return (int) (getMovement() * 1.5);
+    }
+
     public void setMovement(int movement) {
         this.movement = movement;
     }

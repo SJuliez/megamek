@@ -43,12 +43,14 @@ import java.awt.Transparency;
 import java.util.List;
 import java.util.Objects;
 
+import jakarta.annotation.Nonnull;
 import megamek.client.ui.clientGUI.boardview.BoardView;
 import megamek.client.ui.clientGUI.boardview.sprite.Sprite;
 import megamek.client.ui.util.StringDrawer;
 import megamek.client.ui.util.UIUtil;
-import megamek.codeUtilities.MathUtility;
 import megamek.common.Player;
+import megamek.common.board.BoardLocation;
+import megamek.common.strategicBattleSystems.SBFElementType;
 import megamek.common.strategicBattleSystems.SBFFormation;
 import megamek.common.strategicBattleSystems.SBFGame;
 
@@ -62,8 +64,8 @@ public class SBFFormationSprite extends Sprite {
 
     private final SBFFormation formation;
     private final Player owner;
-    private final int positionInHex;
     private final int formationCountInHex;
+    private final boolean isInfantry;
 
     /** The area actually covered by the icon */
     private Rectangle hitBox;
@@ -71,14 +73,48 @@ public class SBFFormationSprite extends Sprite {
     /** Used to color the label when this unit is selected for movement etc. */
     private boolean isSelected;
 
+    /** True when this formation is friendly to the local player */
+    private final boolean isFriendly;
 
-    public SBFFormationSprite(BoardView boardView, SBFFormation formation, Player owner, SBFGame game) {
+    /** True when the location also contains enemy formation(s) of the local player */
+    private final boolean hasEnemies;
+
+    /** True when the location also contains friendly formation(s) of the local player */
+    private final boolean hasFriendlies;
+
+    /** True when the formation is stacked with members of its own team (friendly to the local player or not) */
+    private final boolean isStackedWithTeam;
+
+
+
+    public SBFFormationSprite(BoardView boardView, @Nonnull SBFFormation formation, Player owner, SBFGame game,
+          int localPlayerNumber) {
+
         super(boardView);
         this.formation = Objects.requireNonNull(formation);
         this.owner = owner;
+        BoardLocation location = formation.getPosition();
+        //TODO: can we prevent errors when the position is null or doesnt exist?
         List<SBFFormation> formationsInHex = game.getActiveFormationsAt(formation.getPosition());
         formationCountInHex = formationsInHex.size();
-        positionInHex = MathUtility.clamp(formationsInHex.indexOf(formation), 0, 3);
+        int friendlies = game.getFriendlyFormationsAt(location, localPlayerNumber).size();
+        hasEnemies = formationCountInHex - friendlies > 0;
+        hasFriendlies = friendlies > 0;
+        isFriendly = game.getFriendlyFormationsAt(location, localPlayerNumber).contains(formation);
+        isStackedWithTeam = isFriendly && friendlies > 1; // missing: enemy
+        isInfantry = formation.isAnyTypeOf(SBFElementType.CI, SBFElementType.BA);
+
+        // SBF stacking rules
+        // allow 2 friendly max if one of them is inf; otherwise exactly one friendly
+        // how do flying formations count? must be pure flying, otherwise they are ground
+        // stick with pure ground for now
+        // enemies dont count at all for stacking
+        // within team: all friendly, so only max 2
+        // for MM: each team may have 1 ground formation in hex and one additional infantry formation
+        // players sort: friendly on the left, others right
+        // one F: center
+        // two friendly F: x-center, y-stack, inf bottom
+
         getBounds();
     }
 
@@ -87,11 +123,14 @@ public class SBFFormationSprite extends Sprite {
         bounds = new Rectangle(0, 0, bv.getHexSize().width, bv.getHexSize().height);
         Point ePos = bv.getHexLocation(formation.getPosition().coords());
         bounds.setLocation(ePos.x, ePos.y);
-
-        hitBox = new Rectangle(bounds.x + INSET, bounds.y + INSET,
-              bounds.width - 2 * INSET, bounds.height - 2 * INSET);
-
+        hitBox = new Rectangle(bounds.x + INSET, bounds.y + INSET, bounds.width - 2 * INSET, bounds.height - 2 * INSET);
         return bounds;
+    }
+
+    @Override
+    protected int getSpritePriority() {
+        // When not alone in the hex, infantry paints below other formations
+        return super.getSpritePriority() - (isInfantry ? 10 : 0);
     }
 
     @Override
@@ -99,16 +138,38 @@ public class SBFFormationSprite extends Sprite {
         getBounds();
 
         // create image for buffer
-        GraphicsConfiguration config = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+        GraphicsConfiguration config = GraphicsEnvironment.getLocalGraphicsEnvironment()
+              .getDefaultScreenDevice()
               .getDefaultConfiguration();
         image = config.createCompatibleImage(bounds.width, bounds.height, Transparency.TRANSLUCENT);
         Graphics2D graph = (Graphics2D) image.getGraphics();
         UIUtil.setHighQualityRendering(graph);
 
         graph.scale(bv.getScale(), bv.getScale());
-        int xPos = formationCountInHex <= 2 ? 21 : positionInHex > 1 ? 42 : 0;
-        graph.translate(xPos, (positionInHex % 2 == 1) ? 36 : 0);
-        double scaling = 0.5;//formationCountInHex > 1 ? 0.5 : 1;
+        graph.translate(42, 36);
+        int yPos = 0;
+        int xPos = 0;
+
+        if (isFriendly && hasEnemies) {
+            xPos = -18;
+        } else if (!isFriendly && hasFriendlies) {
+            xPos = 18;
+        }
+
+        if (isStackedWithTeam && isInfantry) {
+            yPos = 18;
+        } else if (isStackedWithTeam) {
+            yPos = -12;
+        }
+
+        double scaling = 0.5;
+        if (formationCountInHex == 1) {
+            scaling = 0.65;
+        } else if (isInfantry && isStackedWithTeam) {
+            scaling = 0.45;
+        }
+
+        graph.translate(xPos, yPos);
         graph.scale(scaling, scaling);
         if (isSelected) {
             graph.setColor(Color.WHITE);
@@ -117,16 +178,25 @@ public class SBFFormationSprite extends Sprite {
         } else {
             graph.setColor(Color.GREEN);
         }
-        graph.setStroke(new BasicStroke(2));
-        graph.drawImage(owner.getCamouflage().getImage(), INSET + INSET / 2, INSET + INSET / 2,
-              84 - 3 * INSET, 72 - 3 * INSET, null);
-        graph.drawRoundRect(INSET, INSET, 84 - 2 * INSET, 72 - 2 * INSET,
-              INSET / 2, INSET / 2);
-        graph.setColor(owner.getColour().getColour());
-        graph.fillRoundRect(INSET, INSET, 84 - 2 * INSET, 72 - 2 * INSET,
-              INSET / 2, INSET / 2);
-        new StringDrawer(formation.getType().toString()).at(42, 36).absoluteCenter().color(Color.DARK_GRAY).draw(graph);
+        drawCenteredIcon(graph);
         graph.dispose();
+    }
+
+    private void drawCenteredIcon(Graphics2D graph) {
+        graph.setStroke(new BasicStroke(2));
+        int iconWidth = 84 - INSET * 2;
+        int iconHeight = 72 - INSET * 2;
+        graph.drawImage(owner.getCamouflage().getImage(), -iconWidth / 2, -iconHeight / 2, iconWidth, iconHeight, null);
+
+        int rectWidth = 84 - INSET;
+        int rectHeight = 72 - INSET;
+        graph.drawRoundRect(-rectWidth / 2, -rectHeight / 2, rectWidth, rectHeight, INSET / 2, INSET / 2);
+        graph.setColor(owner.getColour().getColour());
+        graph.fillRoundRect(-rectWidth / 2, -rectHeight / 2, rectWidth, rectHeight, INSET / 2, INSET / 2);
+        new StringDrawer(formation.getType().toString()).at(0, 0)
+              .fontSize(16).absoluteCenter().color(Color.DARK_GRAY).draw(graph);
+        new StringDrawer("" + formation.getPointValue()).at(42-INSET, -16).fontSize(16)
+              .rightAlign().color(Color.DARK_GRAY).draw(graph);
     }
 
     @Override

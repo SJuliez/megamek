@@ -48,9 +48,11 @@ import megamek.common.strategicBattleSystems.SBFUnitPlaceHolder;
 public class SBFFormationSpriteHandler extends BoardViewSpriteHandler {
 
     private final SBFGame game;
+    private final AbstractClientGUI clientGUI;
 
     public SBFFormationSpriteHandler(AbstractClientGUI clientGUI, SBFClient client) {
         super(clientGUI);
+        this.clientGUI = clientGUI;
         game = client.getGame();
     }
 
@@ -65,7 +67,8 @@ public class SBFFormationSpriteHandler extends BoardViewSpriteHandler {
               .map(f -> new SBFFormationSprite((BoardView) clientGUI.boardViews().getFirst(),
                     (SBFFormation) f,
                     game.getPlayer(f.getOwnerId()),
-                    game))
+                    game,
+                    clientGUI.getClient().getLocalPlayerNumber()))
               .forEach(currentSprites::add);
 
         game.getInGameObjects().stream()

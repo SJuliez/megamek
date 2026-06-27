@@ -130,14 +130,14 @@ public class SBFMovePath implements EntityAction, Serializable {
     public void computeStatus() {
         SBFFormation formation = game.getFormation(formationId).orElseThrow();
 
-        isIllegal = steps.stream().anyMatch(s -> s.isIllegal);
-        if (game.usesSprintingMove()) {
-            isIllegal |= getMpUsed() > (int) (formation.getMovement() * 1.5);
-        } else {
-            isIllegal |= getMpUsed() > formation.getMovement();
-        }
+        // any illegal move step makes this path illegal
+        isIllegal = steps.stream().anyMatch(SBFMoveStep::isIllegal);
 
-        // may not leave after entering hostile hex
+        // exceeding the allowed MP makes the path illegal
+        int allowedMP = game.usesSprintingMove() ? formation.getSprintingMovement() : formation.getMovement();
+        isIllegal |= getMpUsed() > allowedMP;
+
+        // moving out of a hex with a hostile formation is illegal unless it is the starting point of the path
         for (SBFMoveStep step : steps) {
             if (game.isHostileActiveFormationAt(step.startingPoint, formation)
                   && !step.startingPoint.equals(step.destination)
@@ -147,19 +147,21 @@ public class SBFMovePath implements EntityAction, Serializable {
         }
 
         // stacking friendly at end of movement
-        Player owner = game.getPlayer(formation.getOwnerId());
-        List<SBFFormation> friendliesAtDestination = game.getActiveFormationsAt(getLastPosition())
-              .stream()
-              .filter(f -> !game.areHostile(f, owner))
-              .toList();
-        isIllegal |= friendliesAtDestination.size() > 2;
+        List<SBFFormation> friendliesAtDestination = game.getFriendlyFormationsAt(getLastPosition(),
+              formation.getOwnerId());
 
-        Set<SBFElementType> friendliesTypes = friendliesAtDestination.stream()
-              .map(SBFFormation::getType)
-              .collect(toSet());
-        isIllegal |= (friendliesAtDestination.size() == 2)
-              && !friendliesTypes.contains(SBFElementType.CI)
-              && !friendliesTypes.contains(SBFElementType.BA);
+        if (friendliesAtDestination.size() >= 2) {
+            isIllegal = true;
+        } else if (friendliesAtDestination.size() == 1
+              && !formation.getType().isAnyOf(SBFElementType.CI, SBFElementType.BA)
+              && !friendliesAtDestination.getFirst().getType().isAnyOf(SBFElementType.CI, SBFElementType.BA)) {
+            // a second friendly formation is only allowed if one of the two is Infantry
+            // IO:BF speaks of "Infantry" formations; Using the formation type here; this is lenient
+            // and allows formations with some non-infantry elements as long as their overall type is CI/BA; this
+            // also allows checking the type even if the elements of the formation are unknown as in some source
+            // book scenarios
+            isIllegal = true;
+        }
     }
 
     /**

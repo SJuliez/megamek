@@ -35,15 +35,22 @@ package megamek.common.jacksonAdapters;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import megamek.client.ui.preferences.JSplitPanePreference;
 import megamek.common.alphaStrike.AlphaStrikeElement;
 import megamek.common.strategicBattleSystems.SBFFormation;
 import megamek.common.strategicBattleSystems.SBFUnit;
@@ -115,7 +122,8 @@ public final class MMUReader {
      * @throws IOException When a read error occurs
      */
     public List<Object> read(JsonNode node) throws IOException {
-        return read(node, null);
+        JsonNode nodeWithIncludes = YamlIncludeMerger.process(node, Path.of(currentDirectory));
+        return read(nodeWithIncludes, null);
     }
 
     /**
@@ -214,6 +222,143 @@ public final class MMUReader {
                           + "found in " + objectType + " definition!");
                 }
             }
+        }
+    }
+
+
+
+    public static final class YamlIncludeMerger {
+
+        private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
+
+        public static JsonNode process(JsonNode node, Path rootFile) throws IOException {
+            Deque<Path> stack = new ArrayDeque<>();
+            return processNode(node, rootFile, stack);
+        }
+
+        public static JsonNode process(Path rootFile) throws IOException {
+            Deque<Path> stack = new ArrayDeque<>();
+            return processNode(read(rootFile), rootFile.getParent(), stack);
+        }
+
+        private static JsonNode read(Path file) throws IOException {
+            return YAML.readTree(Files.newInputStream(file));
+        }
+
+        private static JsonNode processNode(JsonNode node, Path baseDir, Deque<Path> stack) throws IOException {
+
+            if (node.isObject()) {
+                return processObject((ObjectNode) node, baseDir, stack);
+            }
+
+            if (node.isArray()) {
+                return processArray((ArrayNode) node, baseDir, stack);
+            }
+
+            return node;
+        }
+
+        private static ObjectNode processObject(ObjectNode obj, Path baseDir, Deque<Path> stack) throws IOException {
+
+            // First resolve includes in-place safely
+            var fields = obj.properties();
+            var toSet = new java.util.ArrayList<Runnable>();
+
+            for (var entry : fields) {
+                JsonNode value = entry.getValue();
+
+                if (entry.getKey().equals("include")) {
+                    String includePath = value.asText();
+                    Path resolved = baseDir.resolve(includePath).normalize();
+
+                    if (stack.contains(resolved)) {
+                        throw new IllegalStateException("Include cycle detected: " + buildCycle(stack, resolved));
+                    }
+
+                    stack.push(resolved);
+                    JsonNode included = processNode(read(resolved), resolved.getParent(), stack);
+                    stack.pop();
+
+                    if (!included.isObject()) {
+                        throw new IllegalStateException(
+                              "Include into object must be YAML object: " + resolved);
+                    }
+
+                    ObjectNode includedObj = (ObjectNode) included;
+
+                    // schedule removal + merge to avoid iterator mutation issues
+                    toSet.add(() -> {
+                        obj.remove(entry.getKey());
+                        obj.setAll(includedObj);
+                    });
+
+                } else {
+                    JsonNode processed = processNode(value, baseDir, stack);
+                    toSet.add(() -> obj.set(entry.getKey(), processed));
+                }
+            }
+
+            toSet.forEach(Runnable::run);
+            return obj;
+        }
+
+        private static ArrayNode processArray(ArrayNode arr, Path baseDir, Deque<Path> stack) throws IOException {
+
+            for (int i = 0; i < arr.size(); i++) {
+                JsonNode value = arr.get(i);
+
+                if (isIncludeNode(value)) {
+                    String includePath = value.get("include").asText();
+                    Path resolved = baseDir.resolve(includePath).normalize();
+
+                    if (stack.contains(resolved)) {
+                        throw new IllegalStateException("Include cycle detected: " + buildCycle(stack, resolved));
+                    }
+
+                    stack.push(resolved);
+                    JsonNode included = processNode(read(resolved), resolved.getParent(), stack);
+                    stack.pop();
+
+                    if (included.isArray()) {
+                        // splice array
+                        ArrayNode includedArr = (ArrayNode) included;
+
+                        arr.remove(i);
+                        int insertAt = i;
+
+                        for (JsonNode n : includedArr) {
+                            arr.insert(insertAt++, n);
+                        }
+
+                        i += includedArr.size() - 1;
+
+                    } else {
+                        // replace element
+                        arr.set(i, included);
+                    }
+
+                } else {
+                    arr.set(i, processNode(value, baseDir, stack));
+                }
+            }
+
+            return arr;
+        }
+
+        private static boolean isIncludeNode(JsonNode node) {
+            return node != null
+                  && node.isObject()
+                  && node.size() == 1
+                  && node.has("include");
+        }
+
+        private static String buildCycle(Deque<Path> stack, Path repeated) {
+            StringBuilder sb = new StringBuilder();
+            for (Path p : stack) {
+                sb.append(p.getFileName()).append(" -> ");
+            }
+            sb.append(repeated.getFileName());
+            return sb.toString();
         }
     }
 }

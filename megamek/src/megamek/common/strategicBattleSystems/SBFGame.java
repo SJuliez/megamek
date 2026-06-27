@@ -417,7 +417,18 @@ public final class SBFGame extends AbstractGame implements PlanetaryConditionsUs
               .filter(f -> f.getPosition() != null)
               .filter(f -> f.getPosition().equals(location))
               .collect(Collectors.toList());
-        // TODO: cache when receiving units at the Client
+    }
+
+    public List<SBFFormation> getFriendlyFormationsAt(BoardLocation location, int playerId) {
+        Player owner = getPlayer(playerId);
+        if (owner == null) {
+            return Collections.emptyList();
+        } else {
+            return getActiveFormationsAt(location)
+                  .stream()
+                  .filter(formation -> !areHostile(formation, owner))
+                  .toList();
+        }
     }
 
     public boolean isHostileActiveFormationAt(BoardLocation location, SBFFormation formation) {
@@ -585,7 +596,7 @@ public final class SBFGame extends AbstractGame implements PlanetaryConditionsUs
             logger.error("Trying to set the game options to null!");
         } else {
             this.options = options;
-//            processGameEvent(new GameSettingsChangeEvent(this));
+            //            processGameEvent(new GameSettingsChangeEvent(this));
         }
     }
 }

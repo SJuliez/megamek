@@ -72,19 +72,19 @@ public class SBFMovementDisplay extends SBFActionPhaseDisplay {
     private enum MoveCommand implements PhaseCommand {
         MOVE_NEXT("moveNext"),
         MOVE_PREVIOUS("movePrevious"),
-        MOVE_WALK("moveWalk", BTObject::isGround),
-        MOVE_FLEE("moveFlee"),
-        MOVE_MORE("MoveMore");
+        MOVE_WALK("moveWalk", BTObject::isGround);
+//        MOVE_FLEE("moveFlee");
+//        MOVE_MORE("MoveMore");
 
         private final String cmd;
         private int priority;
 
-        MoveCommand(String c) {
-            this(c, formation -> true);
+        MoveCommand(String cmd) {
+            this(cmd, formation -> true);
         }
 
-        MoveCommand(String c, Predicate<SBFFormation> isEligible) {
-            cmd = c;
+        MoveCommand(String cmd, Predicate<SBFFormation> isEligible) {
+            this.cmd = cmd;
             priority = ordinal();
         }
 
@@ -105,7 +105,7 @@ public class SBFMovementDisplay extends SBFActionPhaseDisplay {
 
         @Override
         public String toString() {
-            return Messages.getString("MovementDisplay." + getCmd());
+            return Messages.getString("SBFMovementDisplay." + getCmd());
         }
     }
 
@@ -166,7 +166,7 @@ public class SBFMovementDisplay extends SBFActionPhaseDisplay {
     @Override
     protected void setButtons() {
         for (MoveCommand cmd : MoveCommand.values()) {
-            buttons.put(cmd, createButton(cmd.getCmd(), "MovementDisplay."));
+            buttons.put(cmd, createButton(cmd.getCmd(), "SBFMovementDisplay."));
         }
     }
 
@@ -292,7 +292,7 @@ public class SBFMovementDisplay extends SBFActionPhaseDisplay {
               game().hasEligibleFormation((SBFFormationTurn) game().getTurn());
 
         buttons.get(MoveCommand.MOVE_NEXT).setEnabled(myTurn && hasAvailableUnits);
-        buttons.get(MoveCommand.MOVE_MORE).setEnabled(myTurn && (numButtonGroups > 1));
+//        buttons.get(MoveCommand.MOVE_MORE).setEnabled(myTurn && (numButtonGroups > 1));
     }
 
     @Override
