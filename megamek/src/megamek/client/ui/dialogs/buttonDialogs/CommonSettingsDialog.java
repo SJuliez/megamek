@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003-2005 - Ben Mazur (bmazur@sev.org)
- * Copyright (C) 2003-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2003-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MegaMek.
  *
@@ -260,8 +260,6 @@ public class CommonSettingsDialog extends AbstractButtonDialog
           "CommonSettingsDialog.defaultAutoejectDisabled"));
     private final JCheckBox useAverageSkills =
           new JCheckBox(Messages.getString("CommonSettingsDialog.useAverageSkills"));
-    private final JCheckBox useGPinUnitSelection = new JCheckBox(Messages.getString(
-          "CommonSettingsDialog.useGPinUnitSelection"));
     private final JCheckBox generateNames = new JCheckBox(Messages.getString("CommonSettingsDialog.generateNames"));
     private final JCheckBox showUnitId = new JCheckBox(Messages.getString("CommonSettingsDialog.showUnitId"));
     private final JCheckBox showAutoResolvePanel = new JCheckBox(Messages.getString(
@@ -341,6 +339,8 @@ public class CommonSettingsDialog extends AbstractButtonDialog
     private ColourSelectorButton csbBuildingTextColor;
     private ColourSelectorButton csbLowFoliageColor;
     private ColourSelectorButton csbDemolitionChargeColor;
+    private final JCheckBox demolitionChargeHazardOutline = new JCheckBox(
+          Messages.getString("CommonSettingsDialog.demolitionChargeHazardOutline"));
     private ColourSelectorButton csbBoardTextColor;
     private ColourSelectorButton csbBoardSpaceTextColor;
     private ColourSelectorButton csbMapSheetColor;
@@ -869,6 +869,8 @@ public class CommonSettingsDialog extends AbstractButtonDialog
         csbDemolitionChargeColor.setColour(GUIP.getDemolitionChargeColor());
         row.add(csbDemolitionChargeColor);
         comps.add(row);
+
+        comps.add(checkboxEntry(demolitionChargeHazardOutline, null));
 
         addLineSpacer(comps);
 
@@ -2150,8 +2152,6 @@ public class CommonSettingsDialog extends AbstractButtonDialog
 
         comps.add(checkboxEntry(defaultAutoEjectDisabled, null));
         comps.add(checkboxEntry(useAverageSkills, null));
-        comps.add(checkboxEntry(useGPinUnitSelection,
-              "This changes the BV/PV displayed in the unit selection list. It does not change the pilot/gunnery of the mek once selected. Request restart of Megamek."));
         comps.add(checkboxEntry(generateNames, null));
 
         addLineSpacer(comps);
@@ -2305,7 +2305,6 @@ public class CommonSettingsDialog extends AbstractButtonDialog
 
             defaultAutoEjectDisabled.setSelected(CLIENT_PREFERENCES.defaultAutoEjectDisabled());
             useAverageSkills.setSelected(CLIENT_PREFERENCES.useAverageSkills());
-            useGPinUnitSelection.setSelected(CLIENT_PREFERENCES.useGPinUnitSelection());
             generateNames.setSelected(CLIENT_PREFERENCES.generateNames());
             showUnitId.setSelected(CLIENT_PREFERENCES.getShowUnitId());
             showAutoResolvePanel.setSelected(CLIENT_PREFERENCES.getShowAutoResolvePanel());
@@ -2530,6 +2529,7 @@ public class CommonSettingsDialog extends AbstractButtonDialog
         csbBoardSpaceTextColor.setColour(GUIP.getBoardSpaceTextColor());
         csbLowFoliageColor.setColour(GUIP.getLowFoliageColor());
         csbDemolitionChargeColor.setColour(GUIP.getDemolitionChargeColor());
+        demolitionChargeHazardOutline.setSelected(GUIP.getDemolitionChargeHazardOutline());
         csbMapSheetColor.setColour(GUIP.getMapsheetColor());
 
         attackArrowTransparency.setValue(GUIP.getAttackArrowTransparency());
@@ -2730,6 +2730,7 @@ public class CommonSettingsDialog extends AbstractButtonDialog
         GUIP.setBoardSpaceTextColor(csbBoardSpaceTextColor.getColour());
         GUIP.setLowFoliageColor(csbLowFoliageColor.getColour());
         GUIP.setDemolitionChargeColor(csbDemolitionChargeColor.getColour());
+        GUIP.setDemolitionChargeHazardOutline(demolitionChargeHazardOutline.isSelected());
         GUIP.setMapSheetColor(csbMapSheetColor.getColour());
 
         GUIP.setAttackArrowTransparency((Integer) attackArrowTransparency.getValue());
@@ -2801,7 +2802,6 @@ public class CommonSettingsDialog extends AbstractButtonDialog
         CLIENT_PREFERENCES.setEnableExperimentalBotFeatures(enableExperimentalBotFeatures.isSelected());
         CLIENT_PREFERENCES.setDefaultAutoEjectDisabled(defaultAutoEjectDisabled.isSelected());
         CLIENT_PREFERENCES.setUseAverageSkills(useAverageSkills.isSelected());
-        CLIENT_PREFERENCES.setUseGpInUnitSelection(useGPinUnitSelection.isSelected());
         CLIENT_PREFERENCES.setGenerateNames(generateNames.isSelected());
         CLIENT_PREFERENCES.setShowUnitId(showUnitId.isSelected());
         CLIENT_PREFERENCES.setShowAutoResolvePanel(showAutoResolvePanel.isSelected());
