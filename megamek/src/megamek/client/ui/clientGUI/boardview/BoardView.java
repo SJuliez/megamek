@@ -2309,8 +2309,9 @@ public final class BoardView extends AbstractBoardView
         // Some hex images shouldn't be cached, like if they are animated
         boolean dontCache = animatedImages.contains(baseImage.hashCode());
 
-        // check if this is a standard tile image 84x72 or something different
-        boolean standardTile = (baseImage.getHeight(null) == HEX_H) && (baseImage.getWidth(null) == HEX_W);
+        // check if this is a standard tile image 84x72 or a hq standard tile (integer multiple of 84x72)
+        boolean standardTile = ((baseImage.getHeight(null) == HEX_H) && (baseImage.getWidth(null) == HEX_W))
+              || (getHqImageScale(baseImage) > 1);
 
         int imgWidth = scaledImage.getWidth(null);
         int imgHeight = scaledImage.getHeight(null);
@@ -5468,8 +5469,13 @@ public final class BoardView extends AbstractBoardView
                 }
                 tracker.removeImage(base);
             }
-            int width = (int) (base.getWidth(null) * scale);
-            int height = (int) (base.getHeight(null) * scale);
+
+            // Terrain images and other can be drawn at higher resolution to look better when zoomed in. In that
+            // case, they need to use an exact integer multiple of the hex size, i.e. 168x144, 252x216 etc. Only such
+            // images are recognized and scaled down accordingly.
+            int hqScale = getHqImageScale(base);
+            int width = (int) (base.getWidth(null) * scale / hqScale);
+            int height = (int) (base.getHeight(null) * scale / hqScale);
 
             if ((width < 1) || (height < 1)) {
                 return null;
@@ -5491,6 +5497,33 @@ public final class BoardView extends AbstractBoardView
             }
         }
         return scaled;
+    }
+
+    /**
+     * Returns the hq image scale factor of the given base image.
+     * <p>
+     * Terrain images and other can be provided at higher resolution to look better when zoomed in. In that case, they
+     * need to use an exact integer multiple of 84x72, i.e. 168x144, 252x216 etc. to be recognized and scaled
+     * accordingly. For any other size, a scale factor of 1 is returned and the image is assumed to have a different
+     * purpose.
+     *
+     * @param base the (terrain) image to test
+     *
+     * @return the scale factor of this image, e.g. 2 for a 168x144 image
+     */
+    private int getHqImageScale(Image base) {
+        // Terrain images and other can be drawn at higher resolution to look better when zoomed in. In that
+        // case, they need to use an exact integer multiple of the hex size, i.e. 168x144, 252x216 etc. Only such
+        // images are recognized and scaled down accordingly.
+        int hqScale = 1;
+        if (base.getWidth(null) % 84 == 0 && base.getHeight(null) % 72 == 0) {
+            int xScale = base.getWidth(null) / 84;
+            int yScale = base.getHeight(null) / 72;
+            if (xScale == yScale) {
+                hqScale = xScale;
+            }
+        }
+        return hqScale;
     }
 
     /**
