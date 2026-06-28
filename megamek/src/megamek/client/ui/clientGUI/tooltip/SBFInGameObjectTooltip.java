@@ -62,13 +62,19 @@ public final class SBFInGameObjectTooltip {
     private static final int BASE_UNIT_NAME_WIDTH = 110;
 
     public static String styles() {
-        float base = UIUtil.scaleForGUI(UIUtil.FONT_SCALE1);
+        return styles(1);
+    }
+
+    public static String styles(float scaling) {
+        float base = UIUtil.scaleForGUI(UIUtil.FONT_SCALE1) * scaling;
         int labelSize = (int) (0.8 * base);
         int valueSize = (int) (1.1 * base);
         int nameSize = (int) (1.3 * base);
-        int nameWidth = UIUtil.scaleForGUI(BASE_UNIT_NAME_WIDTH);
+        int nameWidth = (int) (scaling * UIUtil.scaleForGUI(BASE_UNIT_NAME_WIDTH));
+        int width = (int) (scaling * UIUtil.scaleForGUI(TOOLTIP_BASE_WIDTH));
 
-        return ".value { font-family:Exo; font-size:20; }" +
+        return ".value { font-family:Exo; font-size:" + valueSize + "; }" +
+              ".tooltip { width:" + width + "; padding:0 10; border:2; margin: 5 0; border-style:solid; }" +
               ".label { font-family:Noto Sans; font-size:" + labelSize + "; color:gray; }" +
               ".idnum { font-family:Exo; font-size:" + labelSize + "; color:gray; text-align:right; }" +
               ".unitname { white-space:nowrap; padding-right:10; font-family:Noto Sans; font-size:"
@@ -89,10 +95,7 @@ public final class SBFInGameObjectTooltip {
         Player owner = (game != null) ? game.getPlayer(unit.getOwnerId()) : null;
         Color ownerColor = (owner != null) ? owner.getColour().getColour() : Color.BLACK;
         String styleColor = Integer.toHexString(ownerColor.getRGB() & 0xFFFFFF);
-        int width = UIUtil.scaleForGUI(TOOLTIP_BASE_WIDTH);
-        result.append("<div style=\"width:").append(width)
-              .append("; padding:0 10; border:2; margin: 5 0; border-style:solid; border-color:")
-              .append(styleColor).append(";\">");
+        result.append("<div class=tooltip style=\"border-color:").append(styleColor).append(";\">");
         result.append(nameLines(unit, game));
         result.append(formationStats(unit));
         if (unit instanceof SBFFormation formation) {

@@ -58,6 +58,7 @@ import megamek.client.ui.clientGUI.boardview.BoardView;
 import megamek.client.ui.clientGUI.boardview.overlay.BoardToastOverlay;
 import megamek.client.ui.clientGUI.boardview.overlay.KeyBindingsOverlay;
 import megamek.client.ui.clientGUI.boardview.overlay.PlanetaryConditionsOverlay;
+import megamek.client.ui.clientGUI.boardview.overlay.SBFFormationOverlay;
 import megamek.client.ui.clientGUI.boardview.overlay.ToastLevel;
 import megamek.client.ui.clientGUI.boardview.spriteHandler.BoardViewSpriteHandler;
 import megamek.client.ui.clientGUI.boardview.spriteHandler.MovePathSpriteHandler;
@@ -164,6 +165,7 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
     private MovePathSpriteHandler movePathSpriteHandler;
 
     private BoardToastOverlay toastOverlay;
+    private SBFFormationOverlay formationOverlay;
 
     public SBFClientGUI(SBFClient client, MegaMekController megaMekController) {
         super(client);
@@ -191,6 +193,7 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
 
         miniReportDisplayDialog = new JDialog(getFrame());
         reportPanel = new SBFReportPanel(this);
+        formationOverlay = new SBFFormationOverlay(getClient().getGame());
     }
 
     /**
@@ -218,6 +221,7 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
             bv.addOverlay(new PlanetaryConditionsOverlay(bv));
             toastOverlay = new BoardToastOverlay(bv, this);
             bv.addOverlay(toastOverlay);
+            bv.addOverlay(formationOverlay);
             bv.getPanel().setPreferredSize(clientGuiPanel.getSize());
             boardViewsContainer.setName(CG_BOARD_VIEW);
             boardViewsContainer.updateMapTabs();
@@ -473,6 +477,7 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
         if (GUIP.getAutoCenter() && (formation != null) && (formation.getPosition() != null)) {
             bv.centerOnHex(formation.getPosition().coords());
         }
+        formationOverlay.setFormation(formation);
     }
 
     /**
