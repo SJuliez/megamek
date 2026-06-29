@@ -34,6 +34,7 @@ package megamek.client.ui.clientGUI.boardview.sprite.sbf;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
@@ -44,8 +45,10 @@ import java.util.List;
 import java.util.Objects;
 
 import jakarta.annotation.Nonnull;
+import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.clientGUI.boardview.BoardView;
 import megamek.client.ui.clientGUI.boardview.sprite.Sprite;
+import megamek.client.ui.util.FontHandler;
 import megamek.client.ui.util.StringDrawer;
 import megamek.client.ui.util.UIUtil;
 import megamek.common.Player;
@@ -59,6 +62,8 @@ import megamek.common.strategicBattleSystems.SBFGame;
  * and possibly secondary facing arrows; armor and internal bars; and an identification label.
  */
 public class SBFFormationSprite extends Sprite {
+
+    private static final GUIPreferences GUIP = GUIPreferences.getInstance();
 
     private static final int INSET = 10;
 
@@ -84,6 +89,9 @@ public class SBFFormationSprite extends Sprite {
 
     /** Used to color the label when this unit is selected for movement etc. */
     private boolean isSelected;
+
+    Font font = FontHandler.notoFont().deriveFont(Font.BOLD);
+    Color textOutlineColor = Color.DARK_GRAY;
 
     public SBFFormationSprite(BoardView boardView, @Nonnull SBFFormation formation, Player owner, SBFGame game,
           int localPlayerNumber) {
@@ -177,19 +185,30 @@ public class SBFFormationSprite extends Sprite {
 
     private void drawCenteredIcon(Graphics2D graph) {
         graph.setStroke(new BasicStroke(2));
-        int iconWidth = 84 - INSET * 2;
-        int iconHeight = 72 - INSET * 2;
-        graph.drawImage(owner.getCamouflage().getImage(), -iconWidth / 2, -iconHeight / 2, iconWidth, iconHeight, null);
+        Color outlineColor = isFriendly ? GUIP.getMyUnitColor() : GUIP.getEnemyUnitColor();
+        if (isSelected) {
+            outlineColor = Color.WHITE;
+        }
 
         int rectWidth = 84 - INSET;
         int rectHeight = 72 - INSET;
+        graph.setColor(outlineColor);
         graph.drawRoundRect(-rectWidth / 2, -rectHeight / 2, rectWidth, rectHeight, INSET / 2, INSET / 2);
         graph.setColor(owner.getColour().getColour());
         graph.fillRoundRect(-rectWidth / 2, -rectHeight / 2, rectWidth, rectHeight, INSET / 2, INSET / 2);
-        new StringDrawer(formation.getType().toString()).at(0, 0)
-              .fontSize(16).absoluteCenter().color(Color.DARK_GRAY).draw(graph);
-        new StringDrawer("" + formation.getPointValue()).at(42-INSET, -16).fontSize(16)
-              .rightAlign().color(Color.DARK_GRAY).draw(graph);
+        new StringDrawer(formation.getType().toString()).at(-42 + INSET, -16)
+              .fontSize(16).color(Color.WHITE).outline(textOutlineColor, 2.8f).font(font).draw(graph);
+        new StringDrawer("" + formation.getPointValue()).at(42-INSET, -16)
+              .rightAlign().fontSize(16).color(Color.WHITE).outline(textOutlineColor, 2.8f).font(font).draw(graph);
+        if (!formation.getShortName().isBlank()) {
+            new StringDrawer(formation.getShortName()).at(0, 28).fontSize(20)
+                  .centerX().maxWidth(72).color(Color.WHITE).outline(textOutlineColor, 2.8f).font(font).draw(graph);
+        }
+
+        int iconWidth = 84 - INSET * 5;
+        int iconHeight = 72 - INSET * 5;
+        //TODO: scale properly so it looks better
+        graph.drawImage(owner.getCamouflage().getImage(), -iconWidth / 2, -iconHeight / 2, iconWidth, iconHeight, null);
     }
 
     @Override

@@ -45,10 +45,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import megamek.client.ui.clientGUI.calculationReport.CalculationReport;
 import megamek.client.ui.clientGUI.calculationReport.DummyCalculationReport;
 import megamek.common.Player;
@@ -76,6 +79,10 @@ public class SBFFormation implements ASSpecialAbilityCollector, BattleForceSUAFo
 
     private List<SBFUnit> units = new ArrayList<>();
     private String name;
+
+    /** A shorthand of the name used for label/icon drawing */
+    private String shortName;
+
     protected SBFElementType type;
     private int size;
     private int tmm;
@@ -297,6 +304,24 @@ public class SBFFormation implements ASSpecialAbilityCollector, BattleForceSUAFo
     @Override
     public String specificName() {
         return "";
+    }
+
+    /**
+     * @return A shorthand name for this formation, used for label/icon drawing; if no shorthand has been set for
+     *       this formation, the returned String is empty.
+     */
+    @Nonnull
+    public String getShortName() {
+        return Objects.requireNonNullElse(shortName, "");
+    }
+
+    /**
+     * Sets the given String as a shorthand name for this formation, used for label/icon drawing. The String should
+     * not be longer than around 8 letters.
+     * @param shortName The formation's short name, e.g. "Command", "LEAD" or "Noble's"
+     */
+    public void setShortName(@Nullable String shortName) {
+        this.shortName = Objects.requireNonNullElse(shortName, "");
     }
 
     /**

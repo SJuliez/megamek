@@ -17,6 +17,8 @@ import java.awt.image.BufferedImage;
 
 public class SBFFormationOverlay implements IDisplayable {
 
+    private static final float SCALING = 0.7f;
+
     private final SBFGame game;
     private final JLabel label = new JLabel();
 
@@ -31,7 +33,7 @@ public class SBFFormationOverlay implements IDisplayable {
             image = null;
         } else {
             String tooltip = "<HTML>" + "<HEAD><STYLE>"
-                  + SBFInGameObjectTooltip.styles(0.7f)
+                  + SBFInGameObjectTooltip.styles(SCALING)
                   + "</STYLE></HEAD>"
                   + "<BODY style=padding:5;>"
                   + SBFInGameObjectTooltip.getTooltip(shownFormation, game)

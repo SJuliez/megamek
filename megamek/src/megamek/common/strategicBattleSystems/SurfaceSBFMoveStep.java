@@ -64,13 +64,8 @@ public class SurfaceSBFMoveStep extends SBFMoveStep {
 
         SBFFormation formation = game.getFormation(formationId).orElseThrow();
         final Player owner = game.getPlayer(formation.getOwnerId());
-        if (game.getActiveFormationsAt(startingPoint).stream().anyMatch(f -> game.areHostile(f, owner))) {
+        if (game.isHostileActiveFormationAt(startingPoint, formation)) {
             mpUsed++;
-        }
-
-        if (isIllegal) {
-            // A step that is already illegal from basic tests does not need any further legality tests
-            return;
         }
 
         boolean isNaval = formation.getMovementMode().isDeepWater();
@@ -82,7 +77,6 @@ public class SurfaceSBFMoveStep extends SBFMoveStep {
         boolean isMek = formation.isType(SBFElementType.BM);
         boolean isVehicle = formation.isType(SBFElementType.V);
 
-        mpUsed = startingPoint.coords().distance(destination.coords());
         Hex startingHex = game.getBoard(startingPoint.boardId()).getHex(startingPoint.coords());
         Hex destinationHex = game.getBoard(destination.boardId()).getHex(destination.coords());
         int levelDifference = Math.abs(destinationHex.getLevel() - startingHex.getLevel());

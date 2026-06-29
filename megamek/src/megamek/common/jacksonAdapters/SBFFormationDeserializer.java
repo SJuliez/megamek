@@ -65,6 +65,7 @@ public class SBFFormationDeserializer extends StdDeserializer<SBFFormation> {
     private static final String X = "x";
     private static final String Y = "y";
     private static final String DEPLOYMENT_ROUND = "deploymentround";
+    private static final String SHORT_NAME = "shortname";
 
     @Deprecated(since = "0.51.0", forRemoval = true)
     public SBFFormationDeserializer() {
@@ -96,6 +97,11 @@ public class SBFFormationDeserializer extends StdDeserializer<SBFFormation> {
         if (node.has(ID)) {
             formation.setId(node.get(ID).intValue());
         }
+
+        if (node.has(SHORT_NAME)) {
+            formation.setShortName(node.get(SHORT_NAME).asText());
+        }
+
         assignPosition(formation, node);
         assignDeploymentRound(formation, node);
         return formation;
