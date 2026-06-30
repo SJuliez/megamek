@@ -33,15 +33,11 @@
 
 package megamek.common.strategicBattleSystems;
 
-import static java.util.stream.Collectors.toSet;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
-import megamek.common.Player;
 import megamek.common.actions.EntityAction;
 import megamek.common.board.BoardLocation;
 import megamek.logging.MMLogger;
@@ -55,7 +51,12 @@ public class SBFMovePath implements EntityAction, Serializable {
     private final BoardLocation startLocation;
 
     private boolean isIllegal;
+
+    /** Jumping is a value that is selected when moving, IO:BF 3rd p.166 */
     private int jumpUsed = 0;
+
+    /** True when this path is a minimum movement path, IO:BF 3rd p.164 */
+    private boolean isMinimumMovement;
 
     private transient SBFGame game;
 
@@ -125,7 +126,8 @@ public class SBFMovePath implements EntityAction, Serializable {
     }
 
     /**
-     * Assembles and computes all data for this move path, especially if it is legal.
+     * Assembles and computes all data for this move path, especially if it is legal. Note that the status of the
+     * individual move steps is not re-calculated here.
      */
     public void computeStatus() {
         SBFFormation formation = game.getFormation(formationId).orElseThrow();
@@ -133,11 +135,20 @@ public class SBFMovePath implements EntityAction, Serializable {
         // any illegal move step makes this path illegal
         isIllegal = steps.stream().anyMatch(SBFMoveStep::isIllegal);
 
-        // exceeding the allowed MP makes the path illegal
+        // With sprinting IO:BF 3rd p.199 the formation has more MP
         int allowedMP = game.usesSprintingMove() ? formation.getSprintingMovement() : formation.getMovement();
-        isIllegal |= getMpUsed() > allowedMP;
+
+        // Minimum movement IO:BF 3rd p.164: a unit may move to adjacent hexes regardless of MP if it can move at all
+        isMinimumMovement = (steps.size() == 1)
+              && (steps.getFirst() instanceof SurfaceSBFMoveStep)
+              && allowedMP > 0
+              && !steps.getFirst().isIllegal();
+
+        // exceeding the allowed MP makes the path illegal -- unless it is minimum movement
+        isIllegal |= (getMpUsed() > allowedMP) && !isMinimumMovement;
 
         // moving out of a hex with a hostile formation is illegal unless it is the starting point of the path
+        // cant find this rule again --- where is that? engagement control CAN end movement but doesnt have to
         for (SBFMoveStep step : steps) {
             if (game.isHostileActiveFormationAt(step.startingPoint, formation)
                   && !step.startingPoint.equals(step.destination)
@@ -238,5 +249,9 @@ public class SBFMovePath implements EntityAction, Serializable {
         return game.usesSprintingMove()
               && getMpUsed() > formation.getMovement()
               && getMpUsed() <= (int) (formation.getMovement() * 1.5);
+    }
+
+    public boolean isMinimumMovement() {
+        return isMinimumMovement;
     }
 }

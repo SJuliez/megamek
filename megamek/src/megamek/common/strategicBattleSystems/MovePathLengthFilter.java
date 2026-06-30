@@ -47,7 +47,8 @@ public class MovePathLengthFilter extends Filter<SBFMovePath> {
 
     @Override
     public boolean shouldStay(SBFMovePath mp) {
-        return (mp.getMpUsed() <= maxMP);
+        // allow minimum movement: one step that ignores MP restrictions
+        return (mp.getMpUsed() <= maxMP || mp.isMinimumMovement());
 
     }
 }

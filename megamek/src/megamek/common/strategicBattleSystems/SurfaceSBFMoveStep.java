@@ -63,7 +63,6 @@ public class SurfaceSBFMoveStep extends SBFMoveStep {
         super.computeStatus(game);
 
         SBFFormation formation = game.getFormation(formationId).orElseThrow();
-        final Player owner = game.getPlayer(formation.getOwnerId());
         if (game.isHostileActiveFormationAt(startingPoint, formation)) {
             mpUsed++;
         }
@@ -104,7 +103,7 @@ public class SurfaceSBFMoveStep extends SBFMoveStep {
             mpUsed += (wheeledOrHover) ? 2 : 1;
         }
 
-        if ((destinationHex.terrainLevel(Terrains.WATER) == 0) && isNaval) {
+        if ((destinationHex.terrainLevel(Terrains.WATER) <= 0) && isNaval) {
             isIllegal = true;
         }
 
@@ -112,7 +111,12 @@ public class SurfaceSBFMoveStep extends SBFMoveStep {
             isIllegal = !isHover && !isNaval && !isWige;
         }
 
-        mpUsed += levelDifference;
+        if (levelDifference > 0) {
+            mpUsed += levelDifference;
+            if (isVehicle || isInfantry) {
+                mpUsed += 1;
+            }
+        }
         isIllegal |= (levelDifference > 2) || ((levelDifference == 2) && !isMek);
     }
 
