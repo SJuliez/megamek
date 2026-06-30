@@ -47,6 +47,7 @@ import megamek.common.board.Board;
 import megamek.common.board.BoardHelper;
 import megamek.common.board.Coords;
 import megamek.common.board.CrossBoardAttackHelper;
+import megamek.common.compute.scatter.Scatter;
 import megamek.common.enums.AimingMode;
 import megamek.common.enums.BasementType;
 import megamek.common.enums.MoveStepType;
@@ -2256,10 +2257,14 @@ public class Compute {
         Entity spotter = null;
         int distance = -1;
 
-        // Compute friendly spotters
-        for (Entity friend : game.getPlayerEntities(attacker.getOwner(), true)) {
+        // Compute friendly spotters. Consider every friendly (same-team) unit, not just the attacker's own player's
+        // units: on a multi-bot team the TAG spotter is frequently a different player's unit (e.g. the artillery is one
+        // Princess and the TAG spotter another on the same team), so an own-player-only search misses it and a homing
+        // round a teammate could guide is never fired.
+        for (Entity friend : game.getEntitiesVector()) {
 
             if (friend == null
+                  || friend.isEnemyOf(attacker)
                   || !friend.isDeployed()
                   || friend.isOffBoard()
                   || (friend.getTransportId() != Entity.NONE)
@@ -6442,16 +6447,7 @@ public class Compute {
      * @return the <code>Coords</code> scattered to and distance (moF)
      */
     public static Coords scatterAltitudeBombs(Coords coords, int facing, int moF) {
-        int dir = 0;
-        int scatterDirection = Compute.d6(1);
-        dir = switch (scatterDirection) {
-            case 1, 2 -> (facing - 1) % 6;
-            case 3, 4 -> facing;
-            case 5, 6 -> (facing + 1) % 6;
-            default -> dir;
-        };
-
-        return coords.translated(dir, moF);
+        return Scatter.frontArc(coords, facing, moF).landing();
     }
 
     /**
@@ -6479,11 +6475,7 @@ public class Compute {
      * @return the <code>Coords</code> scattered to
      */
     public static Coords scatter(Coords coords, int margin) {
-        int scatterDirection = Compute.d6(1) - 1;
-        // Scatter distance is a magnitude. A negative margin would push the shot one hex off the
-        // straight-line scatter path, because Coords.translated() truncates toward zero on the
-        // diagonal directions (e.g. -5 / 2 == -2, not the floored -3).
-        return coords.translated(scatterDirection, Math.abs(margin));
+        return Scatter.omnidirectional(coords, margin).landing();
     }
 
     /**
