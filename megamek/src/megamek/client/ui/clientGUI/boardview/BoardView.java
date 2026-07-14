@@ -2616,7 +2616,7 @@ public final class BoardView extends AbstractBoardView
         Graphics2D graphics2D = (Graphics2D) (hexImage.getGraphics());
         UIUtil.setHighQualityRendering(graphics2D);
 
-        if (standardTile) { // is the image hex-sized, 84*72?
+        if (standardTile) { // is the image hex-sized, 84*72, or a hq tile?
             graphics2D.drawImage(scaledImage, 0, 0, boardPanel);
         } else { // Draw image for a texture larger than a hex
             Point p1SRC = getHexLocationLargeTile(coords.getX(), coords.getY());
@@ -5730,7 +5730,8 @@ public final class BoardView extends AbstractBoardView
             return null;
         }
 
-        if (zoomIndex == BASE_ZOOM_INDEX) {
+        // HQ hex tiles must always be scaled (usually scaled down), so check if it's a HQ tile
+        if (zoomIndex == BASE_ZOOM_INDEX && (getHqImageScale(base) == 1)) {
             return base;
         }
 
@@ -5791,7 +5792,7 @@ public final class BoardView extends AbstractBoardView
      * <p>
      * Terrain images and other can be provided at higher resolution to look better when zoomed in. In that case, they
      * need to use an exact integer multiple of 84x72, i.e. 168x144, 252x216 etc. to be recognized and scaled
-     * accordingly. For any other size, a scale factor of 1 is returned and the image is assumed to have a different
+     * appropriately. For any other size, a scale factor of 1 is returned and the image is assumed to have a different
      * purpose.
      *
      * @param base the (terrain) image to test
@@ -5803,7 +5804,7 @@ public final class BoardView extends AbstractBoardView
         // case, they need to use an exact integer multiple of the hex size, i.e. 168x144, 252x216 etc. Only such
         // images are recognized and scaled down accordingly.
         int hqScale = 1;
-        if (base.getWidth(null) % 84 == 0 && base.getHeight(null) % 72 == 0) {
+        if ((base.getWidth(null) % 84 == 0) && (base.getHeight(null) % 72 == 0)) {
             int xScale = base.getWidth(null) / 84;
             int yScale = base.getHeight(null) / 72;
             if (xScale == yScale) {
