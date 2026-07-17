@@ -39,12 +39,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
+import megamek.client.ui.clientGUI.boardview.overlay.ToastLevel;
 import megamek.client.ui.clientGUI.sbf.SBFClientGUI;
 import megamek.client.ui.dialogs.phaseDisplay.SBFTargetDialog;
 import megamek.client.ui.util.KeyCommandBind;
@@ -59,57 +59,17 @@ import megamek.common.game.InGameObject;
 import megamek.common.rolls.TargetRoll;
 import megamek.common.strategicBattleSystems.SBFFormation;
 import megamek.common.strategicBattleSystems.SBFFormationTurn;
-import megamek.common.strategicBattleSystems.SBFGame;
 import megamek.common.strategicBattleSystems.SBFToHitData;
 import megamek.common.units.BTObject;
 
 public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelectionListener {
-
-    private enum FiringCommand implements PhaseCommand {
-        FIRE_NEXT("moveNext"),
-        FIRE_PREVIOUS("movePrevious"),
-        FIRE_MORE("MoveMore"),
-        FIRE_UNIT("fireunit");
-
-        private final String cmd;
-        private int priority;
-
-        FiringCommand(String c) {
-            this(c, formation -> true);
-        }
-
-        FiringCommand(String c, Predicate<SBFFormation> isEligible) {
-            cmd = c;
-            priority = ordinal();
-        }
-
-        @Override
-        public String getCmd() {
-            return cmd;
-        }
-
-        @Override
-        public int getPriority() {
-            return priority;
-        }
-
-        @Override
-        public void setPriority(int p) {
-            priority = p;
-        }
-
-        @Override
-        public String toString() {
-            return Messages.getString("MovementDisplay." + getCmd());
-        }
-    }
 
     private final List<EntityAction> plannedActions = new ArrayList<>();
     private InGameObject selectedTarget;
     private int firingUnit = BTObject.NONE;
     private final SBFTargetDialog targetDialog;
 
-    private final Map<FiringCommand, MegaMekButton> buttons = new HashMap<>();
+    private final Map<SBFFiringCommand, MegaMekButton> buttons = new HashMap<>();
 
     public SBFFiringDisplay(SBFClientGUI cg) {
         super(cg);
@@ -119,8 +79,6 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
         setupButtonPanel();
         registerKeyCommands();
         game().addGameListener(this);
-        //TODO: rather have clientGUI take BVListeners and forward all events -> dont have to deal with changing
-        // BoardViews
         clientGUI.boardViews().forEach(b -> b.addBoardViewListener(this));
         targetDialog = new SBFTargetDialog(getClientGUI().getFrame(), game(), this);
     }
@@ -169,8 +127,8 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
 
     @Override
     protected void setButtons() {
-        for (FiringCommand cmd : FiringCommand.values()) {
-            buttons.put(cmd, createButton(cmd.getCmd(), "MovementDisplay."));
+        for (SBFFiringCommand cmd : SBFFiringCommand.values()) {
+            buttons.put(cmd, createButton(cmd.getCmd(), "SBFFiringDisplay."));
         }
     }
 
@@ -191,11 +149,23 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
     }
 
     private void selectNextFormation() {
-        clientGUI.getClient().getGame().getNextEligibleFormation(currentFormation).ifPresent(this::selectFormation);
+        Optional<SBFFormation> nextFormation = game().getNextEligibleFormation(currentFormation);
+        if (nextFormation.isEmpty()) {
+            clientGUI.addToast(ToastLevel.INFO, "No Formation available");
+        } else if (nextFormation.get().getId() == currentFormation) {
+            clientGUI.addToast(ToastLevel.INFO, "No other Formation available");
+        }
+        nextFormation.ifPresent(this::selectFormation);
     }
 
     private void selectPreviousFormation() {
-        clientGUI.getClient().getGame().getPreviousEligibleFormation(currentFormation).ifPresent(this::selectFormation);
+        Optional<SBFFormation> previousFormation = game().getPreviousEligibleFormation(currentFormation);
+        if (previousFormation.isEmpty()) {
+            clientGUI.addToast(ToastLevel.INFO, "No Formation available");
+        } else if (previousFormation.get().getId() == currentFormation) {
+            clientGUI.addToast(ToastLevel.INFO, "No other Formation available");
+        }
+        previousFormation.ifPresent(this::selectFormation);
     }
 
     @Override
@@ -205,36 +175,82 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
         }
 
         final String actionCmd = e.getActionCommand();
-        if (actionCmd.equals(FiringCommand.FIRE_NEXT.getCmd())) {
+        if (actionCmd.equals(SBFFiringCommand.FIRE_NEXT.getCmd())) {
             selectNextFormation();
-        } else if (actionCmd.equals(FiringCommand.FIRE_PREVIOUS.getCmd())) {
+        } else if (actionCmd.equals(SBFFiringCommand.FIRE_PREVIOUS.getCmd())) {
             selectPreviousFormation();
-        } else if (actionCmd.equals(FiringCommand.FIRE_UNIT.cmd)) {
+        } else if (actionCmd.equals(SBFFiringCommand.FIRE_UNIT.getCmd())) {
             fire();
         }
     }
 
     private void fire() {
-        if (actingFormation().isEmpty() || !isMyTurn() || selectedTarget == null) {
+        if (!isMyTurn()) {
+            clientGUI.addToast(ToastLevel.INFO, "It is not your turn to declare fire");
+            return;
+        } else if (actingFormation().isEmpty()) {
+            clientGUI.addToast(ToastLevel.INFO, "No firing Formation selected");
+            return;
+        } else if (firingUnit < 0) {
+            clientGUI.addToast(ToastLevel.INFO, "No firing Unit selected");
+            return;
+        } else if (selectedTarget == null) {
+            clientGUI.addToast(ToastLevel.INFO, "No target selected");
+            return;
+        } else if (getCurrentToHitData().isImpossible()) {
+            clientGUI.addToast(ToastLevel.INFO, "Attack is impossible (%s)".formatted(getCurrentToHitData().getDesc()));
             return;
         }
         var attack = new SBFStandardUnitAttack(actingFormation().get().getId(),
               firingUnit,
               selectedTarget.getId(),
               ASRange.LONG);
+
         plannedActions.add(attack);
         updateButtonStatus();
         updateDonePanel();
+        targetDialog.updateAttacks(plannedActions);
+        clientGUI.addToast(ToastLevel.INFO, "Attacking " + selectedTarget.getId() + " " + firingUnit);
+    }
+
+    private SBFToHitData getCurrentToHitData() {
+        SBFToHitData toHitData = new SBFToHitData();
+        if (selectedTarget == null) {
+            toHitData.addModifier(TargetRoll.IMPOSSIBLE, "No target selected");
+
+        } else if (firingUnit == BTObject.NONE) {
+            toHitData.addModifier(TargetRoll.IMPOSSIBLE, "No Unit selected for firing");
+
+        } else if (actingFormation().isEmpty()) {
+            toHitData.addModifier(TargetRoll.IMPOSSIBLE, "No Formation selected for firing");
+
+        } else if (!game().usesFriendlyFire()
+              && selectedTarget instanceof SBFFormation targetFormation
+              && !game().areHostile(targetFormation, clientGUI.getClient().getLocalPlayer())) {
+            toHitData.addModifier(TargetRoll.IMPOSSIBLE, "Cannot attack friendly target");
+
+        } else {
+            SBFFormation attacker = actingFormation().get();
+            if (firingUnit >= attacker.getUnits().size() || firingUnit < 0) {
+                toHitData.addModifier(TargetRoll.IMPOSSIBLE, "Invalid Unit");
+            } else {
+                toHitData = SBFToHitData.compileToHit(game(),
+                      new SBFStandardUnitAttack(attacker.getId(), firingUnit, selectedTarget.getId(), ASRange.LONG));
+            }
+        }
+        return toHitData;
     }
 
     @Override
     public void ready() {
-        Optional<SBFFormation> formation = game().getFormation(currentFormation);
-        if (formation.isEmpty()) {
+        if (actingFormation().isEmpty()) {
+            clientGUI.addToast(ToastLevel.INFO, "No Formation selected");
             return;
         }
-
         clientGUI.getClient().sendAttackData(plannedActions, currentFormation);
+        if (plannedActions.isEmpty()) {
+            clientGUI.addToast(ToastLevel.INFO, "No attacks for formation " + currentFormation);
+        }
         endMyTurn();
     }
 
@@ -267,13 +283,14 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
     private void updateButtonStatus() {
         boolean myTurn = isMyTurn();
         boolean turnIsFormationTurn = game().getTurn() instanceof SBFFormationTurn;
-        boolean hasAvailableUnits = turnIsFormationTurn
+        boolean hasAvailableFormations = turnIsFormationTurn
               && game().hasEligibleFormation((SBFFormationTurn) game().getTurn());
         boolean hasTarget = selectedTarget != null;
 
-        buttons.get(FiringCommand.FIRE_NEXT).setEnabled(myTurn && hasAvailableUnits);
-        buttons.get(FiringCommand.FIRE_MORE).setEnabled(myTurn && (numButtonGroups > 1));
-        buttons.get(FiringCommand.FIRE_UNIT).setEnabled(myTurn && hasTarget && isFirePossible());
+        buttons.get(SBFFiringCommand.FIRE_NEXT).setEnabled(myTurn && hasAvailableFormations);
+        buttons.get(SBFFiringCommand.FIRE_PREVIOUS).setEnabled(myTurn && hasAvailableFormations);
+        //        buttons.get(FiringCommand.FIRE_MORE).setVisible(myTurn && (numButtonGroups > 1));
+        buttons.get(SBFFiringCommand.FIRE_UNIT).setEnabled(true);
     }
 
     private boolean isFirePossible() {
@@ -329,24 +346,10 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
      * accordingly.
      */
     private void updateTargetingData() {
-        SBFToHitData toHitData = new SBFToHitData();
-        if (selectedTarget == null) {
-            toHitData.addModifier(TargetRoll.IMPOSSIBLE, "No target selected");
-        } else if (firingUnit == BTObject.NONE) {
-            toHitData.addModifier(TargetRoll.IMPOSSIBLE, "No Unit selected for firing");
-        } else if (actingFormation().isEmpty()) {
-            toHitData.addModifier(TargetRoll.IMPOSSIBLE, "No Formation selected for firing");
-        } else {
-            SBFFormation attacker = actingFormation().get();
-            if (firingUnit >= attacker.getUnits().size() || firingUnit < 0) {
-                toHitData.addModifier(TargetRoll.IMPOSSIBLE, "Invalid Unit");
-            } else {
-                toHitData = SBFToHitData.compileToHit(game(),
-                      new SBFStandardUnitAttack(attacker.getId(), firingUnit, selectedTarget.getId(), ASRange.LONG));
-            }
-        }
         showTargetDialog();
-        targetDialog.setContent(game().getFormation(currentFormation).orElse(null), selectedTarget, toHitData);
+        targetDialog.setContent(game().getFormation(currentFormation).orElse(null),
+              selectedTarget,
+              getCurrentToHitData());
     }
 
     public void showTargetDialog() {

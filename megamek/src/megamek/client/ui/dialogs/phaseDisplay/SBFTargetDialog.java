@@ -33,6 +33,7 @@
 package megamek.client.ui.dialogs.phaseDisplay;
 
 import java.awt.Container;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JFrame;
@@ -46,6 +47,7 @@ import megamek.client.ui.dialogs.abstractDialogs.AbstractDialog;
 import megamek.client.ui.sbf.SBFTargetingToHitDisplay;
 import megamek.client.ui.sbf.SBFUnitAttackSelector;
 import megamek.client.ui.util.UIUtil;
+import megamek.common.actions.EntityAction;
 import megamek.common.game.InGameObject;
 import megamek.common.annotations.Nullable;
 import megamek.common.preference.IPreferenceChangeListener;
@@ -75,7 +77,7 @@ public class SBFTargetDialog extends AbstractDialog implements IPreferenceChange
         super(parent, "SBFTargetDialog", "SBFTargetDialog.title");
         this.game = game;
         // Unit selection events are passed up to the FiringDisplay as listener
-        unitAttackSelector = new SBFUnitAttackSelector(listener);
+        unitAttackSelector = new SBFUnitAttackSelector(listener, game);
         GUIP.addPreferenceChangeListener(this);
         initialize();
     }
@@ -178,5 +180,9 @@ public class SBFTargetDialog extends AbstractDialog implements IPreferenceChange
 
     public void die() {
         GUIP.removePreferenceChangeListener(this);
+    }
+
+    public void updateAttacks(List<EntityAction> plannedAttacks) {
+        unitAttackSelector.updateAttacks(plannedAttacks);
     }
 }

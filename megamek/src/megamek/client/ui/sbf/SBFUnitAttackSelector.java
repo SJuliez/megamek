@@ -34,6 +34,8 @@
 package megamek.client.ui.sbf;
 
 import java.awt.Component;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JComponent;
@@ -44,21 +46,32 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionListener;
 
 import megamek.client.ui.clientGUI.tooltip.SBFInGameObjectTooltip;
+import megamek.common.actions.EntityAction;
+import megamek.common.actions.sbf.SBFAttackAction;
+import megamek.common.actions.sbf.SBFStandardUnitAttack;
 import megamek.common.annotations.Nullable;
 import megamek.common.strategicBattleSystems.SBFFormation;
+import megamek.common.strategicBattleSystems.SBFGame;
 import megamek.common.strategicBattleSystems.SBFUnit;
+
+import static megamek.client.ui.util.UIUtil.tdCSS;
 
 public class SBFUnitAttackSelector {
 
+    private final SBFGame game;
     private final DefaultListModel<SBFUnit> model = new DefaultListModel<>();
     private final JList<SBFUnit> unitSelector = new JList<>(model);
+    private SBFFormation shownFormation;
     private final ListSelectionListener listener;
+    private List<EntityAction> plannedAttacks = new ArrayList<>();
 
-    public SBFUnitAttackSelector(ListSelectionListener listener) {
+    public SBFUnitAttackSelector(ListSelectionListener listener, SBFGame game) {
         this.listener = listener;
+        this.game = game;
         unitSelector.addListSelectionListener(listener);
         unitSelector.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         unitSelector.setAlignmentX(0);
+
         DefaultListCellRenderer renderer = new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index,
@@ -68,6 +81,7 @@ public class SBFUnitAttackSelector {
                       SBFInGameObjectTooltip.styles() +
                       "</STYLE></HEAD><BODY>" + "<TABLE>" +
                       SBFInGameObjectTooltip.unitLine(unit) +
+                      attacksLine(unit) +
                       "</TABLE></BODY></HTML>";
                 super.getListCellRendererComponent(list, unitLine, index, isSelected, cellHasFocus);
                 if (!isSelected) {
@@ -81,13 +95,35 @@ public class SBFUnitAttackSelector {
         unitSelector.setBorder(new EmptyBorder(0, 3, 0, 0));
     }
 
+    private String attacksLine(SBFUnit unit) {
+        if (shownFormation == null) {
+            return "";
+        }
+        for (EntityAction action : plannedAttacks) {
+            if (action instanceof SBFStandardUnitAttack attack) {
+                if (shownFormation.getUnits().get(attack.getUnitNumber()).equals(unit)) {
+                    String result = "Attacking " +
+                          game.getFormation(attack.getTargetId()).map(SBFFormation::getName).orElse("??");
+                    return "<TR><TD class=attack COLSPAN=12>" + result + "</TD></TR>";
+                }
+            }
+        }
+        return "<TR><TD class=noattack COLSPAN=12>No Attack selected</TD></TR>";
+    }
+
     public void setFormation(@Nullable SBFFormation formation) {
+        shownFormation = formation;
         unitSelector.removeListSelectionListener(listener);
         model.clear();
         if (formation != null) {
             model.addAll(formation.getUnits());
         }
         unitSelector.addListSelectionListener(listener);
+    }
+
+    public void updateAttacks(List<EntityAction> plannedAttacks) {
+        this.plannedAttacks = plannedAttacks;
+        setFormation(shownFormation);
     }
 
     public JComponent getComponent() {

@@ -81,6 +81,9 @@ public class SBFRuleOptions extends BasicGameOptions {
     /** Forcing initiative, IO BF p.223 */
     public static final String INIT_FORCING = "init_forcing";
 
+    /** Detection and recon rules aka "double-blind", IO BF p.195 */
+    public static final String BASE_FRIENDLY_FIRE = "friendly_fire";
+
     @Override
     public synchronized void initialize() {
         super.initialize();

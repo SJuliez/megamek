@@ -59,7 +59,6 @@ public interface SBFRuleOptionsUser {
     /**
      * @return True when this game uses Advanced Initiative, IO:BF p.194.
      */
-    @Deprecated(since = "0.51.0", forRemoval = true)
     default boolean usesAdvancedInitiative() {
         return getOptions().booleanOption(SBFRuleOptions.INIT_MODIFIERS);
     }
@@ -67,7 +66,6 @@ public interface SBFRuleOptionsUser {
     /**
      * @return True when this game uses Battlefield Intelligence, IO:BF p.206.
      */
-    @Deprecated(since = "0.51.0", forRemoval = true)
     default boolean usesBattlefieldInt() {
         return getOptions().booleanOption(SBFRuleOptions.INIT_BATTLEFIELD_INT);
     }
@@ -75,7 +73,6 @@ public interface SBFRuleOptionsUser {
     /**
      * @return True when this game allows adjusting formations, IO:BF p.198.
      */
-    @Deprecated(since = "0.51.0", forRemoval = true)
     default boolean usesAdjustingFormations() {
         return getOptions().booleanOption(SBFRuleOptions.BASE_ADJUST_FORMATIONS);
     }
@@ -95,5 +92,13 @@ public interface SBFRuleOptionsUser {
      */
     default boolean usesTeamVision() {
         return getOptions().booleanOption(SBFRuleOptions.BASE_TEAM_VISION);
+    }
+
+    /**
+     * @return True when in this game, players may attack friendly units. This is not an official rules option but is
+     * useful for testing.
+     */
+    default boolean usesFriendlyFire() {
+        return getOptions().booleanOption(SBFRuleOptions.BASE_FRIENDLY_FIRE);
     }
 }

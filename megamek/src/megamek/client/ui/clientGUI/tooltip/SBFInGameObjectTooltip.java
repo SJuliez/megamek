@@ -87,6 +87,8 @@ public final class SBFInGameObjectTooltip {
               ".speccell { font-family:Exo; font-size:" + labelSize + "; }" +
               ".fullwidth { width:100%; }" +
               ".formation { font-family:Noto Sans; font-size:" + nameSize + "; }" +
+              ".attack { padding-left:30; font-family:Noto Sans; font-size:" + labelSize + "; color:#FAA; }" +
+              ".noattack { padding-left:30; font-family:Noto Sans; font-size:" + labelSize + "; color:gray; }" +
               "th, td { padding:0 2; }";
     }
 
