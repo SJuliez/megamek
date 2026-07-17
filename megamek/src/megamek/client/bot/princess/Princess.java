@@ -69,6 +69,7 @@ import megamek.common.board.ElevationOption;
 import megamek.common.compute.Compute;
 import megamek.common.containers.PlayerIDAndList;
 import megamek.common.enums.AimingMode;
+import megamek.common.enums.GamePhase;
 import megamek.common.enums.MoveStepType;
 import megamek.common.equipment.AmmoMounted;
 import megamek.common.equipment.AmmoType;
@@ -189,7 +190,6 @@ public class Princess extends BotClient {
 
     private Integer spinUpThreshold = null;
 
-    private BehaviorSettings behaviorSettings;
     private double moveEvaluationTimeEstimate = 0;
     private final Precognition precognition;
     private final Thread precognitionThread;
@@ -825,6 +825,7 @@ public class Princess extends BotClient {
         return closestPosition;
     }
 
+    @Override
     public void setBehaviorSettings(final BehaviorSettings behaviorSettings) {
         LOGGER.info("New behavior settings for {}\n{}", getName(), behaviorSettings.toLog());
         try {
@@ -901,10 +902,6 @@ public class Princess extends BotClient {
             return damageMap.get(targetId);
         }
         return 0.0; // If we have no entry, return zero
-    }
-
-    public BehaviorSettings getBehaviorSettings() {
-        return behaviorSettings;
     }
 
     public Set<Coords> getStrategicBuildingTargets() {
@@ -3119,13 +3116,17 @@ public class Princess extends BotClient {
 
             final long stop_time = java.lang.System.currentTimeMillis();
 
-            // update path evaluation time estimate
-            final double updatedEstimate = ((double) (stop_time - startTime)) / ((double) paths.size());
-            if (0 == moveEvaluationTimeEstimate) {
-                moveEvaluationTimeEstimate = updatedEstimate;
-            }
+            // update path evaluation time estimate - skip empty path sets, otherwise the division by
+            // paths.size() yields +Infinity in double math and permanently poisons the running average
+            // (the reset guard below never re-fires because Infinity is never equal to 0).
+            if (!paths.isEmpty()) {
+                final double updatedEstimate = ((double) (stop_time - startTime)) / ((double) paths.size());
+                if (0 == moveEvaluationTimeEstimate) {
+                    moveEvaluationTimeEstimate = updatedEstimate;
+                }
 
-            moveEvaluationTimeEstimate = 0.5 * (updatedEstimate + moveEvaluationTimeEstimate);
+                moveEvaluationTimeEstimate = 0.5 * (updatedEstimate + moveEvaluationTimeEstimate);
+            }
 
             if (rankedPaths.isEmpty()) {
                 return performPathPostProcessing(new MovePath(game, entity), 0);
@@ -3145,9 +3146,11 @@ public class Princess extends BotClient {
         }
     }
 
-    private static String getMessage(Entity entity, double thisTimeEstimate, List<MovePath> paths) {
+    static String getMessage(Entity entity, double thisTimeEstimate, List<MovePath> paths) {
         String timeEstimate = "unknown.";
-        if (0 != thisTimeEstimate) {
+        // Guard against non-finite estimates: casting +Infinity to int saturates to Integer.MAX_VALUE
+        // (2147483647), which would otherwise surface as a nonsense "completion" time in chat.
+        if ((0 != thisTimeEstimate) && Double.isFinite(thisTimeEstimate)) {
             timeEstimate = (int) thisTimeEstimate + " seconds";
         }
         return "Moving " +
@@ -3165,8 +3168,10 @@ public class Princess extends BotClient {
 
             // ----Debugging: print out any errors made in guessing to hit
             // values-----
-            final List<Entity> entities = game.getEntitiesVector();
-            for (final Entity entity : entities) {
+            // Only runs at TRACE log level (see FireControl.checkAllGuesses). Sweep only our own
+            // units: Princess never fires with enemy units, so cross-checking their guesses costs
+            // real to-hit calculations for no diagnostic benefit.
+            for (final Entity entity : getEntitiesOwned()) {
                 final String errors = getFireControl(entity).checkAllGuesses(entity, game);
                 if (!StringUtility.isNullOrBlank(errors)) {
                     LOGGER.warn(errors);
@@ -3879,6 +3884,11 @@ public class Princess extends BotClient {
     }
 
     @Override
+    protected void sendBotSettingsToServer() {
+        sendPrincessSettings();
+    }
+
+    @Override
     protected void disconnected() {
         if (null != precognition) {
             precognition.signalDone();
@@ -3921,8 +3931,12 @@ public class Princess extends BotClient {
      */
     private MovePath performPathPostProcessing(MovePath path, double expectedDamage) {
         MovePath retVal = path;
-        evadeIfNotFiring(retVal, expectedDamage >= 0);
-        turnOnSearchLight(retVal, expectedDamage >= 0);
+        // Guard on expectedDamage > 0, not >= 0: expected damage is never negative, so >= 0 was always true. That
+        // left evadeIfNotFiring (which only evades when NOT able to inflict damage) permanently dead, and turned
+        // the searchlight on even with no firing solution, giving away position for nothing.
+        boolean canInflictDamage = expectedDamage > 0;
+        evadeIfNotFiring(retVal, canInflictDamage);
+        turnOnSearchLight(retVal, canInflictDamage);
         unloadTransportedInfantry(retVal);
         launchFighters(retVal);
         abandonShip(retVal);
@@ -4633,6 +4647,57 @@ public class Princess extends BotClient {
         return artilleryCommandAndControl;
     }
 
+    /**
+     * Given an entity that just moved, decide if I should reveal any entities in response
+     */
+    @Override
+    protected void revealEntities(int movedEntityID) {
+    	// for each hidden entity I own
+    	// calculate a firing plan to the moved entity as if it wasn't hidden
+    	// if the firing plan has good odds to hit (based on aggression rating)
+    	// then send the reveal command for that entity
+    	if (getGame().getOptions().booleanOption(OptionsConstants.ADVANCED_HIDDEN_UNITS)) {
+    		Entity target = getGame().getEntity(movedEntityID);
+    		
+    		// if the target is not hostile/destroyed/abandoned/"broken", we don't bother considering it
+    		// also, don't bother if the target can still move after this update
+    		if (target == null || target.isDestroyed() || target.isAbandoned() 
+    				|| (target.turnWasInterrupted() && !target.isDone())
+    				|| !target.getOwner().isEnemyOf(getLocalPlayer())
+    				|| getHonorUtil().isEnemyBroken(movedEntityID, target.getOwnerId(), getForcedWithdrawal())) {
+    			return;
+    		}
+    		
+    		for (Entity shooter : getGame().getEntitiesVector()) {
+    			// if the shooter is hidden, owned by me, on the board and not already activating
+                if (shooter.isHidden() && shooter.getOwnerId() == getLocalPlayerNumber() && 
+                		(shooter.getPosition() != null) && 
+                		(shooter.getHiddenActivationPhase() == GamePhase.UNKNOWN)) {
+                	final Map<WeaponMounted, Double> ammoConservation = calcAmmoConservation(shooter);
+                	
+                	double maxDamage = FireControl.getMaxDamageAtRange(shooter, 
+                			target.getPosition().distance(shooter.getPosition()), false, false);
+                	
+                	// if we're not going to do any damage, don't reveal
+                	if (maxDamage <= 0) {
+                		continue;
+                	}
+                	
+                	FiringPlan firingPlan = getFireControl(shooter).getBestFiringPlan(shooter, target, getGame(), ammoConservation);
+                	
+                	double percentage = firingPlan.getExpectedDamage() / maxDamage;
+                	
+                	// if the expected damage (% of max possible damage at that range)
+                	// is higher than our aggression value (e.g. aggression 7 means we tolerate 30%)
+                	// then reveal
+                	if (percentage > (1.0 - (getBehaviorSettings().getHyperAggressionValue() / 10.0))) {
+                		sendActivateHidden(shooter.getId(), GamePhase.FIRING);
+                	}
+                }
+    		}
+        }
+    }
+    
     /**
      * Determines whether Princess should reroll initiative using the Tactical Genius special ability.
      *

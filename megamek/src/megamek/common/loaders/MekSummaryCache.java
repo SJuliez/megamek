@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2000-2004 Ben Mazur (bmazur@sev.org)
  * Copyright (C) 2013 Edward Cullen (eddy@obsessedcomputers.co.uk)
- * Copyright (C) 2002-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2002-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MegaMek.
  *
@@ -637,7 +637,26 @@ public class MekSummaryCache {
         done();
     }
 
-    private MekSummary getSummary(Entity e, File f, String entry) {
+    /**
+     * Builds a fully populated {@link MekSummary} from a standalone unit file, without requiring the entire unit
+     * cache to be loaded. The unit does not need to be part of the official cache.
+     *
+     * <p>This is intended for tooling (such as the SVG mass printer) that needs to process arbitrary or custom
+     * {@code .blk}/{@code .mtf} files.</p>
+     *
+     * @param unitFile the unit file to parse
+     *
+     * @return a populated {@link MekSummary}, or {@code null} if the file could not be loaded
+     */
+    public static @Nullable MekSummary getSummaryFromFile(File unitFile) {
+        Entity entity = MekSummary.loadEntity(unitFile);
+        if (entity == null) {
+            return null;
+        }
+        return getSummary(entity, unitFile, null);
+    }
+
+    private static MekSummary getSummary(Entity e, File f, String entry) {
         MekSummary ms = new MekSummary();
         ms.setName(e.getShortNameRaw());
         ms.setChassis(e.getChassis());
@@ -693,6 +712,8 @@ public class MekSummaryCache {
         ms.setAdvancedYear(e.getProductionDate(e.isClan()));
         ms.setStandardYear(e.getCommonDate(e.isClan()));
         ms.setExtinctRange(e.getExtinctionRange());
+        ms.setForceGeneratorAvailability(e.getForceGeneratorAvailability());
+        ms.setMissionRoles(e.getMissionRoles());
         ms.setCost((long) e.getCost(false));
         ms.setDryCost((long) e.getCost(true));
         ms.setAlternateCost((int) e.getAlternateCost());

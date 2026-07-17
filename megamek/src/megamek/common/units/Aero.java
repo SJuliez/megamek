@@ -411,10 +411,10 @@ public abstract class Aero extends Entity implements IAero, IBomber {
     }
 
     @Override
-    protected void addSystemTechAdvancement(CompositeTechLevel ctl) {
-        super.addSystemTechAdvancement(ctl);
+    protected void addSystemTechAdvancement(CompositeTechLevel techLevel) {
+        super.addSystemTechAdvancement(techLevel);
         if (isFighter() && (getCockpitTechAdvancement() != null)) {
-            ctl.addComponent(getCockpitTechAdvancement());
+            techLevel.addComponent(getCockpitTechAdvancement(), getCockpitTypeString());
         }
     }
 
@@ -493,6 +493,10 @@ public abstract class Aero extends Entity implements IAero, IBomber {
         if (getPartialRepairs().booleanOption("aero_engine_crit")) {
             mp--;
         }
+
+        // Improved Magnetic Pulse (iATM IMP) missile Safe Thrust reduction (IO IMP rules). Zero for
+        // large craft, which never accumulate IMP hits, so they are unaffected as the rules require.
+        mp = Math.max(0, mp - getImpMpReduction());
 
         if (!mpCalculationSetting.ignoreGrounded() && !isAirborne()) {
             mp = isSpheroid() ? 0 : mp / 2;
