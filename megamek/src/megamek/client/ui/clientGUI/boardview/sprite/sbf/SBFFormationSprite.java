@@ -184,7 +184,7 @@ public class SBFFormationSprite extends Sprite {
     }
 
     private void drawCenteredIcon(Graphics2D graph) {
-        graph.setStroke(new BasicStroke(2));
+        graph.setStroke(new BasicStroke(isSelected ? 5 : 2));
         Color outlineColor = isFriendly ? GUIP.getMyUnitColor() : GUIP.getEnemyUnitColor();
         if (isSelected) {
             outlineColor = Color.WHITE;
