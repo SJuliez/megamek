@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2024-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MegaMek.
  *
@@ -47,8 +47,6 @@ public class MovePathLengthFilter extends Filter<SBFMovePath> {
 
     @Override
     public boolean shouldStay(SBFMovePath mp) {
-        // allow minimum movement: one step that ignores MP restrictions
         return (mp.getMpUsed() <= maxMP || mp.isMinimumMovement());
-
     }
 }
