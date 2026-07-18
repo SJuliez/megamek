@@ -73,7 +73,7 @@ public class SBFStandardUnitAttackHandler extends AbstractSBFActionHandler {
             List<SBFUnit> targetUnits = target.getUnits();
             SBFUnit targetUnit = targetUnits.getFirst();
 
-            SBFToHitData toHit = SBFToHitData.compileToHit(game(), attack);
+            SBFToHitData toHit = SBFToHitData.compileToHit(game(), attack, game().getActionsVector());
             SBFReportEntry report = new SBFReportEntry(2001).noNL();
             report.add(new SBFUnitReportEntry(attacker, attack.getUnitNumber(), ownerColor(attacker, game())).text());
             report.add(new SBFFormationReportEntry(target, game()).text());

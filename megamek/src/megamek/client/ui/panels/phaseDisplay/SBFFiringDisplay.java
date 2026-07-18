@@ -46,7 +46,7 @@ import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
 import megamek.client.ui.clientGUI.boardview.overlay.ToastLevel;
 import megamek.client.ui.clientGUI.sbf.SBFClientGUI;
-import megamek.client.ui.dialogs.phaseDisplay.SBFTargetDialog;
+import megamek.client.ui.sbf.SBFTargetDialog;
 import megamek.client.ui.util.KeyCommandBind;
 import megamek.client.ui.widget.MegaMekButton;
 import megamek.common.actions.EntityAction;
@@ -187,30 +187,31 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
     private void fire() {
         if (!isMyTurn()) {
             clientGUI.addToast(ToastLevel.INFO, "It is not your turn to declare fire");
-            return;
         } else if (actingFormation().isEmpty()) {
             clientGUI.addToast(ToastLevel.INFO, "No firing Formation selected");
-            return;
-        } else if (firingUnit < 0) {
-            clientGUI.addToast(ToastLevel.INFO, "No firing Unit selected");
-            return;
         } else if (selectedTarget == null) {
             clientGUI.addToast(ToastLevel.INFO, "No target selected");
-            return;
+        } else if (firingUnit < 0) {
+            clientGUI.addToast(ToastLevel.INFO, "No firing Unit selected");
         } else if (getCurrentToHitData().isImpossible()) {
             clientGUI.addToast(ToastLevel.INFO, "Attack is impossible (%s)".formatted(getCurrentToHitData().getDesc()));
-            return;
-        }
-        var attack = new SBFStandardUnitAttack(actingFormation().get().getId(),
-              firingUnit,
-              selectedTarget.getId(),
-              ASRange.LONG);
+        } else if (!(selectedTarget instanceof SBFFormation targetFormation)) {
+            clientGUI.addToast(ToastLevel.INFO, "Can only attack formations");
+        } else {
+            int range = actingFormation().get().getPosition().coords().distance(targetFormation.getPosition().coords());
+            ASRange finalRange = range == 2 ? ASRange.EXTREME : ASRange.LONG;
+            var attack = new SBFStandardUnitAttack(actingFormation().get().getId(),
+                  firingUnit,
+                  selectedTarget.getId(),
+                  finalRange);
 
-        plannedActions.add(attack);
-        updateButtonStatus();
-        updateDonePanel();
-        targetDialog.updateAttacks(plannedActions);
-        clientGUI.addToast(ToastLevel.INFO, "Attacking " + selectedTarget.getId() + " " + firingUnit);
+            plannedActions.add(attack);
+            updateButtonStatus();
+            updateDonePanel();
+            targetDialog.updateAttacks(plannedActions);
+            String unitName=actingFormation().get().getUnits().get(firingUnit).getName();
+            clientGUI.addToast(ToastLevel.INFO, "Unit " + unitName + " attacking " + targetFormation.getName() + " ");
+        }
     }
 
     private SBFToHitData getCurrentToHitData() {
@@ -235,7 +236,8 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
                 toHitData.addModifier(TargetRoll.IMPOSSIBLE, "Invalid Unit");
             } else {
                 toHitData = SBFToHitData.compileToHit(game(),
-                      new SBFStandardUnitAttack(attacker.getId(), firingUnit, selectedTarget.getId(), ASRange.LONG));
+                      new SBFStandardUnitAttack(attacker.getId(), firingUnit, selectedTarget.getId(), ASRange.LONG),
+                      plannedActions);
             }
         }
         return toHitData;
@@ -348,6 +350,7 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
     private void updateTargetingData() {
         showTargetDialog();
         targetDialog.setContent(game().getFormation(currentFormation).orElse(null),
+              firingUnit,
               selectedTarget,
               getCurrentToHitData());
     }
@@ -361,11 +364,12 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
     }
 
     @Override
+    // This is called from the SBFUnitAttackSelector when the player selects a firing Unit
     public void valueChanged(ListSelectionEvent e) {
         if (!e.getValueIsAdjusting() && !isIgnoringEvents()) {
-            firingUnit = e.getFirstIndex();
+            firingUnit = targetDialog.getSelectedUnitIndex();
             updateTargetingData();
-            updateButtonStatus();
+//            updateButtonStatus();
         }
     }
 }

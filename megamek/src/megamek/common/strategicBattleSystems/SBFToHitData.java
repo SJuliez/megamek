@@ -33,9 +33,12 @@
 
 package megamek.common.strategicBattleSystems;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import megamek.common.TargetRollModifier;
+import megamek.common.actions.EntityAction;
 import megamek.common.actions.sbf.SBFAttackAction;
 import megamek.common.actions.sbf.SBFStandardUnitAttack;
 import megamek.common.game.InGameObject;
@@ -49,7 +52,8 @@ public class SBFToHitData extends TargetRoll {
 
     public SBFToHitData() {}
 
-    public static SBFToHitData compileToHit(SBFGame game, SBFStandardUnitAttack attack) {
+    public static SBFToHitData compileToHit(SBFGame game, SBFStandardUnitAttack attack,
+          List<EntityAction> attacksOfFormation) {
         if (!attack.isDataValid(game)) {
             return new SBFToHitData(TargetRoll.IMPOSSIBLE, "Invalid attack");
         }
@@ -63,6 +67,7 @@ public class SBFToHitData extends TargetRoll {
         processJUMP(toHit, game, attack);
         processMorale(toHit, game, attack);
         processSecondaryTarget(toHit, game, attack);
+        processUnitsNotFiring(toHit, game, attack, attacksOfFormation);
         return toHit;
     }
 
@@ -129,6 +134,27 @@ public class SBFToHitData extends TargetRoll {
             toHit.addModifier(TargetRoll.IMPOSSIBLE, "too many targets");
         } else if (targetsOfFormation(attacker, game).size() == 2) {
             toHit.addModifier(1, "two targets");
+        }
+    }
+
+    private static void processUnitsNotFiring(SBFToHitData toHit, SBFGame game, SBFStandardUnitAttack attack,
+          List<EntityAction> attacksOfFormation) {
+
+        //noinspection OptionalGetWithoutIsPresent
+        SBFFormation attacker = game.getFormation(attack.getEntityId()).get();
+        Set<Integer> attackingUnits = new HashSet<>();
+        // The presently firing Unit must be assumed to be firing, so just add it to the set
+        attackingUnits.add(attack.getUnitNumber());
+        attacksOfFormation.stream()
+              .filter(action -> action instanceof SBFStandardUnitAttack)
+              .map(action -> (SBFStandardUnitAttack) action)
+              .map(SBFStandardUnitAttack::getUnitNumber)
+              .forEach(attackingUnits::add);
+
+        int totalUnits = attacker.getUnits().size();
+        int nonAttackingUnits = totalUnits - attackingUnits.size();
+        if (nonAttackingUnits > 0) {
+            toHit.addModifier(-Math.min(2, nonAttackingUnits), "Unit(s) not attacking");
         }
     }
 

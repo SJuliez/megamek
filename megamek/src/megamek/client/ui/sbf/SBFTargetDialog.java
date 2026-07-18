@@ -30,7 +30,7 @@
  * <https://www.xbox.com/en-US/developers/rules> and it is not endorsed by or
  * affiliated with Microsoft.
  */
-package megamek.client.ui.dialogs.phaseDisplay;
+package megamek.client.ui.sbf;
 
 import java.awt.Container;
 import java.util.List;
@@ -44,8 +44,6 @@ import javax.swing.event.ListSelectionListener;
 import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.clientGUI.tooltip.SBFInGameObjectTooltip;
 import megamek.client.ui.dialogs.abstractDialogs.AbstractDialog;
-import megamek.client.ui.sbf.SBFTargetingToHitDisplay;
-import megamek.client.ui.sbf.SBFUnitAttackSelector;
 import megamek.client.ui.util.UIUtil;
 import megamek.common.actions.EntityAction;
 import megamek.common.game.InGameObject;
@@ -82,16 +80,20 @@ public class SBFTargetDialog extends AbstractDialog implements IPreferenceChange
         initialize();
     }
 
-    public void setContent(@Nullable InGameObject attacker, @Nullable InGameObject target,
+    public void setContent(@Nullable SBFFormation attacker, int firingUnit, @Nullable InGameObject target,
           @Nullable SBFToHitData data) {
         if (this.attacker != attacker) {
             this.attacker = attacker;
-            unitAttackSelector.setFormation((SBFFormation) attacker);
+            unitAttackSelector.setFormation(attacker);
         }
         if (this.target != target) {
             this.target = target;
         }
-        toHitDisplay.showToHit(data);
+        String unitName = "";
+        if (attacker != null && attacker.getUnit(firingUnit).isPresent()) {
+            unitName = attacker.getUnit(firingUnit).get().getName();
+        }
+        toHitDisplay.showToHit(unitName, data);
         update();
     }
 
@@ -107,7 +109,7 @@ public class SBFTargetDialog extends AbstractDialog implements IPreferenceChange
     }
 
     public void setToHitData(@Nullable SBFToHitData data) {
-        toHitDisplay.showToHit(data);
+        toHitDisplay.showToHit("",data);
         update();
     }
 
@@ -184,5 +186,9 @@ public class SBFTargetDialog extends AbstractDialog implements IPreferenceChange
 
     public void updateAttacks(List<EntityAction> plannedAttacks) {
         unitAttackSelector.updateAttacks(plannedAttacks);
+    }
+
+    public int getSelectedUnitIndex() {
+        return unitAttackSelector.getSelectedUnitIndex();
     }
 }

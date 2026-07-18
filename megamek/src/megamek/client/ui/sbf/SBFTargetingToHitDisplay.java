@@ -45,9 +45,9 @@ public class SBFTargetingToHitDisplay {
 
     private final JLabel formattedLabel = new JLabel();
 
-    public void showToHit(SBFToHitData data) {
+    public void showToHit(String attackerName, SBFToHitData data) {
         StringBuilder result = new StringBuilder();
-        result.append(UIUtil.spanCSS("label", "Chance to Hit: "));
+        result.append(UIUtil.spanCSS("label", attackerName+" - Chance to Hit: "));
         String cssClass = "autosuccess";
         if (data.cannotSucceed()) {
             cssClass = "impossible";

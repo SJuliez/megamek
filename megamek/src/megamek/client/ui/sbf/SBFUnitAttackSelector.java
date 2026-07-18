@@ -47,14 +47,13 @@ import javax.swing.event.ListSelectionListener;
 
 import megamek.client.ui.clientGUI.tooltip.SBFInGameObjectTooltip;
 import megamek.common.actions.EntityAction;
-import megamek.common.actions.sbf.SBFAttackAction;
 import megamek.common.actions.sbf.SBFStandardUnitAttack;
+import megamek.common.alphaStrike.ASRange;
 import megamek.common.annotations.Nullable;
 import megamek.common.strategicBattleSystems.SBFFormation;
 import megamek.common.strategicBattleSystems.SBFGame;
+import megamek.common.strategicBattleSystems.SBFToHitData;
 import megamek.common.strategicBattleSystems.SBFUnit;
-
-import static megamek.client.ui.util.UIUtil.tdCSS;
 
 public class SBFUnitAttackSelector {
 
@@ -101,9 +100,19 @@ public class SBFUnitAttackSelector {
         }
         for (EntityAction action : plannedAttacks) {
             if (action instanceof SBFStandardUnitAttack attack) {
+                if (!attack.isDataValid(game)) {
+                    return "<TR><TD class=noattack COLSPAN=12>Invalid attack data</TD></TR>";
+                }
                 if (shownFormation.getUnits().get(attack.getUnitNumber()).equals(unit)) {
                     String result = "Attacking " +
                           game.getFormation(attack.getTargetId()).map(SBFFormation::getName).orElse("??");
+                    SBFFormation attacker = game.getFormation(attack.getEntityId()).get();
+                    SBFToHitData toHitData = SBFToHitData.compileToHit(game,
+                          new SBFStandardUnitAttack(attacker.getId(),
+                                attack.getUnitNumber(),
+                                attack.getTargetId(),
+                                ASRange.LONG), plannedAttacks);
+                    result += " (TN: %d)".formatted(toHitData.getValue());
                     return "<TR><TD class=attack COLSPAN=12>" + result + "</TD></TR>";
                 }
             }
@@ -130,8 +139,7 @@ public class SBFUnitAttackSelector {
         return unitSelector;
     }
 
-    @Deprecated(since = "0.51.0", forRemoval = true)
-    public int getSelectedUnitIndex() {
+    int getSelectedUnitIndex() {
         return unitSelector.getSelectedIndex();
     }
 

@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -220,6 +221,22 @@ public class SBFFormation implements ASSpecialAbilityCollector, BattleForceSUAFo
         return Collections.unmodifiableList(units);
     }
 
+    /**
+     * Returns the Unit of the given place (index) in the list of Units of this Formation. The first Unit has unit
+     * number 0. If the given number does not correspond to a unit, an empty Optional is returned.
+     *
+     * @param unitNumber The index of the Unit in this formation's Unit list
+     *
+     * @return Optionally, an SBFUnit
+     */
+    public Optional<SBFUnit> getUnit(int unitNumber) {
+        if (unitNumber < 0 || unitNumber >= units.size()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(units.get(unitNumber));
+        }
+    }
+
     public void addUnit(SBFUnit newUnit) {
         units.add(newUnit);
     }
@@ -307,8 +324,8 @@ public class SBFFormation implements ASSpecialAbilityCollector, BattleForceSUAFo
     }
 
     /**
-     * @return A shorthand name for this formation, used for label/icon drawing; if no shorthand has been set for
-     *       this formation, the returned String is empty.
+     * @return A shorthand name for this formation, used for label/icon drawing; if no shorthand has been set for this
+     *       formation, the returned String is empty.
      */
     @Nonnull
     public String getShortName() {
@@ -316,8 +333,9 @@ public class SBFFormation implements ASSpecialAbilityCollector, BattleForceSUAFo
     }
 
     /**
-     * Sets the given String as a shorthand name for this formation, used for label/icon drawing. The String should
-     * not be longer than around 8 letters.
+     * Sets the given String as a shorthand name for this formation, used for label/icon drawing. The String should not
+     * be longer than around 8 letters.
+     *
      * @param shortName The formation's short name, e.g. "Command", "LEAD" or "Noble's"
      */
     public void setShortName(@Nullable String shortName) {
