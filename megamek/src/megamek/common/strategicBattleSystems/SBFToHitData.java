@@ -33,6 +33,7 @@
 
 package megamek.common.strategicBattleSystems;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -66,7 +67,7 @@ public class SBFToHitData extends TargetRoll {
         processTMM(toHit, game, attack);
         processJUMP(toHit, game, attack);
         processMorale(toHit, game, attack);
-        processSecondaryTarget(toHit, game, attack);
+        processSecondaryTarget(toHit, game, attack, attacksOfFormation);
         processUnitsNotFiring(toHit, game, attack, attacksOfFormation);
         return toHit;
     }
@@ -90,7 +91,7 @@ public class SBFToHitData extends TargetRoll {
         } else if (range == 2) {
             toHit.addModifier(new TargetRollModifier(3, "extreme range"));
         } else if (range == 1) {
-            toHit.addModifier(new TargetRollModifier(3, "long range"));
+            toHit.addModifier(new TargetRollModifier(2, "long range"));
         }
         return true;
     }
@@ -112,7 +113,7 @@ public class SBFToHitData extends TargetRoll {
             toHit.addModifier(attacker.getJumpUsedThisTurn(), "attacker JUMP");
         }
         if (target.getJumpUsedThisTurn() > 0) {
-            toHit.addModifier(attacker.getJumpUsedThisTurn(), "target JUMP");
+            toHit.addModifier(target.getJumpUsedThisTurn(), "target JUMP");
         }
     }
 
@@ -127,12 +128,13 @@ public class SBFToHitData extends TargetRoll {
         }
     }
 
-    private static void processSecondaryTarget(SBFToHitData toHit, SBFGame game, SBFStandardUnitAttack attack) {
-        //noinspection OptionalGetWithoutIsPresent
-        SBFFormation attacker = game.getFormation(attack.getEntityId()).get();
-        if (targetsOfFormation(attacker, game).size() > 2) {
+    private static void processSecondaryTarget(SBFToHitData toHit, SBFGame game, SBFStandardUnitAttack attack,
+          List<EntityAction> attacksOfFormation) {
+
+        int targettedFormations = targettedFormations(game, attack, attacksOfFormation);
+        if (targettedFormations > 2) {
             toHit.addModifier(TargetRoll.IMPOSSIBLE, "too many targets");
-        } else if (targetsOfFormation(attacker, game).size() == 2) {
+        } else if (targettedFormations == 2) {
             toHit.addModifier(1, "two targets");
         }
     }
@@ -156,6 +158,20 @@ public class SBFToHitData extends TargetRoll {
         if (nonAttackingUnits > 0) {
             toHit.addModifier(-Math.min(2, nonAttackingUnits), "Unit(s) not attacking");
         }
+    }
+
+    static int targettedFormations(SBFGame game, SBFStandardUnitAttack attack,
+          List<EntityAction> attacksOfFormation) {
+        SBFFormation attackingFormation = game.getFormation(attack.getEntityId()).get();
+        Set<Integer> targets = new HashSet<>();
+        targets.add(attack.getTargetId());
+        attacksOfFormation.stream()
+              .filter(a -> a.getEntityId() == attackingFormation.getId())
+              .filter(a -> a instanceof SBFAttackAction)
+              .map(a -> ((SBFAttackAction) a).getTargetId())
+              .distinct()
+              .forEach(targets::add);
+        return targets.size();
     }
 
     /**

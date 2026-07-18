@@ -142,6 +142,7 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
         resetPlannedActions();
         updateButtonStatus();
         updateDonePanel();
+        updateTargetingData();
     }
 
     private void resetPlannedActions() {
@@ -205,13 +206,34 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
                   selectedTarget.getId(),
                   finalRange);
 
+            clearInvalidDualAttacks(attack);
             plannedActions.add(attack);
             updateButtonStatus();
             updateDonePanel();
             targetDialog.updateAttacks(plannedActions);
-            String unitName=actingFormation().get().getUnits().get(firingUnit).getName();
+            String unitName = actingFormation().get().getUnits().get(firingUnit).getName();
             clientGUI.addToast(ToastLevel.INFO, "Unit " + unitName + " attacking " + targetFormation.getName() + " ");
         }
+    }
+
+    /**
+     * For the given new attack, clears out the planned attacks that would then be invalid (a Unit may only make one
+     * standard attack or IF attack, IO:BF 3rd p.169)
+     */
+    private void clearInvalidDualAttacks(EntityAction newAttack) {
+            List<EntityAction> toRemove = new ArrayList<>();
+        if (newAttack instanceof SBFStandardUnitAttack standardUnitAttack) {
+            int firingUnit = standardUnitAttack.getUnitNumber();
+            int firingFormation = standardUnitAttack.getEntityId();
+            for (EntityAction action : plannedActions) {
+                if (action instanceof SBFStandardUnitAttack otherStandardUnitAttack
+                      && action.getEntityId() == firingFormation
+                      && otherStandardUnitAttack.getUnitNumber() == firingUnit) {
+                    toRemove.add(action);
+                }
+            }
+        }
+        plannedActions.removeAll(toRemove);
     }
 
     private SBFToHitData getCurrentToHitData() {
@@ -369,7 +391,7 @@ public class SBFFiringDisplay extends SBFActionPhaseDisplay implements ListSelec
         if (!e.getValueIsAdjusting() && !isIgnoringEvents()) {
             firingUnit = targetDialog.getSelectedUnitIndex();
             updateTargetingData();
-//            updateButtonStatus();
+            //            updateButtonStatus();
         }
     }
 }

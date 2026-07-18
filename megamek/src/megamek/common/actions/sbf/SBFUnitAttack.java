@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MegaMek.
  *
@@ -33,19 +33,42 @@
 
 package megamek.common.actions.sbf;
 
-import megamek.common.alphaStrike.BattleForceSUA;
-import megamek.server.sbf.SBFActionHandler;
-import megamek.server.sbf.SBFGameManager;
+public abstract class SBFUnitAttack extends AbstractSBFAttackAction {
 
-@SuppressWarnings("unused") // in development
-public class SBFIndirectArtilleryAttack extends SBFArtilleryAttack {
+    private final int unitNumber;
 
-    public SBFIndirectArtilleryAttack(int entityId, int targetId, BattleForceSUA artilleryType) {
-        super(entityId, targetId, artilleryType);
+    /**
+     * Creates a standard attack of an SBF Unit on another formation. The unit number identifies the SBF Unit making the
+     * attack, i.e. 1 for the first of the formation's units, 2 for the second etc.
+     *
+     * @param formationId The attacker's ID
+     * @param unitNumber  The number of the attacking SBF Unit inside the formation
+     * @param targetId    The target's ID
+     */
+    public SBFUnitAttack(int formationId, int targetId, int unitNumber) {
+        super(formationId, targetId);
+        this.unitNumber = unitNumber;
+    }
+
+    /**
+     * Returns the number of the SBF Unit making the attack, i.e. 1 for the first of the formation's units, 2 for the
+     * second.
+     *
+     * @return The unit number within the formation
+     */
+    public int getUnitNumber() {
+        return unitNumber;
     }
 
     @Override
-    public SBFActionHandler getHandler(SBFGameManager gameManager) {
-        return null;
+    public String toString() {
+        return "["
+              + getClass().getSimpleName()
+              + "]: Formation ID "
+              + getEntityId()
+              + "; Unit #"
+              + unitNumber
+              + "; Target ID "
+              + getTargetId();
     }
 }

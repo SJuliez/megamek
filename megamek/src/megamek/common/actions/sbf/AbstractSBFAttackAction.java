@@ -57,6 +57,6 @@ public abstract class AbstractSBFAttackAction implements SBFAttackAction, Serial
 
     @Override
     public String toString() {
-        return "[" + getClass().getSimpleName() + "]: Unit ID " + entityId + "; Target ID " + targetId;
+        return "[" + getClass().getSimpleName() + "]: Formation ID " + entityId + "; Target ID " + targetId;
     }
 }

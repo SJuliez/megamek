@@ -43,10 +43,9 @@ import megamek.server.sbf.SBFActionHandler;
 import megamek.server.sbf.SBFGameManager;
 import megamek.server.sbf.SBFStandardUnitAttackHandler;
 
-public class SBFStandardUnitAttack extends AbstractSBFAttackAction {
+public class SBFStandardUnitAttack extends SBFUnitAttack {
     private static final MMLogger logger = MMLogger.create(SBFStandardUnitAttack.class);
 
-    private final int unitNumber;
     private final ASRange range;
 
     /**
@@ -58,19 +57,8 @@ public class SBFStandardUnitAttack extends AbstractSBFAttackAction {
      * @param targetId    The target's ID
      */
     public SBFStandardUnitAttack(int formationId, int unitNumber, int targetId, ASRange range) {
-        super(formationId, targetId);
-        this.unitNumber = unitNumber;
+        super(formationId, targetId, unitNumber);
         this.range = range;
-    }
-
-    /**
-     * Returns the number of the SBF Unit making the attack, i.e. 1 for the first of the formation's units, 2 for the
-     * second.
-     *
-     * @return The unit number within the formation
-     */
-    public int getUnitNumber() {
-        return unitNumber;
     }
 
     public ASRange getRange() {
