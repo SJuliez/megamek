@@ -35,23 +35,24 @@ package megamek.common.strategicBattleSystems;
 
 import megamek.client.commands.ClientCommand;
 import megamek.common.Hex;
-import megamek.common.Player;
 import megamek.common.board.BoardLocation;
 import megamek.common.units.Terrains;
+
+import java.util.List;
 
 /**
  * This is an SBF move step that happens on the surface of a hex, i.e. on the ground or, if the destination has water,
  * on the water surface. This means that the elevation at start and end is considered to be 0.
  */
-public class SurfaceSBFMoveStep extends SBFMoveStep {
+public class SBFSurfaceMoveStep extends SBFMoveStep {
 
-    protected SurfaceSBFMoveStep(int formationId) {
+    protected SBFSurfaceMoveStep(int formationId) {
         super(formationId);
     }
 
     public static SBFMoveStep createSurfaceMoveStep(SBFGame game, int formationId,
           BoardLocation startingPoint, BoardLocation destination) {
-        SBFMoveStep step = new SurfaceSBFMoveStep(formationId);
+        SBFMoveStep step = new SBFSurfaceMoveStep(formationId);
         step.startingPoint = startingPoint;
         step.destination = destination;
         step.computeStatus(game);
@@ -111,6 +112,26 @@ public class SurfaceSBFMoveStep extends SBFMoveStep {
             isIllegal = !isHover && !isNaval && !isWige;
         }
 
+        // moving into a hex with a hostile formation is illegal if it breaks the friendly stacking rule, IO:BF p.164
+        if (game.isHostileActiveFormationAt(destination, formation)
+              && !startingPoint.equals(destination)) {
+            List<SBFFormation> friendliesAtDestination = game.getFriendlyFormationsAt(destination,
+                  formation.getOwnerId());
+
+            if (friendliesAtDestination.size() >= 2) {
+                isIllegal = true;
+            } else if (friendliesAtDestination.size() == 1
+                  && !formation.getType().isAnyOf(SBFElementType.CI, SBFElementType.BA)
+                  && !friendliesAtDestination.getFirst().getType().isAnyOf(SBFElementType.CI, SBFElementType.BA)) {
+                // a second friendly formation is only allowed if one of the two is Infantry
+                // IO:BF speaks of "Infantry" formations; Using the formation type here; this is lenient
+                // and allows formations with some non-infantry elements as long as their overall type is CI/BA; this
+                // also allows checking the type even if the elements of the formation are unknown as in some source
+                // book scenarios
+                isIllegal = true;
+            }
+        }
+
         if (levelDifference > 0) {
             mpUsed += levelDifference;
             if (isVehicle || isInfantry) {
@@ -122,7 +143,7 @@ public class SurfaceSBFMoveStep extends SBFMoveStep {
 
     @Override
     public SBFMoveStep copy() {
-        SBFMoveStep step = new SurfaceSBFMoveStep(formationId);
+        SBFMoveStep step = new SBFSurfaceMoveStep(formationId);
         step.startingPoint = startingPoint;
         step.destination = destination;
         step.mpUsed = mpUsed;

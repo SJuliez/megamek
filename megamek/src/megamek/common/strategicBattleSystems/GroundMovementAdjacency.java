@@ -54,7 +54,7 @@ public record GroundMovementAdjacency(SBFGame game) implements AdjacencyMap<SBFM
         // Therefore, turning steps do not have to be used, simplifying this compared to TW movement
         for (BoardLocation newDestination : possibleDestinations) {
             SBFMovePath newPath = SBFMovePath.createMovePathShallow(mp);
-            var additionalStep = SurfaceSBFMoveStep.createSurfaceMoveStep(game,
+            var additionalStep = SBFSurfaceMoveStep.createSurfaceMoveStep(game,
                   mp.getEntityId(),
                   currentDestination,
                   newDestination);

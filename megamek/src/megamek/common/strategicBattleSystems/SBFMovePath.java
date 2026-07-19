@@ -140,22 +140,12 @@ public class SBFMovePath implements EntityAction, Serializable {
 
         // Minimum movement IO:BF 3rd p.164: a unit may move to adjacent hexes regardless of MP if it can move at all
         isMinimumMovement = (steps.size() == 1)
-              && (steps.getFirst() instanceof SurfaceSBFMoveStep)
+              && (steps.getFirst() instanceof SBFSurfaceMoveStep)
               && allowedMP > 0
               && !steps.getFirst().isIllegal();
 
         // exceeding the allowed MP makes the path illegal -- unless it is minimum movement
         isIllegal |= (getMpUsed() > allowedMP) && !isMinimumMovement;
-
-        // moving out of a hex with a hostile formation is illegal unless it is the starting point of the path
-        // cant find this rule again --- where is that? engagement control CAN end movement but doesnt have to
-        for (SBFMoveStep step : steps) {
-            if (game.isHostileActiveFormationAt(step.startingPoint, formation)
-                  && !step.startingPoint.equals(step.destination)
-                  && !startLocation.equals(step.startingPoint)) {
-                isIllegal = true;
-            }
-        }
 
         // stacking friendly at end of movement
         List<SBFFormation> friendliesAtDestination = game.getFriendlyFormationsAt(getLastPosition(),
