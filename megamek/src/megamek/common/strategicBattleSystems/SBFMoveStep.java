@@ -74,6 +74,10 @@ public abstract class SBFMoveStep implements Serializable {
     //FIXME it is not an excat copy atm -> remove this if possible
     public abstract SBFMoveStep copy();
 
+    public BoardLocation getStartingPoint() {
+        return startingPoint;
+    }
+
     public BoardLocation getLastPosition() {
         return destination;
     }

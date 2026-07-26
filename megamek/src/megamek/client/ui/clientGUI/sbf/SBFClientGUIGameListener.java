@@ -33,11 +33,34 @@
 
 package megamek.client.ui.clientGUI.sbf;
 
+import megamek.client.bot.BotClient;
+import megamek.client.ui.Messages;
+import megamek.client.ui.clientGUI.AmsAssignGUI;
+import megamek.client.ui.panels.phaseDisplay.PointblankShotDisplay;
+import megamek.client.ui.panels.phaseDisplay.StatusBarPhaseDisplay;
+import megamek.common.actions.WeaponAttackAction;
+import megamek.common.compute.Compute;
+import megamek.common.enums.GamePhase;
+import megamek.common.enums.MoveStepType;
+import megamek.common.equipment.Mounted;
+import megamek.common.event.GameCFREvent;
 import megamek.common.event.GameListenerAdapter;
 import megamek.common.event.GamePhaseChangeEvent;
 import megamek.common.event.board.GameBoardNewEvent;
 import megamek.common.event.entity.GameEntityChangeEvent;
 import megamek.common.event.entity.GameEntityNewEvent;
+import megamek.common.moves.MovePath;
+import megamek.common.options.OptionsConstants;
+import megamek.common.units.Entity;
+import megamek.common.units.Targetable;
+
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
 
 class SBFClientGUIGameListener extends GameListenerAdapter {
 
@@ -80,5 +103,13 @@ class SBFClientGUIGameListener extends GameListenerAdapter {
     @Override
     public void gameEntityNew(GameEntityNewEvent e) {
         clientGUI.updateFormationSprites();
+    }
+
+    @Override
+    public void gameClientFeedbackRequest(GameCFREvent gameCFREvent) {
+//        if ()
+        int response = JOptionPane.showConfirmDialog(null, "Oppose?");
+
+        clientGUI.getClient().sendOpposingMoveResponse(response == JOptionPane.YES_OPTION);
     }
 }

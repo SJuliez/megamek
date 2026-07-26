@@ -165,7 +165,7 @@ public class SBFClientGUI extends AbstractClientGUI implements ActionListener {
     private MovePathSpriteHandler movePathSpriteHandler;
 
     private BoardToastOverlay toastOverlay;
-    private SBFFormationOverlay formationOverlay;
+    private final SBFFormationOverlay formationOverlay;
 
     public SBFClientGUI(SBFClient client, MegaMekController megaMekController) {
         super(client);

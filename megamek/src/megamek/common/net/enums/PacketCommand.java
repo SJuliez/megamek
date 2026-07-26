@@ -206,6 +206,9 @@ public enum PacketCommand {
     /** An SBF packet instructing the Client to replace the pending actions with the sent actions (possibly none). */
     ACTIONS,
 
+    /** An SBF packet to have a player asked if they want to oppose enemy movement. */
+    SBF_CFR_OPPOSE_MOVEMENT,
+
     /** A packet containing other packets to be processed in the order they are stored. */
     MULTI_PACKET,
 

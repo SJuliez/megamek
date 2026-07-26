@@ -64,6 +64,7 @@ public class SBFSurfaceMoveStep extends SBFMoveStep {
         super.computeStatus(game);
 
         SBFFormation formation = game.getFormation(formationId).orElseThrow();
+
         if (game.isHostileActiveFormationAt(startingPoint, formation)) {
             mpUsed++;
         }
@@ -121,7 +122,7 @@ public class SBFSurfaceMoveStep extends SBFMoveStep {
             if (friendliesAtDestination.size() >= 2) {
                 isIllegal = true;
             } else if (friendliesAtDestination.size() == 1
-                  && !formation.getType().isAnyOf(SBFElementType.CI, SBFElementType.BA)
+                  && !isInfantry
                   && !friendliesAtDestination.getFirst().getType().isAnyOf(SBFElementType.CI, SBFElementType.BA)) {
                 // a second friendly formation is only allowed if one of the two is Infantry
                 // IO:BF speaks of "Infantry" formations; Using the formation type here; this is lenient

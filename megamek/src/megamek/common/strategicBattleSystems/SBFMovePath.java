@@ -163,6 +163,11 @@ public class SBFMovePath implements EntityAction, Serializable {
             // book scenarios
             isIllegal = true;
         }
+
+        // an engaged formation cannot move from its hex, IO:BF p.167
+        if (formation.isEngaged()) {
+            isIllegal = true;
+        }
     }
 
     /**

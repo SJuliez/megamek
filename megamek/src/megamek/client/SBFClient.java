@@ -39,11 +39,13 @@ import java.util.List;
 import java.util.Objects;
 
 import megamek.client.ui.clientGUI.GUIPreferences;
+import megamek.common.event.GameCFREvent;
 import megamek.common.interfaces.ForceAssignable;
 import megamek.common.game.InGameObject;
 import megamek.common.Report;
 import megamek.common.actions.EntityAction;
 import megamek.common.force.Forces;
+import megamek.common.moves.MovePath;
 import megamek.common.net.enums.PacketCommand;
 import megamek.common.net.packets.InvalidPacketDataException;
 import megamek.common.net.packets.Packet;
@@ -52,6 +54,7 @@ import megamek.common.options.OptionsConstants;
 import megamek.common.options.SBFRuleOptions;
 import megamek.common.strategicBattleSystems.SBFGame;
 import megamek.common.strategicBattleSystems.SBFMovePath;
+import megamek.common.strategicBattleSystems.SBFOpposingMoveCFREvent;
 import megamek.common.strategicBattleSystems.SBFReportEntry;
 import megamek.common.util.ImageUtil;
 import megamek.logging.MMLogger;
@@ -144,6 +147,20 @@ public class SBFClient extends AbstractClient {
                     for (EntityAction action : packet.getEntityActionList(0)) {
                         getGame().addAction(action);
                     }
+                case CLIENT_FEEDBACK_REQUEST:
+                    final PacketCommand cfrType = packet.getPacketCommand(0);
+                    if (cfrType != null) {
+                        GameCFREvent cfrEvt;
+//                        switch (cfrType) {
+//                            case SBF_CFR_OPPOSE_MOVEMENT:
+                                cfrEvt = new SBFOpposingMoveCFREvent(this);
+//                                break;
+//                            default:
+//                                break;
+                        game.fireGameEvent(cfrEvt);
+
+                    }
+                    break;
                 default:
                     return false;
             }
@@ -153,6 +170,10 @@ public class SBFClient extends AbstractClient {
             logger.error("Invalid packet data:", e);
             return false;
         }
+    }
+
+    public void sendOpposingMoveResponse(boolean doOppose) {
+        send(new Packet(PacketCommand.CLIENT_FEEDBACK_REQUEST, PacketCommand.SBF_CFR_OPPOSE_MOVEMENT, doOppose));
     }
 
     private String assembleAndAddImages(List<SBFReportEntry> reports) {

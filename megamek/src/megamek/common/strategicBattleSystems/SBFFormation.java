@@ -44,9 +44,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -111,6 +113,9 @@ public class SBFFormation implements ASSpecialAbilityCollector, BattleForceSUAFo
     private BoardLocation position;
     private boolean isDone = false;
     private int jumpUsedThisTurn = 0;
+
+    // TODO: maybe keep this in SBFGame only?
+    private final Set<Integer> engagedWith = new HashSet<>();
 
     public enum MoraleStatus {
         NORMAL, SHAKEN, UNSTEADY, BROKEN, ROUTED
@@ -599,5 +604,10 @@ public class SBFFormation implements ASSpecialAbilityCollector, BattleForceSUAFo
 
     public void setMoraleStatus(MoraleStatus status) {
         moraleStatus = status;
+    }
+
+    public boolean isEngaged() {
+        // maybe keep this only in SBFGame?
+        return !engagedWith.isEmpty();
     }
 }

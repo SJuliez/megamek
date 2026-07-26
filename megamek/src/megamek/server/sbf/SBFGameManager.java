@@ -38,9 +38,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import megamek.common.Player;
 import megamek.common.actions.EntityAction;
+import megamek.common.board.BoardLocation;
 import megamek.common.game.IGame;
 import megamek.common.game.InGameObject;
 import megamek.common.interfaces.ReportEntry;
@@ -65,11 +67,17 @@ import megamek.server.commands.ServerCommand;
  * This class manages an SBF game on the server side. As of 2024, this is under construction.
  */
 public final class SBFGameManager extends AbstractGameManager implements SBFRuleOptionsUser {
-    private static final MMLogger logger = MMLogger.create(SBFGameManager.class);
+    private static final MMLogger LOGGER = MMLogger.create(SBFGameManager.class);
 
     private SBFGame game;
 
     private final List<SBFReportEntry> pendingReports = new ArrayList<>();
+
+    /**
+     * Special packet queue for client feedback requests.
+     */
+    private final ConcurrentLinkedQueue<Server.ReceivedPacket> cfrPacketQueue = new ConcurrentLinkedQueue<>();
+
 
     record PendingPacket(int recipient, Packet packet) {
     }
@@ -101,11 +109,11 @@ public final class SBFGameManager extends AbstractGameManager implements SBFRule
                     break;
             }
         } catch (InvalidPacketDataException e) {
-            logger.error("Invalid packet data:", e);
+            LOGGER.error("Invalid packet data:", e);
         }
 
-        logger.info("Leaving handle packet: {}", packet.command());
-        logger.info(pendingPackets);
+        LOGGER.info("Leaving handle packet: {}", packet.command());
+        LOGGER.info(pendingPackets);
         sendPendingPackets();
     }
 
@@ -154,7 +162,7 @@ public final class SBFGameManager extends AbstractGameManager implements SBFRule
     @Override
     public void setGame(IGame g) {
         if (!(g instanceof SBFGame)) {
-            logger.fatal("Attempted to set game to incorrect class.");
+            LOGGER.fatal("Attempted to set game to incorrect class.");
             return;
         }
         game = (SBFGame) g;
@@ -174,6 +182,10 @@ public final class SBFGameManager extends AbstractGameManager implements SBFRule
 
     @Override
     public void handleCfrPacket(Server.ReceivedPacket rp) {
+        synchronized (cfrPacketQueue) {
+            cfrPacketQueue.add(rp);
+            cfrPacketQueue.notifyAll();
+        }
     }
 
     @Override
@@ -256,19 +268,19 @@ public final class SBFGameManager extends AbstractGameManager implements SBFRule
 
     @Override
     protected void endCurrentPhase() {
-        logger.info("Ending phase {}", game.getPhase());
+        LOGGER.info("Ending phase {}", game.getPhase());
         phaseEndManager.managePhase();
     }
 
     @Override
     protected void prepareForCurrentPhase() {
-        logger.info("Preparing phase {}", game.getPhase());
+        LOGGER.info("Preparing phase {}", game.getPhase());
         phasePreparationManager.managePhase();
     }
 
     @Override
     protected void executeCurrentPhase() {
-        logger.info("Executing phase {}", game.getPhase());
+        LOGGER.info("Executing phase {}", game.getPhase());
         switch (game.getPhase()) {
             case EXCHANGE:
                 resetPlayersDone();
@@ -435,12 +447,12 @@ public final class SBFGameManager extends AbstractGameManager implements SBFRule
             movePath.restore(game);
             Optional<SBFFormation> formationInfo = game.getFormation(movePath.getEntityId());
             if (formationInfo.isEmpty()) {
-                logger.error("Malformed packet {}", packet);
+                LOGGER.error("Malformed packet {}", packet);
                 return;
             }
             SBFTurn turn = game.getTurn();
             if ((turn == null) || !turn.isValid(connId, formationInfo.get(), game)) {
-                logger.error("It is not player {}'s turn! ", connId);
+                LOGGER.error("It is not player {}'s turn! ", connId);
                 return;
             }
 
@@ -532,7 +544,7 @@ public final class SBFGameManager extends AbstractGameManager implements SBFRule
 
         if (formationInfo.isEmpty() ||
               !attacks.stream().map(EntityAction::getEntityId).allMatch(id -> id == formationId)) {
-            logger.error("Invalid formation ID or diverging attacker IDs");
+            LOGGER.error("Invalid formation ID or diverging attacker IDs");
             repeatTurn(connId); // TODO: This is untested; questionable if this can save a game after an error
             return;
         }
@@ -549,7 +561,7 @@ public final class SBFGameManager extends AbstractGameManager implements SBFRule
               !getGame().getPhase().isPhysical() &&
               !getGame().getPhase().isTargeting() &&
               !getGame().getPhase().isOffboard()) {
-            logger.error("Server got attack packet in wrong phase");
+            LOGGER.error("Server got attack packet in wrong phase");
             return;
         }
 
@@ -561,12 +573,12 @@ public final class SBFGameManager extends AbstractGameManager implements SBFRule
         // TODO unify firing/movement validity
         Optional<SBFFormation> formationInfo = game.getFormation(action.getEntityId());
         if (formationInfo.isEmpty()) {
-            logger.error("Incorrect formation ID {}", action.getEntityId());
+            LOGGER.error("Incorrect formation ID {}", action.getEntityId());
             return false;
         }
         SBFTurn turn = game.getTurn();
         if ((turn == null) || !turn.isValid(connId, formationInfo.get(), game)) {
-            logger.error("It is not player {}'s turn! ", connId);
+            LOGGER.error("It is not player {}'s turn! ", connId);
             return false;
         }
 
@@ -578,5 +590,77 @@ public final class SBFGameManager extends AbstractGameManager implements SBFRule
      */
     void sendPendingActions() {
         send(new Packet(PacketCommand.ACTIONS, new ArrayList<>(game.getActionsVector())));
+    }
+
+    /**
+     * Processes opposing movement of a formation through or out of a hostile formation's hex.
+     *
+     * @param location        The location where the opposition happens
+     * @param movingFormation The moving formation
+     *
+     * @return true when movement is opposed
+     */
+    boolean processOpposeMovementCFR(BoardLocation location, SBFFormation movingFormation) {
+
+        // find hostile formations at the given location
+        List<SBFFormation> formationsAt = game.getActiveFormationsAt(location);
+        formationsAt.removeIf(other -> !game.areHostile(other, game.getPlayer(movingFormation.getOwnerId())));
+
+        if (formationsAt.isEmpty()) {
+            // nothing there to oppose movement
+            return false;
+        }
+
+        SBFFormation opposer = formationsAt.getFirst();
+        int askedPlayer = opposer.getOwnerId();
+        //        LOGGER.debug("processTeleguidedMissileCFR: playerId={}, targetCount={}", playerId, targetIds.size());
+        // send the question to the player who may oppose movement
+        sendOpposeMovementCFR(askedPlayer, opposer, movingFormation);
+
+        // wait for the return packet
+        while (true) {
+            synchronized (cfrPacketQueue) {
+                try {
+                    while (cfrPacketQueue.isEmpty()) {
+                        cfrPacketQueue.wait();
+                    }
+                } catch (InterruptedException e) {
+                    LOGGER.debug("processTeleguidedMissileCFR: interrupted while waiting for response");
+                    return false;
+                }
+
+                // Get the packet, if there's something to get
+                Server.ReceivedPacket rp = cfrPacketQueue.poll();
+                final PacketCommand cfrType = rp.getPacket().getPacketCommand(0);
+                // Make sure we got the right type of response
+                if (cfrType != PacketCommand.SBF_CFR_OPPOSE_MOVEMENT) {
+                    // Re-queue packet for other handlers - don't discard it
+                    LOGGER.trace("re-queuing mismatched packet type {}", cfrType);
+                    cfrPacketQueue.add(rp);
+                    continue;
+                }
+                // Check packet came from right ID
+                if (rp.getConnectionId() != askedPlayer) {
+                    // Re-queue packet for other handlers - don't discard it
+                    LOGGER.trace("re-queuing packet from wrong player {}",
+                          rp.getConnectionId());
+                    cfrPacketQueue.add(rp);
+                    continue;
+                }
+                boolean result = (boolean) rp.getPacket().data()[1];
+                LOGGER.debug("received response, selected oppose {}", result);
+                return result;
+            }
+        }
+    }
+
+    private void sendOpposeMovementCFR(int playerId, SBFFormation opposer, SBFFormation movingFormation) {
+        // Send target id numbers and to-hit values to Client
+        send(playerId,
+              new Packet(PacketCommand.CLIENT_FEEDBACK_REQUEST,
+                    PacketCommand.SBF_CFR_OPPOSE_MOVEMENT,
+                    opposer,
+                    movingFormation));
+        sendPendingPackets();
     }
 }
