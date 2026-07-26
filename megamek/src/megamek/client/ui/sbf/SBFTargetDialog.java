@@ -41,6 +41,7 @@ import javax.swing.JLabel;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionListener;
 
+import megamek.client.ui.BaseMessages;
 import megamek.client.ui.clientGUI.GUIPreferences;
 import megamek.client.ui.clientGUI.tooltip.SBFInGameObjectTooltip;
 import megamek.client.ui.dialogs.abstractDialogs.AbstractDialog;
@@ -57,11 +58,12 @@ import megamek.common.strategicBattleSystems.SBFToHitData;
 public class SBFTargetDialog extends AbstractDialog implements IPreferenceChangeListener {
 
     private static final GUIPreferences GUIP = GUIPreferences.getInstance();
-    private static final String NO_TARGET = "No Target";
 
+    private final BaseMessages i18N = BaseMessages.of(this);
     private final Box attackerBox = Box.createVerticalBox();
-    private final JLabel attackingLabel = new JLabel("attacking:", JLabel.CENTER);
-    private final JLabel resultLabel = new JLabel("result:", JLabel.CENTER);
+    private final String noTarget = i18N.get("noTarget");
+    private final JLabel attackingLabel = new JLabel("", JLabel.CENTER);
+    private final JLabel resultLabel = new JLabel("", JLabel.CENTER);
     private final JLabel attackerDisplay = new JLabel(noTargetLabel());
     private final JLabel targetDisplay = new JLabel(noTargetLabel());
     private final SBFGame game;
@@ -138,10 +140,10 @@ public class SBFTargetDialog extends AbstractDialog implements IPreferenceChange
         }
 
         attackingLabel.setText("<HTML><HEAD><STYLE>" + labelStyle() + "</STYLE></HEAD><BODY>"
-              + UIUtil.divCSS("label", "Attacking") + "</BODY></HTML>");
+              + UIUtil.divCSS("label", i18N.get("attacking")) + "</BODY></HTML>");
 
         resultLabel.setText("<HTML><HEAD><STYLE>" + labelStyle() + "</STYLE></HEAD><BODY>"
-              + UIUtil.divCSS("label", "Attack Result:") + "</BODY></HTML>");
+              + UIUtil.divCSS("label", i18N.get("result")) + "</BODY></HTML>");
         pack();
     }
 
@@ -166,7 +168,7 @@ public class SBFTargetDialog extends AbstractDialog implements IPreferenceChange
         int fontSize = (int) (1.4 * UIUtil.scaleForGUI(UIUtil.FONT_SCALE1));
         return "<HTML><BODY><div style='width:" + width + "; padding:50 10; border:2; margin: 5 0; " +
               "border-style:solid; border-color: #888; font-family:Noto Sans; font-size:" + fontSize + "; '>"
-              + NO_TARGET + "</div></BODY></HTML>";
+              + noTarget + "</div></BODY></HTML>";
     }
 
     private String labelStyle() {
