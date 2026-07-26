@@ -33,7 +33,6 @@
 
 package megamek.client.ui;
 
-import megamek.client.ui.clientGUI.BugReportDialog;
 import megamek.common.annotations.Nullable;
 
 import javax.swing.*;

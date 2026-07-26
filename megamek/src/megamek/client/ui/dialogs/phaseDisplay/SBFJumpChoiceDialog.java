@@ -43,6 +43,7 @@ import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 
+import megamek.client.ui.BaseMessages;
 import megamek.client.ui.buttons.ButtonEsc;
 import megamek.client.ui.clientGUI.CloseAction;
 import megamek.client.ui.util.UIUtil;
@@ -55,8 +56,11 @@ public class SBFJumpChoiceDialog extends AbstractChoiceDialog<Integer> {
     private static final int BASE_PADDING = 10;
     private static final int BASE_JUMP_SIZE = 35;
 
+    private final BaseMessages i18N = BaseMessages.of(this);
+
     public SBFJumpChoiceDialog(JFrame parent, List<Integer> targets) {
-        super(parent, "SBFTargetDialog.title", titleMessage(), targets, false);
+        super(parent, "SBFTargetDialog.title", "", targets, false);
+        // set the message
         setColumns(1);
         initialize();
         setUseDetailed(false);
@@ -64,7 +68,7 @@ public class SBFJumpChoiceDialog extends AbstractChoiceDialog<Integer> {
 
     @Override
     protected void detailLabel(JToggleButton button, Integer target) {
-        String targetText = (target > 0) ? Integer.toString(target) : "None";
+        String targetText = (target > 0) ? Integer.toString(target) : i18N.get("None");
         String text = "<HTML><HEAD>" + styles() + "</HEAD><BODY>"
               + spanCSS("button", targetText)
               + "</BODY></HTML>";
@@ -86,11 +90,11 @@ public class SBFJumpChoiceDialog extends AbstractChoiceDialog<Integer> {
         detailLabel(button, target);
     }
 
-    private static String titleMessage() {
+    private String titleMessage() {
         return "<HTML><HEAD>" + styles() + "</HEAD><BODY><div class=frame>"
-              + spanCSS("label", "Choose the")
-              + spanCSS("speccell", " JUMP ")
-              + spanCSS("label", "points to use:")
+              + spanCSS("label", i18N.get("info"))
+    //          + spanCSS("speccell", " JUMP ")
+      //        + spanCSS("label", "points to use:")
               + "</div></BODY></HTML>";
     }
 

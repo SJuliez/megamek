@@ -31,7 +31,7 @@
  * affiliated with Microsoft.
  */
 
-package megamek.client.ui.clientGUI;
+package megamek.client.ui;
 
 import java.awt.Cursor;
 import java.awt.GridBagConstraints;
@@ -46,15 +46,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import megamek.MMConstants;
-import megamek.client.ui.BugReportMessages;
 import megamek.client.ui.util.UIUtil;
 import megamek.common.annotations.Nullable;
 
 public class BugReportDialog {
 
     private static final int UNSCALED_WIDTH = 600;
-    private static final BugReportMessages I18N = new BugReportMessages();
-
+    private static final String HTML_WRAPPER = "<html><body width=%d>%s</body></html>";
     private static final String REPORT_LINK_MM = "https://github.com/MegaMek/megamek/issues/new/choose";
     private static final String REPORT_LINK_MML = "https://github.com/MegaMek/megameklab/issues/new/choose";
     private static final String REPORT_LINK_MHQ = "https://github.com/MegaMek/mekhq/issues/new/choose";
@@ -62,7 +60,7 @@ public class BugReportDialog {
 
     private final Window parent;
     private final JComponent content;
-
+    private final BaseMessages i18N = BaseMessages.of(this);
     private final Action copySystemDataAction;
 
     public BugReportDialog(@Nullable Window parent, @Nullable Action copySystemDataAction) {
@@ -72,26 +70,26 @@ public class BugReportDialog {
         var gbc = new GridBagConstraints();
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         int width = UIUtil.scaleForGUI(UNSCALED_WIDTH);
-        String firstText = "<html><body width=%d>%s</body></html>".formatted(width, I18N.get("mainText"));
+        String firstText = HTML_WRAPPER.formatted(width, i18N.get("mainText"));
+        String secondText = HTML_WRAPPER.formatted(width, i18N.get("secondaryText"));
         content.add(new JLabel(firstText), gbc);
-        String secondText = "<html><body width=%d>%s</body></html>".formatted(width, I18N.get("secondaryText"));
         content.add(new JLabel(secondText), gbc);
         content.add(buttonPanel(), gbc);
     }
 
     public void show() {
-        JOptionPane.showMessageDialog(parent, content, I18N.get("title"), JOptionPane.PLAIN_MESSAGE, null);
+        JOptionPane.showMessageDialog(parent, content, i18N.get("title"), JOptionPane.PLAIN_MESSAGE, null);
     }
 
     private JComponent buttonPanel() {
         JPanel row1 = new JPanel();
-        row1.add(new UrlButton(I18N.get("discord.text"), MMConstants.DISCORD_LINK));
+        row1.add(new UrlButton(i18N.get("discord.text"), MMConstants.DISCORD_LINK));
 
         JPanel row2 = new JPanel();
-        row2.add(new UrlButton(I18N.get("mm.text"), REPORT_LINK_MM));
-        row2.add(new UrlButton(I18N.get("mml.text"), REPORT_LINK_MML));
-        row2.add(new UrlButton(I18N.get("mhq.text"), REPORT_LINK_MHQ));
-        row2.add(new UrlButton(I18N.get("mmData.text"), REPORT_LINK_MM_DATA));
+        row2.add(new UrlButton(i18N.get("mm.text"), REPORT_LINK_MM));
+        row2.add(new UrlButton(i18N.get("mml.text"), REPORT_LINK_MML));
+        row2.add(new UrlButton(i18N.get("mhq.text"), REPORT_LINK_MHQ));
+        row2.add(new UrlButton(i18N.get("mmData.text"), REPORT_LINK_MM_DATA));
 
         JPanel row3 = new JPanel();
         if (copySystemDataAction != null) {
